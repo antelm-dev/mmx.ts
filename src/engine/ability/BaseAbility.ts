@@ -116,7 +116,11 @@ export abstract class BaseAbility {
     return this.timer < 1.1 / PHYSICS_FPS;
   }
 
-  play_animation(a: string): void {
-    this.character.play_animation(a);
+  play_animation(a: string, frame = 0): void {
+    this.character.play_animation(a, frame);
+  }
+
+  play_animation_once(a: string): void {
+    this.character.play_animation_once(a);
   }
 }

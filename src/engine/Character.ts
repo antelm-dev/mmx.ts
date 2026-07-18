@@ -99,6 +99,10 @@ export class Character extends AbilityUser {
     this.stepAbilities(dt);
     this.physicsStep(dt);
     this.updateProjectiles(dt);
+    // Sprite last: abilities have set the clip for this frame, and any
+    // `animation_finished` handoff (walk_start -> walk, recover -> idle) lands on
+    // an already-settled state.
+    this.stepAnimation(dt);
     this.input.newFrame();
   }
 }

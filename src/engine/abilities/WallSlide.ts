@@ -8,6 +8,7 @@ import { WALLSLIDE_SPEED, WALLSLIDE_START_DELAY } from '../../core/constants.js'
 export class WallSlide extends Movement {
   readonly name = 'WallSlide';
   priority = 3;
+  override animation = 'slide'; // Player.tscn (the clip is `slide`, not `wallslide`)
 
   start_delay = WALLSLIDE_START_DELAY;
   block_timer = 0;
@@ -36,7 +37,6 @@ export class WallSlide extends Movement {
     this.character.events.emit('wallslide');
     this.character.set_direction(-this.get_pressed_direction());
     this.wallgrab_direction = this.get_pressed_direction();
-    this.play_animation('wallslide');
   }
 
   override _Update(_dt: number): void {

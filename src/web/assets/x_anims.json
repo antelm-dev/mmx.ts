@@ -3,8 +3,59 @@
     "airdash": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            768,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            768,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            0,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             504,
             64,
@@ -12,86 +63,95 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            768,
+            0,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            704,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            768,
+            0,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            704,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             0,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            0,
-            560,
+          ],
+          "armRegion": [
+            704,
+            504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             0,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            0,
-            560,
+          ],
+          "armRegion": [
+            704,
+            504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             0,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            0,
-            560,
+          ],
+          "armRegion": [
+            704,
+            504,
             64,
             56
           ]
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "armor_blink": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -99,8 +159,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -108,8 +174,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -117,8 +189,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -126,8 +204,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -135,8 +219,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -144,8 +234,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -153,8 +249,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -162,8 +264,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -172,13 +280,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "armor_receive": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -186,8 +300,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -195,8 +315,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -204,8 +330,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -213,8 +345,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -222,8 +360,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -231,8 +375,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -241,55 +391,85 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "balance": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             0,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            64,
-            504,
+          ],
+          "armRegion": [
+            704,
+            448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             64,
             504,
             64,
             56
+          ],
+          "armRegion": [
+            768,
+            448,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             64,
             504,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            64,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            448,
             64,
             56
           ]
         }
       ],
       "loop": false,
-      "speed": 10.0
+      "speed": 10
     },
     "beam": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             0,
             64,
@@ -298,13 +478,19 @@
         }
       ],
       "loop": false,
-      "speed": 10.0
+      "speed": 10
     },
     "beam_equip": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             0,
             64,
@@ -312,8 +498,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             0,
             64,
@@ -321,8 +513,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             0,
             64,
@@ -330,8 +528,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             0,
             64,
@@ -339,8 +543,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             0,
             64,
@@ -348,8 +558,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             0,
             64,
@@ -357,8 +573,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             0,
             64,
@@ -366,8 +588,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             0,
             64,
@@ -375,8 +603,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             0,
             64,
@@ -384,8 +618,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             0,
             64,
@@ -393,8 +633,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             0,
             64,
@@ -402,8 +648,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             0,
             64,
@@ -411,8 +663,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             56,
             64,
@@ -420,8 +678,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             56,
             64,
@@ -429,8 +693,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             56,
             64,
@@ -438,8 +708,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             56,
             64,
@@ -447,8 +723,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             56,
             64,
@@ -456,8 +738,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             56,
             64,
@@ -465,8 +753,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             56,
             64,
@@ -474,8 +768,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             56,
             64,
@@ -483,8 +783,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             56,
             64,
@@ -492,8 +798,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             56,
             64,
@@ -501,8 +813,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -510,8 +828,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -519,8 +843,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -528,8 +858,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -537,8 +873,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -546,8 +888,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -555,8 +903,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -564,8 +918,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             56,
             64,
@@ -573,8 +933,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             56,
             64,
@@ -582,8 +948,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             56,
             64,
@@ -591,8 +963,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             56,
             64,
@@ -600,8 +978,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             56,
             64,
@@ -609,8 +993,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             56,
             64,
@@ -618,8 +1008,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             56,
             64,
@@ -627,8 +1023,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             56,
             64,
@@ -636,8 +1038,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             56,
             64,
@@ -645,8 +1053,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             56,
             64,
@@ -654,8 +1068,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             56,
             64,
@@ -663,8 +1083,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             56,
             64,
@@ -672,8 +1098,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             56,
             64,
@@ -681,8 +1113,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             56,
             64,
@@ -690,8 +1128,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             56,
             64,
@@ -699,8 +1143,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -708,8 +1158,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             112,
             64,
@@ -717,8 +1173,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -726,8 +1188,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -735,8 +1203,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -744,8 +1218,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -753,8 +1233,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -762,8 +1248,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -771,8 +1263,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -780,8 +1278,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -789,8 +1293,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -798,8 +1308,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -807,8 +1323,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -816,8 +1338,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -825,8 +1353,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -834,8 +1368,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            56,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             56,
             64,
@@ -843,8 +1383,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             112,
             64,
@@ -852,8 +1398,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             112,
             64,
@@ -861,8 +1413,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             112,
             64,
@@ -870,8 +1428,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -880,13 +1444,19 @@
         }
       ],
       "loop": false,
-      "speed": 60.0
+      "speed": 60
     },
     "beam_in": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             0,
             64,
@@ -894,8 +1464,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             0,
             64,
@@ -903,8 +1479,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             0,
             64,
@@ -912,8 +1494,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             0,
             64,
@@ -921,8 +1509,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             0,
             64,
@@ -930,8 +1524,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             0,
             64,
@@ -939,8 +1539,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             0,
             64,
@@ -948,8 +1554,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             0,
             64,
@@ -957,8 +1569,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            0,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             0,
             64,
@@ -967,32 +1585,50 @@
         }
       ],
       "loop": false,
-      "speed": 60.0
+      "speed": 60
     },
     "boost": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             560,
             64,
             56
@@ -1000,59 +1636,95 @@
         }
       ],
       "loop": false,
-      "speed": 31.0
+      "speed": 31
     },
     "boost_end": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            576,
+          ],
+          "armRegion": [
+            512,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
+          "region": [
+            576,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
           "region": [
             128,
             560,
             64,
             56
+          ],
+          "armRegion": [
+            0,
+            560,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
@@ -1060,59 +1732,95 @@
         }
       ],
       "loop": false,
-      "speed": 31.0
+      "speed": 31
     },
     "boost_start": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
             560,
             64,
             56
+          ],
+          "armRegion": [
+            448,
+            560,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
             560,
             64,
             56
+          ],
+          "armRegion": [
+            448,
+            560,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            640,
+          ],
+          "armRegion": [
+            448,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            640,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             560,
             64,
             56
@@ -1120,13 +1828,49 @@
         }
       ],
       "loop": false,
-      "speed": 31.0
+      "speed": 31
     },
     "break": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            704,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            768,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             616,
             64,
@@ -1134,8 +1878,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            0,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             616,
             64,
@@ -1143,69 +1908,66 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            768,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            768,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             0,
             672,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            0,
-            672,
+          ],
+          "armRegion": [
+            704,
+            616,
             64,
             56
           ]
         }
       ],
       "loop": false,
-      "speed": 12.0
+      "speed": 12
     },
     "break_end": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             64,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            128,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             672,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
-            672,
+            560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            128,
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
@@ -1213,13 +1975,154 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "counter": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             504,
             64,
@@ -1227,8 +2130,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             504,
             64,
@@ -1236,8 +2145,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             504,
             64,
@@ -1245,8 +2160,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             504,
             64,
@@ -1254,8 +2175,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             504,
             64,
@@ -1263,8 +2190,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             504,
             64,
@@ -1272,8 +2205,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             504,
             64,
@@ -1281,26 +2220,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            384,
+            576,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            384,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
+          ],
+          "armRegion": [
             448,
             504,
             64,
@@ -1308,53 +2235,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            448,
+            640,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            448,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            448,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            448,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            448,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
+          ],
+          "armRegion": [
             512,
             504,
             64,
@@ -1362,63 +2250,75 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            576,
+            640,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             640,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            640,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            640,
+          ],
+          "armRegion": [
+            512,
             504,
             64,
             56
@@ -1426,13 +2326,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "crouch": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1440,8 +2346,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1449,8 +2361,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1458,8 +2376,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1467,8 +2391,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1476,8 +2406,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1485,8 +2421,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1494,8 +2436,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1503,8 +2451,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1512,8 +2466,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1521,8 +2481,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1530,8 +2496,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             112,
             64,
@@ -1539,8 +2511,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             112,
             64,
@@ -1549,13 +2527,19 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "crouch_talk": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             112,
             64,
@@ -1563,8 +2547,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             112,
             64,
@@ -1573,13 +2563,79 @@
         }
       ],
       "loop": true,
-      "speed": 10.0
+      "speed": 10
     },
     "damage": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            512,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             448,
             64,
@@ -1587,8 +2643,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            512,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             448,
             64,
@@ -1596,26 +2673,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            384,
+            640,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            448,
-            448,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
+          ],
+          "armRegion": [
             512,
             448,
             64,
@@ -1623,8 +2688,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            384,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            704,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             448,
             64,
@@ -1632,17 +2718,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            512,
+            768,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
+          ],
+          "armRegion": [
             640,
             448,
             64,
@@ -1650,90 +2733,105 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            512,
-            448,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            704,
-            448,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            768,
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             448,
             64,
             56
@@ -1741,13 +2839,79 @@
         }
       ],
       "loop": false,
-      "speed": 31.0
+      "speed": 31
     },
     "damage_resist": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            128,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            128,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             504,
             64,
@@ -1755,8 +2919,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             504,
             64,
@@ -1764,8 +2949,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            504,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             504,
             64,
@@ -1773,126 +2979,120 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            256,
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            256,
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            256,
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
+            504,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
             504,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
             504,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            192,
-            504,
+          ],
+          "armRegion": [
             64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            192,
-            504,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            192,
             504,
             64,
             56
@@ -1900,13 +3100,19 @@
         }
       ],
       "loop": false,
-      "speed": 31.0
+      "speed": 31
     },
     "dash": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             280,
             64,
@@ -1914,8 +3120,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             280,
             64,
@@ -1923,8 +3135,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             280,
             64,
@@ -1932,8 +3150,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1941,8 +3165,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1950,8 +3180,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1959,8 +3195,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1968,8 +3210,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1977,8 +3225,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1986,8 +3240,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -1995,8 +3255,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -2004,8 +3270,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -2013,8 +3285,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -2022,8 +3300,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -2031,8 +3315,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -2040,8 +3330,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             280,
             64,
@@ -2050,13 +3346,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "fall": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             224,
             64,
@@ -2064,8 +3366,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             224,
             64,
@@ -2073,8 +3381,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             224,
             64,
@@ -2082,8 +3396,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             280,
             64,
@@ -2091,8 +3411,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             280,
             64,
@@ -2100,8 +3426,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2109,8 +3441,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2118,8 +3456,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2127,8 +3471,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2136,8 +3486,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2145,8 +3501,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2154,8 +3516,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2163,8 +3531,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2172,8 +3546,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2181,8 +3561,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2190,8 +3576,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2199,8 +3591,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2208,8 +3606,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             280,
             64,
@@ -2218,13 +3622,19 @@
         }
       ],
       "loop": false,
-      "speed": 24.0
+      "speed": 24
     },
     "idle": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2232,8 +3642,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2241,8 +3657,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2250,8 +3672,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2259,8 +3687,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2268,8 +3702,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2277,8 +3717,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2286,8 +3732,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             112,
             64,
@@ -2295,8 +3747,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             112,
             64,
@@ -2304,8 +3762,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             112,
             64,
@@ -2313,8 +3777,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             112,
             64,
@@ -2322,8 +3792,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             112,
             64,
@@ -2331,8 +3807,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2340,8 +3822,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2349,8 +3837,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2358,8 +3852,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2367,8 +3867,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2376,8 +3882,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2385,8 +3897,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2394,8 +3912,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2403,8 +3927,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2412,8 +3942,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2421,8 +3957,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2430,8 +3972,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2439,8 +3987,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2448,8 +4002,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2457,8 +4017,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2466,8 +4032,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2475,8 +4047,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2484,8 +4062,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2493,8 +4077,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2502,8 +4092,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2511,8 +4107,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2520,8 +4122,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2529,8 +4137,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2538,8 +4152,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2547,8 +4167,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2556,8 +4182,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             112,
             64,
@@ -2565,8 +4197,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             112,
             64,
@@ -2574,8 +4212,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             112,
             64,
@@ -2583,8 +4227,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             112,
             64,
@@ -2592,8 +4242,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2601,8 +4257,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2610,8 +4272,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2619,8 +4287,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2628,8 +4302,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2637,8 +4317,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2646,8 +4332,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2655,8 +4347,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2664,8 +4362,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2673,8 +4377,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2682,8 +4392,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2691,8 +4407,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2700,8 +4422,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2709,8 +4437,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2718,8 +4452,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2727,8 +4467,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2736,8 +4482,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2745,8 +4497,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2754,8 +4512,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2763,8 +4527,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2772,8 +4542,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2781,8 +4557,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2790,8 +4572,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2799,8 +4587,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2808,8 +4602,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2817,8 +4617,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2826,8 +4632,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2835,8 +4647,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2844,8 +4662,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2853,8 +4677,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2862,8 +4692,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2871,8 +4707,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2880,8 +4722,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2889,8 +4737,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2898,8 +4752,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2907,8 +4767,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2916,8 +4782,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2925,8 +4797,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2934,8 +4812,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2943,8 +4827,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2952,8 +4842,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2961,8 +4857,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2970,8 +4872,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2979,8 +4887,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2988,8 +4902,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -2997,8 +4917,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -3006,8 +4932,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -3015,8 +4947,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -3024,8 +4962,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -3033,8 +4977,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -3042,8 +4992,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -3052,13 +5008,19 @@
         }
       ],
       "loop": true,
-      "speed": 30.0
+      "speed": 30
     },
     "jump": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             224,
             64,
@@ -3066,8 +5028,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             224,
             64,
@@ -3075,8 +5043,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             224,
             64,
@@ -3084,8 +5058,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             224,
             64,
@@ -3093,8 +5073,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3102,8 +5088,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3111,8 +5103,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3120,8 +5118,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3129,8 +5133,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3138,8 +5148,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3147,8 +5163,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3156,8 +5178,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3165,8 +5193,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3174,8 +5208,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3183,8 +5223,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3192,8 +5238,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3201,8 +5253,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             224,
             64,
@@ -3211,13 +5269,79 @@
         }
       ],
       "loop": false,
-      "speed": 24.0
+      "speed": 24
     },
     "punch_down": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            640,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            704,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            704,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            768,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             336,
             64,
@@ -3225,8 +5349,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             336,
             64,
@@ -3234,8 +5364,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            0,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             336,
             64,
@@ -3243,17 +5394,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            704,
-            336,
+            64,
+            392,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
+          ],
+          "armRegion": [
             768,
             336,
             64,
@@ -3261,8 +5409,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             336,
             64,
@@ -3270,17 +5424,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            768,
-            336,
+            128,
+            392,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
+          ],
+          "armRegion": [
             0,
             392,
             64,
@@ -3288,72 +5439,75 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            64,
-            392,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            64,
-            392,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
             392,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            128,
+          ],
+          "armRegion": [
+            0,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             392,
             64,
             56
@@ -3361,13 +5515,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "recover": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             280,
             64,
@@ -3375,8 +5535,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             280,
             64,
@@ -3384,8 +5550,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             280,
             64,
@@ -3393,8 +5565,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             280,
             64,
@@ -3402,8 +5580,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             280,
             64,
@@ -3412,41 +5596,65 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "ride": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
@@ -3454,68 +5662,110 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "shot": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
             280,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            576,
+          ],
+          "armRegion": [
+            384,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             576,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
+            280,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            576,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
             280,
             64,
             56
@@ -3523,13 +5773,64 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "shot_left": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            128,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            128,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             336,
             64,
@@ -3537,72 +5838,75 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            256,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            256,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
             336,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            320,
+          ],
+          "armRegion": [
+            192,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             336,
             64,
             56
@@ -3610,13 +5914,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "shot_recover": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             280,
             64,
@@ -3624,8 +5934,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             280,
             64,
@@ -3633,8 +5949,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             280,
             64,
@@ -3642,8 +5964,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             280,
             64,
@@ -3651,8 +5979,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             280,
             64,
@@ -3661,13 +5995,64 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "shot_right": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            704,
+            280,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            64,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            280,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            64,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            280,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            128,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             336,
             64,
@@ -3675,54 +6060,45 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            64,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            64,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
             336,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            128,
+          ],
+          "armRegion": [
+            0,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             128,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             336,
             64,
             56
@@ -3730,13 +6106,49 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "shot_strong": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
+            280,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            704,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
+            280,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            768,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             280,
             64,
@@ -3744,63 +6156,75 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
-            704,
+            768,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            280,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             280,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
             280,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            768,
-            280,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            768,
+          ],
+          "armRegion": [
+            640,
             280,
             64,
             56
@@ -3808,13 +6232,79 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "shot_up": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            512,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             336,
             64,
@@ -3822,8 +6312,44 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            576,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            448,
+            336,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            512,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             336,
             64,
@@ -3831,99 +6357,75 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            448,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            448,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
             336,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            576,
+          ],
+          "armRegion": [
+            384,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            576,
-            336,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
             336,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            512,
+          ],
+          "armRegion": [
+            384,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            384,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
+            336,
+            64,
+            56
+          ],
+          "armRegion": [
+            384,
             336,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
             336,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            512,
+          ],
+          "armRegion": [
+            384,
             336,
             64,
             56
@@ -3931,13 +6433,49 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "slide": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            128,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             392,
             64,
@@ -3945,8 +6483,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             392,
             64,
@@ -3954,27 +6498,15 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            320,
-            392,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
             392,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            384,
+          ],
+          "armRegion": [
+            256,
             392,
             64,
             56
@@ -3982,95 +6514,155 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "stairs": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             0,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            64,
-            448,
+          ],
+          "armRegion": [
+            704,
+            392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             64,
             448,
             64,
             56
+          ],
+          "armRegion": [
+            768,
+            392,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
+          "region": [
+            64,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
           "region": [
             0,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            0,
-            448,
+          ],
+          "armRegion": [
+            704,
+            392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
+          "region": [
+            0,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            704,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
           "region": [
             128,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            128,
+          ],
+          "armRegion": [
+            0,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
+          "region": [
+            128,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
           "region": [
             192,
             448,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            192,
+          ],
+          "armRegion": [
+            64,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
+          "region": [
+            192,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            448,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
           "region": [
             128,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             448,
             64,
             56
@@ -4078,23 +6670,35 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "stairs_end": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             256,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            128,
             448,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            448,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             448,
             64,
             56
@@ -4102,14 +6706,20 @@
         }
       ],
       "loop": false,
-      "speed": 10.0
+      "speed": 10
     },
     "stairs_start": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             768,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
             392,
             64,
             56
@@ -4117,13 +6727,64 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "stop": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            192,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             560,
             64,
@@ -4131,8 +6792,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             560,
             64,
@@ -4140,8 +6807,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             560,
             64,
@@ -4149,8 +6822,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            384,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             560,
             64,
@@ -4158,8 +6852,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             560,
             64,
@@ -4167,90 +6867,90 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            320,
-            560,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            320,
-            560,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            384,
+          ],
+          "armRegion": [
+            256,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            384,
+          ],
+          "armRegion": [
+            256,
             560,
             64,
             56
@@ -4258,68 +6958,110 @@
         }
       ],
       "loop": false,
-      "speed": 17.0
+      "speed": 17
     },
     "stop_end": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             448,
             560,
             64,
             56
+          ],
+          "armRegion": [
+            320,
+            560,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             448,
             560,
             64,
             56
+          ],
+          "armRegion": [
+            320,
+            560,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
             560,
             64,
             56
+          ],
+          "armRegion": [
+            384,
+            560,
+            64,
+            56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             512,
             560,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            192,
+          ],
+          "armRegion": [
+            384,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             192,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
             560,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
+          "region": [
+            192,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
           "region": [
             128,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            0,
             560,
             64,
             56
@@ -4327,13 +7069,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "talk": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             112,
             64,
@@ -4341,8 +7089,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             112,
             64,
@@ -4351,13 +7105,49 @@
         }
       ],
       "loop": true,
-      "speed": 10.0
+      "speed": 10
     },
     "turn": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
+            64,
+            672,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            256,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
+            128,
+            672,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            320,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             672,
             64,
@@ -4365,8 +7155,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             672,
             64,
@@ -4374,36 +7170,30 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            320,
-            672,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             384,
             672,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            384,
+          ],
+          "armRegion": [
+            256,
             672,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             448,
+            672,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
             672,
             64,
             56
@@ -4411,13 +7201,19 @@
         }
       ],
       "loop": false,
-      "speed": 15.0
+      "speed": 15
     },
     "victory": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             168,
             64,
@@ -4425,8 +7221,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             168,
             64,
@@ -4434,8 +7236,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             168,
             64,
@@ -4443,8 +7251,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             168,
             64,
@@ -4452,8 +7266,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             168,
             64,
@@ -4461,8 +7281,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4470,8 +7296,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4479,8 +7311,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4488,8 +7326,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4497,8 +7341,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4506,8 +7356,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4515,8 +7371,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4524,8 +7386,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4533,8 +7401,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4542,8 +7416,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4551,8 +7431,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4560,8 +7446,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4569,8 +7461,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4578,8 +7476,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4587,8 +7491,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4596,8 +7506,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             168,
             64,
@@ -4606,13 +7522,19 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "walk": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             168,
             64,
@@ -4620,8 +7542,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             168,
             64,
@@ -4629,8 +7557,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             640,
             168,
             64,
@@ -4638,8 +7572,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             168,
             64,
@@ -4647,8 +7587,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            768,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             168,
             64,
@@ -4656,8 +7602,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             224,
             64,
@@ -4665,8 +7617,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             224,
             64,
@@ -4674,8 +7632,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             224,
             64,
@@ -4683,8 +7647,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             224,
             64,
@@ -4692,8 +7662,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             256,
             224,
             64,
@@ -4701,8 +7677,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             320,
             224,
             64,
@@ -4710,8 +7692,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            224,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             224,
             64,
@@ -4720,13 +7708,19 @@
         }
       ],
       "loop": true,
-      "speed": 22.0
+      "speed": 22
     },
     "walk_start": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             168,
             64,
@@ -4734,8 +7728,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            168,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             168,
             64,
@@ -4744,13 +7744,64 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "walljump": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            512,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            384,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            576,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             392,
             64,
@@ -4758,8 +7809,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             392,
             64,
@@ -4767,8 +7824,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             392,
             64,
@@ -4776,8 +7839,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            640,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            512,
+            392,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             392,
             64,
@@ -4785,8 +7869,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
             576,
             392,
             64,
@@ -4794,126 +7884,150 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            640,
-            392,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            640,
-            392,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
             392,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            704,
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
+            392,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             704,
             392,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            704,
+          ],
+          "armRegion": [
+            576,
             392,
             64,
             56
@@ -4921,13 +8035,19 @@
         }
       ],
       "loop": false,
-      "speed": 27.0
+      "speed": 27
     },
     "weak": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            448,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             112,
             64,
@@ -4935,8 +8055,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -4944,8 +8070,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             512,
             112,
             64,
@@ -4953,8 +8085,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            112,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             112,
             64,
@@ -4963,13 +8101,49 @@
         }
       ],
       "loop": true,
-      "speed": 6.0
+      "speed": 6
     },
     "wheelie": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            704,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            576,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            768,
+            560,
+            64,
+            56
+          ],
+          "armRegion": [
+            640,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            0,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             704,
             560,
             64,
@@ -4977,8 +8151,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            0,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            704,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            64,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             768,
             560,
             64,
@@ -4986,8 +8181,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            64,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            768,
+            560,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            128,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             616,
             64,
@@ -4995,8 +8211,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            128,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             0,
             616,
             64,
@@ -5004,8 +8226,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             616,
             64,
@@ -5013,8 +8241,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            192,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             64,
             616,
             64,
@@ -5022,8 +8256,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             616,
             64,
@@ -5031,8 +8271,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            256,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             128,
             616,
             64,
@@ -5040,8 +8286,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             616,
             64,
@@ -5049,8 +8301,14 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             192,
             616,
             64,
@@ -5058,117 +8316,135 @@
           ]
         },
         {
-          "duration": 1.0,
-          "region": [
-            256,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            256,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
             616,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            320,
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
             320,
             616,
             64,
             56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            320,
+          ],
+          "armRegion": [
+            192,
             616,
             64,
             56
@@ -5176,13 +8452,64 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     },
     "wheelie_end": {
       "frames": [
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            384,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            256,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            448,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            320,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            512,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             384,
             616,
             64,
@@ -5190,8 +8517,29 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            512,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
+            384,
+            616,
+            64,
+            56
+          ]
+        },
+        {
+          "duration": 1,
+          "region": [
+            576,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
             616,
             64,
@@ -5199,45 +8547,15 @@
           ]
         },
         {
-          "duration": 1.0,
+          "duration": 1,
           "region": [
+            576,
+            616,
+            64,
+            56
+          ],
+          "armRegion": [
             448,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            512,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            512,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            576,
-            616,
-            64,
-            56
-          ]
-        },
-        {
-          "duration": 1.0,
-          "region": [
-            576,
             616,
             64,
             56
@@ -5245,7 +8563,7 @@
         }
       ],
       "loop": false,
-      "speed": 23.0
+      "speed": 23
     }
   },
   "atlases": [

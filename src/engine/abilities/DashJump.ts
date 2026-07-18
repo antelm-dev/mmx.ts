@@ -9,6 +9,8 @@ import { DASH_DURATION, DASHJUMP_SPEED } from '../../core/constants.js';
 export class DashJump extends Jump {
   readonly name = 'DashJump';
   priority = 6;
+  // Player.tscn gives DashJump animation = "jump" — it reuses the jump pose, there
+  // is no separate dash-jump clip.
 
   private dash_leeway_time = DASH_DURATION;
 
@@ -22,7 +24,6 @@ export class DashJump extends Jump {
     super._Setup();
     this.character.dashjump_signal();
     this.character.events.emit('dash');
-    this.play_animation('dashjump');
   }
 
   override change_animation_if_falling(_s: string): void {

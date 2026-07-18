@@ -15,6 +15,12 @@ import {
 export class Jump extends Fall {
   readonly name: string = 'Jump';
   priority = 5;
+  override animation = 'jump'; // Player.tscn
+
+  /** Jump.gd:play_animation_on_initialize — unlike Fall, always (re)start the clip. */
+  override play_animation_on_initialize(): void {
+    if (this.animation) this.play_animation(this.animation);
+  }
 
   max_jump_time = JUMP_MAX_TIME;
   leeway_time = JUMP_LEEWAY;
@@ -51,7 +57,6 @@ export class Jump extends Fall {
     this.character.set_vertical_speed(0);
     this.zero_bonus_horizontal_speed();
     this.consumeBuffer();
-    this.play_animation('jump');
   }
 
   override _Update(dt: number): void {

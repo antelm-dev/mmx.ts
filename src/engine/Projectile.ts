@@ -21,8 +21,17 @@ export class Projectile {
   }
 
   update(dt: number, world: World): void {
-    this.x += this.vx * dt;
+    const dx = this.vx * dt;
+    // Cast the whole step instead of sampling only the new position: a fast
+    // charged shot would otherwise register its impact several pixels inside the
+    // wall (and could skip past thin geometry entirely).
+    const hit = world.raycastX(this.x, this.y, dx);
+    if (hit !== null) {
+      this.x = hit;
+      this.alive = false;
+      return;
+    }
+    this.x += dx;
     if (this.x < 0 || this.x > world.widthPx) this.alive = false;
-    if (world.isSolidAt(this.x, this.y)) this.alive = false;
   }
 }

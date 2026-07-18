@@ -2,9 +2,10 @@ import { Input, Action } from '../core/Input.js';
 import { DT, TILE_SIZE } from '../core/constants.js';
 import { Player } from '../engine/Player.js';
 import { makeWorld, LEVEL, SPAWN } from '../engine/level.js';
-import { SpriteAnimator, AnimData } from './sprites.js';
+import { AnimData } from '../engine/Animation.js';
 import animData from './assets/x_anims.json';
 import atlasUrl from './assets/x.png';
+import armAtlasUrl from './assets/x_leftarm.png';
 
 /**
  * Browser front-end: renders the ported gameplay with the Canvas 2D API. The
@@ -61,32 +62,26 @@ const FRAME_H = 56;
 const SPRITE_OFFSET_X = 0;
 const SPRITE_OFFSET_Y = -4;
 
+// Two spritesheets with identical clips and frame indices: the normal set and the
+// arm-pointing set the game swaps in while the buster is out (Shot.gd). Which one
+// is drawn is decided by the engine's animation layer, not by this file.
 const atlas = new Image();
+const armAtlas = new Image();
 let atlasReady = false;
+let armAtlasReady = false;
 atlas.onload = () => {
   atlasReady = true;
 };
-atlas.src = atlasUrl;
-
-// Loop flags, per-clip fps, and frame sequences all come from the exported data
-// (faithful to the game's SpriteFrames): idle/walk/talk/crouch_talk/weak loop, the
-// rest play once and hold their last frame.
-const animator = new SpriteAnimator(animData as unknown as AnimData);
-
-/** Maps an engine locomotion state to an animation tag in x.json. */
-const STATE_TO_TAG: Record<string, string> = {
-  Idle: 'idle',
-  Walk: 'walk',
-  Fall: 'fall',
-  Jump: 'jump',
-  DashJump: 'jump',
-  Dash: 'dash',
-  AirDash: 'dash',
-  WallSlide: 'slide',
-  WallJump: 'walljump',
-  DashWallJump: 'walljump',
+armAtlas.onload = () => {
+  armAtlasReady = true;
 };
-animator.play('idle');
+atlas.src = atlasUrl;
+armAtlas.src = armAtlasUrl;
+
+// Clip data (loop flags, per-clip fps, frame sequences and both atlases' regions)
+// goes into the engine: the abilities pick and read the current clip exactly as the
+// Godot originals do, and this file only blits whatever frame that leaves showing.
+player.loadAnimations(animData as unknown as AnimData);
 
 // --- keyboard -> actions ---
 const KEYMAP: Record<string, Action> = {
@@ -129,23 +124,11 @@ function frame(now: number) {
   acc += Math.min(0.25, dtMs / 1000);
   last = now;
   while (acc >= DT) {
-    player.tick(DT);
+    player.tick(DT); // advances the sprite too, on the same fixed step
     acc -= DT;
   }
-  animator.update(dtMs);
   render();
   requestAnimationFrame(frame);
-}
-
-/** Picks the animation tag for the player's current locomotion (+ firing overlay). */
-function currentTag(): string {
-  const loco = player.currentLocomotion();
-  const base = (loco && STATE_TO_TAG[loco.name]) || 'idle';
-  // Grounded + firing: use the buster-shot pose instead of the plain stance.
-  if (player.is_executing('Shot') && (base === 'idle' || base === 'walk')) {
-    return base === 'walk' ? 'walk' : 'shot';
-  }
-  return base;
 }
 
 function render() {
@@ -165,19 +148,22 @@ function render() {
   }
 
   // --- player sprite ---
-  // Pick clip, then blit the current atlas region centered on the body + offset.
+  // Blit the region the engine's animation left showing, centered on the body +
+  // offset, from the normal or arm-pointing sheet depending on the active layer.
   // Facing flips the sprite horizontally about its center.
-  animator.play(currentTag());
-  if (atlasReady) {
-    const [sx, sy, sw, sh] = animator.currentRegion();
+  const sheetIsArm = player.get_animation_layer() === 'pointing_cannon' && armAtlasReady;
+  const region = player.currentRegion();
+  if (region && atlasReady) {
+    const [sx, sy, sw, sh] = region;
     if (sw > 0 && sh > 0) {
+      const sheet = sheetIsArm ? armAtlas : atlas;
       const cx = player.pos.x + SPRITE_OFFSET_X;
       const cy = player.pos.y + SPRITE_OFFSET_Y;
       const facing = player.get_facing_direction();
       ctx.save();
       ctx.translate(cx, cy);
       ctx.scale(facing, 1); // facing === -1 mirrors left
-      ctx.drawImage(atlas, sx, sy, sw, sh, -FRAME_W / 2, -FRAME_H / 2, FRAME_W, FRAME_H);
+      ctx.drawImage(sheet, sx, sy, sw, sh, -FRAME_W / 2, -FRAME_H / 2, FRAME_W, FRAME_H);
       ctx.restore();
     }
   }

@@ -4,6 +4,7 @@ import { World } from './World.js';
 import {
   BODY_HALF_H,
   BODY_HALF_W,
+  FLOOR_SNAP_LENGTH,
   GRAVITY,
   MAX_FALL_VELOCITY,
   MAX_HEALTH,
@@ -151,6 +152,10 @@ export class Actor {
   has_health(): boolean {
     return this.current_health > 0;
   }
+  /** Actor.gd:is_low_health — drives the "weak" idle stance. */
+  is_low_health(): boolean {
+    return this.current_health - 1 < this.max_health / 4;
+  }
   damage(value: number): void {
     if (!this.is_invulnerable()) {
       this.current_health -= value;
@@ -189,6 +194,7 @@ export class Actor {
 
     this.moveXResolve(this.final_velocity.x * dt);
     this.moveYResolve(this.final_velocity.y * dt);
+    this.applyFloorSnap();
 
     this.updateSensors();
 
@@ -205,66 +211,91 @@ export class Actor {
     this.update_facing_direction();
   }
 
+  /**
+   * Swept horizontal move. The world scans every tile column the leading edge
+   * crosses, so the body cannot tunnel through thin geometry no matter how large
+   * the step, and it lands flush against the blocking face instead of somewhere
+   * within a quarter pixel of it.
+   */
   private moveXResolve(dx: number): void {
     if (dx === 0) return;
-    this.pos.x += dx;
-    if (this.world.overlaps(this.pos.x, this.pos.y, this.hw, this.hh)) {
-      const step = dx > 0 ? -0.25 : 0.25;
-      let guard = 0;
-      while (
-        this.world.overlaps(this.pos.x, this.pos.y, this.hw, this.hh) &&
-        guard++ < 200
-      ) {
-        this.pos.x += step;
-      }
-      this.velocity.x = 0;
-    }
+    const { pos, hit } = this.world.sweepX(this.pos.x, this.pos.y, this.hw, this.hh, dx);
+    this.pos.x = pos;
+    if (hit) this.velocity.x = 0;
   }
 
   private moveYResolve(dy: number): void {
     if (dy === 0) return;
-    this.pos.y += dy;
-    if (this.world.overlaps(this.pos.x, this.pos.y, this.hw, this.hh)) {
-      const step = dy > 0 ? -0.25 : 0.25;
-      let guard = 0;
-      while (
-        this.world.overlaps(this.pos.x, this.pos.y, this.hw, this.hh) &&
-        guard++ < 200
-      ) {
-        this.pos.y += step;
-      }
-      this.velocity.y = 0;
+    const { pos, hit } = this.world.sweepY(this.pos.x, this.pos.y, this.hw, this.hh, dy);
+    this.pos.y = pos;
+    if (hit) this.velocity.y = 0;
+  }
+
+  /**
+   * Actor.gd floor snap (FLOOR_SNAP_LENGTH) — previously declared but never
+   * applied. Without it, walking off the lip of a step or over a one-tile dip
+   * launches the actor into Fall for a few frames; with it, a grounded actor
+   * that would otherwise leave the ground is pulled back down onto it.
+   *
+   * Only runs when already grounded and not moving upward, so it can never
+   * cancel a jump (set_vertical_speed also clears the flag for any non-zero
+   * vertical speed).
+   *
+   * This also keeps a standing body *flush* with the ground. The floor sensor
+   * has a 2px tolerance, so an actor that stopped just short of the surface
+   * would report is_on_floor, have its vertical speed zeroed by the grounded
+   * ability, and hover there indefinitely. Snapping every grounded frame is
+   * idempotent once contact is exact.
+   */
+  private applyFloorSnap(): void {
+    if (!this.floor_snap_enabled || !this._wasOnFloor) return;
+    if (this.final_velocity.y < 0) return;
+
+    const { pos, hit } = this.world.sweepY(
+      this.pos.x,
+      this.pos.y,
+      this.hw,
+      this.hh,
+      FLOOR_SNAP_LENGTH,
+    );
+    if (hit) {
+      this.pos.y = pos;
+      this.velocity.y = 0; // landed, same as a normal floor contact
     }
+  }
+
+  /** Is there solid ground within `probe` pixels below the feet? */
+  private groundBelow(probe: number): boolean {
+    const half = probe / 2;
+    return this.world.overlaps(this.pos.x, this.pos.y + this.hh + half, this.hw - 1, half);
   }
 
   private updateSensors(): void {
     const { hw, hh } = this;
-    const bottom = this.pos.y + hh;
-    const top = this.pos.y - hh;
 
-    // floor: probe 2px below feet at both corners
-    this._onFloor =
-      this.world.isSolidAt(this.pos.x - hw + 1, bottom + 2) ||
-      this.world.isSolidAt(this.pos.x + hw - 1, bottom + 2);
+    // Floor / ceiling: thin full-width probe boxes rather than two corner
+    // points, so geometry narrower than the body still registers.
+    this._onFloor = this.groundBelow(2);
+    this._onCeiling = this.world.overlaps(this.pos.x, this.pos.y - hh - 1, hw - 1, 1);
 
-    // ceiling
-    this._onCeiling =
-      this.world.isSolidAt(this.pos.x - hw + 1, top - 2) ||
-      this.world.isSolidAt(this.pos.x + hw - 1, top - 2);
-
-    this._wallDir = this.sampleWall(hw + 1, [-hh + 2, 0, hh - 2]);
-    this._wallDirExceptFeet = this.sampleWall(hw + 1, [-hh + 2, 0]);
-    this._reachDir = this.sampleWall(hw + 2, [-hh + 2, 0, hh - 4]);
+    // Walls: thin full-height probe boxes beside the body. The vertical insets
+    // match the original raycast columns — the "except feet" variant stops above
+    // the feet so a floor tile is not read as a wall, and the walljump reach
+    // probe extends one pixel further out and stops slightly higher.
+    this._wallDir = this.sampleWall(hw + 1, -hh + 2, hh - 2);
+    this._wallDirExceptFeet = this.sampleWall(hw + 1, -hh + 2, 0);
+    this._reachDir = this.sampleWall(hw + 2, -hh + 2, hh - 4);
   }
 
-  /** Returns +1 (wall on right), -1 (wall on left), 0 (none). Right takes priority. */
-  private sampleWall(xOffset: number, yOffsets: number[]): number {
-    for (const oy of yOffsets) {
-      if (this.world.isSolidAt(this.pos.x + xOffset, this.pos.y + oy)) return 1;
-    }
-    for (const oy of yOffsets) {
-      if (this.world.isSolidAt(this.pos.x - xOffset, this.pos.y + oy)) return -1;
-    }
+  /**
+   * Returns +1 (wall on right), -1 (wall on left), 0 (none). Right takes priority.
+   * `top`/`bottom` are offsets from the body centre bounding the probed span.
+   */
+  private sampleWall(xOffset: number, top: number, bottom: number): number {
+    const cy = this.pos.y + (top + bottom) / 2;
+    const half = (bottom - top) / 2;
+    if (this.world.overlaps(this.pos.x + xOffset, cy, 1, half)) return 1;
+    if (this.world.overlaps(this.pos.x - xOffset, cy, 1, half)) return -1;
     return 0;
   }
 }

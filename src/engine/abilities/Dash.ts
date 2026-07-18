@@ -9,6 +9,8 @@ import { DASH_DURATION, DASH_LEEWAY, DASH_SPEED } from '../../core/constants.js'
 export class Dash extends Movement {
   readonly name: string = 'Dash';
   priority = 4;
+  override animation = 'dash'; // Player.tscn (AirDash inherits it — there is a
+  // separate `airdash` clip in the atlas, but X's AirDash node does not use it)
 
   dash_duration = DASH_DURATION;
   leeway = DASH_LEEWAY;
@@ -43,7 +45,6 @@ export class Dash extends Movement {
     this.left_ground_timer = 0;
     this.can_dash = true;
     this.consumeBuffer();
-    this.play_animation('dash');
   }
 
   override _Update(dt: number): void {

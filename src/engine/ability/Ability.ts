@@ -63,6 +63,21 @@ export abstract class Ability extends BaseAbility {
     return this.inputTriggered();
   }
 
+  /**
+   * Ability.gd:Initialize — the clip is chosen by the ability itself, before
+   * _Setup runs, from the `animation` field (exported per node in Player.tscn).
+   */
+  override Initialize(): void {
+    super.Initialize();
+    this.play_animation_on_initialize();
+  }
+
+  /** Ability.gd:play_animation_on_initialize. Overridden by Fall (don't restart an
+   *  already-playing clip), Walk (walk_start intro) and Shot (swaps layer instead). */
+  play_animation_on_initialize(): void {
+    if (this.animation) this.play_animation(this.animation);
+  }
+
   override BeforeEveryFrame(dt: number): void {
     super.BeforeEveryFrame(dt);
     this.input = this.currentInputValue();

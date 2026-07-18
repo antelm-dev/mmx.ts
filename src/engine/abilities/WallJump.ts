@@ -16,6 +16,7 @@ export class WallJump extends Jump {
   readonly name: string = 'WallJump';
   // Wall context outranks ground-coyote moves (Jump/DashJump) when on a wall.
   priority = 7;
+  override animation = 'walljump'; // Player.tscn (DashWallJump inherits it)
 
   start_delay = WALLJUMP_START_DELAY;
   move_away_duration = WALLJUMP_MOVEAWAY_DURATION;
@@ -42,7 +43,6 @@ export class WallJump extends Jump {
     this.character.set_vertical_speed(0);
     this.character.pos.x += 2 * this.walljump_direction;
     this.character.pos.y -= 2;
-    this.play_animation('walljump');
   }
 
   override _Update(dt: number): void {

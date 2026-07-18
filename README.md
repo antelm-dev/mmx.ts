@@ -85,6 +85,7 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 | `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/) |
 | `Shot.gd` (PrimaryShot) / `Charge.gd` | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
 | `Lemon.gd` / `WeaponShot.gd` | [`src/engine/Projectile.ts`](src/engine/Projectile.ts) |
+| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res` | [`src/engine/Animation.ts`](src/engine/Animation.ts) |
 | Godot `Input` singleton | [`src/core/Input.ts`](src/core/Input.ts) |
 | Godot signals | [`src/core/Events.ts`](src/core/Events.ts) |
 
@@ -93,8 +94,9 @@ tuning constant are ported line-for-line so the *feel* matches.
 
 ### Deliberate divergences
 
-- **Conflict resolution.** The `conflicting_moves` arrays live in `Player.tscn`,
-  which is binary scene data, not source. Instead each ability carries
+- **Conflict resolution.** `Player.tscn` does declare `conflicting_moves` per ability
+  node (see the table below), but this port does not run the original's
+  substring/priority interpreter. Instead each ability carries
   `independent` (Shot/Charge run concurrently) and a `priority`; `AbilityUser`
   keeps exactly one locomotion state active, with a higher-priority candidate (or
   the current state's `_EndCondition`) driving transitions. This reproduces the
@@ -102,8 +104,43 @@ tuning constant are ported line-for-line so the *feel* matches.
   DashJump < WallJump/DashWallJump** (wall context outranks ground-coyote moves).
 - **Collision** is flat-tile AABB (no slopes / moving platforms / conveyors); the
   raycast wall/reach queries become edge samples.
-- **Cosmetics dropped**: sprites/animation frames (animation is kept as a *string*
-  only where gameplay logic reads it), particles, sounds, shaders, camera.
+- **Cosmetics dropped**: particles, sounds, shaders, camera. Animation is *not*
+  dropped — see below.
+
+### Animation
+
+The sprite is part of the engine, not the renderer, because the original's abilities
+read it back: `Movement.change_animation_if_falling` tests `get_animation() != "fall"`,
+`Walk` advances `walk_start -> walk` on Godot's `animation_finished` signal, and
+`IdleWeak` settles `recover -> idle` (or `weak` at low health) the same way.
+[`Animation.ts`](src/engine/Animation.ts) reproduces `AnimatedSprite2D` playback —
+clip, frame index, loop/hold, `animation_finished` — and `AbilityUser` exposes the
+same `play_animation` / `get_animation` / `set_animation_layer` API as the Godot node.
+
+Each ability names its clip in an `animation` field, taken from the exported node in
+`Player.tscn` (or `Idle.tscn` / `Fall.tscn`):
+
+| Ability | Clip | Notes |
+|---|---|---|
+| Idle | `recover` | settles to `idle` / `weak` when the clip finishes |
+| Walk | `walk` | `walk_start` lead-in only when the last state was Idle |
+| Fall | `fall` | does *not* restart if `fall` is already playing |
+| Jump / DashJump / AirJump | `jump` | always restarts (overrides Fall's rule) |
+| Dash / AirDash | `dash` | the atlas' `airdash` clip is unused by X |
+| WallSlide | `slide` | |
+| WallJump / DashWallJump | `walljump` | |
+
+Shooting plays **no clip of its own**. `Shot.gd` swaps the whole SpriteFrames
+resource (`x.res` -> `x_leftarm.res`, "pointing_cannon") while keeping the current
+clip name *and* frame index, so every state has an arm-out twin and X keeps walking,
+jumping or wall-sliding with the buster raised. The port models this as an animation
+*layer*: [`tools/build-anims.mjs`](tools/build-anims.mjs) writes both atlases' regions
+into `x_anims.json`, and the renderer picks the sheet the layer asks for.
+
+Clip data is optional. The headless sim and tests run without loading it — clips then
+have no frames and finish on the next tick, so the handoffs still resolve and
+`get_animation()` behaves like the plain string it used to be. The browser calls
+`player.loadAnimations(...)` and gets real timing.
 
 ### Not ported (extension points)
 
@@ -126,12 +163,15 @@ src/
     Character.ts    input + player API
     Player.ts       assembles the moveset ("X")
     Projectile.ts   buster shots
+    Animation.ts    AnimatedSprite playback + the shot layer
     level.ts        a test chamber exercising every state
     ability/        BaseAbility / Ability / Movement
     abilities/      Idle, Walk, Fall, Jump, Dash, AirDash, WallSlide,
                     WallJump, DashWallJump, DashJump, Shot, Charge
   sim/run.ts   deterministic headless simulation
   web/main.ts  canvas renderer + keyboard input
+  web/assets/  x.png, x_leftarm.png (arm-pointing), x_anims.json
   server.ts    zero-dependency static server
 tests/         node:test behaviour tests
+tools/         build-anims.mjs — re-derives x_anims.json from the Godot project
 ```
