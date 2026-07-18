@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { World } from '../src/engine/World.js';
-import { makeWorld, LEVEL, SPAWN, entities } from '../src/engine/level.js';
+import { makeWorld, LEVEL, SPAWN, CAMERA_ZONES, entities } from '../src/engine/level.js';
+import { Camera } from '../src/engine/Camera.js';
 import { Player } from '../src/engine/Player.js';
 import { Input } from '../src/core/Input.js';
 import { DT, TILE_SIZE } from '../src/core/constants.js';
@@ -66,6 +67,30 @@ test('spawn comes from the LDtk Spawn entity and sits in open air above a floor'
   const cy = Math.floor(SPAWN.y / TILE_SIZE);
   assert.equal(world.isSolidTile(cx, cy), false, 'spawn tile is inside geometry');
   assert.equal(world.isSolidTile(cx, cy - 1), false, 'no headroom above spawn');
+});
+
+test('level camera holds each vertical tier in a stable frame', () => {
+  const world = makeWorld();
+  const camera = new Camera(world.widthPx, world.heightPx);
+  camera.setZones(CAMERA_ZONES);
+  camera.snapTo(SPAWN.x, SPAWN.y);
+
+  assert.equal(CAMERA_ZONES.length, 3, 'upper, ground, and cavern zones must be authored');
+  assert.equal(camera.y, 224, 'spawn should use the ground frame');
+
+  // Running and ordinary jumps within a tier should not bob the whole screen.
+  for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 400, DT);
+  assert.equal(camera.y, 224, 'ground traversal changed the vertical frame');
+
+  // Crossing a tier boundary hands over to the next authored frame and eases
+  // there using the regular camera transition rather than cutting immediately.
+  camera.follow(SPAWN.x + 300, 480, DT);
+  assert.ok(camera.y > 224 && camera.y < 288, 'cavern transition did not ease');
+  for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 480, DT);
+  assert.equal(camera.y, 288, 'cavern did not settle on its frame');
+
+  for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 200, DT);
+  assert.equal(camera.y, 0, 'upper route did not settle on its frame');
 });
 
 /**

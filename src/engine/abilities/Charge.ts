@@ -44,7 +44,11 @@ export class Charge extends Ability {
   }
 
   override _StartCondition(): boolean {
-    return this.character.get_action_pressed('fire') && !this.character.block_charging;
+    return (
+      !this.character.is_executing('Damage') &&
+      this.character.get_action_pressed('fire') &&
+      !this.character.block_charging
+    );
   }
 
   override _Setup(): void {

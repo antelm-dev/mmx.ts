@@ -776,6 +776,132 @@
 									"realEditorValues": []
 								}
 							]
+						},
+						{
+							"__identifier": "CameraZone",
+							"__grid": [
+								0,
+								0
+							],
+							"__pivot": [
+								0,
+								0
+							],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#FFCC66",
+							"__worldX": 0,
+							"__worldY": 0,
+							"iid": "camera-upper-0000-0000-000000000000",
+							"width": 1600,
+							"height": 224,
+							"defUid": 100,
+							"px": [
+								0,
+								0
+							],
+							"fieldInstances": [
+								{
+									"__identifier": "BindX",
+									"__type": "Bool",
+									"__value": false,
+									"__tile": null,
+									"defUid": 101,
+									"realEditorValues": []
+								},
+								{
+									"__identifier": "BindY",
+									"__type": "Bool",
+									"__value": true,
+									"__tile": null,
+									"defUid": 102,
+									"realEditorValues": []
+								}
+							]
+						},
+						{
+							"__identifier": "CameraZone",
+							"__grid": [
+								0,
+								14
+							],
+							"__pivot": [
+								0,
+								0
+							],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#FFCC66",
+							"__worldX": 0,
+							"__worldY": 224,
+							"iid": "camera-ground-0000-0000-00000000000",
+							"width": 1600,
+							"height": 224,
+							"defUid": 100,
+							"px": [
+								0,
+								224
+							],
+							"fieldInstances": [
+								{
+									"__identifier": "BindX",
+									"__type": "Bool",
+									"__value": false,
+									"__tile": null,
+									"defUid": 101,
+									"realEditorValues": []
+								},
+								{
+									"__identifier": "BindY",
+									"__type": "Bool",
+									"__value": true,
+									"__tile": null,
+									"defUid": 102,
+									"realEditorValues": []
+								}
+							]
+						},
+						{
+							"__identifier": "CameraZone",
+							"__grid": [
+								0,
+								18
+							],
+							"__pivot": [
+								0,
+								0
+							],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#FFCC66",
+							"__worldX": 0,
+							"__worldY": 288,
+							"iid": "camera-cavern-0000-0000-0000000000",
+							"width": 1600,
+							"height": 224,
+							"defUid": 100,
+							"px": [
+								0,
+								288
+							],
+							"fieldInstances": [
+								{
+									"__identifier": "BindX",
+									"__type": "Bool",
+									"__value": false,
+									"__tile": null,
+									"defUid": 101,
+									"realEditorValues": []
+								},
+								{
+									"__identifier": "BindY",
+									"__type": "Bool",
+									"__value": true,
+									"__tile": null,
+									"defUid": 102,
+									"realEditorValues": []
+								}
+							]
 						}
 					]
 				},

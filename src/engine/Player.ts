@@ -14,6 +14,8 @@ import { WallJump } from './abilities/WallJump.js';
 import { DashWallJump } from './abilities/DashWallJump.js';
 import { Shot } from './abilities/Shot.js';
 import { Charge } from './abilities/Charge.js';
+import { Damage } from './abilities/Damage.js';
+import type { Actor } from './Actor.js';
 
 /**
  * The player "X" — port of Player.tscn's ability node list.
@@ -23,7 +25,7 @@ import { Charge } from './abilities/Charge.js';
  * abilities (Shot, Charge) run concurrently with movement.
  *
  * Extension points not ported here (documented in README): armor sets (Hermes/Icarus),
- * boss weapons, Ride Armor, damage/knockback/death, subtanks, AirJump double-jump.
+ * boss weapons, Ride Armor, death, subtanks, AirJump double-jump.
  */
 export class Player extends Character {
   constructor(world: World, x: number, y: number, input: Input, seed?: number) {
@@ -40,9 +42,19 @@ export class Player extends Character {
     this.add(new WallJump(this));
     this.add(new DashWallJump(this));
 
+    // high-priority event state (Damage.gd / Player.tscn)
+    this.add(new Damage(this));
+
     // independent action layer
     this.add(new Shot(this));
     this.add(new Charge(this));
+  }
+
+  /** Actor.damage routed through Damage.gd's state instead of reducing health inline. */
+  override damage(value: number, inflicter?: Actor): void {
+    this.events.emit('damage', value, inflicter);
+    const damage = this.get_ability('Damage');
+    if (damage instanceof Damage) damage.receiveHit(value, inflicter);
   }
 
   /** Space-separated names of the currently executing abilities (debug). */

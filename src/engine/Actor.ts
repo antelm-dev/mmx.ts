@@ -44,9 +44,6 @@ export class Actor {
   private _reachDir = 0; // is_in_reach_for_walljump()
 
   private _wasOnFloor = false;
-  // Large until the actor actually touches ground, so an airborne spawn is not
-  // mistaken for "just left the floor" (coyote time).
-  time_since_on_floor = 1e9;
 
   floor_snap_enabled = true;
   conveyor_belt_speed = 0;
@@ -137,10 +134,6 @@ export class Actor {
   is_in_reach_for_walljump(): number {
     return this._reachDir;
   }
-  has_just_been_on_floor(leeway: number): boolean {
-    return this._onFloor || this.time_since_on_floor < leeway;
-  }
-
   // --- health ---
   is_invulnerable(): boolean {
     return this.invulnerability > 0;
@@ -202,12 +195,9 @@ export class Actor {
 
     this.updateSensors();
 
-    // land / coyote bookkeeping (Character.check_for_land)
+    // Landing bookkeeping (Character.check_for_land).
     if (this._onFloor) {
       if (!this._wasOnFloor) this.events.emit('land');
-      this.time_since_on_floor = 0;
-    } else {
-      this.time_since_on_floor += dt;
     }
     if (this._onCeiling) this.events.emit('headbump');
     this._wasOnFloor = this._onFloor;
@@ -292,8 +282,8 @@ export class Actor {
    * The probe spans the *full* body width, matching sweepY. Anything narrower
    * leaves a sliver at every ledge corner where a tile blocks the fall but does
    * not report as floor: the body hangs there in Fall with gravity re-zeroed by
-   * the sweep every frame, and — since is_on_floor stays false and the coyote
-   * window expires — no grounded ability, jump or dash can get it out again.
+   * the sweep every frame, and — since is_on_floor stays false — no grounded
+   * ability can get it out again.
    */
   private groundBelow(probe: number): boolean {
     const half = probe / 2;

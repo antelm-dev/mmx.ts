@@ -80,6 +80,23 @@ test('a short (tapped) jump rises less than a held jump', () => {
   assert.ok(fullJump > shortHop + 4, `full=${fullJump} short=${shortHop}`);
 });
 
+test('cannot jump after walking off a ledge', () => {
+  const rows = Array.from({ length: 11 }, () => '#'.padEnd(19, '.').concat('#'));
+  rows.push('#'.repeat(9).padEnd(19, '.').concat('#'));
+  const input = new Input();
+  const player = new Player(World.fromRows(rows), 6 * 16, 10 * 16, input);
+
+  for (let i = 0; i < 5; i++) player.tick(DT);
+  input.setDown('move_right', true);
+  for (let i = 0; i < 120 && player.is_on_floor(); i++) player.tick(DT);
+  assert.equal(player.is_on_floor(), false, 'player should have left the ledge');
+
+  input.setDown('jump', true);
+  player.tick(DT);
+  assert.equal(player.is_executing('Jump'), false, 'jump must require current floor contact');
+  assert.ok(player.velocity.y >= 0, 'player should continue falling');
+});
+
 test('dash reaches a higher speed than walking', () => {
   const { input, player } = makePlayer();
   hold(input, 'move_right', true);

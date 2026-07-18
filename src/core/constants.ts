@@ -21,7 +21,7 @@ export const DASHFALL_SPEED = 210.0; // Fall.gd:34
 
 // --- Jump.gd ---
 export const JUMP_MAX_TIME = 0.625; // Jump.gd:4 max_jump_time
-export const JUMP_LEEWAY = 0.1; // Jump.gd:5 leeway_time (coyote + buffer)
+export const JUMP_LEEWAY = 0.1; // Jump.gd:5 leeway_time (input buffer only)
 export const JUMP_FULLSPEED_PROPORTION = 0.19; // Jump.gd:6 fullspeed_proportion
 
 // --- Dash.gd ---
@@ -303,17 +303,13 @@ export const BAT_WEAVE_RATE = 4.0;
 export const BAT_JUMP_SPEED = 200.0; // BatJump.gd current_vertical_speed = -200
 export const BAT_JUMP_TIME = 0.7; // BatJump.gd jump_timne
 
-/**
- * How long the player is immune after taking a contact hit.
- *
- * DamageOnTouch re-applies damage every 0.016s for as long as the boxes overlap,
- * which in the original is survivable only because the player's own Damage state
- * (Player.gd, not ported here — the port has no hurt/knockback state) takes over
- * and carries him out of the enemy. Without that state a touching enemy would
- * drain the whole bar in a third of a second, so contact damage is gated on an
- * invulnerability window instead — the same mechanism, minus the animation.
- */
-export const PLAYER_HIT_INVULNERABILITY = 0.75;
+// --- Damage.gd (as configured on Player.tscn's Damage node) ---
+export const PLAYER_DAMAGE_DURATION = 0.6;
+export const PLAYER_DAMAGE_INVULNERABILITY = 1.75;
+export const PLAYER_KNOCKBACK_SPEED = 45.0;
+export const PLAYER_KNOCKBACK_JUMP_VELOCITY = 190.0;
+/** @deprecated Use PLAYER_DAMAGE_INVULNERABILITY. */
+export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
 
 // World / rendering
 export const TILE_SIZE = 16;

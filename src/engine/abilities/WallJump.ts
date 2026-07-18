@@ -14,7 +14,7 @@ import {
  */
 export class WallJump extends Jump {
   readonly name: string = 'WallJump';
-  // Wall context outranks ground-coyote moves (Jump/DashJump) when on a wall.
+  // Wall context outranks grounded moves (Jump/DashJump) when on a wall.
   priority = 7;
   override animation = 'walljump'; // Player.tscn (DashWallJump inherits it)
 

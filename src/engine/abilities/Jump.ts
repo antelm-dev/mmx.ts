@@ -43,7 +43,7 @@ export class Jump extends Fall {
 
   override _StartCondition(): boolean {
     return (
-      this.character.has_just_been_on_floor(this.leeway_time) &&
+      this.character.is_on_floor() &&
       this.character.get_last_used_ability() !== 'DashJump'
     );
   }

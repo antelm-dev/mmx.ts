@@ -3,7 +3,7 @@
 A faithful **TypeScript / Node** port of the *core player gameplay* from the
 [Mega Man X8 16-bit](../Mega-Man-X8-16-bit) Godot project — the movement state
 machine (walk / dash / variable jump / air-dash / wall-slide / wall-jump /
-dash-jump) plus buster shooting and charge shots.
+dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
 The engine is **pure TypeScript** with no runtime dependencies. It runs two ways:
 
@@ -67,7 +67,7 @@ EndAbility ─ Finalize ─ _Interrupt
 
 Key numbers (all reproduced in [`src/core/constants.ts`](src/core/constants.ts)):
 gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
-`0.55s`, jump max time `0.625s`, jump coyote/buffer `0.1s`, charge thresholds
+`0.55s`, jump max time `0.625s`, jump buffer `0.1s`, charge thresholds
 `0.5 / 1.75 / 2.75s`.
 
 ---
@@ -84,6 +84,7 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 | `BaseAbility.gd` / `Ability.gd` / `Movement.gd` | [`src/engine/ability/`](src/engine/ability/) |
 | `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/) |
 | `Shot.gd` (PrimaryShot) / `Charge.gd` | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
+| `Damage.gd` (hurt, knockback, invulnerability) | [`src/engine/abilities/Damage.ts`](src/engine/abilities/Damage.ts) |
 | `Lemon.gd` / `WeaponShot.gd` | [`src/engine/Projectile.ts`](src/engine/Projectile.ts) |
 | `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch` | [`src/engine/Enemy.ts`](src/engine/Enemy.ts) |
 | `AI.gd` (event -> ability lists) | [`src/engine/EnemyAI.ts`](src/engine/EnemyAI.ts) |
@@ -107,7 +108,7 @@ tuning constant are ported line-for-line so the *feel* matches.
   keeps exactly one locomotion state active, with a higher-priority candidate (or
   the current state's `_EndCondition`) driving transitions. This reproduces the
   intended ordering **Idle < Walk/Fall < WallSlide < Dash/AirDash < Jump <
-  DashJump < WallJump/DashWallJump** (wall context outranks ground-coyote moves).
+  DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
 - **Collision** is flat-tile AABB (no slopes / moving platforms / conveyors); the
   raycast wall/reach queries become edge samples.
 - **Cosmetics dropped**: particles, sounds, shaders, camera. Animation is *not*
@@ -192,12 +193,9 @@ Metool stunned forever, since `EnemyStun` advances on `animation_finished`).
 ### Not ported (extension points)
 
 Documented but out of scope: armor sets (Hermes / Icarus and their gameplay
-modifiers), boss weapons, Ride Armor, sub-tanks, and the AirJump double-jump. The
-player's own hurt/knockback state is also absent — enemies damage him, but he has
-no Damage ability to be carried out of contact by, so contact damage is gated on an
-invulnerability window instead (`PLAYER_HIT_INVULNERABILITY`). The ability framework
-is built to accept these as additional `BaseAbility` subclasses exactly as the
-original does.
+modifiers), boss weapons, Ride Armor, sub-tanks, player death, and the AirJump
+double-jump. The ability framework is built to accept these as additional
+`BaseAbility` subclasses exactly as the original does.
 
 ---
 

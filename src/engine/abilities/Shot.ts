@@ -29,7 +29,7 @@ export class Shot extends Ability {
 
   /** Weapon.gd:can_shoot — infinite ammo, but capped on shots already in flight. */
   override _StartCondition(): boolean {
-    return this.character.can_shoot(0);
+    return !this.character.is_executing('Damage') && this.character.can_shoot(0);
   }
 
   /** Shot.gd:play_animation_on_initialize — raise the buster, don't change clip. */

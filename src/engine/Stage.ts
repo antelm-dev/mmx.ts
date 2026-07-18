@@ -2,7 +2,6 @@ import { Enemy } from './Enemy.js';
 import { Player } from './Player.js';
 import type { Projectile } from './Projectile.js';
 import type { World } from './World.js';
-import { PLAYER_HIT_INVULNERABILITY } from '../core/constants.js';
 
 /**
  * The room: the player, the enemies in it, and the interactions between them.
@@ -84,11 +83,9 @@ export class Stage {
   /**
    * DamageOnTouch — the enemy body against the player's.
    *
-   * The original re-applies this every 0.016s while the boxes overlap and relies
-   * on the player's Damage state to carry him clear. This port has no hurt state,
-   * so the invulnerability window stands in for it (see PLAYER_HIT_INVULNERABILITY);
-   * the enemy's own reaction still fires on every landed hit, which is what the
-   * bat's recoil hangs off.
+   * The original re-applies this every 0.016s while the boxes overlap. The player's
+   * Damage state accepts the first hit, becomes invulnerable, and carries him clear;
+   * the inflicter is passed through so knockback is always away from the enemy.
    */
   private resolveContact(): void {
     for (const enemy of this.enemies) {
@@ -96,8 +93,7 @@ export class Stage {
       if (!bodiesOverlap(enemy, this.player)) continue;
 
       if (!this.player.is_invulnerable()) {
-        this.player.damage(enemy.stats.touch_damage);
-        this.player.invulnerability = PLAYER_HIT_INVULNERABILITY;
+        this.player.damage(enemy.stats.touch_damage, enemy);
       }
       enemy.ai.onTouchedPlayer();
     }

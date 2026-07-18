@@ -248,6 +248,9 @@ export class Renderer {
     this.player.visible = !!texture;
     if (!snap || !texture) return;
     place(this.player, texture, snap.x, snap.y, snap.facing);
+    // Character.apply_invulnerability_shader sets Alpha to 0.5 after the hurt
+    // animation ends; Damage._Setup keeps full alpha during the actual tumble.
+    this.player.alpha = player.is_invulnerable() && !player.is_executing('Damage') ? 0.5 : 1;
   }
 
   /** The charge-up aura, drawn over X exactly as the emitter sits over his sprite. */
