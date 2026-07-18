@@ -19,6 +19,8 @@ export class Pursuit extends EnemyAbility {
   readonly name = "Pursuit";
 
   pursuit_speed = BAT_PURSUIT_SPEED;
+  /** BatPursuit's give-up range, as a field so tooling can read it off the ability. */
+  give_up_distance = BAT_PURSUIT_GIVE_UP_DISTANCE;
 
   constructor(enemy: Enemy) {
     super(enemy);
@@ -35,7 +37,7 @@ export class Pursuit extends EnemyAbility {
 
   /** BatPursuit._EndCondition — it gives up rather than following forever. */
   override _EndCondition(): boolean {
-    return this.get_distance_to_player() > BAT_PURSUIT_GIVE_UP_DISTANCE;
+    return this.get_distance_to_player() > this.give_up_distance;
   }
 
   override _Update(_dt: number): void {

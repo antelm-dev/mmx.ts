@@ -44,4 +44,9 @@ export class SpritePool {
   end(): void {
     for (let i = this.used; i < this.sprites.length; i++) this.sprites[i].visible = false;
   }
+
+  /** Sprites drawn this frame, and the high-water mark the pool has grown to. */
+  get counts(): { active: number; pooled: number } {
+    return { active: this.used, pooled: this.sprites.length };
+  }
 }

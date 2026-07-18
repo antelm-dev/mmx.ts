@@ -15,6 +15,7 @@ import { Shot } from "./abilities/Shot.js";
 import { Charge } from "./abilities/Charge.js";
 import { Damage } from "./abilities/Damage.js";
 import type { Actor } from "./Actor.js";
+import { AirDash } from "./abilities/AirDash.js";
 
 /**
  * The player "X" — port of Player.tscn's ability node list.
@@ -35,7 +36,7 @@ export class Player extends Character {
     this.add(new Fall(this));
     this.add(new WallSlide(this));
     this.add(new Dash(this));
-    // this.add(new AirDash(this));
+    this.add(new AirDash(this));
     this.add(new Jump(this));
     this.add(new DashJump(this));
     this.add(new WallJump(this));

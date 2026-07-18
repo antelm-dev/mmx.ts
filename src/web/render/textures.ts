@@ -47,6 +47,11 @@ export function regionTexture(sheet: string, region: Region): Texture | null {
   return texture;
 }
 
+/** How many sheets are loaded and how many sub-textures have been cut from them. */
+export function textureCounts(): { sheets: number; regions: number } {
+  return { sheets: sheets.size, regions: regions.size };
+}
+
 /**
  * One frame of a shot/effect clip.
  *

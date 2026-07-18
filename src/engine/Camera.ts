@@ -110,6 +110,11 @@ export class Camera {
     return this.current;
   }
 
+  /** Every installed zone — read by the debug overlay to draw the level's framing. */
+  get allZones(): readonly CameraZone[] {
+    return this.zones;
+  }
+
   /**
    * Install the level's camera zones. Overlap is allowed and expected — zones
    * are butted together or overlapped at the seam so the target is never
