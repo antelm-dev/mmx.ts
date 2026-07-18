@@ -5,8 +5,18 @@ import { defineConfig } from 'vite';
  * PixiJS, with HMR. The pure engine under src/engine + src/core is shared unchanged
  * with the headless Node sim/tests (built separately by `tsc`).
  */
+const isTauri = !!process.env.TAURI_ENV_PLATFORM;
+
 export default defineConfig({
-  server: { port: 5173, open: true },
+  clearScreen: false,
+  server: {
+    port: 5173,
+    strictPort: true,
+    open: !isTauri,
+    watch: {
+      ignored: (p) => p.replace(/\\/g, '/').includes('/src-tauri/'),
+    },
+  },
   build: {
     outDir: 'dist-web',
     emptyOutDir: true,
