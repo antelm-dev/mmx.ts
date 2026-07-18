@@ -6,7 +6,7 @@ import { Scene } from "../engine/Scene.js";
 /**
  * Replay a recording captured in the browser, headlessly.
  *
- *   pnpm run replay <file.replay.json> [--trace] [--expect <digest>]
+ *   npm run replay <file.replay.json> [--trace] [--expect <digest>]
  *
  * This is the other half of the debug HUD's recorder. A bug that reproduces once
  * in fifty attempts is not something you can iterate against; the same bug as a
@@ -36,7 +36,7 @@ function parseArgs(argv: string[]): Options {
   const args = argv.slice(2);
   const file = args.find((a) => !a.startsWith("--"));
   if (!file) {
-    console.error("usage: pnpm run replay <file.replay.json> [--trace] [--expect <digest>]");
+    console.error("usage: npm run replay <file.replay.json> [--trace] [--expect <digest>]");
     process.exit(2);
   }
   const expectIndex = args.indexOf("--expect");

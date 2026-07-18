@@ -8,7 +8,7 @@ import { makeWorld, SPAWN, ENEMY_SPAWNS } from "../engine/level.js";
 /**
  * Deterministic headless simulation. Drives the ported player through a scripted
  * input timeline and prints the resulting state trace — proving the whole gameplay
- * runs in pure Node with no rendering. Run with:  pnpm run sim
+ * runs in pure Node with no rendering. Run with:  npm run sim
  *
  * The enemies run here too, without any clip data: with no frames loaded every
  * clip reports itself finished on the next tick, so the animation-gated beats of

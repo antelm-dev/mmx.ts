@@ -17,29 +17,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: pnpm
+          cache: npm
 
-      - run: pnpm install --frozen-lockfile
+      - run: npm ci
 
       - name: Lint
-        run: pnpm run lint
+        run: npm run lint
 
       - name: Format
-        run: pnpm run fmt:check
+        run: npm run fmt:check
 
       - name: Test
-        run: pnpm test
+        run: npm test
 
       - name: Typecheck / compile
-        run: pnpm run build
+        run: npm run build
 
       - name: Build web
-        run: pnpm run build:web
+        run: npm run build:web
 
       - uses: actions/upload-artifact@v4
         with:
@@ -67,12 +65,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: pnpm
+          cache: npm
 
       - uses: dtolnay/rust-toolchain@1.93.0
         with:
@@ -82,7 +78,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      - run: pnpm install --frozen-lockfile
+      - run: npm ci
 
       - name: Cargo fmt
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
@@ -94,7 +90,7 @@ jobs:
         run: cargo check --manifest-path src-tauri/Cargo.toml --locked
 
       - name: Build desktop
-        run: pnpm run desktop:build -- -- --locked
+        run: npm run desktop:build -- -- --locked
 
       - uses: actions/upload-artifact@v4
         with:

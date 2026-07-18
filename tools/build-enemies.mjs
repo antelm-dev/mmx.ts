@@ -1,7 +1,7 @@
 /**
  * Builds src/web/assets/enemy_anims.json from the Godot project's Aseprite sheets.
  *
- *   node tools/build-enemies.mjs [path-to-godot-project]   # or: pnpm run enemies:import
+ *   node tools/build-enemies.mjs [path-to-godot-project]   # or: npm run enemies:import
  *
  * The player's clips came out of Godot .res SpriteFrames resources (binary, and
  * already exported to x_anims.json). The enemies still have their *source*

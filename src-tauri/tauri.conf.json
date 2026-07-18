@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "identifier": "com.mmx.core-ts",
   "build": {
-    "beforeDevCommand": "pnpm run dev",
+    "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5173",
-    "beforeBuildCommand": "pnpm run build:web",
+    "beforeBuildCommand": "npm run build:web",
     "frontendDist": "../dist-web"
   },
   "app": {
