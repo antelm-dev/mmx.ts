@@ -115,6 +115,7 @@ export const ENEMY_SPAWNS: EnemySpawn[] = entities("Enemy").map((e) => {
  * fields default to true so a plain undecorated rectangle locks both axes.
  */
 export const CAMERA_ZONES: CameraZone[] = entities("CameraZone").map((e) => ({
+  id: e.iid,
   x: e.x,
   y: e.y,
   w: e.w,

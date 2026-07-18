@@ -223,3 +223,95 @@ test("with no zones the camera behaves exactly as before", () => {
   assert.equal(cam.x, WORLD_W - VIEW_WIDTH);
   assert.equal(cam.y, WORLD_H - VIEW_HEIGHT);
 });
+
+test("snapTo performs a fresh zone lookup after a teleport", () => {
+  const zone: CameraZone = { id: "left-room", x: 0, y: 0, w: 400, h: WORLD_H };
+  const cam = zoned(zone);
+  cam.snapTo(200, 256);
+  assert.equal(cam.activeZone, zone);
+
+  cam.snapTo(800, 256);
+  assert.equal(cam.activeZone, null, "teleport retained a stale room constraint");
+  assert.equal(cam.centerX, 800);
+});
+
+test("priority resolves first entry into overlapping zones", () => {
+  const low: CameraZone = { x: 400, y: 0, w: 800, h: WORLD_H, priority: 1 };
+  const high: CameraZone = { x: 400, y: 0, w: 800, h: WORLD_H, priority: 5 };
+  const cam = zoned(low, high);
+
+  cam.snapTo(800, 256);
+  assert.equal(cam.activeZone, high);
+});
+
+test("outsideZone world releases a zone when ordinary following leaves it", () => {
+  const cam = new Camera(WORLD_W, WORLD_H, VIEW_WIDTH, VIEW_HEIGHT, {
+    outsideZone: "world",
+  });
+  cam.setZones([{ x: 0, y: 0, w: 400, h: WORLD_H }]);
+  cam.snapTo(200, 256);
+
+  settle(cam, 800, 256);
+  assert.equal(cam.activeZone, null);
+  assert.equal(cam.centerX, 800 - 24);
+});
+
+test("asymmetric dead zones expose more space in one direction", () => {
+  const cam = new Camera(WORLD_W, WORLD_H, VIEW_WIDTH, VIEW_HEIGHT, {
+    deadZone: { right: 80 },
+  });
+  cam.snapTo(800, 256);
+
+  settle(cam, 1000, 256);
+  assert.equal(cam.centerX, 1000 - 80);
+});
+
+test("a configured maximum speed caps one camera step", () => {
+  const cam = new Camera(WORLD_W, WORLD_H, VIEW_WIDTH, VIEW_HEIGHT, { maxSpeedX: 50 });
+  cam.snapTo(800, 256);
+
+  cam.follow(1200, 256, 0.1);
+  assert.equal(cam.centerX, 805);
+});
+
+test("intent following looks ahead in the direction of travel", () => {
+  const plain = makeCamera();
+  const intent = makeCamera();
+  plain.snapTo(800, 256);
+  intent.snapTo(800, 256);
+
+  settle(plain, 1000, 256);
+  for (let i = 0; i < 600; i++) {
+    intent.followTarget({ x: 1000, y: 256, velocityX: 200, grounded: true }, DT);
+  }
+
+  assert.equal(plain.centerX, 1000 - 24);
+  assert.equal(intent.centerX, 1000 + intent.config.lookAheadX - 24);
+});
+
+test("render offsets retain the player-relative pixel quantisation", () => {
+  const cam = makeCamera();
+  cam.x = 123.4;
+  cam.y = 45.6;
+
+  assert.equal(cam.renderOffsetX(500.5), Math.round(500.5 - 123.4) - Math.round(500.5));
+  assert.equal(cam.renderOffsetY(200.25), Math.round(200.25 - 45.6) - Math.round(200.25));
+});
+
+test("invalid camera steps fail before poisoning camera state", () => {
+  const cam = makeCamera();
+  cam.snapTo(800, 256);
+
+  assert.throws(() => cam.follow(1000, 256, -DT), RangeError);
+  assert.throws(() => cam.follow(Number.NaN, 256, DT), RangeError);
+  assert.equal(cam.centerX, 800);
+});
+
+test("a zero-duration step leaves camera state unchanged", () => {
+  const cam = makeCamera();
+  cam.snapTo(800, 256);
+
+  cam.follow(1200, 400, 0);
+  assert.equal(cam.centerX, 800);
+  assert.equal(cam.centerY, 256);
+});

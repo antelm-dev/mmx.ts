@@ -1,4 +1,5 @@
 import { DASH_FX_FPS, DASH_FX_FRAME_COUNT } from "@mmx/engine/core/constants.js";
+import { AnimationCursor, uniformClip } from "@mmx/engine/core/AnimationCursor.js";
 
 /**
  * The dust X kicks up when he pushes off into a dash — the other half of
@@ -30,8 +31,8 @@ export interface Puff {
   clip: string;
   /** Horizontal mirror, from the dash direction (SpriteEffect's `scale.x`). */
   facing: number;
-  /** Seconds since emission; drives the frame and decides when the puff is dropped. */
-  age: number;
+  /** Fixed-step playback state for this detached one-shot. */
+  animation: AnimationCursor;
 }
 
 /**
@@ -40,13 +41,16 @@ export interface Puff {
  * grow the array without bound.
  */
 const MAX_PUFFS = 8;
+const DASH_SMOKE_ANIMATION = uniformClip(DASH_FX_FRAME_COUNT, DASH_FX_FPS, false);
 
 export class DashSmoke {
   readonly puffs: Puff[] = [];
 
   /** SpriteEffect.emit(): a copy pinned to where the emitter stood right now. */
   spawn(x: number, y: number, clip: string, facing: number): void {
-    this.puffs.push({ x, y, clip, facing, age: 0 });
+    const animation = new AnimationCursor();
+    animation.play(DASH_SMOKE_ANIMATION);
+    this.puffs.push({ x, y, clip, facing, animation });
     if (this.puffs.length > MAX_PUFFS) this.puffs.shift();
   }
 
@@ -60,8 +64,8 @@ export class DashSmoke {
   tick(dt: number): void {
     let live = 0;
     for (const p of this.puffs) {
-      p.age += dt;
-      if (DashSmoke.frame(p) < DASH_FX_FRAME_COUNT) this.puffs[live++] = p;
+      p.animation.advance(dt);
+      if (!p.animation.finished) this.puffs[live++] = p;
     }
     this.puffs.length = live;
   }
@@ -73,7 +77,7 @@ export class DashSmoke {
    * rather than clamping to the final frame.
    */
   static frame(p: Puff): number {
-    return Math.floor(p.age * DASH_FX_FPS);
+    return p.animation.frame;
   }
 
   clear(): void {

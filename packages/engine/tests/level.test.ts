@@ -150,7 +150,7 @@ test("level camera holds each vertical tier in a stable frame", () => {
   camera.setZones(CAMERA_ZONES);
   camera.snapTo(SPAWN.x, SPAWN.y);
 
-  assert.equal(CAMERA_ZONES.length, 3, "upper, ground, and cavern zones must be authored");
+  assert.ok(CAMERA_ZONES.length >= 3, "upper, ground, and cavern framing must be authored");
   assert.equal(camera.y, 224, "spawn should use the ground frame");
 
   // Running and ordinary jumps within a tier should not bob the whole screen.

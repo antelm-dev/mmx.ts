@@ -12,7 +12,7 @@ import type { Stage } from "@mmx/engine/engine/Stage.js";
 import type { World } from "@mmx/engine/engine/World.js";
 import { DashSmoke } from "../DashSmoke.js";
 import { Trail } from "../Trail.js";
-import { enemyAnims, PLAYER_SHEETS, SHEET_URLS } from "./assets.js";
+import { enemyAnims, PLAYER_SHEETS, SHEET_URLS, validateAnimationAssets } from "./assets.js";
 import { Hud } from "./Hud.js";
 import { place, spriteSnapshot } from "./sprite.js";
 import { SpritePool } from "./SpritePool.js";
@@ -109,6 +109,7 @@ export class Renderer {
   }
 
   static async create(canvas: HTMLCanvasElement, world: World): Promise<Renderer> {
+    validateAnimationAssets();
     const app = new Application();
     await app.init({
       canvas,
@@ -216,10 +217,7 @@ export class Renderer {
     //
     // Only whole-pixel offsets separate the body from its sprite anchor, so the body
     // position stands in for it here and both quantise in step.
-    this.scene.position.set(
-      Math.round(player.pos.x - camera.x) - Math.round(player.pos.x),
-      Math.round(player.pos.y - camera.y) - Math.round(player.pos.y),
-    );
+    this.scene.position.set(camera.renderOffsetX(player.pos.x), camera.renderOffsetY(player.pos.y));
 
     this.syncEnemies(stage);
     this.syncGhosts(trail);

@@ -4,6 +4,8 @@ import type { SlopeMap, Tile } from "./World.js";
 export interface LevelEntity {
   /** The LDtk entity identifier, e.g. 'Spawn'. */
   id: string;
+  /** Stable LDtk instance identifier, unique within the project. */
+  iid: string;
   x: number;
   y: number;
   /**

@@ -72,6 +72,7 @@ function convert(ldtk, sourceName) {
 
   const entities = entityInstances.map((e) => ({
     id: e.__identifier,
+    iid: e.iid,
     // px is pivot-adjusted; every entity def here pivots at 0,0, so this is
     // the box's top-left and `width`/`height` extend right/down from it.
     x: e.px[0],

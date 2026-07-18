@@ -19,6 +19,57 @@ const FOLLOW_RATE = 10;
 /** Below this many pixels the camera is snapped onto its target outright. */
 const SETTLE_EPSILON = 0.05;
 
+export interface CameraConfig {
+  deadZone: { left: number; right: number; up: number; down: number };
+  followRateX: number;
+  followRateY: number;
+  maxSpeedX: number;
+  maxSpeedY: number;
+  /** Distance revealed in the direction of horizontal travel. */
+  lookAheadX: number;
+  /** Extra space revealed beneath a falling target. */
+  fallLookAheadY: number;
+  /** Rate at which intent offsets blend in and out. */
+  lookAheadRate: number;
+  /** Horizontal speed which produces the full horizontal look-ahead. */
+  maxLookAheadSpeedX: number;
+  /** Downward speed which produces the full falling look-ahead. */
+  maxFallSpeedY: number;
+  /** What ordinary following does while the target is outside every zone. */
+  outsideZone: "hold" | "world";
+}
+
+export interface CameraOptions extends Partial<Omit<CameraConfig, "deadZone">> {
+  deadZone?: Partial<CameraConfig["deadZone"]>;
+}
+
+export interface CameraTarget {
+  x: number;
+  y: number;
+  velocityX?: number;
+  velocityY?: number;
+  grounded?: boolean;
+}
+
+const DEFAULT_CONFIG: CameraConfig = {
+  deadZone: {
+    left: DEADZONE_HALF_W,
+    right: DEADZONE_HALF_W,
+    up: DEADZONE_HALF_H,
+    down: DEADZONE_HALF_H,
+  },
+  followRateX: FOLLOW_RATE,
+  followRateY: FOLLOW_RATE,
+  maxSpeedX: Number.POSITIVE_INFINITY,
+  maxSpeedY: Number.POSITIVE_INFINITY,
+  lookAheadX: 32,
+  fallLookAheadY: 24,
+  lookAheadRate: 6,
+  maxLookAheadSpeedX: 200,
+  maxFallSpeedY: 320,
+  outsideZone: "hold",
+};
+
 /**
  * A rectangular region of the level that constrains the view while the target
  * is inside it — the "camera bounds" volumes the original games place around
@@ -30,6 +81,8 @@ const SETTLE_EPSILON = 0.05;
  * band while still scrolling freely along it, whereas a boss room binds both.
  */
 export interface CameraZone {
+  /** Stable authoring identifier for diagnostics and scripted transitions. */
+  id?: string;
   /** Top-left, in world pixels. */
   x: number;
   y: number;
@@ -39,13 +92,29 @@ export interface CameraZone {
   bindX?: boolean;
   /** Constrain the view vertically to [y, y+h]. Default true. */
   bindY?: boolean;
+  /** Higher-priority zones win when entering an overlap from outside both. */
+  priority?: number;
 }
 
 /** Move `from` toward `to` far enough that `to` sits inside ±`half` of it. */
-function pullIntoDeadzone(from: number, to: number, half: number): number {
-  if (to > from + half) return to - half;
-  if (to < from - half) return to + half;
+function pullIntoDeadzone(from: number, to: number, before: number, after: number): number {
+  if (to > from + after) return to - after;
+  if (to < from - before) return to + before;
   return from;
+}
+
+function clampUnit(value: number): number {
+  return Math.min(Math.max(value, -1), 1);
+}
+
+function validatePositive(name: string, value: number, allowInfinity = false): void {
+  if (
+    (allowInfinity && value === Number.POSITIVE_INFINITY) ||
+    (Number.isFinite(value) && value > 0)
+  ) {
+    return;
+  }
+  throw new RangeError(`${name} must be positive`);
 }
 
 /**
@@ -90,12 +159,50 @@ export class Camera {
 
   private zones: readonly CameraZone[] = [];
   private current: CameraZone | null = null;
+  private intentX = 0;
+  private intentY = 0;
+  readonly config: Readonly<CameraConfig>;
 
-  constructor(worldW: number, worldH: number, viewW = VIEW_WIDTH, viewH = VIEW_HEIGHT) {
+  constructor(
+    worldW: number,
+    worldH: number,
+    viewW = VIEW_WIDTH,
+    viewH = VIEW_HEIGHT,
+    options: CameraOptions = {},
+  ) {
+    validatePositive("worldW", worldW);
+    validatePositive("worldH", worldH);
+    validatePositive("viewW", viewW);
+    validatePositive("viewH", viewH);
     this.worldW = worldW;
     this.worldH = worldH;
     this.viewW = viewW;
     this.viewH = viewH;
+    this.config = {
+      ...DEFAULT_CONFIG,
+      ...options,
+      deadZone: { ...DEFAULT_CONFIG.deadZone, ...options.deadZone },
+    };
+    for (const [name, value] of Object.entries(this.config.deadZone)) {
+      if (!Number.isFinite(value) || value < 0) {
+        throw new RangeError(`deadZone.${name} must be non-negative`);
+      }
+    }
+    validatePositive("followRateX", this.config.followRateX);
+    validatePositive("followRateY", this.config.followRateY);
+    validatePositive("maxSpeedX", this.config.maxSpeedX, true);
+    validatePositive("maxSpeedY", this.config.maxSpeedY, true);
+    validatePositive("lookAheadRate", this.config.lookAheadRate);
+    validatePositive("maxLookAheadSpeedX", this.config.maxLookAheadSpeedX);
+    validatePositive("maxFallSpeedY", this.config.maxFallSpeedY);
+    for (const name of ["lookAheadX", "fallLookAheadY"] as const) {
+      const value = this.config[name];
+      if (!Number.isFinite(value) || value < 0)
+        throw new RangeError(`${name} must be non-negative`);
+    }
+    if (this.config.outsideZone !== "hold" && this.config.outsideZone !== "world") {
+      throw new RangeError("outsideZone must be 'hold' or 'world'");
+    }
   }
 
   get centerX(): number {
@@ -121,7 +228,14 @@ export class Camera {
    * momentarily inside none of them mid-stride.
    */
   setZones(zones: readonly CameraZone[]): void {
-    this.zones = zones;
+    for (const [index, zone] of zones.entries()) {
+      if (![zone.x, zone.y, zone.w, zone.h].every(Number.isFinite) || zone.w <= 0 || zone.h <= 0) {
+        throw new RangeError(
+          `camera zone ${zone.id ?? index} must have finite coordinates and positive size`,
+        );
+      }
+    }
+    this.zones = [...zones];
     this.current = null;
   }
 
@@ -139,10 +253,14 @@ export class Camera {
    */
   private zoneFor(tx: number, ty: number): CameraZone | null {
     if (this.current && contains(this.current, tx, ty)) return this.current;
+    let match: CameraZone | null = null;
     for (const z of this.zones) {
-      if (contains(z, tx, ty)) return z;
+      if (contains(z, tx, ty) && (match === null || (z.priority ?? 0) > (match.priority ?? 0))) {
+        match = z;
+      }
     }
-    return this.current;
+    if (match) return match;
+    return this.config.outsideZone === "hold" ? this.current : null;
   }
 
   /** Horizontal limits imposed by `z`, falling back to the world edges. */
@@ -177,7 +295,14 @@ export class Camera {
 
   /** Centre on a point immediately — for spawns and teleports, not per-frame. */
   snapTo(tx: number, ty: number): void {
+    if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
+      throw new RangeError("camera target position must be finite");
+    }
+    // Teleports perform a fresh lookup instead of retaining a zone across a gap.
+    this.current = null;
     this.current = this.zoneFor(tx, ty);
+    this.intentX = 0;
+    this.intentY = 0;
     const [cx, cy] = this.confine(tx, ty);
     // Whole pixels, as in follow(): a spawn should not leave the view parked on a
     // fraction it will never ease off of.
@@ -199,11 +324,59 @@ export class Camera {
    * result as well would teleport it to the boundary on the crossing frame.
    */
   follow(tx: number, ty: number, dt: number): void {
+    this.validateStep(tx, ty, dt);
     this.current = this.zoneFor(tx, ty);
+    this.advance(tx, ty, dt);
+  }
+
+  /** Follow a gameplay target with velocity-aware horizontal and falling look-ahead. */
+  followTarget(target: CameraTarget, dt: number): void {
+    this.validateStep(target.x, target.y, dt);
+    const vx = target.velocityX ?? 0;
+    const vy = target.velocityY ?? 0;
+    if (!Number.isFinite(vx) || !Number.isFinite(vy)) {
+      throw new RangeError("camera target velocity must be finite");
+    }
+
+    this.current = this.zoneFor(target.x, target.y);
+    const desiredX = clampUnit(vx / this.config.maxLookAheadSpeedX) * this.config.lookAheadX;
+    const desiredY =
+      target.grounded === false && vy > 0
+        ? Math.min(vy / this.config.maxFallSpeedY, 1) * this.config.fallLookAheadY
+        : 0;
+    const k = 1 - Math.exp(-this.config.lookAheadRate * dt);
+    this.intentX += (desiredX - this.intentX) * k;
+    this.intentY += (desiredY - this.intentY) * k;
+    if (Math.abs(desiredX - this.intentX) < SETTLE_EPSILON) this.intentX = desiredX;
+    if (Math.abs(desiredY - this.intentY) < SETTLE_EPSILON) this.intentY = desiredY;
+
+    this.advance(target.x + this.intentX, target.y + this.intentY, dt);
+  }
+
+  /** Pixel-perfect world translation, quantised relative to the tracked anchor. */
+  renderOffsetX(anchorX: number): number {
+    return Math.round(anchorX - this.x) - Math.round(anchorX);
+  }
+
+  renderOffsetY(anchorY: number): number {
+    return Math.round(anchorY - this.y) - Math.round(anchorY);
+  }
+
+  private validateStep(tx: number, ty: number, dt: number): void {
+    if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
+      throw new RangeError("camera target position must be finite");
+    }
+    if (!Number.isFinite(dt) || dt < 0) {
+      throw new RangeError("camera dt must be finite and non-negative");
+    }
+  }
+
+  private advance(tx: number, ty: number, dt: number): void {
+    const { deadZone } = this.config;
 
     const [rawX, rawY] = this.confine(
-      pullIntoDeadzone(this.centerX, tx, DEADZONE_HALF_W),
-      pullIntoDeadzone(this.centerY, ty, DEADZONE_HALF_H),
+      pullIntoDeadzone(this.centerX, tx, deadZone.left, deadZone.right),
+      pullIntoDeadzone(this.centerY, ty, deadZone.up, deadZone.down),
     );
 
     // The goal is quantised to whole pixels so that a camera which has caught up and
@@ -215,9 +388,8 @@ export class Camera {
     const goalX = Math.round(rawX);
     const goalY = Math.round(rawY);
 
-    const k = 1 - Math.exp(-FOLLOW_RATE * dt);
-    let cx = this.centerX + (goalX - this.centerX) * k;
-    let cy = this.centerY + (goalY - this.centerY) * k;
+    let cx = this.stepAxis(this.centerX, goalX, this.config.followRateX, this.config.maxSpeedX, dt);
+    let cy = this.stepAxis(this.centerY, goalY, this.config.followRateY, this.config.maxSpeedY, dt);
 
     // Kill the asymptotic tail, which would otherwise leave the camera drifting
     // by a fraction of a pixel forever and flicker the rounded render offset.
@@ -226,5 +398,12 @@ export class Camera {
 
     this.x = cx - this.viewW / 2;
     this.y = cy - this.viewH / 2;
+  }
+
+  private stepAxis(from: number, to: number, rate: number, maxSpeed: number, dt: number): number {
+    if (dt === 0) return from;
+    const eased = (to - from) * (1 - Math.exp(-rate * dt));
+    const maxStep = maxSpeed * dt;
+    return from + Math.min(Math.max(eased, -maxStep), maxStep);
   }
 }

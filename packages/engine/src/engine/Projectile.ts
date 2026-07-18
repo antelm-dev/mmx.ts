@@ -1,5 +1,6 @@
 import { World } from "./World.js";
 import { Rng } from "../core/Rng.js";
+import { AnimationCursor, uniformClip } from "../core/AnimationCursor.js";
 import {
   BUSTER_SHOTS,
   HIT_FX_FPS,
@@ -25,10 +26,15 @@ import {
  */
 export type ShotPhase = "live" | "spent";
 
+const SHOT_ANIMATIONS = BUSTER_SHOTS.map((stats) =>
+  uniformClip(SHOT_FRAME_COUNT, 1000 / stats.frameMs, true),
+);
+const HIT_ANIMATION = uniformClip(HIT_FX_FRAME_COUNT, HIT_FX_FPS, false);
+
 export class Projectile {
   readonly stats: ShotStats;
-  /** Cosmetic playback state; the renderer advances nothing itself. */
-  frame = 0;
+  private readonly shotAnimation = new AnimationCursor();
+  private readonly hitAnimation = new AnimationCursor();
   /** True once the impact particle has been spawned, so it only ever fires once. */
   emittedHitParticle = false;
   /** Where the hit particle plays — the impact point, not the shot's last position. */
@@ -40,7 +46,6 @@ export class Projectile {
   phase: ShotPhase = "live";
   alive = true;
 
-  private animSec = 0;
   private countdown = 0;
 
   constructor(
@@ -55,6 +60,8 @@ export class Projectile {
     // Weapon.gd:clamp_to_max_charge — the buster only carries three projectiles.
     const level = Math.max(0, Math.min(charge, BUSTER_SHOTS.length - 1));
     this.stats = BUSTER_SHOTS[level];
+    this.shotAnimation.play(SHOT_ANIMATIONS[level]);
+    this.hitAnimation.play(HIT_ANIMATION);
 
     this.x += this.stats.spawnX * dir;
     this.y += this.stats.spawnY;
@@ -72,7 +79,7 @@ export class Projectile {
     }
     if (this.stats.randomStartFrame) {
       // Lemon.references_setup — desync the spin of shots fired back to back.
-      this.frame = rng.int(0, SHOT_FRAME_COUNT - 1);
+      this.shotAnimation.seek(rng.int(0, SHOT_FRAME_COUNT - 1));
     }
     this.hitFlipV = rng.next() <= 0.5;
   }
@@ -89,6 +96,10 @@ export class Projectile {
   }
   get vx(): number {
     return this.stats.speed * this.dir;
+  }
+  /** Cosmetic playback state; the renderer advances nothing itself. */
+  get frame(): number {
+    return this.shotAnimation.frame;
   }
   /** Whether this shot can still collide — `can_be_hit` / the damage box. */
   get isLive(): boolean {
@@ -118,14 +129,14 @@ export class Projectile {
     this.hitY = atY;
     this.emittedHitParticle = true;
     this.countdown = 0.01; // WeaponShot.disable_visual_and_mechanics
-    this.animSec = 0; // the particle plays from its first frame, not the shot's
+    this.hitAnimation.seek(0); // the particle plays from its first frame, not the shot's
   }
 
   update(dt: number, world: World): void {
     if (this.phase === "spent") {
       // Still on screen only as a particle; hold position and run out the clock.
       this.countdown += dt;
-      this.animSec += dt;
+      this.hitAnimation.advance(dt);
       if (this.countdown > this.stats.timeOutsideScreen) this.alive = false;
       return;
     }
@@ -159,18 +170,10 @@ export class Projectile {
    */
   get hitParticleFrame(): number {
     if (this.phase !== "spent") return -1;
-    const frame = Math.floor(this.animSec * HIT_FX_FPS);
-    return frame < HIT_FX_FRAME_COUNT ? frame : -1;
+    return this.hitAnimation.finished ? -1 : this.hitAnimation.frame;
   }
 
   private advanceAnimation(dt: number): void {
-    // All three projectile sheets are uniform-duration loops, so playback is a
-    // plain accumulator rather than the per-frame walk AnimationPlayer needs.
-    const secPerFrame = this.stats.frameMs / 1000;
-    this.animSec += dt;
-    while (this.animSec >= secPerFrame) {
-      this.animSec -= secPerFrame;
-      this.frame = (this.frame + 1) % SHOT_FRAME_COUNT;
-    }
+    this.shotAnimation.advance(dt);
   }
 }

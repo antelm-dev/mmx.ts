@@ -875,7 +875,7 @@
               "__smartColor": "#FFCC66",
               "iid": "camera-upper-0000-0000-000000000000",
               "width": 800,
-              "height": 176,
+              "height": 224,
               "defUid": 100,
               "px": [
                 0,
@@ -917,7 +917,7 @@
               "__smartColor": "#FFCC66",
               "iid": "camera-ground-0000-0000-00000000000",
               "width": 1600,
-              "height": 144,
+              "height": 224,
               "defUid": 100,
               "px": [
                 0,
@@ -959,11 +959,11 @@
               "__smartColor": "#FFCC66",
               "iid": "a2d81e70-6fc0-11f1-8e32-133f0ea710e7",
               "width": 1600,
-              "height": 144,
+              "height": 224,
               "defUid": 100,
               "px": [
                 0,
-                368
+                288
               ],
               "fieldInstances": [
                 {
@@ -1001,7 +1001,7 @@
               "__smartColor": "#FFCC66",
               "iid": "bc26f8d0-6fc0-11f1-8e32-c345da5cdf87",
               "width": 800,
-              "height": 176,
+              "height": 224,
               "defUid": 100,
               "px": [
                 800,

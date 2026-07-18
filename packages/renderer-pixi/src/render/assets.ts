@@ -1,4 +1,5 @@
-import type { Region } from "@mmx/engine/engine/Animation.js";
+import { assertAnimData, assertRegion, type Region } from "@mmx/engine/engine/Animation.js";
+import { assertTimedClip } from "@mmx/engine/core/AnimationCursor.js";
 import animData from "../assets/x_anims.json";
 import atlasUrl from "../assets/x.png";
 import armAtlasUrl from "../assets/x_leftarm.png";
@@ -60,7 +61,10 @@ export const FRAME_H = 56;
 
 interface ShotAnimData {
   sheets: Record<string, string>;
-  animations: Record<string, { loop: boolean; speed: number; frames: { region: Region }[] }>;
+  animations: Record<
+    string,
+    { loop: boolean; speed: number; frames: { region: Region; duration: number }[] }
+  >;
 }
 
 /**
@@ -89,3 +93,21 @@ interface EnemyAnimData {
 export const shotAnims = shotAnimData as unknown as ShotAnimData;
 export const enemyAnims = enemyAnimData as unknown as EnemyAnimData;
 export { animData };
+
+/** Validate generated JSON once at startup, before any malformed frame reaches Pixi. */
+export function validateAnimationAssets(): void {
+  assertAnimData(animData, "player animations");
+
+  for (const [name, clip] of Object.entries(shotAnims.animations)) {
+    assertTimedClip(clip, `shot animation '${name}'`);
+    if (!shotAnims.sheets[name]) throw new Error(`shot animation '${name}' has no sheet`);
+    clip.frames.forEach((frame, index) =>
+      assertRegion(frame.region, `shot animation '${name}' frame ${index} region`),
+    );
+  }
+
+  for (const [actorName, actor] of Object.entries(enemyAnims.actors)) {
+    if (!actor.sheet) throw new Error(`enemy animation '${actorName}' has no sheet`);
+    assertAnimData(actor, `enemy animations '${actorName}'`);
+  }
+}
