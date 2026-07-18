@@ -1,11 +1,13 @@
 {
-  "name": "mmx-core-ts",
+  "name": "mmx.ts",
   "version": "1.0.0",
   "description": "A faithful TypeScript/Node port of the core player gameplay (movement + shooting state machine) from the Mega Man X8 16-bit fan project.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build:web": "vite build",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "preview": "vite preview",
     "sim": "tsx src/sim/run.ts",
     "level:import": "node tools/import-ldtk.mjs",
@@ -24,6 +26,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^20.11.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",

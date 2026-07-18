@@ -5,10 +5,11 @@ A faithful **TypeScript / Node** port of the *core player gameplay* from the
 machine (walk / dash / variable jump / air-dash / wall-slide / wall-jump /
 dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
-The engine is **pure TypeScript** with no runtime dependencies. It runs two ways:
+The engine is **pure TypeScript** with no runtime dependencies. It runs three ways:
 
 - **Headless** in Node (deterministic, scripted input) — `npm run sim`
 - **In the browser** on a canvas with real keyboard input — `npm run play`
+- **As a desktop app** through Tauri 2 — `npm run desktop:dev`
 
 ---
 
@@ -20,11 +21,24 @@ npm install
 npm run sim      # deterministic headless simulation, prints a state trace
 npm test         # unit tests (node:test) for the movement/shooting behaviour
 npm run play     # build + serve -> open http://localhost:8080 and play
+npm run desktop:dev    # launch the desktop app with Vite hot reload
+npm run desktop:build  # build the native executable and platform installers
 ```
 
-Controls (browser): **← →** / **A D** move · **Space** jump (hold for height) ·
+Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
 hold *into* a wall while falling to wall-slide, then **Space** to wall-kick.
+
+### Desktop prerequisites
+
+The desktop shell uses **Tauri 2** and leaves the TypeScript engine and PixiJS
+renderer unchanged. Install Rust plus the native prerequisites for your operating
+system before using the desktop commands. On Windows that means Microsoft C++ Build
+Tools and WebView2; current Windows releases normally already include WebView2.
+
+Production artifacts are written below `src-tauri/target/release/`. Windows builds
+produce the standalone executable along with MSI and NSIS installers under
+`src-tauri/target/release/bundle/`.
 
 ---
 
