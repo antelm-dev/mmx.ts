@@ -1,12 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
+import { PhysicalSize } from "@tauri-apps/api/dpi";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 
+import { VIEW_HEIGHT, VIEW_WIDTH } from "../core/constants.js";
 import type { Action } from "../core/Input.js";
 import { REPLAY_ACTIONS } from "../core/Replay.js";
 import type { ReplayFileAccess, ReplayText } from "./debug/DebugSession.js";
 
 const SETTINGS_KEY = "mmx.desktop-settings.v1";
+
+/** Default integer zoom; matches the tauri.conf.json window size (3 × 398×224). */
+export const DEFAULT_WINDOW_SCALE = 3;
+/** Hard ceiling so the menu cannot walk off into absurd sizes. */
+export const MAX_WINDOW_SCALE = 8;
 
 /**
  * The two key slots every action carries, as `KeyboardEvent.code` values.
@@ -34,6 +41,8 @@ export const DEFAULT_BINDINGS: KeyBindings = {
 export interface DesktopSettings {
   version: 2;
   masterVolume: number;
+  /** Device pixels per world pixel; also the locked window size multiplier. */
+  scale: number;
   fullscreen: boolean;
   pauseOnBlur: boolean;
   bindings: KeyBindings;
@@ -42,10 +51,16 @@ export interface DesktopSettings {
 export const DEFAULT_SETTINGS: DesktopSettings = {
   version: 2,
   masterVolume: 1,
+  scale: DEFAULT_WINDOW_SCALE,
   fullscreen: false,
   pauseOnBlur: true,
   bindings: DEFAULT_BINDINGS,
 };
+
+export function clampScale(scale: number, max = MAX_WINDOW_SCALE): number {
+  if (!Number.isFinite(scale)) return DEFAULT_WINDOW_SCALE;
+  return Math.max(1, Math.min(max, Math.round(scale)));
+}
 
 export function cloneBindings(bindings: KeyBindings): KeyBindings {
   return Object.fromEntries(
@@ -72,16 +87,31 @@ function validBindings(value: unknown): value is KeyBindings {
 function validSettings(value: unknown): value is DesktopSettings {
   if (!value || typeof value !== "object") return false;
   const settings = value as Partial<DesktopSettings>;
+  const scaleOk =
+    settings.scale === undefined ||
+    (typeof settings.scale === "number" &&
+      Number.isInteger(settings.scale) &&
+      settings.scale >= 1 &&
+      settings.scale <= MAX_WINDOW_SCALE);
   return (
     settings.version === 2 &&
     typeof settings.masterVolume === "number" &&
     Number.isFinite(settings.masterVolume) &&
     settings.masterVolume >= 0 &&
     settings.masterVolume <= 1 &&
+    scaleOk &&
     typeof settings.fullscreen === "boolean" &&
     typeof settings.pauseOnBlur === "boolean" &&
     validBindings(settings.bindings)
   );
+}
+
+function withScale(settings: DesktopSettings): DesktopSettings {
+  return {
+    ...settings,
+    scale: clampScale(settings.scale ?? DEFAULT_WINDOW_SCALE),
+    bindings: cloneBindings(settings.bindings),
+  };
 }
 
 /**
@@ -157,23 +187,76 @@ export class DesktopBridge {
         : JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null");
       const value = migrate(stored);
       return validSettings(value)
-        ? value
+        ? withScale(value)
         : { ...DEFAULT_SETTINGS, bindings: cloneBindings(DEFAULT_BINDINGS) };
     } catch (error) {
       console.warn("Could not load desktop settings; using defaults", error);
-      return { ...DEFAULT_SETTINGS };
+      return { ...DEFAULT_SETTINGS, bindings: cloneBindings(DEFAULT_BINDINGS) };
     }
   }
 
   async saveSettings(settings: DesktopSettings): Promise<void> {
-    if (!validSettings(settings)) throw new Error("refusing to save invalid desktop settings");
-    if (this.native) await invoke("save_settings", { settings });
-    else localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const normalized = withScale(settings);
+    if (!validSettings(normalized)) throw new Error("refusing to save invalid desktop settings");
+    if (this.native) await invoke("save_settings", { settings: normalized });
+    else localStorage.setItem(SETTINGS_KEY, JSON.stringify(normalized));
+  }
+
+  /**
+   * Largest integer zoom that still fits the current monitor (desktop) or the
+   * screen (browser). The menu uses this as the right-hand stop for the scale row.
+   */
+  async maxWindowScale(): Promise<number> {
+    if (this.native) {
+      const monitor = await currentMonitor();
+      if (monitor) {
+        return clampScale(
+          Math.floor(Math.min(monitor.size.width / VIEW_WIDTH, monitor.size.height / VIEW_HEIGHT)),
+        );
+      }
+    }
+    const dpr = window.devicePixelRatio || 1;
+    return clampScale(
+      Math.floor(
+        Math.min(
+          (window.screen.width * dpr) / VIEW_WIDTH,
+          (window.screen.height * dpr) / VIEW_HEIGHT,
+        ),
+      ),
+    );
+  }
+
+  /**
+   * Lock the native window to an exact integer zoom of the 398×224 view.
+   *
+   * Uses physical pixels so a chosen "3x" is three device pixels per world pixel
+   * on every display, matching {@link Renderer.fit}. No-op in the browser.
+   */
+  async applyWindowScale(scale: number): Promise<void> {
+    if (!this.native) return;
+    const zoom = clampScale(scale);
+    const win = getCurrentWindow();
+    if (await win.isFullscreen()) await win.setFullscreen(false);
+    const size = new PhysicalSize(VIEW_WIDTH * zoom, VIEW_HEIGHT * zoom);
+    await win.setResizable(false);
+    await win.setMinSize(null);
+    await win.setMaxSize(null);
+    await win.setSize(size);
+    await win.setMinSize(size);
+    await win.setMaxSize(size);
   }
 
   async setFullscreen(fullscreen: boolean): Promise<void> {
     if (this.native) {
-      await getCurrentWindow().setFullscreen(fullscreen);
+      const win = getCurrentWindow();
+      if (fullscreen) {
+        // Fullscreen cannot grow past a locked max-size constraint.
+        await win.setMinSize(null);
+        await win.setMaxSize(null);
+        await win.setFullscreen(true);
+        return;
+      }
+      await win.setFullscreen(false);
       return;
     }
     if (fullscreen && !document.fullscreenElement)

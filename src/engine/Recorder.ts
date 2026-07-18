@@ -110,7 +110,9 @@ export class Recorder {
    */
   load(replay: Replay): Scene {
     if (replay.level !== this.scene.levelId) {
-      throw new Error(`replay was recorded on level '${replay.level}', this build has '${this.scene.levelId}'`);
+      throw new Error(
+        `replay was recorded on level '${replay.level}', this build has '${this.scene.levelId}'`,
+      );
     }
     this.scene = Scene.create({ ...this.options, seed: replay.seed });
     this.frames = replay.frames.slice();
@@ -127,7 +129,9 @@ export class Recorder {
   static replay(replay: Replay, options: SceneOptions = {}): Scene {
     const scene = Scene.create({ ...options, seed: replay.seed });
     if (replay.level !== scene.levelId) {
-      throw new Error(`replay was recorded on level '${replay.level}', this build has '${scene.levelId}'`);
+      throw new Error(
+        `replay was recorded on level '${replay.level}', this build has '${scene.levelId}'`,
+      );
     }
     for (const mask of replay.frames) scene.step(mask);
     return scene;

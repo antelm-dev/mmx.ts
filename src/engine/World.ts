@@ -47,6 +47,13 @@ export interface SlopeProfile {
   r: number;
 }
 
+/**
+ * Slope profiles keyed by row-major tile index, as `[left, right]` — the pair
+ * form rather than the object survives being written into a generated level
+ * module without turning every ramp tile into a line of its own.
+ */
+export type SlopeMap = Record<number, [number, number]>;
+
 /** The 45-degree ramp each slope kind means when no profile is given for it. */
 const DEFAULT_PROFILE: Record<number, SlopeProfile> = {
   [Tile.SlopeUpRight]: { l: 0, r: TILE_SIZE },
@@ -75,26 +82,40 @@ export class World {
   readonly cols: number;
   readonly rows: number;
   private readonly tiles: Tile[]; // row-major
+  /** Row-major tile index -> profile, for slope tiles that are not 45 degrees. */
+  private readonly profiles: Map<number, SlopeProfile>;
 
   /**
    * Takes an already-decoded row-major grid. Parsing lives outside so that a
    * level format (see the LDtk import under tools/) can produce tiles directly
    * instead of round-tripping through the ASCII characters below.
+   *
+   * `slopes` is sparse and keyed the same way as `tiles`: the overwhelming
+   * majority of a level has no slope in it at all, and the 45-degree ones need
+   * no entry, so carrying a parallel full-length array would be mostly zeroes.
    */
-  constructor(tiles: Tile[], cols: number, rows: number) {
+  constructor(tiles: Tile[], cols: number, rows: number, slopes?: SlopeMap) {
     if (tiles.length !== cols * rows) {
       throw new Error(`World: expected ${cols * rows} tiles, got ${tiles.length}`);
     }
     this.cols = cols;
     this.rows = rows;
     this.tiles = tiles;
+    this.profiles = new Map();
+    for (const [index, [l, r]] of Object.entries(slopes ?? {})) {
+      this.profiles.set(Number(index), { l, r });
+    }
   }
 
   /**
    * Build from the ASCII form. Rows may be ragged; short ones are padded with
    * empty, which keeps hand-written test fixtures from having to line up.
+   *
+   * `slopes` overrides the 45-degree default of individual ramp tiles, keyed
+   * `"x,y"` so a fixture can name the tile it is shaping rather than compute an
+   * index into a grid whose width the surrounding text determines.
    */
-  static fromRows(rows: string[]): World {
+  static fromRows(rows: string[], slopes: Record<string, [number, number]> = {}): World {
     const cols = Math.max(...rows.map((r) => r.length));
     const tiles: Tile[] = new Array(cols * rows.length).fill(Tile.Empty);
     for (let y = 0; y < rows.length; y++) {
@@ -102,7 +123,12 @@ export class World {
         tiles[y * cols + x] = CHAR_TO_TILE[rows[y][x]] ?? Tile.Empty;
       }
     }
-    return new World(tiles, cols, rows.length);
+    const byIndex: SlopeMap = {};
+    for (const [key, profile] of Object.entries(slopes)) {
+      const [x, y] = key.split(",").map(Number);
+      byIndex[y * cols + x] = profile;
+    }
+    return new World(tiles, cols, rows.length, byIndex);
   }
 
   get widthPx(): number {
@@ -136,13 +162,21 @@ export class World {
   }
 
   /**
+   * The ramp shape of a slope tile: whatever the level authored for it, or the
+   * 45-degree default its kind implies.
+   */
+  slopeProfile(tx: number, ty: number, kind: Tile): SlopeProfile {
+    return this.profiles.get(ty * this.cols + tx) ?? DEFAULT_PROFILE[kind];
+  }
+
+  /**
    * World y of a slope tile's surface at world x, clamped to the tile's span.
    * Points at or below this y (and inside the tile) are inside the ramp.
    */
   slopeSurfaceY(tx: number, ty: number, kind: Tile, worldX: number): number {
     const lx = Math.min(TILE_SIZE, Math.max(0, worldX - tx * TILE_SIZE));
-    const fill = kind === Tile.SlopeUpRight ? lx : TILE_SIZE - lx;
-    return (ty + 1) * TILE_SIZE - fill;
+    const { l, r } = this.slopeProfile(tx, ty, kind);
+    return (ty + 1) * TILE_SIZE - (l + ((r - l) * lx) / TILE_SIZE);
   }
 
   /** Highest (smallest y) point of the ramp under the x span `x0..x1`. */

@@ -4,7 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mega Man X — TS Gameplay Core</title>
+    <link rel="preload" href="/mega-man-x.ttf" as="font" type="font/ttf" crossorigin />
     <style>
+      /* The UI face. See src/web/ui/font.ts for the metrics that go with it —
+         it is only pixel-exact at multiples of 8px. `block` rather than `swap`
+         because boot awaits the face before drawing (loadUiFont), so a swap
+         period would only ever show a flash of the wrong font. */
+      @font-face {
+        font-family: "Mega Man X";
+        src: url("/mega-man-x.ttf") format("truetype");
+        font-display: block;
+      }
       :root {
         color-scheme: dark;
       }
@@ -44,7 +54,10 @@
         border: 1px solid #395564;
         background: rgb(5 10 16 / 92%);
         color: #d7edf7;
-        font: 11px/1.35 ui-monospace, "Cascadia Mono", monospace;
+        font:
+          11px/1.35 ui-monospace,
+          "Cascadia Mono",
+          monospace;
         /* Clicks fall through to the game: the panel is never a thing to aim at,
            and swallowing them would steal focus from the canvas mid-session. */
         pointer-events: none;

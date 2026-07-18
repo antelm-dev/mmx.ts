@@ -127,7 +127,9 @@ export function encodeReplay(replay: Replay): string {
 export function decodeReplay(text: string): Replay {
   const raw = JSON.parse(text) as Record<string, unknown>;
   if (raw.version !== REPLAY_VERSION) {
-    throw new Error(`replay: unsupported version ${String(raw.version)} (expected ${REPLAY_VERSION})`);
+    throw new Error(
+      `replay: unsupported version ${String(raw.version)} (expected ${REPLAY_VERSION})`,
+    );
   }
   if (typeof raw.seed !== "number" || typeof raw.level !== "string") {
     throw new Error("replay: missing seed or level");
@@ -136,7 +138,9 @@ export function decodeReplay(text: string): Replay {
 
   const frames = decodeRuns(raw.runs as Run[]);
   if (typeof raw.frameCount === "number" && raw.frameCount !== frames.length) {
-    throw new Error(`replay: frameCount ${raw.frameCount} disagrees with ${frames.length} decoded frames`);
+    throw new Error(
+      `replay: frameCount ${raw.frameCount} disagrees with ${frames.length} decoded frames`,
+    );
   }
   return {
     version: REPLAY_VERSION,

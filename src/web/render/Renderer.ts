@@ -148,8 +148,12 @@ export class Renderer {
    * usual `VIEW * SCALE * dpr`) breaks on any fractional dpr — 1.25 and 1.5 are
    * ordinary on Windows — because the browser then resamples the backing store onto
    * a grid it does not divide evenly, and the sprite grid crawls as the camera eases.
+   *
+   * @param preferredScale When set, use this integer zoom (clamped to what fits)
+   *   instead of filling the window. Desktop windowed mode sizes the window to match,
+   *   so the clamp is a no-op there; the browser uses it as the settings-menu scale.
    */
-  fit(): void {
+  fit(preferredScale?: number): void {
     const dpr = window.devicePixelRatio || 1;
     const availW = window.innerWidth * dpr;
     const availH = window.innerHeight * dpr;
@@ -157,7 +161,11 @@ export class Renderer {
     // Clamped to 1: on a window too small for even a single 1:1 view we keep the
     // integer backing store and let CSS letterbox it down (see max-width in the
     // page style) rather than emit a fractional scale.
-    const scale = Math.max(1, Math.floor(Math.min(availW / VIEW_WIDTH, availH / VIEW_HEIGHT)));
+    const maxFit = Math.max(1, Math.floor(Math.min(availW / VIEW_WIDTH, availH / VIEW_HEIGHT)));
+    const scale =
+      preferredScale != null && preferredScale > 0
+        ? Math.max(1, Math.min(Math.round(preferredScale), maxFit))
+        : maxFit;
     const w = VIEW_WIDTH * scale;
     const h = VIEW_HEIGHT * scale;
 

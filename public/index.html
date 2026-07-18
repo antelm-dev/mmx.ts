@@ -4,7 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mega Man X — TS Gameplay Core</title>
+    <link rel="preload" href="/mega-man-x.ttf" as="font" type="font/ttf" crossorigin />
     <style>
+      /* The UI face; see src/web/ui/font.ts. Served from public/ under the same
+         root-relative URL Vite gives it, so this rule matches the dev entry. */
+      @font-face {
+        font-family: "Mega Man X";
+        src: url("/mega-man-x.ttf") format("truetype");
+        font-display: block;
+      }
       :root { color-scheme: dark; }
       html, body { height: 100%; }
       body {

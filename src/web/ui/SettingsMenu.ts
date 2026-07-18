@@ -1,10 +1,11 @@
 import { Container, Graphics, Text } from "pixi.js";
 import type { Action } from "../../core/Input.js";
 import { VIEW_HEIGHT, VIEW_WIDTH } from "../../core/constants.js";
-import { BINDABLE_ACTIONS, type DesktopSettings } from "../DesktopBridge.js";
+import { BINDABLE_ACTIONS, DEFAULT_WINDOW_SCALE, type DesktopSettings } from "../DesktopBridge.js";
+import { uiTextStyle } from "./font.js";
 
 /**
- * The pause menu: key bindings and master volume, on Escape.
+ * The pause menu: key bindings, window scale and master volume, on Escape.
  *
  * Drawn into the Pixi scene rather than overlaid as DOM — unlike the debug panel
  * (see {@link DebugPanel}, which is deliberately DOM), this is player-facing
@@ -18,28 +19,25 @@ import { BINDABLE_ACTIONS, type DesktopSettings } from "../DesktopBridge.js";
  * that owns the bridge.
  */
 
-// The view is 398x224 and every coordinate below is in those world pixels.
-const PANEL_W = 232;
-const PANEL_H = 160;
+// Sized around the UI face rather than around the strings: every glyph advances
+// UI_CHAR_W (7px), so a column is just its longest label times that. The widest
+// things that have to fit are the hint line at 36 characters (252px inside the
+// padding) and "press..." in a key slot (56px).
+const PANEL_W = 296;
+const PANEL_H = 176;
 const PANEL_X = Math.round((VIEW_WIDTH - PANEL_W) / 2);
 const PANEL_Y = Math.round((VIEW_HEIGHT - PANEL_H) / 2);
 
-const PAD = 10;
+const PAD = 12;
 const ROW_H = 12;
-/**
- * Vertical stops inside the panel. An 8px glyph box is ~10px tall, so each of
- * these is one text line clear of the one above it: title, rule, column heads,
- * then the rows, with the hint pinned to the bottom padding.
- */
 const TITLE_Y = PANEL_Y + PAD;
-const RULE_Y = PANEL_Y + 22;
-const HEADER_Y = PANEL_Y + 26;
-const ROWS_Y = PANEL_Y + 40;
+const RULE_Y = PANEL_Y + 24;
+const HEADER_Y = PANEL_Y + 28;
+const ROWS_Y = PANEL_Y + 42;
 const HINT_Y = PANEL_Y + PANEL_H - 20;
-/** Column origins, relative to the panel. */
 const LABEL_X = PANEL_X + PAD;
-const SLOT_X = [PANEL_X + 104, PANEL_X + 164] as const;
-const SLOT_W = 54;
+const SLOT_X = [PANEL_X + 132, PANEL_X + 208] as const;
+const SLOT_W = 68;
 
 const COLOR_SCRIM = 0x05070f;
 const COLOR_PANEL = 0x0b1622;
@@ -49,15 +47,14 @@ const COLOR_DIM = 0x7f9daa;
 const COLOR_SELECTED = 0xffd166;
 const COLOR_CAPTURING = 0xff6b6b;
 
-/** Volume steps, matching the F9/F10 nudges. */
 const VOLUME_STEP = 0.1;
 const METER_CELLS = 10;
 
-/** Rows, in the order they are drawn and walked. */
-type Row = { kind: "binding"; action: Action } | { kind: "volume" };
+type Row = { kind: "binding"; action: Action } | { kind: "scale" } | { kind: "volume" };
 
 const ROWS: readonly Row[] = [
   ...BINDABLE_ACTIONS.map((action): Row => ({ kind: "binding", action })),
+  { kind: "scale" },
   { kind: "volume" },
 ];
 
@@ -71,14 +68,6 @@ const ACTION_LABELS: Record<Action, string> = {
   fire: "Fire",
 };
 
-/**
- * Keys the menu will not hand out.
- *
- * Escape is the menu's own way in and out, and the function keys are the debug
- * layer — gameplay bindings are dispatched *before* debug commands (see
- * main.ts), so a bindable F-key would be a way to permanently lose the debug
- * panel from inside the menu that is supposed to be the safe surface.
- */
 function isReserved(code: string): boolean {
   return code === "Escape" || /^F\d+$/.test(code);
 }
@@ -104,7 +93,9 @@ const KEY_LABELS: Record<string, string> = {
   Comma: ",",
   Period: ".",
   Slash: "/",
-  Backslash: "\\",
+  // Spelled out because the UI face has no backslash glyph, and a lone character
+  // dropping to the fallback font beside the pixel caps reads as a rendering bug.
+  Backslash: "Bslash",
   Semicolon: ";",
   Quote: "'",
   BracketLeft: "[",
@@ -123,12 +114,12 @@ export function keyLabel(code: string): string {
 }
 
 export interface SettingsMenuOptions {
-  /** The live settings object; read on every refresh, never written here. */
   getSettings: () => DesktopSettings;
   setVolume: (volume: number) => void;
-  /** Bind `code` to one of an action's two slots; "" clears it. */
+  setScale: (scale: number) => void;
+  /** Upper bound for the scale row; refreshed whenever the menu opens. */
+  getMaxScale: () => number;
   setBinding: (action: Action, slot: number, code: string) => void;
-  /** Called on open and on close, for pausing and for dropping held keys. */
   onVisibilityChange?: (visible: boolean) => void;
 }
 
@@ -141,19 +132,17 @@ export class SettingsMenu {
   private readonly texts: Text[] = [];
   private readonly rowLabels: Text[] = [];
   private readonly slotLabels: Text[][] = [];
+  private readonly scaleValue: Text;
   private readonly volumeValue: Text;
   private readonly hint: Text;
 
   private row = 0;
   private column = 0;
-  /** The slot waiting for a key press, if the menu is listening for one. */
   private capturing: { action: Action; slot: number } | null = null;
   private resolution = 1;
 
   constructor(private readonly options: SettingsMenuOptions) {
     this.view.visible = false;
-    // Nothing in the game view should be reachable behind the menu, and Pixi hit
-    // tests children even when nothing here is interactive.
     this.view.eventMode = "none";
 
     this.paintFrame();
@@ -165,7 +154,12 @@ export class SettingsMenu {
 
     ROWS.forEach((row, index) => {
       const y = ROWS_Y + index * ROW_H;
-      const label = row.kind === "volume" ? "Volume" : ACTION_LABELS[row.action];
+      const label =
+        row.kind === "volume"
+          ? "Volume"
+          : row.kind === "scale"
+            ? "Scale"
+            : ACTION_LABELS[row.action];
       this.rowLabels.push(this.addText(label, LABEL_X, y, COLOR_TEXT));
       this.slotLabels.push(
         row.kind === "binding"
@@ -177,11 +171,16 @@ export class SettingsMenu {
       );
     });
 
-    // The meter is drawn geometry; only the percentage is text.
+    this.scaleValue = this.addText(
+      "",
+      SLOT_X[0] + 3,
+      ROWS_Y + rowIndex("scale") * ROW_H,
+      COLOR_TEXT,
+    );
     this.volumeValue = this.addText(
       "",
       SLOT_X[1] + 3,
-      ROWS_Y + (ROWS.length - 1) * ROW_H,
+      ROWS_Y + rowIndex("volume") * ROW_H,
       COLOR_TEXT,
     );
     this.hint = this.addText("", LABEL_X, HINT_Y, COLOR_DIM);
@@ -189,6 +188,17 @@ export class SettingsMenu {
 
   get visible(): boolean {
     return this.view.visible;
+  }
+
+  /**
+   * True while a slot is waiting for a key press.
+   *
+   * Exposed for the gamepad, which drives the menu by synthesizing key codes:
+   * those are not keys the player pressed, and binding one would put a code in
+   * the settings file that no keyboard can ever produce again.
+   */
+  get isCapturing(): boolean {
+    return this.capturing !== null;
   }
 
   /**
@@ -273,23 +283,21 @@ export class SettingsMenu {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Navigation
-  // ---------------------------------------------------------------------------
-
   private moveRow(delta: number): void {
     this.row = (this.row + delta + ROWS.length) % ROWS.length;
     this.refresh();
   }
 
-  /** Left/right picks the key slot on a binding row and nudges the volume on the volume row. */
   private moveColumn(delta: number): void {
     const row = ROWS[this.row];
     if (row.kind === "volume") {
       const current = this.options.getSettings().masterVolume;
-      // Rounded to the step so repeated nudges cannot drift onto 0.30000000000000004.
       const next = Math.round((current + delta * VOLUME_STEP) * 10) / 10;
       this.options.setVolume(Math.max(0, Math.min(1, next)));
+    } else if (row.kind === "scale") {
+      const current = this.options.getSettings().scale ?? DEFAULT_WINDOW_SCALE;
+      const max = Math.max(1, this.options.getMaxScale());
+      this.options.setScale(Math.max(1, Math.min(max, current + delta)));
     } else {
       this.column = Math.max(0, Math.min(1, this.column + delta));
     }
@@ -310,7 +318,6 @@ export class SettingsMenu {
     this.refresh();
   }
 
-  /** Take the pressed key as the new binding, unless it is one the menu keeps. */
   private captureKey(code: string): void {
     const capturing = this.capturing;
     if (!capturing) return;
@@ -328,15 +335,8 @@ export class SettingsMenu {
     this.refresh();
   }
 
-  // ---------------------------------------------------------------------------
-  // Drawing
-  // ---------------------------------------------------------------------------
-
   private addText(content: string, x: number, y: number, color: number): Text {
-    const text = new Text({
-      text: content,
-      style: { fontFamily: "monospace", fontSize: 8, fill: color },
-    });
+    const text = new Text({ text: content, style: uiTextStyle(color) });
     text.x = x;
     text.y = y;
     text.resolution = this.resolution;
@@ -345,7 +345,6 @@ export class SettingsMenu {
     return text;
   }
 
-  /** The scrim, the panel and its border — none of which ever change. */
   private paintFrame(): void {
     this.backdrop
       .rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT)
@@ -358,7 +357,6 @@ export class SettingsMenu {
       .fill(COLOR_BORDER);
   }
 
-  /** Bring every changeable part in line with the current settings and selection. */
   private refresh(notice?: string): void {
     const settings = this.options.getSettings();
     const row = ROWS[this.row];
@@ -369,7 +367,6 @@ export class SettingsMenu {
       .rect(PANEL_X + PAD - 3, rowY - 2, PANEL_W - (PAD - 3) * 2, ROW_H - 2)
       .fill({ color: COLOR_BORDER, alpha: 0.3 });
     if (row.kind === "binding") {
-      // The cell cursor: which of the two slots Enter would rebind.
       this.highlight
         .rect(SLOT_X[this.column], rowY - 2, SLOT_W, ROW_H - 2)
         .fill({ color: this.capturing ? COLOR_CAPTURING : COLOR_SELECTED, alpha: 0.25 });
@@ -388,32 +385,39 @@ export class SettingsMenu {
       });
     });
 
+    this.scaleValue.text = `${settings.scale ?? DEFAULT_WINDOW_SCALE}x`;
     this.paintVolume(settings.masterVolume);
     this.hint.text =
       notice ??
       (this.capturing
         ? "press a key to bind, Esc to cancel"
         : row.kind === "volume"
-          ? "Left/Right volume  -  Esc close"
-          : "Enter rebind  -  Del clear  -  Esc close");
+          ? "Left/Right volume - Esc close"
+          : row.kind === "scale"
+            ? "Left/Right scale - Esc close"
+            : "Enter rebind - Del clear - Esc close");
     this.hint.style.fill = notice ? COLOR_CAPTURING : COLOR_DIM;
   }
 
-  /** The volume row's meter: one filled cell per tenth. */
   private paintVolume(volume: number): void {
     const filled = Math.round(volume * METER_CELLS);
-    const y = ROWS_Y + (ROWS.length - 1) * ROW_H;
+    const y = ROWS_Y + rowIndex("volume") * ROW_H;
 
     this.meter.clear();
     for (let cell = 0; cell < METER_CELLS; cell++) {
       const x = SLOT_X[0] + cell * 5;
-      // +2 lines the cells up with the glyph body of the row label rather than
-      // with the top of its (taller) text box.
       this.meter.rect(x, y + 2, 4, 7).fill({
         color: cell < filled ? COLOR_SELECTED : COLOR_BORDER,
         alpha: cell < filled ? 1 : 0.5,
       });
     }
-    this.volumeValue.text = `${Math.round(volume * 100)}%`;
+    // No percent sign: the face has no `%` glyph. The ten-cell meter immediately
+    // to the left already says the number is a proportion, so the bare figure
+    // loses nothing that a fallback-font `%` would have bought.
+    this.volumeValue.text = `${Math.round(volume * 100)}`;
   }
+}
+
+function rowIndex(kind: Row["kind"]): number {
+  return ROWS.findIndex((row) => row.kind === kind);
 }

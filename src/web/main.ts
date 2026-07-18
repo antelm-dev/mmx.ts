@@ -6,6 +6,7 @@ import type { Player } from "../engine/Player.js";
 import type { Scene } from "../engine/Scene.js";
 import type { AnimData } from "../engine/Animation.js";
 import { DashSmoke } from "./DashSmoke.js";
+import { GamepadInput } from "./Gamepad.js";
 import { Trail, TrailStyle, DASH_TRAIL, WALLSLIDE_TRAIL } from "./Trail.js";
 import { animData, enemyAnims } from "./render/assets.js";
 import { Renderer } from "./render/Renderer.js";
@@ -17,9 +18,11 @@ import {
   DEFAULT_BINDINGS,
   DEFAULT_SETTINGS,
   DesktopBridge,
+  MAX_WINDOW_SCALE,
   type DesktopSettings,
 } from "./DesktopBridge.js";
 import { SettingsMenu } from "./ui/SettingsMenu.js";
+import { loadUiFont } from "./ui/font.js";
 import { DebugOverlay } from "./debug/DebugOverlay.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
 import { DebugSession } from "./debug/DebugSession.js";
@@ -54,6 +57,17 @@ let settings: DesktopSettings = { ...DEFAULT_SETTINGS, bindings: cloneBindings(D
  * This one is the authority, and each tick packs a mask from it.
  */
 const held = new Input();
+
+/**
+ * The pad's half of the same picture, polled once per frame.
+ *
+ * Held apart from {@link held} rather than merged into it because the two are
+ * updated on opposite schedules — the keyboard on events, the pad by a poll that
+ * rewrites every action every frame — and a poll that found no pad would clear
+ * a key the player is still holding. They are ORed together at pack time, so a
+ * player can hold left on the stick and jump on the keyboard.
+ */
+const pad = new GamepadInput();
 
 let renderer: Renderer | null = null;
 
@@ -95,6 +109,33 @@ function adjustVolume(delta: number): void {
   debug.notify(`volume ${Math.round(settings.masterVolume * 100)}%`);
 }
 
+let maxWindowScale = MAX_WINDOW_SCALE;
+
+function setScale(scale: number): void {
+  const next = Math.max(1, Math.min(maxWindowScale, Math.round(scale)));
+  if (next === settings.scale && !settings.fullscreen) return;
+  const previous = settings;
+  settings = { ...settings, scale: next, fullscreen: false };
+  void desktop
+    .applyWindowScale(next)
+    .then(() => {
+      fitRenderer();
+      persistSettings();
+      debug.notify(`scale ${next}x`);
+    })
+    .catch((error: unknown) => {
+      settings = previous;
+      debug.notify(`scale failed: ${String(error)}`);
+    });
+}
+
+/** Prefer the settings zoom when windowed; fill the display in fullscreen. */
+function fitRenderer(): void {
+  if (!renderer) return;
+  if (settings.fullscreen) renderer.fit();
+  else renderer.fit(settings.scale);
+}
+
 // --- settings menu (Escape) -------------------------------------------------
 
 const menu = new SettingsMenu({
@@ -105,6 +146,8 @@ const menu = new SettingsMenu({
     // says nothing about how loud that actually is.
     sounds.play("lemon");
   },
+  setScale,
+  getMaxScale: () => maxWindowScale,
   setBinding: (action, slot, code) => {
     const bindings = cloneBindings(settings.bindings);
     // A key can only mean one thing: taking it for this slot releases it
@@ -127,7 +170,12 @@ const menu = new SettingsMenu({
   onVisibilityChange: (visible) => {
     // Keys held on the way in would stay held for as long as the menu is up,
     // and X would be mid-run the instant it closes.
-    if (visible) releaseAllKeys();
+    if (visible) {
+      releaseAllKeys();
+      void desktop.maxWindowScale().then((max) => {
+        maxWindowScale = max;
+      });
+    }
   },
 });
 
@@ -159,12 +207,15 @@ debug.registerCommand({
   description: "toggle fullscreen",
   run: () => {
     const previous = settings.fullscreen;
-    settings = { ...settings, fullscreen: !settings.fullscreen };
+    const next = !settings.fullscreen;
+    settings = { ...settings, fullscreen: next };
     void desktop
-      .setFullscreen(settings.fullscreen)
-      .then(() => {
+      .setFullscreen(next)
+      .then(async () => {
+        if (!next) await desktop.applyWindowScale(settings.scale);
+        fitRenderer();
         persistSettings();
-        debug.notify(settings.fullscreen ? "fullscreen" : "windowed");
+        debug.notify(next ? "fullscreen" : "windowed");
       })
       .catch((error: unknown) => {
         settings = { ...settings, fullscreen: previous };
@@ -322,11 +373,39 @@ window.addEventListener("keyup", (e) => {
 });
 window.addEventListener("blur", () => {
   releaseAllKeys();
+  pad.releaseAll();
   if (settings.pauseOnBlur && !debug.paused) {
     debug.paused = true;
     debug.notify("paused — focus lost");
   }
 });
+
+// --- gamepad -> actions ---
+
+// A pad is not enumerable until it reports something, so these are the only
+// notice the player gets that it was seen at all.
+window.addEventListener("gamepadconnected", (e) => {
+  debug.notify(`gamepad ${e.gamepad.index}: ${e.gamepad.id.slice(0, 40)}`);
+});
+window.addEventListener("gamepaddisconnected", (e) => {
+  // Whatever was held at the moment the cable came out is held forever otherwise:
+  // the poll only ever sees pads that are still there.
+  pad.releaseAll();
+  debug.notify(`gamepad ${e.gamepad.index} disconnected`);
+});
+
+/** Feed the frame's pad presses to the settings menu as the key codes it speaks. */
+function applyPadMenuCodes(): void {
+  const codes = pad.takeMenuCodes();
+  if (codes.length > 0) sounds.unlock();
+  for (const code of codes) {
+    // A capturing slot takes the next code as a binding, and these codes are
+    // synthesized — binding one would write a key into the settings file that no
+    // keyboard can ever press again. Only the cancel gets through.
+    if (menu.isCapturing && code !== "Escape") continue;
+    menu.handleKey(code);
+  }
+}
 
 // --- afterimage trail ---
 // Dash.gd keeps its ghost sprite synchronized with the live one every frame
@@ -348,7 +427,7 @@ function trailStyle(player: Player): TrailStyle | null {
  */
 function stepOnce(): void {
   debug.beforeStep();
-  debug.recorder.step(packInput(held));
+  debug.recorder.step(packInput(held) | packInput(pad.actions));
 
   const { player } = debug.scene;
   const style = trailStyle(player);
@@ -369,10 +448,16 @@ const MAX_FRAME_SECONDS = 0.25;
 async function main(): Promise<void> {
   settings = await desktop.loadSettings();
   sounds.setMasterVolume(settings.masterVolume);
+  maxWindowScale = await desktop.maxWindowScale().catch(() => MAX_WINDOW_SCALE);
+  settings = { ...settings, scale: Math.min(settings.scale, maxWindowScale) };
   if (settings.fullscreen) {
     await desktop.setFullscreen(true).catch((error: unknown) => {
       settings = { ...settings, fullscreen: false };
       console.warn("Could not restore fullscreen", error);
+    });
+  } else {
+    await desktop.applyWindowScale(settings.scale).catch((error: unknown) => {
+      console.warn("Could not apply window scale", error);
     });
   }
   await desktop.onReplayDropped((file) => debug.loadReplayText(file.contents, file.path));
@@ -380,12 +465,19 @@ async function main(): Promise<void> {
   const canvas = document.getElementById("game") as HTMLCanvasElement;
   const panel = new DebugPanel(debug);
 
-  const [created] = await Promise.all([Renderer.create(canvas, debug.scene.world), sounds.load()]);
+  // The UI face loads alongside the atlas and the audio, and is awaited with them:
+  // the menu's labels are built at module scope and Pixi rasterises a Text the
+  // first time it draws, so the face has to be in before any frame goes out.
+  const [created] = await Promise.all([
+    Renderer.create(canvas, debug.scene.world),
+    sounds.load(),
+    loadUiFont(),
+  ]);
   renderer = created;
   renderer.worldOverlay.addChild(overlay.view);
   renderer.uiLayer.addChild(menu.view);
 
-  window.addEventListener("resize", () => renderer?.fit());
+  window.addEventListener("resize", () => fitRenderer());
   // Dragging the window to a monitor with a different scaling factor changes dpr
   // without necessarily resizing the viewport, and the media query only matches the
   // dpr it was created with — so re-arm it against the new value on every change.
@@ -394,13 +486,14 @@ async function main(): Promise<void> {
     mq.addEventListener(
       "change",
       () => {
-        renderer?.fit();
+        fitRenderer();
         watchDpr();
       },
       { once: true },
     );
   }
   watchDpr();
+  fitRenderer();
 
   // --- fixed-timestep loop ---
   let acc = 0;
@@ -413,6 +506,13 @@ async function main(): Promise<void> {
       performance.clearMarks(`${name}:end`);
     }
     performance.mark("mmx:frame-work:start");
+
+    // Before the accumulator, so the steps below run against this frame's pad
+    // state rather than the previous one's. The repeat clock is clamped for the
+    // same reason the accumulator is: a tab that was backgrounded for ten seconds
+    // must not come back and scroll the menu to the bottom.
+    pad.poll(Math.min(frameTime / 1000, MAX_FRAME_SECONDS), menu.visible);
+    applyPadMenuCodes();
 
     // Scaled before clamping, so slow motion buys a longer wall-clock budget
     // rather than being cut off at the same quarter second real time is.

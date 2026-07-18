@@ -17,6 +17,7 @@ const MIME: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".map": "application/json; charset=utf-8",
+  ".ttf": "font/ttf",
 };
 
 const server = createServer(async (req, res) => {
@@ -31,7 +32,14 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    const data = await readFile(filePath);
+    // Vite serves public/ at the root, so the page asks for /mega-man-x.ttf while
+    // the file is at public/mega-man-x.ttf. Falling back to public/ on a miss lets
+    // one URL — and so one @font-face rule — work under both entry points.
+    const data = await readFile(filePath).catch(async (error: unknown) => {
+      const fallback = normalize(join(ROOT, "public", urlPath));
+      if (!fallback.startsWith(ROOT)) throw error;
+      return await readFile(fallback);
+    });
     res.writeHead(200, { "Content-Type": MIME[extname(filePath)] ?? "application/octet-stream" });
     res.end(data);
   } catch {

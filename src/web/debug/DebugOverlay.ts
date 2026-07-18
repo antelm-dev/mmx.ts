@@ -122,19 +122,22 @@ export class DebugOverlay {
         // A ramp's collidable surface is the diagonal, not the tile box, so the
         // tile outline would be actively misleading here — draw the actual
         // surface the resolver places bodies on.
-        const risesRight = kind === Tile.SlopeUpRight;
         const leftY = world.slopeSurfaceY(tx, ty, kind, px);
         const rightY = world.slopeSurfaceY(tx, ty, kind, px + TILE_SIZE);
         g.moveTo(px, leftY)
           .lineTo(px + TILE_SIZE, rightY)
           .stroke({ width: 1, color: COLORS.slope });
 
-        // The outward normal, drawn from the ramp's midpoint. 45-degree ramps, so
-        // it is (∓1, -1)/√2 — pointing up and away from the filled half.
+        // The outward normal, drawn from the ramp's midpoint: the surface tangent
+        // rotated to point up and away from the filled half. Derived from the two
+        // sampled ends rather than assumed to be 45 degrees, so a shallow ramp
+        // reads as shallow here too.
         const midX = px + TILE_SIZE / 2;
         const midY = (leftY + rightY) / 2;
-        const nx = (risesRight ? -1 : 1) * Math.SQRT1_2;
-        const ny = -Math.SQRT1_2;
+        const dy = rightY - leftY;
+        const len = Math.hypot(TILE_SIZE, dy);
+        const nx = dy / len;
+        const ny = -TILE_SIZE / len;
         g.moveTo(midX, midY)
           .lineTo(midX + nx * 6, midY + ny * 6)
           .stroke({ width: 1, color: COLORS.normal });
@@ -217,7 +220,15 @@ export class DebugOverlay {
     // The dash hitbox is a different size from the standing one, so colour the
     // box by which is in effect rather than making the reader compare heights.
     const dashing = player.is_executing_either(["Dash", "AirDash"]);
-    box(g, player.pos.x, player.pos.y, player.hw, player.hh, dashing ? COLORS.bodyDash : COLORS.body, 1);
+    box(
+      g,
+      player.pos.x,
+      player.pos.y,
+      player.hw,
+      player.hh,
+      dashing ? COLORS.bodyDash : COLORS.body,
+      1,
+    );
 
     // Muzzle: where a shot would actually leave from, which moves with the pose.
     const muzzle = player.get_shot_position();
@@ -255,7 +266,15 @@ export class DebugOverlay {
 }
 
 /** Axis-aligned box from a centre and half-extents — the engine's own convention. */
-function box(g: Graphics, cx: number, cy: number, hw: number, hh: number, color: number, alpha: number): void {
+function box(
+  g: Graphics,
+  cx: number,
+  cy: number,
+  hw: number,
+  hh: number,
+  color: number,
+  alpha: number,
+): void {
   g.rect(cx - hw, cy - hh, hw * 2, hh * 2).stroke({ width: 1, color, alpha });
 }
 

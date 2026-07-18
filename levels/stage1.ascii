@@ -3,6 +3,19 @@
 The text source the LDtk project was bootstrapped from (tools/export-ldtk.mjs).
 Once stage1.ldtk exists, LDtk owns the geometry — this file is the pinned fixture
 tests/level.test.ts checks the import against, so update it alongside real edits.
+Ramps shallower than 45 degrees cannot be drawn here: a tile grid cannot say how
+steep a tile is, so they are authored as Slope boxes on the Entities layer and
+baked over this grid by tools/slope-bake.mjs. The cavern hills therefore show
+their flat tops below but not the ramps climbing to them. Those boxes, as
+run x rise tiles at their top-left tile, are:
+   2x2 UpRight at  4,28
+   2x2 UpLeft  at  8,28
+   6x3 UpRight at 12,27
+   6x3 UpLeft  at 20,27
+   6x2 UpRight at 34,28
+   2x2 UpLeft  at 42,28
+   8x2 UpRight at 68,28
+   2x2 UpLeft  at 78,28
 
 ####################################################################################################
 #..................................................................................................#
@@ -31,8 +44,8 @@ tests/level.test.ts checks the import against, so update it alongside real edits
 #............................................##..................###............##.........#########
 #............................................##..................###............##.........#########
 #............................................##..................###............##.........#########
-#............................................##..................###.......................#########
-#..................../####\......................................###.../####\..............#########
-#.................../######\.....................................###../######\.............#########
+#.................##.........................##..................###.......................#########
+#.....##..........##....................##.......................###........##.............#########
+#.....##..........##....................##.......................###........##.............#########
 ####################################################################################################
 ####################################################################################################

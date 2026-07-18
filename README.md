@@ -159,8 +159,12 @@ tuning constant are ported line-for-line so the _feel_ matches.
   the current state's `_EndCondition`) driving transitions. This reproduces the
   intended ordering **Idle < Walk/Fall < WallSlide < Dash/AirDash < Jump <
   DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
-- **Collision** is flat-tile AABB (no slopes / moving platforms / conveyors); the
-  raycast wall/reach queries become edge samples.
+- **Collision** is tile AABB (no moving platforms / conveyors); the raycast
+  wall/reach queries become edge samples. Ramps are supported up to 45 degrees:
+  a slope tile carries a linear surface between its two edge heights, and
+  shallower ramps are a run of tiles whose surfaces chain. Level designers draw
+  them as resizable `Slope` boxes in LDtk — width is the run, height the rise —
+  which `tools/slope-bake.mjs` expands into those tiles at import.
 - **Some cosmetics remain scoped**: the player/enemy effects used by the current
   room and their original sounds are ported; unrelated shaders are not. Animation
   is engine state rather than a cosmetic — see below.

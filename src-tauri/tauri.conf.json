@@ -15,10 +15,9 @@
         "title": "MMX Core TS",
         "width": 1194,
         "height": 672,
-        "minWidth": 398,
-        "minHeight": 224,
         "center": true,
-        "resizable": true
+        "resizable": false,
+        "maximizable": false
       }
     ],
     "security": {

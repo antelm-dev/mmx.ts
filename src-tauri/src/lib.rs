@@ -8,6 +8,8 @@ use tauri::{AppHandle, Manager};
 
 const SETTINGS_VERSION: u32 = 2;
 const MAX_REPLAY_BYTES: u64 = 16 * 1024 * 1024;
+const DEFAULT_WINDOW_SCALE: u32 = 3;
+const MAX_WINDOW_SCALE: u32 = 8;
 
 /// The actions the front-end can bind, in the bit order recordings use.
 /// Kept in step with REPLAY_ACTIONS in src/core/Replay.ts.
@@ -49,9 +51,15 @@ fn default_bindings() -> KeyBindings {
 struct DesktopSettings {
     version: u32,
     master_volume: f64,
+    #[serde(default = "default_window_scale")]
+    scale: u32,
     fullscreen: bool,
     pause_on_blur: bool,
     bindings: KeyBindings,
+}
+
+fn default_window_scale() -> u32 {
+    DEFAULT_WINDOW_SCALE
 }
 
 impl Default for DesktopSettings {
@@ -59,6 +67,7 @@ impl Default for DesktopSettings {
         Self {
             version: SETTINGS_VERSION,
             master_volume: 1.0,
+            scale: DEFAULT_WINDOW_SCALE,
             fullscreen: false,
             pause_on_blur: true,
             bindings: default_bindings(),
@@ -76,6 +85,11 @@ impl DesktopSettings {
         }
         if !self.master_volume.is_finite() || !(0.0..=1.0).contains(&self.master_volume) {
             return Err("masterVolume must be between 0 and 1".into());
+        }
+        if !(1..=MAX_WINDOW_SCALE).contains(&self.scale) {
+            return Err(format!(
+                "scale must be an integer between 1 and {MAX_WINDOW_SCALE}"
+            ));
         }
         // Exactly the known actions, no more and no fewer: a binding for an action
         // the game cannot dispatch is unreachable, and a missing one would leave
@@ -311,6 +325,36 @@ mod tests {
             .bindings
             .insert("teleport".into(), ["KeyT".into(), String::new()]);
         assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn settings_reject_invalid_scale() {
+        let settings = DesktopSettings {
+            scale: 0,
+            ..DesktopSettings::default()
+        };
+        assert!(settings.validate().is_err());
+
+        let settings = DesktopSettings {
+            scale: MAX_WINDOW_SCALE + 1,
+            ..DesktopSettings::default()
+        };
+        assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn v2_settings_without_scale_default_to_3x() {
+        let stored = serde_json::json!({
+            "version": 2,
+            "masterVolume": 0.5,
+            "fullscreen": false,
+            "pauseOnBlur": true,
+            "bindings": default_bindings(),
+        });
+        let settings: DesktopSettings =
+            serde_json::from_value(stored).expect("v2 settings without scale should load");
+        assert!(settings.validate().is_ok());
+        assert_eq!(settings.scale, DEFAULT_WINDOW_SCALE);
     }
 
     #[test]
