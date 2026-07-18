@@ -194,7 +194,11 @@ export class Actor {
 
     this.moveXResolve(this.final_velocity.x * dt);
     this.moveYResolve(this.final_velocity.y * dt);
-    this.applyFloorSnap();
+    // Ramps are passable to the swept resolvers, so the body is placed on the
+    // ramp surface here. When a ramp carries it, the tile-based floor snap is
+    // skipped — its downward sweep ignores ramps and would drag the body off the
+    // slope onto whatever full tile sits underneath.
+    if (!this.resolveSlope()) this.applyFloorSnap();
 
     this.updateSensors();
 
@@ -229,6 +233,24 @@ export class Actor {
     const { pos, hit } = this.world.sweepY(this.pos.x, this.pos.y, this.hw, this.hh, dy);
     this.pos.y = pos;
     if (hit) this.velocity.y = 0;
+  }
+
+  /**
+   * Place the body on a 45-degree ramp, and report whether one is carrying it.
+   *
+   * A body that walked into a ramp is lifted to its surface; a grounded body
+   * walking down one is pulled back onto it (same role floor snap plays for flat
+   * tiles, and gated on the same conditions so it can never cancel a jump).
+   */
+  private resolveSlope(): boolean {
+    const snapping = this.floor_snap_enabled && this._wasOnFloor && this.final_velocity.y >= 0;
+    const reach = snapping ? FLOOR_SNAP_LENGTH : 0;
+    const surface = this.world.slopeFloorY(this.pos.x, this.pos.y, this.hw, this.hh, reach);
+    if (surface === null) return false;
+
+    this.pos.y = surface - this.hh;
+    if (this.velocity.y > 0) this.velocity.y = 0; // landed on the ramp
+    return true;
   }
 
   /**

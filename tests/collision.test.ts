@@ -10,7 +10,7 @@ import { BODY_HALF_H, BODY_HALF_W, DT, TILE_SIZE } from '../src/core/constants.j
 function room(interior: string[]): World {
   const width = interior[0].length + 2;
   const rows = ['#'.repeat(width), ...interior.map((r) => '#' + r + '#'), '#'.repeat(width)];
-  return new World(rows);
+  return World.fromRows(rows);
 }
 
 /** Open room, 10 tiles wide and 6 tall inside the border. */

@@ -17,6 +17,28 @@ export interface Sweep {
 }
 
 /**
+ * Tile kinds. Slopes are 45-degree ramps filling the half of the tile below the
+ * diagonal: `SlopeUpRight` ('/') is empty at its left edge and full height at
+ * its right edge, `SlopeUpLeft` ('\') the mirror.
+ */
+export enum Tile {
+  Empty = 0,
+  Solid = 1,
+  SlopeUpRight = 2,
+  SlopeUpLeft = 3,
+}
+
+const CHAR_TO_TILE: Record<string, Tile> = {
+  '#': Tile.Solid,
+  '/': Tile.SlopeUpRight,
+  '\\': Tile.SlopeUpLeft,
+};
+
+function isSlope(t: Tile): boolean {
+  return t === Tile.SlopeUpRight || t === Tile.SlopeUpLeft;
+}
+
+/**
  * A simple solid-tile world with AABB collision + sensor queries.
  *
  * This replaces Godot's move_and_slide() + RayCast2D nodes. The Godot project
@@ -27,17 +49,35 @@ export interface Sweep {
 export class World {
   readonly cols: number;
   readonly rows: number;
-  private solid: boolean[]; // row-major
+  private readonly tiles: Tile[]; // row-major
 
-  constructor(rows: string[]) {
-    this.rows = rows.length;
-    this.cols = Math.max(...rows.map((r) => r.length));
-    this.solid = new Array(this.cols * this.rows).fill(false);
-    for (let y = 0; y < this.rows; y++) {
+  /**
+   * Takes an already-decoded row-major grid. Parsing lives outside so that a
+   * level format (see the LDtk import under tools/) can produce tiles directly
+   * instead of round-tripping through the ASCII characters below.
+   */
+  constructor(tiles: Tile[], cols: number, rows: number) {
+    if (tiles.length !== cols * rows) {
+      throw new Error(`World: expected ${cols * rows} tiles, got ${tiles.length}`);
+    }
+    this.cols = cols;
+    this.rows = rows;
+    this.tiles = tiles;
+  }
+
+  /**
+   * Build from the ASCII form. Rows may be ragged; short ones are padded with
+   * empty, which keeps hand-written test fixtures from having to line up.
+   */
+  static fromRows(rows: string[]): World {
+    const cols = Math.max(...rows.map((r) => r.length));
+    const tiles: Tile[] = new Array(cols * rows.length).fill(Tile.Empty);
+    for (let y = 0; y < rows.length; y++) {
       for (let x = 0; x < rows[y].length; x++) {
-        if (rows[y][x] === '#') this.solid[y * this.cols + x] = true;
+        tiles[y * cols + x] = CHAR_TO_TILE[rows[y][x]] ?? Tile.Empty;
       }
     }
+    return new World(tiles, cols, rows.length);
   }
 
   get widthPx(): number {
@@ -47,9 +87,22 @@ export class World {
     return this.rows * TILE_SIZE;
   }
 
+  /** Tile kind at a grid coordinate; out of bounds is solid left/right, open top/bottom. */
+  tileAt(cx: number, cy: number): Tile {
+    if (cx < 0 || cx >= this.cols || cy < 0 || cy >= this.rows) {
+      return cx < 0 || cx >= this.cols ? Tile.Solid : Tile.Empty;
+    }
+    return this.tiles[cy * this.cols + cx];
+  }
+
+  /**
+   * Full-height blocking tile. Slopes are deliberately excluded: the swept
+   * resolvers treat a ramp as passable and the body is lifted onto its surface
+   * afterwards (see {@link slopeFloorY}), which is what makes walking up a ramp
+   * work instead of stopping dead against its foot.
+   */
   isSolidTile(cx: number, cy: number): boolean {
-    if (cx < 0 || cx >= this.cols || cy < 0 || cy >= this.rows) return cx < 0 || cx >= this.cols; // walls on horizontal edges, open top/bottom
-    return this.solid[cy * this.cols + cx];
+    return this.tileAt(cx, cy) === Tile.Solid;
   }
 
   /** Is world-space point inside a solid tile? */
@@ -57,18 +110,83 @@ export class World {
     return this.isSolidTile(Math.floor(px / TILE_SIZE), Math.floor(py / TILE_SIZE));
   }
 
-  /** Does the AABB (center cx,cy, half hw,hh) overlap any solid tile? */
+  /**
+   * World y of a slope tile's surface at world x, clamped to the tile's span.
+   * Points at or below this y (and inside the tile) are inside the ramp.
+   */
+  slopeSurfaceY(tx: number, ty: number, kind: Tile, worldX: number): number {
+    const lx = Math.min(TILE_SIZE, Math.max(0, worldX - tx * TILE_SIZE));
+    const fill = kind === Tile.SlopeUpRight ? lx : TILE_SIZE - lx;
+    return (ty + 1) * TILE_SIZE - fill;
+  }
+
+  /** Highest (smallest y) point of the ramp under the x span `x0..x1`. */
+  private slopeTopOverSpan(tx: number, ty: number, kind: Tile, x0: number, x1: number): number {
+    return Math.min(
+      this.slopeSurfaceY(tx, ty, kind, x0),
+      this.slopeSurfaceY(tx, ty, kind, x1),
+    );
+  }
+
+  /** Does the AABB (center cx,cy, half hw,hh) overlap any solid tile or ramp? */
   overlaps(cx: number, cy: number, hw: number, hh: number): boolean {
-    const x0 = Math.floor((cx - hw) / TILE_SIZE);
-    const x1 = Math.floor((cx + hw - SKIN) / TILE_SIZE);
+    const left = cx - hw;
+    const right = cx + hw - SKIN;
+    const bottom = cy + hh - SKIN;
+    const x0 = Math.floor(left / TILE_SIZE);
+    const x1 = Math.floor(right / TILE_SIZE);
     const y0 = Math.floor((cy - hh) / TILE_SIZE);
-    const y1 = Math.floor((cy + hh - SKIN) / TILE_SIZE);
+    const y1 = Math.floor(bottom / TILE_SIZE);
     for (let ty = y0; ty <= y1; ty++) {
       for (let tx = x0; tx <= x1; tx++) {
-        if (this.isSolidTile(tx, ty)) return true;
+        const kind = this.tileAt(tx, ty);
+        if (kind === Tile.Solid) return true;
+        if (!isSlope(kind)) continue;
+        const lo = Math.max(left, tx * TILE_SIZE);
+        const hi = Math.min(right, (tx + 1) * TILE_SIZE);
+        if (hi < lo) continue;
+        if (bottom > this.slopeTopOverSpan(tx, ty, kind, lo, hi)) return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Surface y of the ramp supporting a body whose feet are at `cy + hh`, or null
+   * when no ramp is in range.
+   *
+   * Candidates are limited to surfaces between one tile above the feet (the most
+   * a single step can drive the body into a ramp) and `reach` pixels below them,
+   * so this both lifts a body that walked into a ramp and — when `reach` is the
+   * floor-snap length — keeps a grounded body glued while walking down one.
+   */
+  slopeFloorY(cx: number, cy: number, hw: number, hh: number, reach: number): number | null {
+    const left = cx - hw;
+    const right = cx + hw - SKIN;
+    const feet = cy + hh;
+    const tx0 = Math.floor(left / TILE_SIZE);
+    const tx1 = Math.floor(right / TILE_SIZE);
+    const ty0 = Math.floor((feet - TILE_SIZE) / TILE_SIZE);
+    const ty1 = Math.floor((feet + reach) / TILE_SIZE);
+
+    let best: number | null = null;
+    for (let ty = ty0; ty <= ty1; ty++) {
+      for (let tx = tx0; tx <= tx1; tx++) {
+        const kind = this.tileAt(tx, ty);
+        if (!isSlope(kind)) continue;
+        // The surface is measured against the body's true edge, not the skinned
+        // one: a sub-pixel shortfall here leaves the body resting a hair below
+        // the plateau a ramp feeds into, where the next horizontal sweep catches
+        // its lip and the climb stalls one pixel short of the top.
+        const lo = Math.max(cx - hw, tx * TILE_SIZE);
+        const hi = Math.min(cx + hw, (tx + 1) * TILE_SIZE);
+        if (hi < lo) continue;
+        const surface = this.slopeTopOverSpan(tx, ty, kind, lo, hi);
+        if (surface < feet - TILE_SIZE || surface > feet + reach) continue;
+        if (best === null || surface < best) best = surface;
+      }
+    }
+    return best;
   }
 
   /** Is any tile in column `tx`, rows `ty0..ty1`, solid? */

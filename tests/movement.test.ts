@@ -11,7 +11,7 @@ function flatRoom(): World {
   const rows: string[] = [];
   for (let y = 0; y < 11; y++) rows.push('#' + '.'.repeat(28) + '#');
   rows.push('#'.repeat(30));
-  return new World(rows);
+  return World.fromRows(rows);
 }
 
 function makePlayer() {
@@ -106,7 +106,7 @@ test('holds into a wall to wall-slide, then jumps to wall-kick', () => {
   const rows: string[] = [];
   for (let y = 0; y < 14; y++) rows.push('#' + '.'.repeat(28) + '#');
   rows.push('#'.repeat(30));
-  const world = new World(rows);
+  const world = World.fromRows(rows);
   const input = new Input();
   const player = new Player(world, 28 * 16, 3 * 16, input); // airborne near right wall
 
@@ -131,7 +131,7 @@ test('holding dash while wall-kicking performs a DashWallJump (faster kick-off)'
   const rows: string[] = [];
   for (let y = 0; y < 14; y++) rows.push('#' + '.'.repeat(28) + '#');
   rows.push('#'.repeat(30));
-  const world = new World(rows);
+  const world = World.fromRows(rows);
   const input = new Input();
   const player = new Player(world, 28 * 16, 3 * 16, input);
 

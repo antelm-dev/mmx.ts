@@ -24,7 +24,7 @@ function flatRoom(): World {
   const rows: string[] = [];
   for (let y = 0; y < 11; y++) rows.push('#' + '.'.repeat(28) + '#');
   rows.push('#'.repeat(30));
-  return new World(rows);
+  return World.fromRows(rows);
 }
 
 function makePlayer() {
@@ -130,7 +130,7 @@ test('wall-sliding plays the slide clip', () => {
   for (let y = 0; y < 14; y++) rows.push('#' + '.'.repeat(28) + '#');
   rows.push('#'.repeat(30));
   const input = new Input();
-  const player = new Player(new World(rows), 28 * 16, 3 * 16, input); // airborne by the wall
+  const player = new Player(World.fromRows(rows), 28 * 16, 3 * 16, input); // airborne by the wall
   player.loadAnimations(animData);
 
   hold(input, 'move_right', true); // press into the wall while falling
