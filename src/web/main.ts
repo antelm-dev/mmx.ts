@@ -227,6 +227,14 @@ debug.registerCommand({
 // --- per-scene wiring -------------------------------------------------------
 
 /**
+ * MMX - Charge.wav.import declares a forward loop over PCM frames 51645..56497
+ * of a 32 kHz file — the tail of the hum, which is what should sustain while the
+ * shot holds. Kept in seconds because that is what the Web Audio source wants
+ * and the decoded buffer no longer carries the file's rate.
+ */
+const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
+
+/**
  * Ability.gd randomizes ordinary ability sounds upward by up to ten percent.
  * Re-subscribed per scene: the events live on the player, and a rebuilt scene has
  * a new one.
@@ -261,14 +269,11 @@ function bindPlayer(player: Player): void {
     else sounds.play("chargedShot", { rate: [0.95, 1] });
   });
   player.events.on("charge_started", () => {
-    // MMX - Charge.wav.import: forward loop from PCM frame 51645 to 56497.
-    sounds.play("charge", { db: -13.5, loop: true, loopFrames: [51645, 56497] });
+    sounds.play("charge", { db: -13.5, loop: true, loopSeconds: CHARGE_LOOP });
   });
-  player.events.on("charge_max", () => sounds.play("chargeMax", { tracked: true }));
-  player.events.on("charge_stopped", () => {
-    sounds.stop("charge");
-    sounds.stop("chargeMax");
-  });
+  // Topping out is a visual-only cue: the hum just keeps looping. Layering a
+  // second sample over it only read as louder, not as a threshold being crossed.
+  player.events.on("charge_stopped", () => sounds.stop("charge"));
 
   // --- dash kick-up smoke ---
   // Unlike the trail this is not sampled: Dash.gd emits a single puff at the moment it
@@ -319,7 +324,6 @@ function bindScene(scene: Scene): void {
   // load must not leave a loop from the previous scene playing.
   sounds.stop("wallslide");
   sounds.stop("charge");
-  sounds.stop("chargeMax");
 }
 
 bindScene(debug.scene);
