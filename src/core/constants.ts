@@ -311,6 +311,11 @@ export const PLAYER_KNOCKBACK_JUMP_VELOCITY = 190.0;
 /** @deprecated Use PLAYER_DAMAGE_INVULNERABILITY. */
 export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
 
+// --- PlayerDeath.gd (trimmed — see engine/abilities/Death.ts) ---
+/** How long the death sequence holds before handing off to a room restart — long
+ *  enough for "11 - MMX - X Die.wav" (~3.83s) to finish playing out. */
+export const PLAYER_DEATH_RESTART_DELAY = 3.8;
+
 // World / rendering
 export const TILE_SIZE = 16;
 

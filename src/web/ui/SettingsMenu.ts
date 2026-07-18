@@ -24,7 +24,7 @@ import { uiTextStyle } from "./font.js";
 // things that have to fit are the hint line at 36 characters (252px inside the
 // padding) and "press..." in a key slot (56px).
 const PANEL_W = 296;
-const PANEL_H = 176;
+const PANEL_H = 188;
 const PANEL_X = Math.round((VIEW_WIDTH - PANEL_W) / 2);
 const PANEL_Y = Math.round((VIEW_HEIGHT - PANEL_H) / 2);
 
@@ -50,11 +50,16 @@ const COLOR_CAPTURING = 0xff6b6b;
 const VOLUME_STEP = 0.1;
 const METER_CELLS = 10;
 
-type Row = { kind: "binding"; action: Action } | { kind: "scale" } | { kind: "volume" };
+type Row =
+  | { kind: "binding"; action: Action }
+  | { kind: "scale" }
+  | { kind: "fullscreen" }
+  | { kind: "volume" };
 
 const ROWS: readonly Row[] = [
   ...BINDABLE_ACTIONS.map((action): Row => ({ kind: "binding", action })),
   { kind: "scale" },
+  { kind: "fullscreen" },
   { kind: "volume" },
 ];
 
@@ -117,6 +122,7 @@ export interface SettingsMenuOptions {
   getSettings: () => DesktopSettings;
   setVolume: (volume: number) => void;
   setScale: (scale: number) => void;
+  setFullscreen: (fullscreen: boolean) => void;
   /** Upper bound for the scale row; refreshed whenever the menu opens. */
   getMaxScale: () => number;
   setBinding: (action: Action, slot: number, code: string) => void;
@@ -133,6 +139,7 @@ export class SettingsMenu {
   private readonly rowLabels: Text[] = [];
   private readonly slotLabels: Text[][] = [];
   private readonly scaleValue: Text;
+  private readonly fullscreenValue: Text;
   private readonly volumeValue: Text;
   private readonly hint: Text;
 
@@ -154,13 +161,7 @@ export class SettingsMenu {
 
     ROWS.forEach((row, index) => {
       const y = ROWS_Y + index * ROW_H;
-      const label =
-        row.kind === "volume"
-          ? "Volume"
-          : row.kind === "scale"
-            ? "Scale"
-            : ACTION_LABELS[row.action];
-      this.rowLabels.push(this.addText(label, LABEL_X, y, COLOR_TEXT));
+      this.rowLabels.push(this.addText(rowLabel(row), LABEL_X, y, COLOR_TEXT));
       this.slotLabels.push(
         row.kind === "binding"
           ? [
@@ -175,6 +176,12 @@ export class SettingsMenu {
       "",
       SLOT_X[0] + 3,
       ROWS_Y + rowIndex("scale") * ROW_H,
+      COLOR_TEXT,
+    );
+    this.fullscreenValue = this.addText(
+      "",
+      SLOT_X[0] + 3,
+      ROWS_Y + rowIndex("fullscreen") * ROW_H,
       COLOR_TEXT,
     );
     this.volumeValue = this.addText(
@@ -298,6 +305,8 @@ export class SettingsMenu {
       const current = this.options.getSettings().scale ?? DEFAULT_WINDOW_SCALE;
       const max = Math.max(1, this.options.getMaxScale());
       this.options.setScale(Math.max(1, Math.min(max, current + delta)));
+    } else if (row.kind === "fullscreen") {
+      this.toggleFullscreen();
     } else {
       this.column = Math.max(0, Math.min(1, this.column + delta));
     }
@@ -306,9 +315,18 @@ export class SettingsMenu {
 
   private activate(): void {
     const row = ROWS[this.row];
+    if (row.kind === "fullscreen") {
+      this.toggleFullscreen();
+      this.refresh();
+      return;
+    }
     if (row.kind !== "binding") return;
     this.capturing = { action: row.action, slot: this.column };
     this.refresh();
+  }
+
+  private toggleFullscreen(): void {
+    this.options.setFullscreen(!this.options.getSettings().fullscreen);
   }
 
   private clearBinding(): void {
@@ -386,16 +404,9 @@ export class SettingsMenu {
     });
 
     this.scaleValue.text = `${settings.scale ?? DEFAULT_WINDOW_SCALE}x`;
+    this.fullscreenValue.text = settings.fullscreen ? "On" : "Off";
     this.paintVolume(settings.masterVolume);
-    this.hint.text =
-      notice ??
-      (this.capturing
-        ? "press a key to bind, Esc to cancel"
-        : row.kind === "volume"
-          ? "Left/Right volume - Esc close"
-          : row.kind === "scale"
-            ? "Left/Right scale - Esc close"
-            : "Enter rebind - Del clear - Esc close");
+    this.hint.text = notice ?? (this.capturing ? "press a key to bind, Esc to cancel" : rowHint(row));
     this.hint.style.fill = notice ? COLOR_CAPTURING : COLOR_DIM;
   }
 
@@ -420,4 +431,30 @@ export class SettingsMenu {
 
 function rowIndex(kind: Row["kind"]): number {
   return ROWS.findIndex((row) => row.kind === kind);
+}
+
+function rowLabel(row: Row): string {
+  switch (row.kind) {
+    case "volume":
+      return "Volume";
+    case "scale":
+      return "Scale";
+    case "fullscreen":
+      return "Fullscreen";
+    case "binding":
+      return ACTION_LABELS[row.action];
+  }
+}
+
+function rowHint(row: Row): string {
+  switch (row.kind) {
+    case "volume":
+      return "Left/Right volume - Esc close";
+    case "scale":
+      return "Left/Right scale - Esc close";
+    case "fullscreen":
+      return "Enter toggle - Esc close";
+    case "binding":
+      return "Enter rebind - Del clear - Esc close";
+  }
 }

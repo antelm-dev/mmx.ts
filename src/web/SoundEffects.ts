@@ -17,7 +17,8 @@ export type SoundName =
   | "enemyHit"
   | "shieldHit"
   | "guardBreak"
-  | "enemyDeath";
+  | "enemyDeath"
+  | "playerDeath";
 
 const URLS: Record<SoundName, string> = {
   jump: new URL("./assets/sfx/jump.wav", import.meta.url).href,
@@ -33,6 +34,7 @@ const URLS: Record<SoundName, string> = {
   shieldHit: new URL("./assets/sfx/shield-hit.ogg", import.meta.url).href,
   guardBreak: new URL("./assets/sfx/guard-break.wav", import.meta.url).href,
   enemyDeath: new URL("./assets/sfx/enemy-death.wav", import.meta.url).href,
+  playerDeath: new URL("./assets/sfx/player-death.wav", import.meta.url).href,
 };
 
 export interface PlayOptions {

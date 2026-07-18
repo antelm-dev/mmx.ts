@@ -302,8 +302,16 @@ export class Renderer {
     this.ghosts.end();
   }
 
-  /** The live sprite. `layer` picks the sheet the way Shot.gd's SpriteFrames swap does. */
+  /**
+   * The live sprite. `layer` picks the sheet the way Shot.gd's SpriteFrames swap
+   * does. Death hides it outright once it starts, exactly like an enemy's
+   * `sprite_visible` — there is no explosion FX behind it here (see Death.ts).
+   */
   private syncPlayer(player: Player): void {
+    if (!player.sprite_visible) {
+      this.player.visible = false;
+      return;
+    }
     const snap = spriteSnapshot(player);
     const texture = snap && regionTexture(PLAYER_SHEETS[snap.layer], snap.region);
     this.player.visible = !!texture;

@@ -14,6 +14,7 @@ import { DashWallJump } from "./abilities/DashWallJump.js";
 import { Shot } from "./abilities/Shot.js";
 import { Charge } from "./abilities/Charge.js";
 import { Damage } from "./abilities/Damage.js";
+import { Death } from "./abilities/Death.js";
 import type { Actor } from "./Actor.js";
 import { AirDash } from "./abilities/AirDash.js";
 
@@ -25,7 +26,7 @@ import { AirDash } from "./abilities/AirDash.js";
  * abilities (Shot, Charge) run concurrently with movement.
  *
  * Extension points not ported here (documented in README): armor sets (Hermes/Icarus),
- * boss weapons, Ride Armor, death, subtanks, AirJump double-jump.
+ * boss weapons, Ride Armor, subtanks, AirJump double-jump.
  */
 export class Player extends Character {
   constructor(world: World, x: number, y: number, input: Input, seed?: number) {
@@ -42,8 +43,9 @@ export class Player extends Character {
     this.add(new WallJump(this));
     this.add(new DashWallJump(this));
 
-    // high-priority event state (Damage.gd / Player.tscn)
+    // high-priority event states (Damage.gd / PlayerDeath.gd, Player.tscn)
     this.add(new Damage(this));
+    this.add(new Death(this));
 
     // independent action layer
     this.add(new Shot(this));
@@ -55,6 +57,11 @@ export class Player extends Character {
     this.events.emit("damage", value, inflicter);
     const damage = this.get_ability("Damage");
     if (damage instanceof Damage) damage.receiveHit(value, inflicter);
+    // Checked here, after Damage's own _Setup has fully run its knockback, rather
+    // than inline in reduce_health(): "zero_health" starts Death synchronously,
+    // and interrupting Damage from partway through its own _Setup would leave the
+    // rest of that _Setup still running against an ability Death just finalized.
+    if (this.current_health <= 0) this.emit_zero_health();
   }
 
   /** Space-separated names of the currently executing abilities (debug). */

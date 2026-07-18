@@ -26,6 +26,11 @@ export class Character extends AbilityUser {
 
   projectiles: Projectile[] = [];
 
+  /** Death hides the sprite once the sequence starts (mirrors Enemy.sprite_visible). */
+  sprite_visible = true;
+  /** Set once zero health is reached, so the death hand-off only fires once. */
+  private zero_health_emitted = false;
+
   /**
    * Owned, seeded randomness for the cosmetic rolls the original takes with the
    * global `randf` (spawn jitter, lemon start frame, particle flip). Seeding it
@@ -121,6 +126,14 @@ export class Character extends AbilityUser {
   }
   airdash_signal(): void {
     this.events.emit("airdash");
+  }
+
+  /** Character.gd's zero-health hand-off — port of Enemy.emit_zero_health, fires once. */
+  emit_zero_health(): void {
+    if (this.zero_health_emitted) return;
+    this.zero_health_emitted = true;
+    this.current_health = 0;
+    this.events.emit("zero_health");
   }
 
   // low walljump raycast toggles — cosmetic no-ops in this port

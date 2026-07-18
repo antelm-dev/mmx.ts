@@ -135,6 +135,7 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 | `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/)                                                              |
 | `Shot.gd` (PrimaryShot) / `Charge.gd`                                          | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
 | `Damage.gd` (hurt, knockback, invulnerability)                                 | [`src/engine/abilities/Damage.ts`](src/engine/abilities/Damage.ts)                                            |
+| `PlayerDeath.gd` (trimmed — see the file for what was dropped)                 | [`src/engine/abilities/Death.ts`](src/engine/abilities/Death.ts)                                              |
 | `Lemon.gd` / `WeaponShot.gd`                                                   | [`src/engine/Projectile.ts`](src/engine/Projectile.ts)                                                        |
 | `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch`    | [`src/engine/Enemy.ts`](src/engine/Enemy.ts)                                                                  |
 | `AI.gd` (event -> ability lists)                                               | [`src/engine/EnemyAI.ts`](src/engine/EnemyAI.ts)                                                              |
@@ -248,9 +249,9 @@ Metool stunned forever, since `EnemyStun` advances on `animation_finished`).
 ### Not ported (extension points)
 
 Documented but out of scope: armor sets (Hermes / Icarus and their gameplay
-modifiers), boss weapons, Ride Armor, sub-tanks, player death, and the AirJump
-double-jump. The ability framework is built to accept these as additional
-`BaseAbility` subclasses exactly as the original does.
+modifiers), boss weapons, Ride Armor, sub-tanks, and the AirJump double-jump.
+The ability framework is built to accept these as additional `BaseAbility`
+subclasses exactly as the original does.
 
 ---
 
@@ -273,7 +274,8 @@ src/
     level.ts        a test chamber exercising every state
     ability/        BaseAbility / Ability / Movement
     abilities/      Idle, Walk, Fall, Jump, Dash, AirDash, WallSlide,
-                    WallJump, DashWallJump, DashJump, Shot, Charge
+                    WallJump, DashWallJump, DashJump, Shot, Charge,
+                    Damage, Death
     enemy/          EnemyAbility + Patrol, Hide, Stun, Death,
                     Hover, Pursuit, Recoil
     enemies/        Metool and Bat, as ports of their .tscn node lists

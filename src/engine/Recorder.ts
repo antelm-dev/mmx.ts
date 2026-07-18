@@ -92,6 +92,21 @@ export class Recorder {
     return this.rewindTo(this.checkpointFrame);
   }
 
+  /**
+   * Rebuild the room from the top of the level, discarding whatever was recorded.
+   *
+   * This is what a real player death hands off to (Player.events "death"), and it
+   * is deliberately not {@link restart}: a death is not "another take at the same
+   * setup" the way a debug rewind is, it is the start of a new life, so there is
+   * nothing worth keeping to fast-forward through.
+   */
+  restartLevel(): Scene {
+    this.scene = Scene.create(this.options);
+    this.frames = [];
+    this.checkpointFrame = 0;
+    return this.scene;
+  }
+
   /** Everything captured so far, as a saveable recording. */
   toReplay(): Replay {
     return {

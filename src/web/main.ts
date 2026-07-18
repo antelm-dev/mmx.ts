@@ -136,6 +136,24 @@ function fitRenderer(): void {
   else renderer.fit(settings.scale);
 }
 
+function setFullscreen(fullscreen: boolean): void {
+  if (fullscreen === settings.fullscreen) return;
+  const previous = settings.fullscreen;
+  settings = { ...settings, fullscreen };
+  void desktop
+    .setFullscreen(fullscreen)
+    .then(async () => {
+      if (!fullscreen) await desktop.applyWindowScale(settings.scale);
+      fitRenderer();
+      persistSettings();
+      debug.notify(fullscreen ? "fullscreen" : "windowed");
+    })
+    .catch((error: unknown) => {
+      settings = { ...settings, fullscreen: previous };
+      debug.notify(`fullscreen failed: ${String(error)}`);
+    });
+}
+
 // --- settings menu (Escape) -------------------------------------------------
 
 const menu = new SettingsMenu({
@@ -147,6 +165,7 @@ const menu = new SettingsMenu({
     sounds.play("lemon");
   },
   setScale,
+  setFullscreen,
   getMaxScale: () => maxWindowScale,
   setBinding: (action, slot, code) => {
     const bindings = cloneBindings(settings.bindings);
@@ -205,23 +224,7 @@ debug.registerCommand({
   code: "F11",
   label: "F11",
   description: "toggle fullscreen",
-  run: () => {
-    const previous = settings.fullscreen;
-    const next = !settings.fullscreen;
-    settings = { ...settings, fullscreen: next };
-    void desktop
-      .setFullscreen(next)
-      .then(async () => {
-        if (!next) await desktop.applyWindowScale(settings.scale);
-        fitRenderer();
-        persistSettings();
-        debug.notify(next ? "fullscreen" : "windowed");
-      })
-      .catch((error: unknown) => {
-        settings = { ...settings, fullscreen: previous };
-        debug.notify(`fullscreen failed: ${String(error)}`);
-      });
-  },
+  run: () => setFullscreen(!settings.fullscreen),
 });
 
 // --- per-scene wiring -------------------------------------------------------
@@ -257,11 +260,16 @@ function bindPlayer(player: Player): void {
       sounds.play("wallslide", { loop: true, rate: [1, 1.1] });
     } else if (name === "Damage") {
       sounds.play("damage", { rate: [1, 1.1] });
+    } else if (name === "Death") {
+      sounds.play("playerDeath");
     }
   });
   player.events.on("ability_end", (name: string) => {
     if (name === "WallSlide") sounds.stop("wallslide");
   });
+  // Death's restart_delay is timed to this sample, so by the time it fires the
+  // death sound has already finished playing out.
+  player.events.on("death", () => debug.restartLevel());
   player.events.on("land", () => sounds.play("land", { db: -5.333, rate: [1, 1.1] }));
   player.events.on("shot_fired", (charge: number) => {
     if (charge <= 0) sounds.play("lemon", { rate: [0.95, 1] });

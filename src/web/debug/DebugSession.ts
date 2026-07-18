@@ -179,6 +179,12 @@ export class DebugSession {
     this.say(message);
   }
 
+  /** Player death -> fresh room. Called by main.ts off the player's "death" event. */
+  restartLevel(): void {
+    this.replaceScene(this.recorder.restartLevel());
+    this.say("you died — restarting");
+  }
+
   private nudgeSpeed(delta: number): void {
     this.scaleIndex = Math.max(0, Math.min(TIME_SCALES.length - 1, this.scaleIndex + delta));
     this.say(`time x${this.timeScale}`);

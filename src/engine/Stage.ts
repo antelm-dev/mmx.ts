@@ -88,6 +88,7 @@ export class Stage {
    * the inflicter is passed through so knockback is always away from the enemy.
    */
   private resolveContact(): void {
+    if (!this.player.has_health()) return; // Death is running; nothing can touch a corpse
     for (const enemy of this.enemies) {
       if (!enemy.has_health() || enemy.exploding) continue;
       if (!bodiesOverlap(enemy, this.player)) continue;
