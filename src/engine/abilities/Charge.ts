@@ -1,10 +1,13 @@
 import { Ability } from '../ability/Ability.js';
 import type { Character } from '../Character.js';
 import {
+  CHARGE_FX_FRAME_COUNT,
+  CHARGE_FX_LIFETIME,
   CHARGE_LEVEL_3,
   CHARGE_LEVEL_4,
   CHARGE_MAX_TIME,
   CHARGE_MIN_TIME,
+  ChargeTier,
 } from '../../core/constants.js';
 
 /**
@@ -21,6 +24,14 @@ export class Charge extends Ability {
   charging = false;
   mid_charge = false;
   max_charge = false;
+
+  /**
+   * Playback clock for the charge aura. It lives here rather than in the renderer
+   * for the same reason the rest of the animation state does: the aura is part of
+   * what the simulation says is true at a given tick, so a paused or stepped frame
+   * shows the same thing the engine believes.
+   */
+  vfx_timer = 0;
 
   constructor(character: Character) {
     super(character);
@@ -60,9 +71,11 @@ export class Charge extends Ability {
    */
   private charge(dt: number): void {
     if (this.charged_time < CHARGE_MAX_TIME) this.charged_time += dt;
+    if (this.charging) this.vfx_timer += dt;
 
     if (this.charged_time > CHARGE_MIN_TIME && !this.charging) {
       this.charging = true;
+      this.vfx_timer = 0;
       this.character.events.emit('charge_started');
     }
     if (this.get_charge_level() > 1 && !this.mid_charge) {
@@ -88,6 +101,24 @@ export class Charge extends Ability {
     return 2;
   }
 
+  /**
+   * Which aura to show right now. Nothing is drawn below the minimum hold: the
+   * charge only becomes visible once it is actually worth releasing, which is
+   * what makes the aura a usable signal rather than decoration.
+   */
+  get vfx_tier(): ChargeTier {
+    if (!this.executing || !this.charging) return ChargeTier.None;
+    if (this.max_charge) return ChargeTier.Super;
+    if (this.mid_charge) return ChargeTier.Charged;
+    return ChargeTier.Charging;
+  }
+
+  /** Frame of the aura loop — 16 frames per 0.3s emitter lifetime, repeating. */
+  get vfx_frame(): number {
+    const fps = CHARGE_FX_FRAME_COUNT / CHARGE_FX_LIFETIME;
+    return Math.floor(this.vfx_timer * fps) % CHARGE_FX_FRAME_COUNT;
+  }
+
   override _EndCondition(): boolean {
     if (this.charged_time === 0 && this.timer > 0.1) return true;
     return false;
@@ -102,5 +133,6 @@ export class Charge extends Ability {
     this.charging = false;
     this.mid_charge = false;
     this.max_charge = false;
+    this.vfx_timer = 0;
   }
 }

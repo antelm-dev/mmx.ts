@@ -19,7 +19,7 @@
         image-rendering: crisp-edges; /* fallback first — `pixelated` overrides it below */
         image-rendering: pixelated;
         /* The display size is set in JS to a whole multiple of the view (see
-           fitCanvas). These caps only bite on a window too small for even a 1:1
+           Renderer.fit). These caps only bite on a window too small for even a 1:1
            view, where letterboxing a blurry picture beats cropping the play area. */
         max-width: 100%;
         max-height: 100%;

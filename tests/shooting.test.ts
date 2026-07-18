@@ -2,7 +2,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { Input, Action } from '../src/core/Input.js';
-import { DT, BUSTER_SHOTS, MAX_SHOTS_ALIVE, SHOT_POSITION } from '../src/core/constants.js';
+import {
+  DT,
+  BUSTER_SHOTS,
+  CHARGE_FX_FRAME_COUNT,
+  CHARGE_LEVEL_3,
+  CHARGE_LEVEL_4,
+  CHARGE_MIN_TIME,
+  ChargeTier,
+  MAX_SHOTS_ALIVE,
+  SHOT_POSITION,
+} from '../src/core/constants.js';
+import type { Charge } from '../src/engine/abilities/Charge.js';
 import { Player } from '../src/engine/Player.js';
 import { Projectile } from '../src/engine/Projectile.js';
 import { World } from '../src/engine/World.js';
@@ -134,6 +145,71 @@ test('a spent shot stops colliding but still reports where it landed', () => {
   // Hitting twice must not restart the effect or extend its life.
   p.hit(999, 999);
   assert.equal(p.hitX, travelled, 'the impact point is recorded once');
+});
+
+test('the impact effect plays once and then stops drawing', () => {
+  const world = openRoom();
+  // The charged shot is the worst case: it lingers 0.4s but its burst is only
+  // 0.125s, so a clamped frame index would freeze it on screen for 0.275s.
+  const p = new Projectile(100, 50, 1, 2);
+  assert.equal(p.hitParticleFrame, -1, 'nothing to draw while still in flight');
+
+  p.hit(100, 50);
+  const seen: number[] = [];
+  for (let i = 0; i < 40 && p.alive; i++) {
+    const f = p.hitParticleFrame;
+    if (f >= 0) seen.push(f);
+    p.update(DT, world);
+  }
+
+  assert.deepEqual(
+    [...new Set(seen)],
+    [0, 1, 2, 3],
+    'every frame of the burst is shown, in order and exactly once through',
+  );
+  assert.equal(p.hitParticleFrame, -1, 'and it is gone before the node is');
+  assert.equal(p.alive, false, 'the node did eventually clean itself up');
+});
+
+test('the charge aura appears, escalates through its tiers, and clears on release', () => {
+  const { input, player } = makePlayer();
+  const charge = () => player.get_ability('Charge') as Charge;
+
+  hold(input, 'fire', true);
+  player.tick(DT);
+  // Nothing shows below the minimum hold: the aura is a signal that the charge is
+  // worth releasing, so it must not appear while it still fires a plain lemon.
+  assert.equal(charge().vfx_tier, ChargeTier.None, 'no aura on a bare tap');
+
+  const tierAt = (seconds: number) => {
+    while (charge().charged_time < seconds) player.tick(DT);
+    return charge().vfx_tier;
+  };
+  assert.equal(tierAt(CHARGE_MIN_TIME + 0.05), ChargeTier.Charging, 'aura starts at min hold');
+  assert.equal(tierAt(CHARGE_LEVEL_3 + 0.05), ChargeTier.Charged, 'escalates past level 3');
+  assert.equal(tierAt(CHARGE_LEVEL_4 + 0.05), ChargeTier.Super, 'and again past level 4');
+
+  hold(input, 'fire', false);
+  player.tick(DT);
+  assert.equal(charge().vfx_tier, ChargeTier.None, 'aura clears once the shot is away');
+});
+
+test('the charge aura loops rather than running off the end of its sheet', () => {
+  const { input, player } = makePlayer();
+  const charge = () => player.get_ability('Charge') as Charge;
+
+  hold(input, 'fire', true);
+  const frames = new Set<number>();
+  for (let i = 0; i < 240; i++) {
+    player.tick(DT);
+    if (charge().vfx_tier !== ChargeTier.None) frames.add(charge().vfx_frame);
+  }
+
+  assert.ok(frames.size > 1, 'the aura actually animates');
+  assert.ok(
+    [...frames].every((f) => f >= 0 && f < CHARGE_FX_FRAME_COUNT),
+    'and every frame stays inside the 4x4 sheet',
+  );
 });
 
 test('the same seed replays identically', () => {

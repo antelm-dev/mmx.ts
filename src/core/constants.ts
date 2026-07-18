@@ -115,6 +115,34 @@ export interface ShotStats {
 /** Every buster projectile sheet is an 8-frame loop. */
 export const SHOT_FRAME_COUNT = 8;
 
+// --- SpriteEffect.gd (Basic Hit.tscn / Big Hit.tscn) ---
+// The impact effect is a 2x2 sheet played once at 32fps and then *destroyed*
+// (SpriteEffect.process_frames: one_shot -> destroy). Its lifetime is therefore
+// 4/32 = 0.125s, which is shorter than the spent projectile's own countdown —
+// the burst is long gone before the shot node finishes lingering.
+export const HIT_FX_FPS = 32; // animation_speed
+export const HIT_FX_FRAME_COUNT = 4; // hframes 2 * vframes 2
+
+// --- Charge-up aura (Player.tscn ChargingParticle / ChargedParticle) ---
+// A GPUParticles2D with `amount = 1` and a 4x4 particles_animation sheet: one
+// 16-frame pass per 0.3s particle lifetime, restarting for as long as the emitter
+// runs. That is a 16-frame loop by another name.
+export const CHARGE_FX_FRAME_COUNT = 16; // 4 h_frames * 4 v_frames
+export const CHARGE_FX_LIFETIME = 0.3; // GPUParticles2D lifetime
+/** Emitter offset from the sprite origin — Player.tscn position = (0, 3.99). */
+export const CHARGE_FX_OFFSET_Y = 4;
+
+/**
+ * Which aura tier is showing. Charge.gd swaps between three separate emitters
+ * rather than recolouring one, so the tier picks both the sheet and the tint.
+ */
+export const enum ChargeTier {
+  None = 0,
+  Charging = 1, // charge_1.png, x_charging_particle.tres
+  Charged = 2, // charge_2.png, x_charged_particle.tres
+  Super = 3, // charge_2.png, x_supercharged_particle.tres
+}
+
 export const BUSTER_SHOTS: readonly ShotStats[] = [
   {
     kind: 'lemon',

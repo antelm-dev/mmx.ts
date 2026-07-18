@@ -4,7 +4,9 @@
     "medium": "medium_shot.png",
     "charged": "heavy_shot.png",
     "lemon_hit": "lemon_hit.png",
-    "charge_hit": "charge_hit.png"
+    "charge_hit": "charge_hit.png",
+    "charge_1": "charge_1.png",
+    "charge_2": "charge_2.png"
   },
   "animations": {
     "lemon": {
@@ -320,6 +322,306 @@
             80,
             80,
             80
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "charge_1": {
+      "loop": false,
+      "speed": 53.333333333333336,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "charge_2": {
+      "loop": false,
+      "speed": 53.333333333333336,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            96,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            96,
+            144,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            144,
+            144,
+            48,
+            48
           ],
           "duration": 1
         }

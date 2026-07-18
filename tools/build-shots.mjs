@@ -1,8 +1,8 @@
 /**
- * Builds src/web/assets/shot_anims.json (+ copies the sheets) for buster shots
- * and their hit effects.
+ * Builds src/web/assets/shot_anims.json (+ copies the sheets) for buster shots,
+ * their hit effects, and the charge-up aura.
  *
- * Two different sources, because the Godot project stores them two different ways:
+ * Three different sources, because the Godot project stores them three ways:
  *
  *  - The projectiles (lemon / medium_shot / heavy_shot) are Aseprite sheets with a
  *    sibling .json describing every frame's region and duration, exactly like x.json.
@@ -71,6 +71,11 @@ function clipFromGrid(pngPath, hframes, vframes, fps) {
   return { loop: false, speed: fps, frames };
 }
 
+// The 16 frames of the charge aura are spread across the emitter's 0.3s particle
+// lifetime (Player.tscn ChargingParticle), so the sheet's effective rate is fixed
+// by that lifetime rather than by an authored fps.
+const CHARGE_FX_FPS = 16 / 0.3;
+
 const animations = {
   // Buster projectiles. Names match ShotKind in src/engine/Projectile.ts.
   lemon: clipFromAseprite(join(projectiles, 'lemon.json')),
@@ -79,6 +84,12 @@ const animations = {
   // Hit effects. 2x2 @ 32fps one-shot — Basic Hit.tscn / Big Hit.tscn.
   lemon_hit: clipFromGrid(join(textures, 'lemon_hit.png'), 2, 2, 32),
   charge_hit: clipFromGrid(join(textures, 'charge_hit.png'), 2, 2, 32),
+  // Charge-up aura. These are GPUParticles2D textures in Player.tscn rather than
+  // sprites, but the emitter is `amount = 1` with a 0.3s lifetime and a 4x4
+  // particles_animation sheet (mat_chargeparticle.tres) — which is just a 16-frame
+  // clip replayed every 0.3s. Drawn here as the animation it actually is.
+  charge_1: clipFromGrid(join(textures, 'charge_1.png'), 4, 4, CHARGE_FX_FPS),
+  charge_2: clipFromGrid(join(textures, 'charge_2.png'), 4, 4, CHARGE_FX_FPS),
 };
 
 /** Which sheet each clip draws from, so the renderer can pick the right image. */
@@ -88,6 +99,8 @@ const sheets = {
   charged: 'heavy_shot.png',
   lemon_hit: 'lemon_hit.png',
   charge_hit: 'charge_hit.png',
+  charge_1: 'charge_1.png',
+  charge_2: 'charge_2.png',
 };
 
 writeFileSync(
@@ -101,6 +114,8 @@ for (const [src, dir] of [
   ['heavy_shot.png', projectiles],
   ['lemon_hit.png', textures],
   ['charge_hit.png', textures],
+  ['charge_1.png', textures],
+  ['charge_2.png', textures],
 ]) {
   copyFileSync(join(dir, src), join(assets, src));
 }
@@ -112,4 +127,4 @@ for (const [name, clip] of Object.entries(animations)) {
       `${w}x${h}  ${clip.speed.toFixed(1)}fps${clip.loop ? ' loop' : ''}`,
   );
 }
-console.log('\nshot_anims.json + 5 sheets written to src/web/assets');
+console.log('\nshot_anims.json + 7 sheets written to src/web/assets');

@@ -1,6 +1,12 @@
 import { World } from './World.js';
 import { Rng } from '../core/Rng.js';
-import { BUSTER_SHOTS, SHOT_FRAME_COUNT, type ShotStats } from '../core/constants.js';
+import {
+  BUSTER_SHOTS,
+  HIT_FX_FPS,
+  HIT_FX_FRAME_COUNT,
+  SHOT_FRAME_COUNT,
+  type ShotStats,
+} from '../core/constants.js';
 
 /**
  * Buster projectile — port of WeaponShot.gd / Lemon.gd / Medium Buster.gd /
@@ -142,9 +148,19 @@ export class Projectile {
     if (this.x < 0 || this.x > world.widthPx) this.alive = false;
   }
 
-  /** Frame timing for the hit particle, once the shot itself is spent. */
-  get hitParticleSec(): number {
-    return this.animSec;
+  /**
+   * Current frame of the impact effect, or -1 when nothing should be drawn.
+   *
+   * The burst and the projectile node have *different* lifetimes and conflating
+   * them is what leaves a hit effect frozen on screen. SpriteEffect is one_shot:
+   * it destroys itself after 4 frames at 32fps (0.125s). The spent projectile
+   * outlives that by design — up to 0.4s for a charged shot — so past the last
+   * frame there is simply nothing left to draw.
+   */
+  get hitParticleFrame(): number {
+    if (this.phase !== 'spent') return -1;
+    const frame = Math.floor(this.animSec * HIT_FX_FPS);
+    return frame < HIT_FX_FRAME_COUNT ? frame : -1;
   }
 
   private advanceAnimation(dt: number): void {
