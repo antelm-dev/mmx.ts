@@ -188,3 +188,29 @@ test('sweep results always agree with the overlap test', () => {
     }
   }
 });
+
+test('a body the floor sweep still supports reports is_on_floor, right to the ledge corner', () => {
+  // Ledge occupying the left half of the interior; its right face is at x=6*TILE.
+  const world = room([
+    '..........',
+    '..........',
+    '..........',
+    '#####.....',
+    '..........',
+    '..........',
+  ]);
+  const ledgeTop = 4 * TILE_SIZE;
+
+  // Walk the body across the lip in sub-pixel steps. Anywhere the downward sweep
+  // still catches the ledge, the floor sensor has to agree — otherwise the body
+  // hangs in Fall with gravity cancelled every frame and nothing can start.
+  for (let x = 5 * TILE_SIZE; x < 7 * TILE_SIZE; x += 0.2) {
+    const a = new Actor(world, x, ledgeTop - BODY_HALF_H);
+    a.set_vertical_speed(60);
+    a.physicsStep(DT);
+    const supported = a.pos.y + a.hh === ledgeTop && a.get_vertical_speed() === 0;
+    if (supported) {
+      assert.equal(a.is_on_floor(), true, `held up by the ledge at x=${x} but not on floor`);
+    }
+  }
+});

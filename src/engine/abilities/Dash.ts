@@ -16,6 +16,13 @@ export class Dash extends Movement {
   leeway = DASH_LEEWAY;
   protected left_ground_timer = 0;
   protected can_dash = true;
+  /**
+   * Clip for the kick-up smoke this move leaves behind, or null for none. The name
+   * of the SpriteEffect sheet on the ability's own `dash_particle` node — Dash has
+   * dash.png, and AirDash a separate airdash.png (not ported yet).
+   */
+  protected smoke_fx: string | null = 'dash';
+  private emitted_smoke = false;
 
   constructor(character: Character) {
     super(character);
@@ -44,7 +51,22 @@ export class Dash extends Movement {
     this.changed_animation = false;
     this.left_ground_timer = 0;
     this.can_dash = true;
+    this.emitted_smoke = false;
     this.consumeBuffer();
+  }
+
+  /**
+   * Dash.gd emit_dash_particle: one puff per dash, thrown in the direction actually
+   * being held rather than the facing, so a dash started on the same frame as a turn
+   * kicks up behind the new heading. Emitted from _Update, not _Setup, so a dash that
+   * never gets off the ground never leaves a puff.
+   */
+  private emit_smoke(): void {
+    if (this.emitted_smoke || !this.smoke_fx) return;
+    this.emitted_smoke = true;
+    const pressed = this.get_pressed_direction();
+    const dir = pressed !== 0 ? pressed : this.character.get_facing_direction();
+    this.character.events.emit('dash_smoke', this.smoke_fx, dir);
   }
 
   override _Update(dt: number): void {
@@ -52,6 +74,7 @@ export class Dash extends Movement {
     if (this.can_dash && this.should_dash()) {
       this.on_dash();
       this.force_movement(this.horizontal_velocity);
+      this.emit_smoke();
       if (!this.character.is_on_floor()) this.character.set_vertical_speed(0);
     } else {
       this.can_dash = false;

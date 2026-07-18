@@ -1,4 +1,5 @@
 import { Ability } from '../ability/Ability.js';
+import { Shot } from './Shot.js';
 import type { Character } from '../Character.js';
 import {
   CHARGE_FX_FRAME_COUNT,
@@ -58,6 +59,11 @@ export class Charge extends Ability {
     } else {
       if (this.charged_time > CHARGE_MIN_TIME) {
         this.character.spawnBuster(this.get_charge_level());
+        // Charge owns the projectile but not the pose — Shot does. Without this
+        // the charged shot leaves the cannon while X is still standing neutral,
+        // since the initial tap's arm-point window expired during the hold.
+        const shot = this.character.get_ability('Shot');
+        if (shot instanceof Shot) shot.arm_point();
       }
       this.EndAbility();
     }

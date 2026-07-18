@@ -6,7 +6,8 @@
     "lemon_hit": "lemon_hit.png",
     "charge_hit": "charge_hit.png",
     "charge_1": "charge_1.png",
-    "charge_2": "charge_2.png"
+    "charge_2": "charge_2.png",
+    "dash": "dash.png"
   },
   "animations": {
     "lemon": {
@@ -622,6 +623,66 @@
             144,
             48,
             48
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "dash": {
+      "loop": false,
+      "speed": 24,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            32,
+            32,
+            32
           ],
           "duration": 1
         }

@@ -174,8 +174,10 @@ export class Camera {
   snapTo(tx: number, ty: number): void {
     this.current = this.zoneFor(tx, ty);
     const [cx, cy] = this.confine(tx, ty);
-    this.x = cx - this.viewW / 2;
-    this.y = cy - this.viewH / 2;
+    // Whole pixels, as in follow(): a spawn should not leave the view parked on a
+    // fraction it will never ease off of.
+    this.x = Math.round(cx - this.viewW / 2);
+    this.y = Math.round(cy - this.viewH / 2);
   }
 
   /**
@@ -194,10 +196,19 @@ export class Camera {
   follow(tx: number, ty: number, dt: number): void {
     this.current = this.zoneFor(tx, ty);
 
-    const [goalX, goalY] = this.confine(
+    const [rawX, rawY] = this.confine(
       pullIntoDeadzone(this.centerX, tx, DEADZONE_HALF_W),
       pullIntoDeadzone(this.centerY, ty, DEADZONE_HALF_H),
     );
+
+    // The goal is quantised to whole pixels so that a camera which has caught up and
+    // settled rests on an integer rather than on whatever fraction the target happened
+    // to carry. A view resting at x.5 is the one place the renderer's scroll rounding
+    // is ambiguous, and the target still moving inside the dead zone would then tip it
+    // back and forth and shake the whole background while the camera is nominally
+    // still. Half a pixel of framing is not a visible difference; the shake is.
+    const goalX = Math.round(rawX);
+    const goalY = Math.round(rawY);
 
     const k = 1 - Math.exp(-FOLLOW_RATE * dt);
     let cx = this.centerX + (goalX - this.centerX) * k;

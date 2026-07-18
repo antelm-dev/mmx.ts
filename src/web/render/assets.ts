@@ -10,6 +10,12 @@ import lemonHitUrl from '../assets/lemon_hit.png';
 import chargeHitUrl from '../assets/charge_hit.png';
 import charge1Url from '../assets/charge_1.png';
 import charge2Url from '../assets/charge_2.png';
+import dashUrl from '../assets/dash.png';
+import xBarUrl from '../assets/x_bar.png';
+import hpFillUrl from '../assets/hp_fill.png';
+import enemyAnimData from '../assets/enemy_anims.json';
+import metoolUrl from '../assets/metool.png';
+import batUrl from '../assets/sbat.png';
 
 /**
  * Every image the renderer draws from, and the clip tables that index into them.
@@ -29,6 +35,13 @@ export const SHEET_URLS: Record<string, string> = {
   'charge_hit.png': chargeHitUrl,
   'charge_1.png': charge1Url,
   'charge_2.png': charge2Url,
+  'dash.png': dashUrl,
+  // HUD furniture, from the original's src/HUD.
+  'x_bar.png': xBarUrl,
+  'hp_fill.png': hpFillUrl,
+  // Enemies, imported by tools/build-enemies.mjs.
+  'metool.png': metoolUrl,
+  'sbat.png': batUrl,
 };
 
 /**
@@ -50,7 +63,23 @@ interface ShotAnimData {
   animations: Record<string, { loop: boolean; speed: number; frames: { region: Region }[] }>;
 }
 
+/**
+ * The enemy clip tables, one AnimData per enemy kind (see tools/build-enemies.mjs).
+ *
+ * Each kind cuts from a single sheet, so unlike the shot table — where one clip's
+ * frames may come from any sheet — the sheet is recorded per actor rather than
+ * per clip.
+ */
+interface EnemyAnimData {
+  sheets: Record<string, string>;
+  actors: Record<
+    string,
+    { sheet: string; animations: Record<string, { loop: boolean; speed: number; frames: { region: Region; duration: number }[] }> }
+  >;
+}
+
 // JSON imports type each region as number[], which does not narrow to the
 // fixed-length Region tuple on its own.
 export const shotAnims = shotAnimData as unknown as ShotAnimData;
+export const enemyAnims = enemyAnimData as unknown as EnemyAnimData;
 export { animData };

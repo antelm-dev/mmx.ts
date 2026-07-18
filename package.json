@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "sim": "tsx src/sim/run.ts",
     "level:import": "node tools/import-ldtk.mjs",
+    "enemies:import": "node tools/build-enemies.mjs",
     "test": "node --import tsx --test tests/*.test.ts",
     "build": "tsc",
     "start": "node dist/server.js",

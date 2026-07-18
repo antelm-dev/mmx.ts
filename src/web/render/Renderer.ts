@@ -2,10 +2,13 @@ import { Application, Container, Sprite } from 'pixi.js';
 import { CHARGE_FX_OFFSET_Y, ChargeTier, VIEW_WIDTH, VIEW_HEIGHT } from '../../core/constants.js';
 import type { Charge } from '../../engine/abilities/Charge.js';
 import type { Camera } from '../../engine/Camera.js';
+import type { Enemy } from '../../engine/Enemy.js';
 import type { Player } from '../../engine/Player.js';
+import type { Stage } from '../../engine/Stage.js';
 import type { World } from '../../engine/World.js';
+import { DashSmoke } from '../DashSmoke.js';
 import { Trail } from '../Trail.js';
-import { PLAYER_SHEETS, SHEET_URLS } from './assets.js';
+import { enemyAnims, PLAYER_SHEETS, SHEET_URLS } from './assets.js';
 import { Hud } from './Hud.js';
 import { place, spriteSnapshot } from './sprite.js';
 import { SpritePool } from './SpritePool.js';
@@ -31,7 +34,7 @@ import { loadSheets, regionTexture, shotTexture } from './textures.js';
  *   stage
  *    +- viewport   (integer zoom)
  *    |   +- world  (camera scroll)
- *    |       +- terrain, ghosts, player, charge aura, projectiles
+ *    |       +- terrain, ghosts, player, charge aura, projectiles, dash smoke
  *    +- hud        (integer zoom, no scroll — screen furniture)
  */
 
@@ -53,7 +56,9 @@ export class Renderer {
   private readonly scene = new Container();
   private readonly hudLayer = new Container();
   private readonly ghosts = new SpritePool();
+  private readonly enemies = new SpritePool();
   private readonly shots = new SpritePool();
+  private readonly smoke = new SpritePool();
   private readonly player = new Sprite();
   private readonly aura = new Sprite();
   private readonly hud = new Hud();
@@ -67,8 +72,19 @@ export class Renderer {
 
     // Ghosts before the player so the live sprite always reads on top of its own
     // trail; the aura after it, as the emitter is a child of animatedSprite with
-    // z_index 4 and so rides in front.
-    this.scene.addChild(this.ghosts.view, this.player, this.aura, this.shots.view);
+    // z_index 4 and so rides in front. Enemies sit behind the player and in front
+    // of the terrain (Metool.tscn animatedSprite z_index = 1), and shots stay on
+    // top of everything so an impact is never hidden by what it hit. Dash smoke is
+    // above even those: dash_particle carries z_index 45, so the dust reads over X
+    // on the frames he has not yet cleared it.
+    this.scene.addChild(
+      this.enemies.view,
+      this.ghosts.view,
+      this.player,
+      this.aura,
+      this.shots.view,
+      this.smoke.view,
+    );
     this.viewport.addChild(this.scene);
     this.hudLayer.addChild(this.hud.view);
     this.app.stage.addChild(this.viewport, this.hudLayer);
@@ -94,8 +110,11 @@ export class Renderer {
       autoDensity: false,
     });
 
-    const renderer = new Renderer(app);
+    // Before the Renderer is built, not after: the HUD cuts its textures out of the
+    // sheets in its constructor.
     await loadSheets(SHEET_URLS);
+
+    const renderer = new Renderer(app);
     renderer.scene.addChildAt(buildTerrain(world), 0);
     renderer.fit();
     return renderer;
@@ -138,23 +157,72 @@ export class Renderer {
     this.scale = scale;
     this.viewport.scale.set(scale);
     this.hudLayer.scale.set(scale);
-    this.hud.setScale(scale);
   }
 
   /** Bring the scene graph in line with the simulation, then draw it. */
-  render(player: Player, camera: Camera, trail: Trail): void {
+  render(stage: Stage, camera: Camera, trail: Trail, smoke: DashSmoke): void {
+    const { player } = stage;
     // The scroll offset is rounded to whole world pixels: at a fractional offset
     // every sprite and tile edge would resample against the pixel grid and the whole
     // picture would shimmer as the camera eases.
-    this.scene.position.set(-Math.round(camera.x), -Math.round(camera.y));
+    //
+    // Rounded *against the player*, not on its own. Sprites are quantised in world
+    // space (see `place`), so an independently rounded scroll would put the player on
+    // screen at `round(p) - round(c)` — two integer sequences with unrelated subpixel
+    // phases. Walking is 1.5px a tick, so frac(p) alternates .0/.5 while the camera
+    // eases along a continuous trail behind him, and that difference flips by a pixel
+    // every frame: the body vibrates on the spot even though it and the camera are
+    // moving at exactly the same speed. Subtracting a rounded *relative* offset makes
+    // his screen position `round(p - c)`, a function of the gap alone, so it holds
+    // still whenever the camera is matching him. The residual lands on the scroll
+    // instead, where the world advances 1px on one frame and 2px on the next — which
+    // is what 1.5px/tick on a pixel grid has to look like somewhere, and is far less
+    // legible on distant terrain than on the sprite the eye is tracking.
+    //
+    // Only whole-pixel offsets separate the body from its sprite anchor, so the body
+    // position stands in for it here and both quantise in step.
+    this.scene.position.set(
+      Math.round(player.pos.x - camera.x) - Math.round(player.pos.x),
+      Math.round(player.pos.y - camera.y) - Math.round(player.pos.y),
+    );
 
+    this.syncEnemies(stage);
     this.syncGhosts(trail);
     this.syncPlayer(player);
     this.syncAura(player);
     this.syncShots(player);
-    this.hud.update(player.current_health, player.max_health);
+    this.syncSmoke(smoke);
+    this.hud.update(player, camera);
 
     this.app.render();
+  }
+
+  /**
+   * Enemies, each drawn from its own kind's sheet.
+   *
+   * The sprite is centred on the body, which is how both scenes have it — their
+   * animatedSprite nodes carry no offset, unlike the player's (0, -4). Two bits
+   * of engine state show through: `flash` fades the frame for a moment after a
+   * hit (standing in for EnemyDamage's Flash shader parameter, which this
+   * renderer has no shader for), and an enemy whose death sequence has already
+   * hidden its sprite is skipped entirely.
+   */
+  private syncEnemies(stage: Stage): void {
+    this.enemies.begin();
+    for (const enemy of stage.enemies) {
+      if (!enemy.sprite_visible) continue;
+      const region = enemy.currentRegion();
+      if (!region) continue;
+      const texture = regionTexture(enemyAnims.actors[enemy.stats.sheet].sheet, region);
+      if (!texture) continue;
+
+      const sprite = this.enemies.next();
+      // Both sheets are authored facing right but the scenes set `flip_h = true`,
+      // so the mirror is inverted relative to the player's.
+      place(sprite, texture, enemy.pos.x, enemy.pos.y, -enemy.get_facing_direction());
+      sprite.alpha = enemy.flash > 0 ? 0.5 : 1;
+    }
+    this.enemies.end();
   }
 
   /** Afterimages: frozen poses that fade with age (see {@link Trail}). */
@@ -217,5 +285,19 @@ export class Renderer {
       if (texture) place(this.shots.next(), texture, p.hitX, p.hitY, p.dir, p.hitFlipV);
     }
     this.shots.end();
+  }
+
+  /**
+   * The dust left behind by a dash. Each puff draws at the world position it was
+   * emitted at — it was cut loose from the player when it spawned (see
+   * {@link DashSmoke}), so there is nothing to follow here.
+   */
+  private syncSmoke(smoke: DashSmoke): void {
+    this.smoke.begin();
+    for (const puff of smoke.puffs) {
+      const texture = shotTexture(puff.clip, DashSmoke.frame(puff));
+      if (texture) place(this.smoke.next(), texture, puff.x, puff.y, puff.facing);
+    }
+    this.smoke.end();
   }
 }

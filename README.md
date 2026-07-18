@@ -85,6 +85,12 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 | `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/) |
 | `Shot.gd` (PrimaryShot) / `Charge.gd` | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
 | `Lemon.gd` / `WeaponShot.gd` | [`src/engine/Projectile.ts`](src/engine/Projectile.ts) |
+| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch` | [`src/engine/Enemy.ts`](src/engine/Enemy.ts) |
+| `AI.gd` (event -> ability lists) | [`src/engine/EnemyAI.ts`](src/engine/EnemyAI.ts) |
+| `EnemyAbility.gd` / `AttackAbility.gd` | [`src/engine/enemy/EnemyAbility.ts`](src/engine/enemy/EnemyAbility.ts) |
+| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump` | [`src/engine/enemy/`](src/engine/enemy/) |
+| `Metool.tscn` / `SmallBat.tscn` node lists | [`src/engine/enemies/index.ts`](src/engine/enemies/index.ts) |
+| Area2D layer/mask overlaps (shots, contact damage) | [`src/engine/Stage.ts`](src/engine/Stage.ts) |
 | `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res` | [`src/engine/Animation.ts`](src/engine/Animation.ts) |
 | Godot `Input` singleton | [`src/core/Input.ts`](src/core/Input.ts) |
 | Godot signals | [`src/core/Events.ts`](src/core/Events.ts) |
@@ -142,12 +148,56 @@ have no frames and finish on the next tick, so the handoffs still resolve and
 `get_animation()` behaves like the plain string it used to be. The browser calls
 `player.loadAnimations(...)` and gets real timing.
 
+## Enemies
+
+Two are ported, chosen to exercise opposite halves of the enemy framework: the
+**Metool** (grounded, shielded, 2 HP) and the **SmallBat** (flying, fragile, 1 HP).
+
+They do *not* reuse the player's state machine. `AbilityUser` picks the player's
+locomotion by a priority race between abilities that all want to run; an enemy's
+state is chosen by [`EnemyAI`](src/engine/EnemyAI.ts) from the event lists its
+scene declares, and the abilities arbitrate between themselves using Godot's
+`conflicting_moves` rules — which, unlike `Player.tscn`'s, *are* present in the
+enemy scenes, so they are ported as written rather than replaced:
+
+| Godot | Metool | Bat |
+|---|---|---|
+| `on_idle` | `Patrol` — walk a leg, rest, reverse | `Hover` — ease to a random point near its anchor |
+| `on_see_player` | `Hide` — helmet down, guard up | `Pursuit` — swooping homing flight |
+| `on_touch_player` | — | `Recoil` — hop up and away |
+| `on_guard_break` | `Stun` — 1.65s, wide open | — |
+
+The Metool is the interesting one. It only comes out from under its helmet when the
+player is *looking away*, so you cannot stand and shoot it: facing it is what keeps
+it shut. While the guard is up the body cannot be damaged at all
+(`Damage.ignore_hits_if_shield`), and a shot that lands on the shield is consumed
+without doing anything — unless it is a **charged** shot, which breaks the guard and
+routes to `Stun`, long enough to kill it outright.
+
+`AI.gd`'s event lists are kept rather than hard-coded into each enemy because that
+indirection is what lets both share one dispatcher: they differ only in which
+ability answers which event.
+
+### Enemy sprites
+
+[`tools/build-enemies.mjs`](tools/build-enemies.mjs) (`npm run enemies:import`)
+builds `src/web/assets/enemy_anims.json` from the Godot project's **Aseprite**
+sidecars, not its `.res` SpriteFrames — the enemies still have their source
+`.json` checked in, and it carries per-frame atlas rects, per-frame durations in
+milliseconds, and `meta.frameTags` naming the clips. The one thing it cannot carry
+is whether a clip loops, which lives in the Godot resource; that is declared in the
+script and is load-bearing rather than cosmetic (a looping `stun` would leave a
+Metool stunned forever, since `EnemyStun` advances on `animation_finished`).
+
 ### Not ported (extension points)
 
-Documented but out of scope for the movement core: armor sets (Hermes / Icarus and
-their gameplay modifiers), boss weapons, Ride Armor, the damage/knockback/death
-pipeline, sub-tanks, and the AirJump double-jump. The ability framework is built to
-accept these as additional `BaseAbility` subclasses exactly as the original does.
+Documented but out of scope: armor sets (Hermes / Icarus and their gameplay
+modifiers), boss weapons, Ride Armor, sub-tanks, and the AirJump double-jump. The
+player's own hurt/knockback state is also absent — enemies damage him, but he has
+no Damage ability to be carried out of contact by, so contact damage is gated on an
+invulnerability window instead (`PLAYER_HIT_INVULNERABILITY`). The ability framework
+is built to accept these as additional `BaseAbility` subclasses exactly as the
+original does.
 
 ---
 
@@ -164,14 +214,23 @@ src/
     Player.ts       assembles the moveset ("X")
     Projectile.ts   buster shots
     Animation.ts    AnimatedSprite playback + the shot layer
+    Stage.ts        the room: player + enemies + the damage between them
+    Enemy.ts        enemy body, shield, damage and death
+    EnemyAI.ts      AI.gd's event -> ability dispatch
     level.ts        a test chamber exercising every state
     ability/        BaseAbility / Ability / Movement
     abilities/      Idle, Walk, Fall, Jump, Dash, AirDash, WallSlide,
                     WallJump, DashWallJump, DashJump, Shot, Charge
+    enemy/          EnemyAbility + Patrol, Hide, Stun, Death,
+                    Hover, Pursuit, Recoil
+    enemies/        Metool and Bat, as ports of their .tscn node lists
   sim/run.ts   deterministic headless simulation
   web/main.ts  canvas renderer + keyboard input
-  web/assets/  x.png, x_leftarm.png (arm-pointing), x_anims.json
+  web/assets/  x.png, x_leftarm.png (arm-pointing), x_anims.json,
+               metool.png, sbat.png, enemy_anims.json
   server.ts    zero-dependency static server
 tests/         node:test behaviour tests
-tools/         build-anims.mjs — re-derives x_anims.json from the Godot project
+tools/         build-anims.mjs    — re-derives x_anims.json from the Godot project
+               build-enemies.mjs  — builds enemy_anims.json from its Aseprite sheets
+               import-ldtk.mjs    — compiles levels/*.ldtk into src/engine/levels/
 ```

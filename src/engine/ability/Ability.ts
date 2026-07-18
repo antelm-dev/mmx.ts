@@ -1,5 +1,6 @@
 import { BaseAbility } from './BaseAbility.js';
 import type { Action } from '../../core/Input.js';
+import type { Character } from '../Character.js';
 
 /**
  * Input-aware ability — port of Ability.gd.
@@ -7,7 +8,7 @@ import type { Action } from '../../core/Input.js';
  * Adds trigger actions, hold-vs-tap semantics, "let go of input" tracking and an
  * input buffer (get_activation_leeway_time) matching Ability.check_all_actions_for_input.
  */
-export abstract class Ability extends BaseAbility {
+export abstract class Ability extends BaseAbility<Character> {
   actions: Action[] = [];
   input = 0;
   has_let_go_of_input = false;

@@ -149,7 +149,8 @@ export class AbilityUser extends Actor {
     return best;
   }
 
-  private processMoves(dt: number): void {
+  /** Protected rather than private: Enemy drives its own frame order (see Enemy.tick). */
+  protected processMoves(dt: number): void {
     // snapshot: abilities may end/remove themselves during their update
     for (const m of [...this.executing_moves]) {
       m.ExecuteEachFrame(dt);

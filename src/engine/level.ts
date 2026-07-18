@@ -1,6 +1,7 @@
 import { World } from './World.js';
 import type { CameraZone } from './Camera.js';
 import type { LevelData, LevelEntity } from './LevelData.js';
+import type { EnemyKind } from './Enemy.js';
 import { level as stage1 } from './levels/stage1.js';
 
 /**
@@ -58,6 +59,40 @@ function boolField(e: LevelEntity, name: string, fallback: boolean): boolean {
   const v = e.fields[name];
   return typeof v === 'boolean' ? v : fallback;
 }
+
+/**
+ * Where each enemy starts, in the order they were placed.
+ *
+ * Placed as Enemy entities in LDtk with a `Kind` field, for the same reason the
+ * spawn is: an enemy's position is only meaningful relative to the geometry
+ * around it — a Metool needs floor under it and headroom above, and a bat needs
+ * open air to drift in — and that is a thing you check by looking, not by
+ * reading coordinates.
+ */
+export interface EnemySpawn {
+  kind: EnemyKind;
+  x: number;
+  y: number;
+  /** +1 / -1, as the Enemy constructor takes it (Enemy.gd spawn_direction). */
+  facing: number;
+}
+
+const ENEMY_KINDS: readonly EnemyKind[] = ['metool', 'bat'];
+
+export const ENEMY_SPAWNS: EnemySpawn[] = entities('Enemy').map((e) => {
+  const kind = e.fields.Kind;
+  if (typeof kind !== 'string' || !ENEMY_KINDS.includes(kind as EnemyKind)) {
+    throw new Error(
+      `level ${LEVEL.identifier}: Enemy at ${e.x},${e.y} has Kind '${String(kind)}'; expected one of ${ENEMY_KINDS.join(', ')}`,
+    );
+  }
+  return {
+    kind: kind as EnemyKind,
+    x: e.x,
+    y: e.y,
+    facing: boolField(e, 'FacesRight', false) ? 1 : -1,
+  };
+});
 
 /**
  * The level's camera zones, in the order they were placed.

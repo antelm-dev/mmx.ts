@@ -1,11 +1,14 @@
 import { Input, Action } from '../core/Input.js';
-import { DT } from '../core/constants.js';
+import { BODY_HALF_H, DASH_FX_OFFSET_X, DASH_FX_OFFSET_Y, DT } from '../core/constants.js';
 import { Player } from '../engine/Player.js';
 import { Camera } from '../engine/Camera.js';
-import { makeWorld, SPAWN, CAMERA_ZONES } from '../engine/level.js';
+import { Stage } from '../engine/Stage.js';
+import { spawnEnemy } from '../engine/enemies/index.js';
+import { makeWorld, SPAWN, CAMERA_ZONES, ENEMY_SPAWNS } from '../engine/level.js';
 import type { AnimData } from '../engine/Animation.js';
+import { DashSmoke } from './DashSmoke.js';
 import { Trail, TrailStyle, DASH_TRAIL, WALLSLIDE_TRAIL } from './Trail.js';
-import { animData } from './render/assets.js';
+import { animData, enemyAnims } from './render/assets.js';
 import { Renderer } from './render/Renderer.js';
 import { spriteSnapshot } from './render/sprite.js';
 
@@ -26,6 +29,18 @@ camera.snapTo(player.pos.x, player.pos.y);
 // goes into the engine: the abilities pick and read the current clip exactly as the
 // Godot originals do, and the renderer only draws whatever frame that leaves showing.
 player.loadAnimations(animData as unknown as AnimData);
+
+// The room the player is in: the enemies placed on the level, and the collision
+// between them and him. Its tick drives the player's, so there is one fixed step
+// for the whole simulation rather than one per actor.
+const stage = new Stage(world, player);
+for (const [i, spawn] of ENEMY_SPAWNS.entries()) {
+  const enemy = spawnEnemy(spawn.kind, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i);
+  // Same split as the player's: clip data is engine state, because the abilities
+  // read it (Hide waits for "open" to finish before it advances).
+  enemy.loadAnimations(enemyAnims.actors[spawn.kind] as unknown as AnimData);
+  stage.add(enemy);
+}
 
 // --- keyboard -> actions ---
 const KEYMAP: Record<string, Action> = {
@@ -74,6 +89,25 @@ function trailStyle(): TrailStyle | null {
   return null;
 }
 
+// --- dash kick-up smoke ---
+// Unlike the trail this is not sampled: Dash.gd emits a single puff at the moment it
+// pushes off, so the ability announces it and the effect is spawned from the signal.
+// The puff is pinned to where the body was on that frame and left there.
+const smoke = new DashSmoke();
+player.events.on('dash_smoke', (clip: string, dir: number) => {
+  // The emitter hangs off the player *root*, whose origin is the unshrunk body
+  // centre — which is not pos.y here, because reduce_hitbox trims the dash hitbox
+  // from the top and slides the centre down while the feet stay planted. Anchor off
+  // the feet instead, exactly as spriteSnapshot does, or the puff drops 4px the
+  // instant the dash hitbox comes in.
+  smoke.spawn(
+    player.pos.x + DASH_FX_OFFSET_X * dir,
+    player.pos.y + player.hh - BODY_HALF_H + DASH_FX_OFFSET_Y,
+    clip,
+    dir,
+  );
+});
+
 async function main(): Promise<void> {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   const renderer = await Renderer.create(canvas, world);
@@ -102,13 +136,14 @@ async function main(): Promise<void> {
     acc += Math.min(0.25, (now - last) / 1000);
     last = now;
     while (acc >= DT) {
-      player.tick(DT); // advances the sprite too, on the same fixed step
+      stage.tick(DT); // player, enemies and the damage between them; sprites too
       camera.follow(player.pos.x, player.pos.y, DT); // same fixed step, so scrolling is deterministic
       const style = trailStyle();
       trail.sample(DT, style ? spriteSnapshot(player) : null, style ?? DASH_TRAIL);
+      smoke.tick(DT); // SpriteEffect ages in _physics_process, so on the fixed step
       acc -= DT;
     }
-    renderer.render(player, camera, trail);
+    renderer.render(stage, camera, trail, smoke);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

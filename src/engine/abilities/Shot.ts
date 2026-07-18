@@ -19,6 +19,8 @@ export class Shot extends Ability {
   override independent = true;
   private readonly arm_point_duration = SHOT_ARM_POINT_DURATION;
   private disabled_layer = true;
+  /** Set by arm_point() so the run it starts poses without firing a lemon too. */
+  private pose_only = false;
 
   constructor(character: Character) {
     super(character);
@@ -36,7 +38,31 @@ export class Shot extends Ability {
   }
 
   override _Setup(): void {
+    if (this.pose_only) {
+      this.pose_only = false;
+      this.arm_up();
+      return;
+    }
     this.fire();
+  }
+
+  /**
+   * Raise the buster for a shot this ability did not spawn — Charge's release.
+   * The projectile belongs to Charge, but the pose belongs here: a charged shot
+   * comes out of the same cannon and reads on screen exactly like a lemon, so it
+   * reuses the same arm-point window rather than growing a second copy of it.
+   *
+   * Mid-hold the arm has usually already gone back down (the initial tap's window
+   * expired long ago), so this starts a fresh run; if the window is somehow still
+   * open it just re-kicks it, the way a second tap does.
+   */
+  arm_point(): void {
+    if (this.executing) {
+      this.arm_up();
+      return;
+    }
+    this.pose_only = true;
+    this.ExecuteOnce();
   }
 
   override _Update(_dt: number): void {
@@ -51,10 +77,15 @@ export class Shot extends Ability {
   }
 
   private fire(): void {
+    this.arm_up();
+    this.character.spawnBuster(0);
+  }
+
+  /** The pose half of a shot: buster out, arm-point window restarted. */
+  private arm_up(): void {
     this.enable_animation_layer();
     this.restart_animation();
     this.timer = 0;
-    this.character.spawnBuster(0);
   }
 
   /** Shot.gd:restart_animation — firing mid-`recover` skips its first frame so a

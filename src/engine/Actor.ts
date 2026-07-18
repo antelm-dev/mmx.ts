@@ -286,10 +286,18 @@ export class Actor {
     }
   }
 
-  /** Is there solid ground within `probe` pixels below the feet? */
+  /**
+   * Is there solid ground within `probe` pixels below the feet?
+   *
+   * The probe spans the *full* body width, matching sweepY. Anything narrower
+   * leaves a sliver at every ledge corner where a tile blocks the fall but does
+   * not report as floor: the body hangs there in Fall with gravity re-zeroed by
+   * the sweep every frame, and — since is_on_floor stays false and the coyote
+   * window expires — no grounded ability, jump or dash can get it out again.
+   */
   private groundBelow(probe: number): boolean {
     const half = probe / 2;
-    return this.world.overlaps(this.pos.x, this.pos.y + this.hh + half, this.hw - 1, half);
+    return this.world.overlaps(this.pos.x, this.pos.y + this.hh + half, this.hw, half);
   }
 
   private updateSensors(): void {

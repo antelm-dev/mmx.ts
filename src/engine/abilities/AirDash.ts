@@ -13,6 +13,9 @@ export class AirDash extends Dash {
 
   max_airdashes = AIRDASH_MAX;
   airdash_count = AIRDASH_MAX;
+  // AirDash/dash_particle is a *different* sheet (airdash.png at (-16, 4), 32fps),
+  // which this port has not brought over — so no puff rather than the ground one.
+  protected override smoke_fx: string | null = null;
   private initial_direction = 1;
 
   constructor(character: Character) {

@@ -1,17 +1,29 @@
 import { Input, Action } from '../core/Input.js';
 import { DT } from '../core/constants.js';
 import { Player } from '../engine/Player.js';
-import { makeWorld, SPAWN } from '../engine/level.js';
+import { Stage } from '../engine/Stage.js';
+import { spawnEnemy } from '../engine/enemies/index.js';
+import { makeWorld, SPAWN, ENEMY_SPAWNS } from '../engine/level.js';
 
 /**
  * Deterministic headless simulation. Drives the ported player through a scripted
  * input timeline and prints the resulting state trace — proving the whole gameplay
  * runs in pure Node with no rendering. Run with:  npm run sim
+ *
+ * The enemies run here too, without any clip data: with no frames loaded every
+ * clip reports itself finished on the next tick, so the animation-gated beats of
+ * their state machines pass through in one frame instead of several. They still
+ * patrol, hide, chase and die — which is the point, since it means none of that
+ * logic secretly depends on the renderer's assets.
  */
 
 const input = new Input();
 const world = makeWorld();
 const player = new Player(world, SPAWN.x, SPAWN.y, input);
+const stage = new Stage(world, player);
+for (const [i, spawn] of ENEMY_SPAWNS.entries()) {
+  stage.add(spawnEnemy(spawn.kind, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i));
+}
 
 // A scripted timeline: at frame N, set an action down/up.
 type Cue = { frame: number; action: Action; down: boolean };
@@ -44,8 +56,8 @@ function label(n: number): string {
 }
 
 console.log('Mega Man X — TypeScript gameplay core (headless sim)\n');
-console.log('frame |    posX |    posY |   velX |   velY | floor | state');
-console.log('------+---------+---------+--------+--------+-------+----------------------');
+console.log('frame |    posX |    posY |   velX |   velY | floor | hp | state');
+console.log('------+---------+---------+--------+--------+-------+----+------------------');
 
 /**
  * Live shots by type, plus any that are spent and only playing their hit
@@ -70,17 +82,22 @@ for (let f = 0; f <= TOTAL; f++) {
     input.setDown(c.action, c.down);
   }
 
-  player.tick(DT);
+  stage.tick(DT);
 
   if (f % 5 === 0) {
     console.log(
       `${String(f).padStart(5)} | ${label(player.pos.x)} | ${label(player.pos.y)} | ` +
         `${label(player.velocity.x)} | ${label(player.velocity.y)} | ` +
-        `${(player.is_on_floor() ? 'yes' : 'no').padStart(5)} | ${player.stateString()}` +
+        `${(player.is_on_floor() ? 'yes' : 'no').padStart(5)} | ` +
+        `${String(player.current_health).padStart(2)} | ${player.stateString()}` +
         shotsColumn(),
     );
   }
 }
 
 console.log('\nFinal position:', player.pos.x.toFixed(1), player.pos.y.toFixed(1));
+console.log(
+  `Enemies: ${stage.enemies.length} of ${ENEMY_SPAWNS.length} still standing —`,
+  stage.enemies.map((e) => `${e.kind} ${e.current_health}hp`).join(', ') || 'none',
+);
 console.log('Simulation complete — every core movement state was exercised.');

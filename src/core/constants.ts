@@ -132,6 +132,22 @@ export const CHARGE_FX_LIFETIME = 0.3; // GPUParticles2D lifetime
 /** Emitter offset from the sprite origin — Player.tscn position = (0, 3.99). */
 export const CHARGE_FX_OFFSET_Y = 4;
 
+// --- Dash kick-up smoke (Player.tscn Dash/dash_particle) ---
+// A SpriteEffect Sprite2D on the Dash node: 3x2 sheet, animation_speed 24, one_shot.
+// Dash.gd emits it exactly once per dash (`emitted_dash`), and SpriteEffect.emit()
+// reparents the copy to `get_tree().current_scene` — so the puff is left behind in
+// *world* space and X dashes away from it rather than dragging it along.
+export const DASH_FX_FPS = 24; // animation_speed
+export const DASH_FX_FRAME_COUNT = 6; // hframes 3 * vframes 2
+/**
+ * Emitter offset from the body origin — Player.tscn position = (-22, 0), mirrored
+ * by the dash direction (SpriteEffect.emit negates position.x when scale_x < 0), so
+ * the smoke is kicked up 22px *behind* X. The frame is 32px tall and centred on this
+ * point, which puts its bottom edge just under his feet.
+ */
+export const DASH_FX_OFFSET_X = -22;
+export const DASH_FX_OFFSET_Y = 0;
+
 /**
  * Which aura tier is showing. Charge.gd swaps between three separate emitters
  * rather than recolouring one, so the tier picks both the sheet and the tint.
@@ -194,6 +210,110 @@ export const BUSTER_SHOTS: readonly ShotStats[] = [
 
 // --- Actor.gd ---
 export const MAX_HEALTH = 32.0; // Actor.gd:6
+
+// ---------------------------------------------------------------------------
+// Enemies
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-enemy data, read off the Godot scenes (Metool.tscn / SmallBat.tscn).
+ *
+ * Godot RectangleShape2D `extents` are already half-extents, so they map onto the
+ * engine's hw/hh directly. Three boxes matter and they are deliberately different
+ * sizes in the original: the *body* is what collides with terrain, the *hurtbox*
+ * is what player shots have to reach, and the *vision* box is what wakes the AI.
+ */
+export interface EnemyStats {
+  /** Key into enemy_anims.json's `actors` table. */
+  sheet: 'metool' | 'bat';
+  max_health: number;
+  /** DamageOnTouch.damage — dealt to the player on contact. */
+  touch_damage: number;
+  /** Terrain collision box (the CharacterBody2D's collisionShape2D). */
+  hw: number;
+  hh: number;
+  /** Hurtbox half-extents (area2D) — what player projectiles test against. */
+  hurt_hw: number;
+  hurt_hh: number;
+  /** AI vision box half-extents and its offset from the body centre. */
+  vision_hw: number;
+  vision_hh: number;
+  vision_oy: number;
+  /** Fliers ignore gravity and terrain (SmallBat.tscn: collision_mask = 0). */
+  flying: boolean;
+}
+
+export const ENEMY_STATS: Readonly<Record<'metool' | 'bat', EnemyStats>> = {
+  // Metool.tscn: max_health 2, DamageOnTouch.damage 3, body extents (12,10),
+  // area2D extents (9,10), AI/vision extents (158,18) at y -6.
+  metool: {
+    sheet: 'metool',
+    max_health: 2,
+    touch_damage: 3,
+    hw: 12,
+    hh: 10,
+    hurt_hw: 9,
+    hurt_hh: 10,
+    vision_hw: 158,
+    vision_hh: 18,
+    vision_oy: -6,
+    flying: false,
+  },
+  // SmallBat.tscn: max_health 1, DamageOnTouch default damage 1, body extents
+  // (13.5,15.5), area2D a default-sized RectangleShape2D (10,10), AI/vision
+  // extents (102,86.5) at y 1.5.
+  bat: {
+    sheet: 'bat',
+    max_health: 1,
+    touch_damage: 1,
+    hw: 13.5,
+    hh: 15.5,
+    hurt_hw: 10,
+    hurt_hh: 10,
+    vision_hw: 102,
+    vision_hh: 86.5,
+    vision_oy: 1.5,
+    flying: true,
+  },
+};
+
+/** EnemyDamage.max_flash_time — how long the white hit flash stays on. */
+export const ENEMY_FLASH_TIME = 0.035;
+
+// --- Patrol.gd (CrabPatrol, as configured on Metool.tscn's Patrol node) ---
+export const PATROL_TRAVEL_TIME = 0.8; // Metool.tscn Patrol.travel_time
+export const PATROL_SPEED = 25.0; // Metool.tscn Patrol.travel_speed
+export const PATROL_REST_TIME = 2.0; // Metool.tscn Patrol.rest_time
+
+// --- Hide.gd (Metool) ---
+export const HIDE_OPEN_DELAY = 3.0; // Hide.gd: attack_stage 0, timer > 3
+export const HIDE_ADVANCE_RANGE_X = 64; // is_player_nearby_horizontally(64)
+export const HIDE_ADVANCE_RANGE_Y = 16; // is_player_nearby_vertically(16)
+export const HIDE_GIVE_UP_RANGE_X = 80; // stage 2: not nearby 80 -> end
+export const HIDE_RESHIELD_DELAY = 0.1; // Tools.timer(0.1, "activate", shield)
+
+// --- EnemyStun.gd (as configured on Metool.tscn's EnemyStun node) ---
+export const STUN_DURATION = 1.65; // Metool.tscn EnemyStun.stun_duration
+
+// --- BatPursuit.gd / BatJump.gd ---
+export const BAT_PURSUIT_SPEED = 80.0; // BatPursuit.gd pursuit_speed
+export const BAT_PURSUIT_GIVE_UP_DISTANCE = 200.0; // _EndCondition
+/** The vertical weave: cos(timer * BAT_WEAVE_RATE) remapped to [-0.25, 1]. */
+export const BAT_WEAVE_RATE = 4.0;
+export const BAT_JUMP_SPEED = 200.0; // BatJump.gd current_vertical_speed = -200
+export const BAT_JUMP_TIME = 0.7; // BatJump.gd jump_timne
+
+/**
+ * How long the player is immune after taking a contact hit.
+ *
+ * DamageOnTouch re-applies damage every 0.016s for as long as the boxes overlap,
+ * which in the original is survivable only because the player's own Damage state
+ * (Player.gd, not ported here — the port has no hurt/knockback state) takes over
+ * and carries him out of the enemy. Without that state a touching enemy would
+ * drain the whole bar in a third of a second, so contact damage is gated on an
+ * invulnerability window instead — the same mechanism, minus the animation.
+ */
+export const PLAYER_HIT_INVULNERABILITY = 0.75;
 
 // World / rendering
 export const TILE_SIZE = 16;

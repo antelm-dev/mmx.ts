@@ -1,0 +1,420 @@
+{
+  "sheets": {
+    "metool": "metool.png",
+    "bat": "sbat.png"
+  },
+  "actors": {
+    "metool": {
+      "sheet": "metool.png",
+      "animations": {
+        "defense": {
+          "loop": true,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                0,
+                0,
+                32,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                32,
+                0,
+                32,
+                32
+              ],
+              "duration": 66
+            },
+            {
+              "region": [
+                64,
+                0,
+                32,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                32,
+                0,
+                32,
+                32
+              ],
+              "duration": 444
+            }
+          ]
+        },
+        "open": {
+          "loop": false,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                96,
+                0,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                0,
+                0,
+                32,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                128,
+                0,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                0,
+                32,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                32,
+                32,
+                32,
+                32
+              ],
+              "duration": 100
+            }
+          ]
+        },
+        "stun": {
+          "loop": false,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                64,
+                32,
+                32,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                96,
+                32,
+                32,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                128,
+                32,
+                32,
+                32
+              ],
+              "duration": 66
+            },
+            {
+              "region": [
+                0,
+                64,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                32,
+                64,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                64,
+                64,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                96,
+                64,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                32,
+                32,
+                32,
+                32
+              ],
+              "duration": 100
+            }
+          ]
+        },
+        "idle": {
+          "loop": true,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                32,
+                32,
+                32,
+                32
+              ],
+              "duration": 100
+            }
+          ]
+        },
+        "walk": {
+          "loop": true,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                128,
+                64,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                0,
+                96,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                32,
+                96,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                64,
+                96,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                96,
+                96,
+                32,
+                32
+              ],
+              "duration": 100
+            },
+            {
+              "region": [
+                128,
+                96,
+                32,
+                32
+              ],
+              "duration": 100
+            }
+          ]
+        }
+      }
+    },
+    "bat": {
+      "sheet": "sbat.png",
+      "animations": {
+        "idle": {
+          "loop": true,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                0,
+                0,
+                64,
+                32
+              ],
+              "duration": 82
+            },
+            {
+              "region": [
+                64,
+                0,
+                64,
+                32
+              ],
+              "duration": 65
+            },
+            {
+              "region": [
+                128,
+                0,
+                64,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                192,
+                0,
+                64,
+                32
+              ],
+              "duration": 65
+            },
+            {
+              "region": [
+                0,
+                32,
+                64,
+                32
+              ],
+              "duration": 65
+            },
+            {
+              "region": [
+                64,
+                32,
+                64,
+                32
+              ],
+              "duration": 65
+            },
+            {
+              "region": [
+                128,
+                32,
+                64,
+                32
+              ],
+              "duration": 65
+            },
+            {
+              "region": [
+                192,
+                32,
+                64,
+                32
+              ],
+              "duration": 82
+            }
+          ]
+        },
+        "jump": {
+          "loop": false,
+          "speed": 1000,
+          "frames": [
+            {
+              "region": [
+                0,
+                64,
+                64,
+                32
+              ],
+              "duration": 42
+            },
+            {
+              "region": [
+                64,
+                64,
+                64,
+                32
+              ],
+              "duration": 82
+            },
+            {
+              "region": [
+                128,
+                64,
+                64,
+                32
+              ],
+              "duration": 122
+            },
+            {
+              "region": [
+                192,
+                64,
+                64,
+                32
+              ],
+              "duration": 122
+            },
+            {
+              "region": [
+                0,
+                96,
+                64,
+                32
+              ],
+              "duration": 82
+            },
+            {
+              "region": [
+                64,
+                32,
+                64,
+                32
+              ],
+              "duration": 82
+            },
+            {
+              "region": [
+                128,
+                32,
+                64,
+                32
+              ],
+              "duration": 65
+            },
+            {
+              "region": [
+                192,
+                32,
+                64,
+                32
+              ],
+              "duration": 65
+            }
+          ]
+        }
+      }
+    }
+  }
+}

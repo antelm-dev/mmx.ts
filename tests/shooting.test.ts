@@ -194,6 +194,31 @@ test('the charge aura appears, escalates through its tiers, and clears on releas
   assert.equal(charge().vfx_tier, ChargeTier.None, 'aura clears once the shot is away');
 });
 
+test('releasing a charged shot puts the buster back out', () => {
+  const { input, player } = makePlayer();
+  const charge = () => player.get_ability('Charge') as Charge;
+
+  hold(input, 'fire', true);
+  player.tick(DT);
+  // The tap that begins the hold raises the arm, and its window expires long
+  // before a full charge is ready — which is exactly why the release needs to
+  // raise it again rather than assuming it is still up.
+  while (charge().charged_time < CHARGE_LEVEL_3 + 0.05) player.tick(DT);
+  assert.equal(player.get_animation_layer(), 'normal', 'arm is back down mid-hold');
+
+  hold(input, 'fire', false);
+  player.tick(DT);
+  assert.equal(player.projectiles.at(-1)?.kind, 'charged');
+  assert.equal(
+    player.get_animation_layer(),
+    'pointing_cannon',
+    'the charged shot leaves a raised buster, not a neutral pose',
+  );
+
+  for (let i = 0; i < 40; i++) player.tick(DT);
+  assert.equal(player.get_animation_layer(), 'normal', 'and the arm comes down after');
+});
+
 test('the charge aura loops rather than running off the end of its sheet', () => {
   const { input, player } = makePlayer();
   const charge = () => player.get_ability('Charge') as Charge;

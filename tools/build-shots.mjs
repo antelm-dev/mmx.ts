@@ -90,6 +90,9 @@ const animations = {
   // clip replayed every 0.3s. Drawn here as the animation it actually is.
   charge_1: clipFromGrid(join(textures, 'charge_1.png'), 4, 4, CHARGE_FX_FPS),
   charge_2: clipFromGrid(join(textures, 'charge_2.png'), 4, 4, CHARGE_FX_FPS),
+  // Dash kick-up smoke: another SpriteEffect Sprite2D, 3x2 @ 24fps one-shot
+  // (Player.tscn Dash/dash_particle).
+  dash: clipFromGrid(join(textures, 'dash.png'), 3, 2, 24),
 };
 
 /** Which sheet each clip draws from, so the renderer can pick the right image. */
@@ -101,6 +104,7 @@ const sheets = {
   charge_hit: 'charge_hit.png',
   charge_1: 'charge_1.png',
   charge_2: 'charge_2.png',
+  dash: 'dash.png',
 };
 
 writeFileSync(
@@ -116,6 +120,7 @@ for (const [src, dir] of [
   ['charge_hit.png', textures],
   ['charge_1.png', textures],
   ['charge_2.png', textures],
+  ['dash.png', textures],
 ]) {
   copyFileSync(join(dir, src), join(assets, src));
 }
@@ -127,4 +132,4 @@ for (const [name, clip] of Object.entries(animations)) {
       `${w}x${h}  ${clip.speed.toFixed(1)}fps${clip.loop ? ' loop' : ''}`,
   );
 }
-console.log('\nshot_anims.json + 7 sheets written to src/web/assets');
+console.log('\nshot_anims.json + 8 sheets written to src/web/assets');

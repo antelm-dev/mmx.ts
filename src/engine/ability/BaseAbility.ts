@@ -1,5 +1,5 @@
 import { PHYSICS_FPS } from '../../core/constants.js';
-import type { Character } from '../Character.js';
+import type { AbilityUser } from '../AbilityUser.js';
 
 /**
  * Lifecycle base — port of BaseAbility.gd.
@@ -10,8 +10,14 @@ import type { Character } from '../Character.js';
  * The Godot conflict system (conflicting_moves arrays defined in Player.tscn, which
  * are not available as source) is replaced by the `independent` + `priority` fields,
  * resolved centrally in AbilityUser. Behaviour is documented in the README.
+ *
+ * The owner is a type parameter because the lifecycle is shared by two families
+ * that do *not* share an interface: the player's abilities are driven by input and
+ * need a {@link Character}, the enemies' are driven by an AI and need an
+ * {@link Enemy}. Everything this class itself touches lives on AbilityUser, so the
+ * state machine in AbilityUser can still hold them in one list.
  */
-export abstract class BaseAbility {
+export abstract class BaseAbility<TOwner extends AbilityUser = AbilityUser> {
   active = true;
   executing = false;
   timer = 0;
@@ -25,7 +31,7 @@ export abstract class BaseAbility {
 
   abstract readonly name: string;
 
-  constructor(protected character: Character) {}
+  constructor(protected character: TOwner) {}
 
   get_time(): number {
     return this.character.get_time();
@@ -95,6 +101,10 @@ export abstract class BaseAbility {
     this.Finalize();
     this.character.remove_from_executing_list(this);
     this.character.enable_floor_snap();
+    // BaseAbility.gd emits `ability_end` here. The player port had no listener
+    // for it so it was dropped; the bat's patrol re-anchors on it (see
+    // BeePatrol.ability_who_updates_patrol_area), so it is emitted again.
+    this.character.events.emit('ability_end', this.name);
   }
 
   ResetAbility(): void {
