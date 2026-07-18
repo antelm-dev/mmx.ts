@@ -69,6 +69,12 @@ export class Renderer {
    */
   readonly worldOverlay = new Container();
 
+  /**
+   * Screen-space layer for menus, above the HUD and outside the camera scroll.
+   * Shares the HUD's integer zoom, so its coordinates are the 398x224 view.
+   */
+  readonly uiLayer = new Container();
+
   /** Whole device pixels per world pixel. Recomputed by {@link fit}. */
   private scale = 0;
 
@@ -94,7 +100,7 @@ export class Renderer {
     );
     this.viewport.addChild(this.scene);
     this.hudLayer.addChild(this.hud.view);
-    this.app.stage.addChild(this.viewport, this.hudLayer);
+    this.app.stage.addChild(this.viewport, this.hudLayer, this.uiLayer);
   }
 
   static async create(canvas: HTMLCanvasElement, world: World): Promise<Renderer> {
@@ -167,6 +173,12 @@ export class Renderer {
     this.scale = scale;
     this.viewport.scale.set(scale);
     this.hudLayer.scale.set(scale);
+    this.uiLayer.scale.set(scale);
+  }
+
+  /** Device pixels per world pixel — what screen-space text has to rasterise at. */
+  get pixelScale(): number {
+    return this.scale;
   }
 
   /** Bring the scene graph in line with the simulation, then draw it. */
@@ -215,7 +227,12 @@ export class Renderer {
    * means some frame drew far more than the steady state does.
    */
   stats(): Record<string, string | number> {
-    const pools = { ghosts: this.ghosts, enemies: this.enemies, shots: this.shots, smoke: this.smoke };
+    const pools = {
+      ghosts: this.ghosts,
+      enemies: this.enemies,
+      shots: this.shots,
+      smoke: this.smoke,
+    };
     const drawn = Object.values(pools).reduce((sum, pool) => sum + pool.counts.active, 0);
     const pooled = Object.values(pools).reduce((sum, pool) => sum + pool.counts.pooled, 0);
     const textures = textureCounts();

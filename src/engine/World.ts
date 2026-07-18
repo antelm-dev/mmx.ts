@@ -17,9 +17,10 @@ export interface Sweep {
 }
 
 /**
- * Tile kinds. Slopes are 45-degree ramps filling the half of the tile below the
- * diagonal: `SlopeUpRight` ('/') is empty at its left edge and full height at
- * its right edge, `SlopeUpLeft` ('\') the mirror.
+ * Tile kinds. A slope tile carries a ramp whose surface is linear across the
+ * tile; `SlopeUpRight` ('/') rises left-to-right, `SlopeUpLeft` ('\') the
+ * mirror. How steeply it rises is the tile's {@link SlopeProfile}, which
+ * defaults to the full 45 degrees.
  */
 export enum Tile {
   Empty = 0,
@@ -27,6 +28,30 @@ export enum Tile {
   SlopeUpRight = 2,
   SlopeUpLeft = 3,
 }
+
+/**
+ * How much of a slope tile is filled at each of its vertical edges, in pixels
+ * from the tile's base, `0..TILE_SIZE`. The surface between them is a straight
+ * line, so a tile expresses any angle up to 45 degrees — steeper than that
+ * would need more than a tile of rise, which this cannot represent.
+ *
+ * Shallow ramps are therefore built from a run of tiles whose profiles chain:
+ * a 1-in-2 ramp is `{l:0,r:8}` then `{l:8,r:16}`, and so on. Authoring that by
+ * hand is what the Slope entity and its bake in tools/slope-bake.mjs exist to
+ * avoid.
+ */
+export interface SlopeProfile {
+  /** Fill height at the tile's left edge. */
+  l: number;
+  /** Fill height at the tile's right edge. */
+  r: number;
+}
+
+/** The 45-degree ramp each slope kind means when no profile is given for it. */
+const DEFAULT_PROFILE: Record<number, SlopeProfile> = {
+  [Tile.SlopeUpRight]: { l: 0, r: TILE_SIZE },
+  [Tile.SlopeUpLeft]: { l: TILE_SIZE, r: 0 },
+};
 
 const CHAR_TO_TILE: Record<string, Tile> = {
   "#": Tile.Solid,

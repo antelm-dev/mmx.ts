@@ -1,12 +1,48 @@
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Manager};
 
-const SETTINGS_VERSION: u32 = 1;
+const SETTINGS_VERSION: u32 = 2;
 const MAX_REPLAY_BYTES: u64 = 16 * 1024 * 1024;
+
+/// The actions the front-end can bind, in the bit order recordings use.
+/// Kept in step with REPLAY_ACTIONS in src/core/Replay.ts.
+const BINDABLE_ACTIONS: [&str; 7] = [
+    "move_left",
+    "move_right",
+    "move_up",
+    "move_down",
+    "jump",
+    "dash",
+    "fire",
+];
+
+/// Two `KeyboardEvent.code` slots per action; an empty string is unbound.
+type KeyBindings = BTreeMap<String, [String; 2]>;
+
+fn default_bindings() -> KeyBindings {
+    [
+        ("move_left", ["ArrowLeft", "KeyA"]),
+        ("move_right", ["ArrowRight", "KeyD"]),
+        ("move_up", ["ArrowUp", "KeyW"]),
+        ("move_down", ["ArrowDown", "KeyS"]),
+        ("jump", ["Space", "KeyK"]),
+        ("dash", ["ShiftLeft", "KeyL"]),
+        ("fire", ["KeyJ", "KeyF"]),
+    ]
+    .into_iter()
+    .map(|(action, slots)| {
+        (
+            action.to_owned(),
+            [slots[0].to_owned(), slots[1].to_owned()],
+        )
+    })
+    .collect()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -15,6 +51,7 @@ struct DesktopSettings {
     master_volume: f64,
     fullscreen: bool,
     pause_on_blur: bool,
+    bindings: KeyBindings,
 }
 
 impl Default for DesktopSettings {
@@ -24,6 +61,7 @@ impl Default for DesktopSettings {
             master_volume: 1.0,
             fullscreen: false,
             pause_on_blur: true,
+            bindings: default_bindings(),
         }
     }
 }
@@ -39,8 +77,40 @@ impl DesktopSettings {
         if !self.master_volume.is_finite() || !(0.0..=1.0).contains(&self.master_volume) {
             return Err("masterVolume must be between 0 and 1".into());
         }
+        // Exactly the known actions, no more and no fewer: a binding for an action
+        // the game cannot dispatch is unreachable, and a missing one would leave
+        // that action silently dead on the next launch.
+        if self.bindings.len() != BINDABLE_ACTIONS.len()
+            || !BINDABLE_ACTIONS
+                .iter()
+                .all(|action| self.bindings.contains_key(*action))
+        {
+            return Err(format!(
+                "bindings must cover exactly these actions: {}",
+                BINDABLE_ACTIONS.join(", ")
+            ));
+        }
         Ok(())
     }
+}
+
+/// Bring a stored file forward to the current version.
+///
+/// v1 predates rebinding, so it gains the default map rather than being
+/// rejected — the alternative resets a player's volume the first time they
+/// launch a build that has a settings menu.
+fn migrate_settings(mut value: serde_json::Value) -> serde_json::Value {
+    if value.get("version").and_then(serde_json::Value::as_u64) != Some(1) {
+        return value;
+    }
+    if let Some(object) = value.as_object_mut() {
+        object.insert("version".into(), serde_json::json!(SETTINGS_VERSION));
+        object.insert(
+            "bindings".into(),
+            serde_json::to_value(default_bindings()).unwrap_or(serde_json::Value::Null),
+        );
+    }
+    value
 }
 
 #[derive(Serialize)]
@@ -135,7 +205,9 @@ fn load_settings(app: AppHandle) -> Result<DesktopSettings, String> {
     }
     let text = fs::read_to_string(&path)
         .map_err(|error| format!("could not read {}: {error}", path.display()))?;
-    let settings: DesktopSettings = serde_json::from_str(&text)
+    let stored: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|error| format!("invalid settings in {}: {error}", path.display()))?;
+    let settings: DesktopSettings = serde_json::from_value(migrate_settings(stored))
         .map_err(|error| format!("invalid settings in {}: {error}", path.display()))?;
     settings.validate()?;
     Ok(settings)
@@ -226,5 +298,35 @@ mod tests {
             ..DesktopSettings::default()
         };
         assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn settings_reject_unknown_or_missing_bindings() {
+        let mut settings = DesktopSettings::default();
+        settings.bindings.remove("dash");
+        assert!(settings.validate().is_err());
+
+        let mut settings = DesktopSettings::default();
+        settings
+            .bindings
+            .insert("teleport".into(), ["KeyT".into(), String::new()]);
+        assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn v1_settings_migrate_with_default_bindings() {
+        let stored = serde_json::json!({
+            "version": 1,
+            "masterVolume": 0.4,
+            "fullscreen": true,
+            "pauseOnBlur": false,
+        });
+        let settings: DesktopSettings =
+            serde_json::from_value(migrate_settings(stored)).expect("v1 settings should migrate");
+        assert!(settings.validate().is_ok());
+        // The player's own choices survive; only the new field is defaulted.
+        assert_eq!(settings.master_volume, 0.4);
+        assert!(settings.fullscreen);
+        assert_eq!(settings.bindings, default_bindings());
     }
 }

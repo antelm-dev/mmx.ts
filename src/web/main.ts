@@ -11,7 +11,15 @@ import { animData, enemyAnims } from "./render/assets.js";
 import { Renderer } from "./render/Renderer.js";
 import { spriteSnapshot } from "./render/sprite.js";
 import { SoundEffects } from "./SoundEffects.js";
-import { DEFAULT_SETTINGS, DesktopBridge, type DesktopSettings } from "./DesktopBridge.js";
+import {
+  BINDABLE_ACTIONS,
+  cloneBindings,
+  DEFAULT_BINDINGS,
+  DEFAULT_SETTINGS,
+  DesktopBridge,
+  type DesktopSettings,
+} from "./DesktopBridge.js";
+import { SettingsMenu } from "./ui/SettingsMenu.js";
 import { DebugOverlay } from "./debug/DebugOverlay.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
 import { DebugSession } from "./debug/DebugSession.js";
@@ -33,7 +41,7 @@ const trail = new Trail();
 const smoke = new DashSmoke();
 const overlay = new DebugOverlay();
 const desktop = new DesktopBridge();
-let settings: DesktopSettings = { ...DEFAULT_SETTINGS };
+let settings: DesktopSettings = { ...DEFAULT_SETTINGS, bindings: cloneBindings(DEFAULT_BINDINGS) };
 
 /**
  * The keys physically held right now.
@@ -56,22 +64,72 @@ const debug = new DebugSession({
   replayFiles: desktop.replays,
 });
 
+/**
+ * Write the settings out, coalescing a burst into one write.
+ *
+ * Holding an arrow key on the menu's volume row emits a change per key repeat,
+ * and each one is a disk write on desktop. The delay is short enough that a
+ * player who closes the menu and quits immediately still keeps their choice,
+ * because closing the window does not cancel a pending timer that has already
+ * been given the final value.
+ */
+let saveTimer = 0;
 function persistSettings(): void {
-  void desktop.saveSettings(settings).catch((error: unknown) => {
-    console.warn("Could not save desktop settings", error);
-    debug.notify(`settings save failed: ${String(error)}`);
-  });
+  clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => {
+    void desktop.saveSettings(settings).catch((error: unknown) => {
+      console.warn("Could not save desktop settings", error);
+      debug.notify(`settings save failed: ${String(error)}`);
+    });
+  }, 200);
+}
+
+function setVolume(volume: number): void {
+  settings = { ...settings, masterVolume: Math.max(0, Math.min(1, volume)) };
+  sounds.setMasterVolume(settings.masterVolume);
+  persistSettings();
 }
 
 function adjustVolume(delta: number): void {
-  settings = {
-    ...settings,
-    masterVolume: Math.round(Math.max(0, Math.min(1, settings.masterVolume + delta)) * 10) / 10,
-  };
-  sounds.setMasterVolume(settings.masterVolume);
-  persistSettings();
+  setVolume(Math.round((settings.masterVolume + delta) * 10) / 10);
   debug.notify(`volume ${Math.round(settings.masterVolume * 100)}%`);
 }
+
+// --- settings menu (Escape) -------------------------------------------------
+
+const menu = new SettingsMenu({
+  getSettings: () => settings,
+  setVolume: (volume) => {
+    setVolume(volume);
+    // The point of a volume slider is hearing the result, and the meter alone
+    // says nothing about how loud that actually is.
+    sounds.play("lemon");
+  },
+  setBinding: (action, slot, code) => {
+    const bindings = cloneBindings(settings.bindings);
+    // A key can only mean one thing: taking it for this slot releases it
+    // everywhere else, or the earlier action would keep winning the lookup and
+    // the rebind would look like it silently failed.
+    if (code) {
+      for (const other of BINDABLE_ACTIONS) {
+        for (let i = 0; i < bindings[other].length; i++) {
+          if (bindings[other][i] === code) bindings[other][i] = "";
+        }
+      }
+    }
+    bindings[action][slot] = code;
+    settings = { ...settings, bindings };
+    // The key that was physically down when it was captured belongs to the old
+    // mapping, and no keyup will ever arrive for it under the new one.
+    releaseAllKeys();
+    persistSettings();
+  },
+  onVisibilityChange: (visible) => {
+    // Keys held on the way in would stay held for as long as the menu is up,
+    // and X would be mid-run the instant it closes.
+    if (visible) releaseAllKeys();
+  },
+});
 
 debug.registerCommand({
   code: "F8",
@@ -134,10 +192,16 @@ function bindPlayer(player: Player): void {
     } else if (name === "Dash" || name === "AirDash") {
       sounds.play("dash", { db: -0.676, rate: [1, 1.1] });
     } else if (name === "WallSlide") {
-      sounds.play("wallslide", { rate: [1, 1.1] });
+      // Keep the scrape alive for as long as the sustained ability is active.
+      // It remains routed through SoundEffects' master gain, so changing the
+      // volume while wall-sliding takes effect immediately.
+      sounds.play("wallslide", { loop: true, rate: [1, 1.1] });
     } else if (name === "Damage") {
       sounds.play("damage", { rate: [1, 1.1] });
     }
+  });
+  player.events.on("ability_end", (name: string) => {
+    if (name === "WallSlide") sounds.stop("wallslide");
   });
   player.events.on("land", () => sounds.play("land", { db: -5.333, rate: [1, 1.1] }));
   player.events.on("shot_fired", (charge: number) => {
@@ -200,9 +264,9 @@ function bindScene(scene: Scene): void {
   trail.clear();
   smoke.clear();
   overlay.reset();
-  // A charge loop is the one sound that outlives the frame that started it, so a
-  // rewind mid-charge would leave it droning over a scene that is no longer
-  // charging anything.
+  // Sustained sounds outlive the frame that started them, so a restart or replay
+  // load must not leave a loop from the previous scene playing.
+  sounds.stop("wallslide");
   sounds.stop("charge");
   sounds.stop("chargeMax");
 }
@@ -210,45 +274,54 @@ function bindScene(scene: Scene): void {
 bindScene(debug.scene);
 
 // --- keyboard -> actions ---
-const KEYMAP: Record<string, Action> = {
-  ArrowLeft: "move_left",
-  KeyA: "move_left",
-  ArrowRight: "move_right",
-  KeyD: "move_right",
-  ArrowUp: "move_up",
-  KeyW: "move_up",
-  ArrowDown: "move_down",
-  KeyS: "move_down",
-  Space: "jump",
-  KeyK: "jump",
-  ShiftLeft: "dash",
-  KeyL: "dash",
-  KeyJ: "fire",
-  KeyF: "fire",
-};
+
+/**
+ * Which action a key means right now, from the player's own bindings.
+ *
+ * A lookup over seven actions rather than a prebuilt code->action map, because
+ * the map is now editable at runtime and a cached one would need rebuilding on
+ * every rebind. Fourteen string compares per key event is nothing next to that.
+ */
+function actionFor(code: string): Action | undefined {
+  return BINDABLE_ACTIONS.find((action) => settings.bindings[action].includes(code));
+}
+
+function releaseAllKeys(): void {
+  for (const action of BINDABLE_ACTIONS) held.setDown(action, false);
+}
 
 window.addEventListener("keydown", (e) => {
   sounds.unlock();
-  // Debug keys first, and none of them share a code with the gameplay map above.
-  if (!e.repeat && debug.handleKey(e.code)) {
-    e.preventDefault();
-    return;
+  // The menu first: while it is open it swallows everything, including the keys
+  // that are also gameplay bindings, and while it is closed it takes only Escape.
+  if (!e.repeat || menu.visible) {
+    if (menu.handleKey(e.code)) {
+      e.preventDefault();
+      return;
+    }
   }
-  const a = KEYMAP[e.code];
+
+  // Gameplay before debug, so a key the player has explicitly bound always does
+  // what they bound it to. The default map shares no code with a debug command,
+  // and the menu refuses to bind the function keys, so the debug layer survives
+  // any rebind that can be made from inside the game.
+  const a = actionFor(e.code);
   if (a) {
     held.setDown(a, true);
     e.preventDefault();
+    return;
   }
+  if (!e.repeat && debug.handleKey(e.code)) e.preventDefault();
 });
 window.addEventListener("keyup", (e) => {
-  const a = KEYMAP[e.code];
+  const a = actionFor(e.code);
   if (a) {
     held.setDown(a, false);
     e.preventDefault();
   }
 });
 window.addEventListener("blur", () => {
-  for (const action of Object.values(KEYMAP)) held.setDown(action, false);
+  releaseAllKeys();
   if (settings.pauseOnBlur && !debug.paused) {
     debug.paused = true;
     debug.notify("paused — focus lost");
@@ -310,6 +383,7 @@ async function main(): Promise<void> {
   const [created] = await Promise.all([Renderer.create(canvas, debug.scene.world), sounds.load()]);
   renderer = created;
   renderer.worldOverlay.addChild(overlay.view);
+  renderer.uiLayer.addChild(menu.view);
 
   window.addEventListener("resize", () => renderer?.fit());
   // Dragging the window to a monitor with a different scaling factor changes dpr
@@ -342,7 +416,10 @@ async function main(): Promise<void> {
 
     // Scaled before clamping, so slow motion buys a longer wall-clock budget
     // rather than being cut off at the same quarter second real time is.
-    const elapsed = debug.scaleElapsed((now - last) / 1000);
+    // An open menu contributes no simulation time, for the same reason a pause
+    // does: the accumulator must not fill behind it and then discharge the whole
+    // backlog the moment it closes.
+    const elapsed = menu.visible ? 0 : debug.scaleElapsed((now - last) / 1000);
     if (elapsed > MAX_FRAME_SECONDS) debug.stats.droppedFrames++;
     acc += Math.min(MAX_FRAME_SECONDS, elapsed);
     last = now;
@@ -370,6 +447,8 @@ async function main(): Promise<void> {
     const scene = debug.scene;
     overlay.setVisible(debug.overlayVisible);
     overlay.update(scene, scene.camera);
+    // A no-op unless the window moved to a display that changed the integer zoom.
+    menu.setPixelScale(created.pixelScale);
 
     performance.mark("mmx:render:start");
     created.render(scene.stage, scene.camera, trail, smoke);
