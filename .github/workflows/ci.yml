@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
 
       - run: npm ci
@@ -67,10 +67,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.93.0
+        with:
+          components: rustfmt, clippy
 
       - uses: swatinem/rust-cache@v2
         with:
@@ -78,8 +80,17 @@ jobs:
 
       - run: npm ci
 
+      - name: Cargo fmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+
+      - name: Cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+
+      - name: Cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml --locked
+
       - name: Build desktop
-        run: npm run desktop:build
+        run: npm run desktop:build -- -- --locked
 
       - uses: actions/upload-artifact@v4
         with:
