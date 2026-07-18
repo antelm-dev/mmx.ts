@@ -1,0 +1,30 @@
+{
+  "name": "mmx-core-ts",
+  "version": "1.0.0",
+  "description": "A faithful TypeScript/Node port of the core player gameplay (movement + shooting state machine) from the Mega Man X8 16-bit fan project.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:web": "vite build",
+    "preview": "vite preview",
+    "sim": "tsx src/sim/run.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "serve": "tsx src/server.ts",
+    "play": "npm run dev"
+  },
+  "keywords": [
+    "platformer",
+    "state-machine",
+    "mega-man",
+    "typescript"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.4.0"
+  }
+}
