@@ -1,7 +1,7 @@
 # mmx-core-ts
 
 A faithful **TypeScript / Node** port of the _core player gameplay_ from the
-[Mega Man X8 16-bit](../Mega-Man-X8-16-bit) Godot project — the movement state
+[Mega Man X8 16-bit](https://github.com/AlyssonDaPaz/Mega-Man-X8-16-bit) Godot project — the movement state
 machine (walk / dash / variable jump / air-dash / wall-slide / wall-jump /
 dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
