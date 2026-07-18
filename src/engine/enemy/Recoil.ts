@@ -1,6 +1,6 @@
-import { EnemyAbility } from './EnemyAbility.js';
-import { BAT_JUMP_SPEED, BAT_JUMP_TIME } from '../../core/constants.js';
-import type { Enemy } from '../Enemy.js';
+import { EnemyAbility } from "./EnemyAbility.js";
+import { BAT_JUMP_SPEED, BAT_JUMP_TIME } from "../../core/constants.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * The hop the bat makes after it connects — port of BatJump.gd.
@@ -12,7 +12,7 @@ import type { Enemy } from '../Enemy.js';
  * top of its arc rather than stopping there.
  */
 export class Recoil extends EnemyAbility {
-  readonly name = 'Recoil';
+  readonly name = "Recoil";
 
   jump_time = BAT_JUMP_TIME;
 
@@ -20,7 +20,7 @@ export class Recoil extends EnemyAbility {
 
   constructor(enemy: Enemy) {
     super(enemy);
-    this.animation = 'jump';
+    this.animation = "jump";
     // Conflicts with nothing: the recoil always wins, and Pursuit names it so
     // that a chase in progress is interrupted by the hop.
     this.conflicts = [];
@@ -39,7 +39,7 @@ export class Recoil extends EnemyAbility {
     this.set_vertical_speed(this.vertical_speed);
 
     if (this.timer > this.jump_time) {
-      this.play_animation('idle');
+      this.play_animation("idle");
       this.EndAbility();
     }
   }

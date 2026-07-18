@@ -1,4 +1,4 @@
-import { DASH_FX_FPS, DASH_FX_FRAME_COUNT } from '../core/constants.js';
+import { DASH_FX_FPS, DASH_FX_FRAME_COUNT } from "../core/constants.js";
 
 /**
  * The dust X kicks up when he pushes off into a dash — the other half of

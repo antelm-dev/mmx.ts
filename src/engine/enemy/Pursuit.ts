@@ -1,10 +1,10 @@
-import { EnemyAbility } from './EnemyAbility.js';
+import { EnemyAbility } from "./EnemyAbility.js";
 import {
   BAT_PURSUIT_GIVE_UP_DISTANCE,
   BAT_PURSUIT_SPEED,
   BAT_WEAVE_RATE,
-} from '../../core/constants.js';
-import type { Enemy } from '../Enemy.js';
+} from "../../core/constants.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * Homing flight — port of BatPursuit.gd.
@@ -16,14 +16,14 @@ import type { Enemy } from '../Enemy.js';
  * repeatedly overshoots and comes back around.
  */
 export class Pursuit extends EnemyAbility {
-  readonly name = 'Pursuit';
+  readonly name = "Pursuit";
 
   pursuit_speed = BAT_PURSUIT_SPEED;
 
   constructor(enemy: Enemy) {
     super(enemy);
-    this.animation = 'idle';
-    this.conflicts = ['Recoil'];
+    this.animation = "idle";
+    this.conflicts = ["Recoil"];
   }
 
   /**

@@ -1,4 +1,4 @@
-import { TILE_SIZE } from '../core/constants.js';
+import { TILE_SIZE } from "../core/constants.js";
 
 /**
  * Shrink applied to the max edge of an AABB before mapping it to a tile index,
@@ -29,9 +29,9 @@ export enum Tile {
 }
 
 const CHAR_TO_TILE: Record<string, Tile> = {
-  '#': Tile.Solid,
-  '/': Tile.SlopeUpRight,
-  '\\': Tile.SlopeUpLeft,
+  "#": Tile.Solid,
+  "/": Tile.SlopeUpRight,
+  "\\": Tile.SlopeUpLeft,
 };
 
 function isSlope(t: Tile): boolean {
@@ -122,10 +122,7 @@ export class World {
 
   /** Highest (smallest y) point of the ramp under the x span `x0..x1`. */
   private slopeTopOverSpan(tx: number, ty: number, kind: Tile, x0: number, x1: number): number {
-    return Math.min(
-      this.slopeSurfaceY(tx, ty, kind, x0),
-      this.slopeSurfaceY(tx, ty, kind, x1),
-    );
+    return Math.min(this.slopeSurfaceY(tx, ty, kind, x0), this.slopeSurfaceY(tx, ty, kind, x1));
   }
 
   /** Does the AABB (center cx,cy, half hw,hh) overlap any solid tile or ramp? */

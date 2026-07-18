@@ -1,6 +1,6 @@
-import { Container, Graphics } from 'pixi.js';
-import { TILE_SIZE } from '../../core/constants.js';
-import { Tile, World } from '../../engine/World.js';
+import { Container, Graphics } from "pixi.js";
+import { TILE_SIZE } from "../../core/constants.js";
+import { Tile, World } from "../../engine/World.js";
 
 /**
  * The level's backdrop and collision geometry, built once.
@@ -23,15 +23,15 @@ const COLOR_GRID = 0x123f2b;
 const COLOR_TILE_FILL = 0x080d1c;
 export const COLOR_TILE_EDGE = 0xe8eefc;
 
-type Side = 'top' | 'bottom' | 'left' | 'right';
+type Side = "top" | "bottom" | "left" | "right";
 
-const SIDES: Side[] = ['top', 'bottom', 'left', 'right'];
+const SIDES: Side[] = ["top", "bottom", "left", "right"];
 
 const OPPOSITE: Record<Side, Side> = {
-  top: 'bottom',
-  bottom: 'top',
-  left: 'right',
-  right: 'left',
+  top: "bottom",
+  bottom: "top",
+  left: "right",
+  right: "left",
 };
 
 const NEIGHBOUR: Record<Side, [number, number]> = {
@@ -51,9 +51,9 @@ function coversSide(kind: Tile, side: Side): boolean {
     case Tile.Solid:
       return true;
     case Tile.SlopeUpRight:
-      return side === 'right' || side === 'bottom';
+      return side === "right" || side === "bottom";
     case Tile.SlopeUpLeft:
-      return side === 'left' || side === 'bottom';
+      return side === "left" || side === "bottom";
     default:
       return false;
   }
@@ -82,13 +82,13 @@ function traceSide(g: Graphics, side: Side, x: number, y: number): void {
   const x1 = x + TILE_SIZE;
   const y1 = y + TILE_SIZE;
   switch (side) {
-    case 'top':
+    case "top":
       g.moveTo(x, y + 0.5).lineTo(x1, y + 0.5);
       break;
-    case 'bottom':
+    case "bottom":
       g.moveTo(x, y1 - 0.5).lineTo(x1, y1 - 0.5);
       break;
-    case 'left':
+    case "left":
       g.moveTo(x + 0.5, y).lineTo(x + 0.5, y1);
       break;
     default:

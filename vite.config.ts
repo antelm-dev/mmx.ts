@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 /**
  * Vite serves the web front-end (index.html -> src/web/main.ts), which renders with
@@ -14,12 +14,12 @@ export default defineConfig({
     strictPort: true,
     open: !isTauri,
     watch: {
-      ignored: (p) => p.replace(/\\/g, '/').includes('/src-tauri/'),
+      ignored: (p) => p.replace(/\\/g, "/").includes("/src-tauri/"),
     },
   },
   build: {
-    outDir: 'dist-web',
+    outDir: "dist-web",
     emptyOutDir: true,
-    target: 'es2020',
+    target: "es2020",
   },
 });

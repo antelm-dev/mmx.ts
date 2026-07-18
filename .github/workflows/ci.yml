@@ -24,6 +24,12 @@ jobs:
 
       - run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Format
+        run: npm run fmt:check
+
       - name: Test
         run: npm test
 

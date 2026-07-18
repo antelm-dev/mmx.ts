@@ -1,12 +1,12 @@
-import { Movement } from '../ability/Movement.js';
-import type { Actor } from '../Actor.js';
-import type { Character } from '../Character.js';
+import { Movement } from "../ability/Movement.js";
+import type { Actor } from "../Actor.js";
+import type { Character } from "../Character.js";
 import {
   PLAYER_DAMAGE_DURATION,
   PLAYER_DAMAGE_INVULNERABILITY,
   PLAYER_KNOCKBACK_JUMP_VELOCITY,
   PLAYER_KNOCKBACK_SPEED,
-} from '../../core/constants.js';
+} from "../../core/constants.js";
 
 /**
  * Player hurt/knockback — port of Damage.gd and Player.tscn's Damage node.
@@ -16,9 +16,9 @@ import {
  * every running move immediately, including the independent buster/charge layer.
  */
 export class Damage extends Movement {
-  readonly name = 'Damage';
+  readonly name = "Damage";
   priority = 100;
-  override animation = 'damage';
+  override animation = "damage";
 
   duration_time = PLAYER_DAMAGE_DURATION;
   invulnerability_time = PLAYER_DAMAGE_INVULNERABILITY;
@@ -64,7 +64,7 @@ export class Damage extends Movement {
     this.zero_bonus_horizontal_speed();
     // Damage.gd lifts X one pixel before the launch so floor snap cannot pin him.
     this.character.pos.y -= 1;
-    this.character.events.emit('received_damage', this.damage_taken);
+    this.character.events.emit("received_damage", this.damage_taken);
   }
 
   override _Update(dt: number): void {
@@ -119,11 +119,11 @@ export class Damage extends Movement {
       const reduced = this.character.current_health - 1;
       this.character.current_health = 1;
       this.death_protection = 0;
-      this.character.events.emit('reduced_health', reduced);
+      this.character.events.emit("reduced_health", reduced);
       return;
     }
 
     this.character.current_health -= actual;
-    this.character.events.emit('reduced_health', actual);
+    this.character.events.emit("reduced_health", actual);
   }
 }

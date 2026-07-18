@@ -10,29 +10,29 @@
  *
  *   node tools/export-ldtk.mjs [--force]
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 
 const GRID = 16;
 
-const SOURCE = new URL('../levels/stage1.ascii', import.meta.url);
+const SOURCE = new URL("../levels/stage1.ascii", import.meta.url);
 
 /**
  * The grid is everything after the first blank line, so the file can carry a
  * legend above it. Rows are padded to the widest, matching World.fromRows.
  */
 function readAscii(url) {
-  const text = readFileSync(url, 'utf8').replaceAll('\r\n', '\n');
-  const blank = text.indexOf('\n\n');
+  const text = readFileSync(url, "utf8").replaceAll("\r\n", "\n");
+  const blank = text.indexOf("\n\n");
   const body = blank === -1 ? text : text.slice(blank + 2);
-  return body.split('\n').filter((line) => line.length > 0);
+  return body.split("\n").filter((line) => line.length > 0);
 }
 
 const ASCII = readAscii(SOURCE);
 
 // Must match the Tile enum in src/engine/World.ts. 'S' marks the spawn entity
 // and leaves the tile itself empty.
-const CHAR_TO_VALUE = { '#': 1, '/': 2, '\\': 3 };
+const CHAR_TO_VALUE = { "#": 1, "/": 2, "\\": 3 };
 
 const cols = Math.max(...ASCII.map((r) => r.length));
 const rows = ASCII.length;
@@ -42,7 +42,7 @@ let spawn = null;
 for (let y = 0; y < rows; y++) {
   for (let x = 0; x < cols; x++) {
     const ch = ASCII[y][x];
-    if (ch === 'S') {
+    if (ch === "S") {
       if (spawn) throw new Error(`levels/stage1.ascii: more than one spawn ('S')`);
       spawn = [x, y];
     }
@@ -110,11 +110,11 @@ const layerInstCommon = {
 
 const project = {
   iid: randomUUID(),
-  jsonVersion: '1.5.3',
+  jsonVersion: "1.5.3",
   appBuildId: 473688,
   nextUid: 100,
-  identifierStyle: 'Capitalize',
-  worldLayout: 'Free',
+  identifierStyle: "Capitalize",
+  worldLayout: "Free",
   worldGridWidth: 256,
   worldGridHeight: 256,
   defaultLevelWidth: cols * GRID,
@@ -124,19 +124,19 @@ const project = {
   defaultEntityHeight: GRID,
   defaultPivotX: 0,
   defaultPivotY: 0,
-  bgColor: '#40465B',
-  defaultLevelBgColor: '#696A79',
+  bgColor: "#40465B",
+  defaultLevelBgColor: "#696A79",
   minifyJson: false,
   externalLevels: false,
   exportTiled: false,
   simplifiedExport: false,
-  imageExportMode: 'None',
+  imageExportMode: "None",
   exportLevelBg: true,
   pngFilePattern: null,
   backupOnSave: false,
   backupLimit: 10,
   backupRelPath: null,
-  levelNamePattern: 'Level_%idx',
+  levelNamePattern: "Level_%idx",
   tutorialDesc: null,
   customCommands: [],
   flags: [],
@@ -147,30 +147,30 @@ const project = {
     layers: [
       {
         ...layerDefCommon,
-        __type: 'Entities',
-        identifier: 'Entities',
-        type: 'Entities',
+        __type: "Entities",
+        identifier: "Entities",
+        type: "Entities",
         uid: ENTITIES_UID,
         intGridValues: [],
         intGridValuesGroups: [],
       },
       {
         ...layerDefCommon,
-        __type: 'IntGrid',
-        identifier: 'Collision',
-        type: 'IntGrid',
+        __type: "IntGrid",
+        identifier: "Collision",
+        type: "IntGrid",
         uid: COLLISION_UID,
         intGridValues: [
-          { value: 1, identifier: 'Solid', color: '#7F8FA4', tile: null, groupUid: 0 },
-          { value: 2, identifier: 'SlopeUpRight', color: '#E4A672', tile: null, groupUid: 0 },
-          { value: 3, identifier: 'SlopeUpLeft', color: '#B86F50', tile: null, groupUid: 0 },
+          { value: 1, identifier: "Solid", color: "#7F8FA4", tile: null, groupUid: 0 },
+          { value: 2, identifier: "SlopeUpRight", color: "#E4A672", tile: null, groupUid: 0 },
+          { value: 3, identifier: "SlopeUpLeft", color: "#B86F50", tile: null, groupUid: 0 },
         ],
         intGridValuesGroups: [],
       },
     ],
     entities: [
       {
-        identifier: 'Spawn',
+        identifier: "Spawn",
         uid: SPAWN_UID,
         tags: [],
         width: GRID,
@@ -186,18 +186,18 @@ const project = {
         fillOpacity: 1,
         lineOpacity: 1,
         hollow: false,
-        color: '#94D9B3',
-        renderMode: 'Ellipse',
+        color: "#94D9B3",
+        renderMode: "Ellipse",
         showName: true,
         tilesetId: null,
         tileId: null,
-        tileRenderMode: 'FitInside',
+        tileRenderMode: "FitInside",
         tileRect: null,
         uiTileRect: null,
         nineSliceBorders: [],
         maxCount: 1,
-        limitScope: 'PerLevel',
-        limitBehavior: 'MoveLastOne',
+        limitScope: "PerLevel",
+        limitBehavior: "MoveLastOne",
         // Top-left pivot keeps the exported px identical to the tile origin, which
         // is the convention the engine's spawn constant already used.
         pivotX: 0,
@@ -215,7 +215,7 @@ const project = {
   },
   levels: [
     {
-      identifier: 'Stage1',
+      identifier: "Stage1",
       iid: randomUUID(),
       uid: LEVEL_UID,
       worldX: 0,
@@ -223,14 +223,14 @@ const project = {
       worldDepth: 0,
       pxWid: cols * GRID,
       pxHei: rows * GRID,
-      __bgColor: '#696A79',
+      __bgColor: "#696A79",
       bgColor: null,
       useAutoIdentifier: false,
       bgRelPath: null,
       bgPos: null,
       bgPivotX: 0.5,
       bgPivotY: 0.5,
-      __smartColor: '#AFAFC0',
+      __smartColor: "#AFAFC0",
       __bgPos: null,
       externalRelPath: null,
       fieldInstances: [],
@@ -239,19 +239,19 @@ const project = {
       layerInstances: [
         {
           ...layerInstCommon,
-          __identifier: 'Entities',
-          __type: 'Entities',
+          __identifier: "Entities",
+          __type: "Entities",
           iid: randomUUID(),
           layerDefUid: ENTITIES_UID,
           intGridCsv: [],
           entityInstances: [
             {
-              __identifier: 'Spawn',
+              __identifier: "Spawn",
               __grid: [spawnX, spawnY],
               __pivot: [0, 0],
               __tags: [],
               __tile: null,
-              __smartColor: '#94D9B3',
+              __smartColor: "#94D9B3",
               __worldX: spawnX * GRID,
               __worldY: spawnY * GRID,
               iid: randomUUID(),
@@ -265,8 +265,8 @@ const project = {
         },
         {
           ...layerInstCommon,
-          __identifier: 'Collision',
-          __type: 'IntGrid',
+          __identifier: "Collision",
+          __type: "IntGrid",
           iid: randomUUID(),
           layerDefUid: COLLISION_UID,
           intGridCsv,
@@ -277,14 +277,14 @@ const project = {
   ],
 };
 
-const outDir = new URL('../levels/', import.meta.url);
-const outFile = new URL('stage1.ldtk', outDir);
+const outDir = new URL("../levels/", import.meta.url);
+const outFile = new URL("stage1.ldtk", outDir);
 mkdirSync(outDir, { recursive: true });
 
-if (existsSync(outFile) && !process.argv.includes('--force')) {
-  console.error('levels/stage1.ldtk already exists; refusing to overwrite (use --force).');
+if (existsSync(outFile) && !process.argv.includes("--force")) {
+  console.error("levels/stage1.ldtk already exists; refusing to overwrite (use --force).");
   process.exit(1);
 }
 
-writeFileSync(outFile, JSON.stringify(project, null, 2) + '\n');
+writeFileSync(outFile, JSON.stringify(project, null, 2) + "\n");
 console.log(`wrote levels/stage1.ldtk (${cols}x${rows})`);

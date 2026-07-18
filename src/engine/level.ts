@@ -1,8 +1,8 @@
-import { World } from './World.js';
-import type { CameraZone } from './Camera.js';
-import type { LevelData, LevelEntity } from './LevelData.js';
-import type { EnemyKind } from './Enemy.js';
-import { level as stage1 } from './levels/stage1.js';
+import { World } from "./World.js";
+import type { CameraZone } from "./Camera.js";
+import type { LevelData, LevelEntity } from "./LevelData.js";
+import type { EnemyKind } from "./Enemy.js";
+import { level as stage1 } from "./levels/stage1.js";
 
 /**
  * The playable level. Authored in LDtk (levels/stage1.ldtk) and compiled to
@@ -40,7 +40,9 @@ export function entities(id: string): LevelEntity[] {
 function requireEntity(id: string): LevelEntity {
   const found = entities(id);
   if (found.length !== 1) {
-    throw new Error(`level ${LEVEL.identifier}: expected exactly one '${id}', found ${found.length}`);
+    throw new Error(
+      `level ${LEVEL.identifier}: expected exactly one '${id}', found ${found.length}`,
+    );
   }
   return found[0];
 }
@@ -51,13 +53,13 @@ function requireEntity(id: string): LevelEntity {
  * column 3 was wrong (it sat under a platform with ~2px of headroom, so a jump
  * there instantly headbumped), which is exactly the mistake an editor prevents.
  */
-const spawn = requireEntity('Spawn');
+const spawn = requireEntity("Spawn");
 export const SPAWN = { x: spawn.x, y: spawn.y };
 
 /** Read an optional LDtk boolean field, defaulting when it is absent or null. */
 function boolField(e: LevelEntity, name: string, fallback: boolean): boolean {
   const v = e.fields[name];
-  return typeof v === 'boolean' ? v : fallback;
+  return typeof v === "boolean" ? v : fallback;
 }
 
 /**
@@ -77,20 +79,20 @@ export interface EnemySpawn {
   facing: number;
 }
 
-const ENEMY_KINDS: readonly EnemyKind[] = ['metool', 'bat'];
+const ENEMY_KINDS: readonly EnemyKind[] = ["metool", "bat"];
 
-export const ENEMY_SPAWNS: EnemySpawn[] = entities('Enemy').map((e) => {
+export const ENEMY_SPAWNS: EnemySpawn[] = entities("Enemy").map((e) => {
   const kind = e.fields.Kind;
-  if (typeof kind !== 'string' || !ENEMY_KINDS.includes(kind as EnemyKind)) {
+  if (typeof kind !== "string" || !ENEMY_KINDS.includes(kind as EnemyKind)) {
     throw new Error(
-      `level ${LEVEL.identifier}: Enemy at ${e.x},${e.y} has Kind '${String(kind)}'; expected one of ${ENEMY_KINDS.join(', ')}`,
+      `level ${LEVEL.identifier}: Enemy at ${e.x},${e.y} has Kind '${String(kind)}'; expected one of ${ENEMY_KINDS.join(", ")}`,
     );
   }
   return {
     kind: kind as EnemyKind,
     x: e.x,
     y: e.y,
-    facing: boolField(e, 'FacesRight', false) ? 1 : -1,
+    facing: boolField(e, "FacesRight", false) ? 1 : -1,
   };
 });
 
@@ -103,11 +105,11 @@ export const ENEMY_SPAWNS: EnemySpawn[] = entities('Enemy').map((e) => {
  * obvious in the editor and invisible in a table of numbers. Their BindX/BindY
  * fields default to true so a plain undecorated rectangle locks both axes.
  */
-export const CAMERA_ZONES: CameraZone[] = entities('CameraZone').map((e) => ({
+export const CAMERA_ZONES: CameraZone[] = entities("CameraZone").map((e) => ({
   x: e.x,
   y: e.y,
   w: e.w,
   h: e.h,
-  bindX: boolField(e, 'BindX', true),
-  bindY: boolField(e, 'BindY', true),
+  bindX: boolField(e, "BindX", true),
+  bindY: boolField(e, "BindY", true),
 }));

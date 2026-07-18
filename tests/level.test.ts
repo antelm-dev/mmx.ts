@@ -1,13 +1,13 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { test } from "node:test";
+import assert from "node:assert/strict";
 
-import { World } from '../src/engine/World.js';
-import { makeWorld, LEVEL, SPAWN, CAMERA_ZONES, entities } from '../src/engine/level.js';
-import { Camera } from '../src/engine/Camera.js';
-import { Player } from '../src/engine/Player.js';
-import { Input } from '../src/core/Input.js';
-import { DT, TILE_SIZE } from '../src/core/constants.js';
-import { readFileSync } from 'node:fs';
+import { World } from "../src/engine/World.js";
+import { makeWorld, LEVEL, SPAWN, CAMERA_ZONES, entities } from "../src/engine/level.js";
+import { Camera } from "../src/engine/Camera.js";
+import { Player } from "../src/engine/Player.js";
+import { Input } from "../src/core/Input.js";
+import { DT, TILE_SIZE } from "../src/core/constants.js";
+import { readFileSync } from "node:fs";
 
 /**
  * The authored text grid the LDtk project was built from. Read from the same file
@@ -20,40 +20,39 @@ import { readFileSync } from 'node:fs';
  * the .ldtk file and calls process.exit at import time.
  */
 function readAscii(url: URL): string[] {
-  const text = readFileSync(url, 'utf8').replaceAll('\r\n', '\n');
-  const blank = text.indexOf('\n\n');
-  return (blank === -1 ? text : text.slice(blank + 2)).split('\n').filter((l) => l.length > 0);
+  const text = readFileSync(url, "utf8").replaceAll("\r\n", "\n");
+  const blank = text.indexOf("\n\n");
+  return (blank === -1 ? text : text.slice(blank + 2)).split("\n").filter((l) => l.length > 0);
 }
 
-const AUTHORED = readAscii(new URL('../levels/stage1.ascii', import.meta.url));
+const AUTHORED = readAscii(new URL("../levels/stage1.ascii", import.meta.url));
 
 /** 'S' marks the spawn entity and leaves the tile itself empty. */
-const SPAWN_MARK = 'S';
+const SPAWN_MARK = "S";
 
-test('the imported level reproduces the authored geometry tile for tile', () => {
+test("the imported level reproduces the authored geometry tile for tile", () => {
   const imported = makeWorld();
-  const expected = World.fromRows(AUTHORED.map((r) => r.replaceAll(SPAWN_MARK, '.')));
+  const expected = World.fromRows(AUTHORED.map((r) => r.replaceAll(SPAWN_MARK, ".")));
 
   assert.equal(imported.cols, expected.cols);
   assert.equal(imported.rows, expected.rows);
 
   for (let y = 0; y < expected.rows; y++) {
     for (let x = 0; x < expected.cols; x++) {
-      assert.equal(
-        imported.tileAt(x, y),
-        expected.tileAt(x, y),
-        `tile mismatch at ${x},${y}`,
-      );
+      assert.equal(imported.tileAt(x, y), expected.tileAt(x, y), `tile mismatch at ${x},${y}`);
     }
   }
 });
 
-test('the grid size the level was authored at matches the engine tile size', () => {
+test("the grid size the level was authored at matches the engine tile size", () => {
   assert.equal(LEVEL.gridSize, TILE_SIZE);
 });
 
-test('spawn comes from the LDtk Spawn entity and sits in open air above a floor', () => {
-  assert.deepEqual(entities('Spawn').map((e) => e.id), ['Spawn']);
+test("spawn comes from the LDtk Spawn entity and sits in open air above a floor", () => {
+  assert.deepEqual(
+    entities("Spawn").map((e) => e.id),
+    ["Spawn"],
+  );
 
   // Located from the authored marker, so moving the spawn in the .ascii does not
   // need this expectation restated.
@@ -65,32 +64,32 @@ test('spawn comes from the LDtk Spawn entity and sits in open air above a floor'
   const world = makeWorld();
   const cx = Math.floor(SPAWN.x / TILE_SIZE);
   const cy = Math.floor(SPAWN.y / TILE_SIZE);
-  assert.equal(world.isSolidTile(cx, cy), false, 'spawn tile is inside geometry');
-  assert.equal(world.isSolidTile(cx, cy - 1), false, 'no headroom above spawn');
+  assert.equal(world.isSolidTile(cx, cy), false, "spawn tile is inside geometry");
+  assert.equal(world.isSolidTile(cx, cy - 1), false, "no headroom above spawn");
 });
 
-test('level camera holds each vertical tier in a stable frame', () => {
+test("level camera holds each vertical tier in a stable frame", () => {
   const world = makeWorld();
   const camera = new Camera(world.widthPx, world.heightPx);
   camera.setZones(CAMERA_ZONES);
   camera.snapTo(SPAWN.x, SPAWN.y);
 
-  assert.equal(CAMERA_ZONES.length, 3, 'upper, ground, and cavern zones must be authored');
-  assert.equal(camera.y, 224, 'spawn should use the ground frame');
+  assert.equal(CAMERA_ZONES.length, 3, "upper, ground, and cavern zones must be authored");
+  assert.equal(camera.y, 224, "spawn should use the ground frame");
 
   // Running and ordinary jumps within a tier should not bob the whole screen.
   for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 400, DT);
-  assert.equal(camera.y, 224, 'ground traversal changed the vertical frame');
+  assert.equal(camera.y, 224, "ground traversal changed the vertical frame");
 
   // Crossing a tier boundary hands over to the next authored frame and eases
   // there using the regular camera transition rather than cutting immediately.
   camera.follow(SPAWN.x + 300, 480, DT);
-  assert.ok(camera.y > 224 && camera.y < 288, 'cavern transition did not ease');
+  assert.ok(camera.y > 224 && camera.y < 288, "cavern transition did not ease");
   for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 480, DT);
-  assert.equal(camera.y, 288, 'cavern did not settle on its frame');
+  assert.equal(camera.y, 288, "cavern did not settle on its frame");
 
   for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 200, DT);
-  assert.equal(camera.y, 0, 'upper route did not settle on its frame');
+  assert.equal(camera.y, 0, "upper route did not settle on its frame");
 });
 
 /**
@@ -105,13 +104,13 @@ function climbOutFrom(startX: number, wallX: number): number {
 
   for (let i = 0; i < 60; i++) player.tick(DT); // drop to the cavern floor
 
-  const toward = wallX > player.pos.x ? 'move_right' : 'move_left';
+  const toward = wallX > player.pos.x ? "move_right" : "move_left";
   input.setDown(toward, true);
   for (let i = 0; i < 600 && Math.abs(player.pos.x - wallX) > 10; i++) player.tick(DT);
 
   let best = player.pos.y;
   for (let i = 0; i < 900; i++) {
-    input.setDown('jump', i % 20 < 6);
+    input.setDown("jump", i % 20 < 6);
     player.tick(DT);
     best = Math.min(best, player.pos.y);
   }
@@ -127,17 +126,17 @@ function climbOutFrom(startX: number, wallX: number): number {
  */
 const GROUND_SURFACE_Y = 22 * TILE_SIZE;
 
-test('the left cavern region can be escaped by wall-jumping', () => {
+test("the left cavern region can be escaped by wall-jumping", () => {
   const best = climbOutFrom(30 * TILE_SIZE, 65 * TILE_SIZE - 8);
   assert.ok(best < GROUND_SURFACE_Y, `only reached y ${best}, cavern is a dead end`);
 });
 
-test('the right cavern region can be escaped by wall-jumping', () => {
+test("the right cavern region can be escaped by wall-jumping", () => {
   const best = climbOutFrom(85 * TILE_SIZE, 91 * TILE_SIZE - 8);
   assert.ok(best < GROUND_SURFACE_Y, `only reached y ${best}, cavern is a dead end`);
 });
 
-test('each World gets its own tile grid', () => {
+test("each World gets its own tile grid", () => {
   assert.notEqual(makeWorld(), makeWorld());
   assert.equal(makeWorld().tileAt(0, 0), makeWorld().tileAt(0, 0));
 });

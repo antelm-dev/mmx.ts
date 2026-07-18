@@ -1,19 +1,18 @@
-import { Application, Container, Sprite } from 'pixi.js';
-import { CHARGE_FX_OFFSET_Y, ChargeTier, VIEW_WIDTH, VIEW_HEIGHT } from '../../core/constants.js';
-import type { Charge } from '../../engine/abilities/Charge.js';
-import type { Camera } from '../../engine/Camera.js';
-import type { Enemy } from '../../engine/Enemy.js';
-import type { Player } from '../../engine/Player.js';
-import type { Stage } from '../../engine/Stage.js';
-import type { World } from '../../engine/World.js';
-import { DashSmoke } from '../DashSmoke.js';
-import { Trail } from '../Trail.js';
-import { enemyAnims, PLAYER_SHEETS, SHEET_URLS } from './assets.js';
-import { Hud } from './Hud.js';
-import { place, spriteSnapshot } from './sprite.js';
-import { SpritePool } from './SpritePool.js';
-import { buildTerrain, COLOR_BG } from './terrain.js';
-import { loadSheets, regionTexture, shotTexture } from './textures.js';
+import { Application, Container, Sprite } from "pixi.js";
+import { CHARGE_FX_OFFSET_Y, ChargeTier, VIEW_WIDTH, VIEW_HEIGHT } from "../../core/constants.js";
+import type { Charge } from "../../engine/abilities/Charge.js";
+import type { Camera } from "../../engine/Camera.js";
+import type { Player } from "../../engine/Player.js";
+import type { Stage } from "../../engine/Stage.js";
+import type { World } from "../../engine/World.js";
+import { DashSmoke } from "../DashSmoke.js";
+import { Trail } from "../Trail.js";
+import { enemyAnims, PLAYER_SHEETS, SHEET_URLS } from "./assets.js";
+import { Hud } from "./Hud.js";
+import { place, spriteSnapshot } from "./sprite.js";
+import { SpritePool } from "./SpritePool.js";
+import { buildTerrain, COLOR_BG } from "./terrain.js";
+import { loadSheets, regionTexture, shotTexture } from "./textures.js";
 
 /**
  * Browser front-end: renders the ported gameplay with PixiJS. The scene graph is
@@ -46,9 +45,9 @@ import { loadSheets, regionTexture, shotTexture } from './textures.js';
  * a GPU tint is a vertex attribute, so it is free.
  */
 const CHARGE_TIER_FX: Record<number, { clip: string; tint: number }> = {
-  [ChargeTier.Charging]: { clip: 'charge_1', tint: 0x78d8f0 }, // x_charging_particle.tres
-  [ChargeTier.Charged]: { clip: 'charge_2', tint: 0xfff287 }, // x_charged_particle.tres
-  [ChargeTier.Super]: { clip: 'charge_2', tint: 0xffffff }, // x_supercharged_particle.tres
+  [ChargeTier.Charging]: { clip: "charge_1", tint: 0x78d8f0 }, // x_charging_particle.tres
+  [ChargeTier.Charged]: { clip: "charge_2", tint: 0xfff287 }, // x_charged_particle.tres
+  [ChargeTier.Super]: { clip: "charge_2", tint: 0xffffff }, // x_supercharged_particle.tres
 };
 
 export class Renderer {
@@ -250,12 +249,12 @@ export class Renderer {
     place(this.player, texture, snap.x, snap.y, snap.facing);
     // Character.apply_invulnerability_shader sets Alpha to 0.5 after the hurt
     // animation ends; Damage._Setup keeps full alpha during the actual tumble.
-    this.player.alpha = player.is_invulnerable() && !player.is_executing('Damage') ? 0.5 : 1;
+    this.player.alpha = player.is_invulnerable() && !player.is_executing("Damage") ? 0.5 : 1;
   }
 
   /** The charge-up aura, drawn over X exactly as the emitter sits over his sprite. */
   private syncAura(player: Player): void {
-    const charge = player.get_ability('Charge') as Charge | undefined;
+    const charge = player.get_ability("Charge") as Charge | undefined;
     const fx = charge && CHARGE_TIER_FX[charge.vfx_tier];
     const snap = fx && spriteSnapshot(player);
     const texture = fx && snap ? shotTexture(fx.clip, charge!.vfx_frame) : null;

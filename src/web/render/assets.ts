@@ -1,21 +1,21 @@
-import type { Region } from '../../engine/Animation.js';
-import animData from '../assets/x_anims.json';
-import atlasUrl from '../assets/x.png';
-import armAtlasUrl from '../assets/x_leftarm.png';
-import shotAnimData from '../assets/shot_anims.json';
-import lemonUrl from '../assets/lemon.png';
-import mediumShotUrl from '../assets/medium_shot.png';
-import heavyShotUrl from '../assets/heavy_shot.png';
-import lemonHitUrl from '../assets/lemon_hit.png';
-import chargeHitUrl from '../assets/charge_hit.png';
-import charge1Url from '../assets/charge_1.png';
-import charge2Url from '../assets/charge_2.png';
-import dashUrl from '../assets/dash.png';
-import xBarUrl from '../assets/x_bar.png';
-import hpFillUrl from '../assets/hp_fill.png';
-import enemyAnimData from '../assets/enemy_anims.json';
-import metoolUrl from '../assets/metool.png';
-import batUrl from '../assets/sbat.png';
+import type { Region } from "../../engine/Animation.js";
+import animData from "../assets/x_anims.json";
+import atlasUrl from "../assets/x.png";
+import armAtlasUrl from "../assets/x_leftarm.png";
+import shotAnimData from "../assets/shot_anims.json";
+import lemonUrl from "../assets/lemon.png";
+import mediumShotUrl from "../assets/medium_shot.png";
+import heavyShotUrl from "../assets/heavy_shot.png";
+import lemonHitUrl from "../assets/lemon_hit.png";
+import chargeHitUrl from "../assets/charge_hit.png";
+import charge1Url from "../assets/charge_1.png";
+import charge2Url from "../assets/charge_2.png";
+import dashUrl from "../assets/dash.png";
+import xBarUrl from "../assets/x_bar.png";
+import hpFillUrl from "../assets/hp_fill.png";
+import enemyAnimData from "../assets/enemy_anims.json";
+import metoolUrl from "../assets/metool.png";
+import batUrl from "../assets/sbat.png";
 
 /**
  * Every image the renderer draws from, and the clip tables that index into them.
@@ -26,22 +26,22 @@ import batUrl from '../assets/sbat.png';
  * table instead of a variable per image.
  */
 export const SHEET_URLS: Record<string, string> = {
-  'x.png': atlasUrl,
-  'x_leftarm.png': armAtlasUrl,
-  'lemon.png': lemonUrl,
-  'medium_shot.png': mediumShotUrl,
-  'heavy_shot.png': heavyShotUrl,
-  'lemon_hit.png': lemonHitUrl,
-  'charge_hit.png': chargeHitUrl,
-  'charge_1.png': charge1Url,
-  'charge_2.png': charge2Url,
-  'dash.png': dashUrl,
+  "x.png": atlasUrl,
+  "x_leftarm.png": armAtlasUrl,
+  "lemon.png": lemonUrl,
+  "medium_shot.png": mediumShotUrl,
+  "heavy_shot.png": heavyShotUrl,
+  "lemon_hit.png": lemonHitUrl,
+  "charge_hit.png": chargeHitUrl,
+  "charge_1.png": charge1Url,
+  "charge_2.png": charge2Url,
+  "dash.png": dashUrl,
   // HUD furniture, from the original's src/HUD.
-  'x_bar.png': xBarUrl,
-  'hp_fill.png': hpFillUrl,
+  "x_bar.png": xBarUrl,
+  "hp_fill.png": hpFillUrl,
   // Enemies, imported by tools/build-enemies.mjs.
-  'metool.png': metoolUrl,
-  'sbat.png': batUrl,
+  "metool.png": metoolUrl,
+  "sbat.png": batUrl,
 };
 
 /**
@@ -50,8 +50,8 @@ export const SHEET_URLS: Record<string, string> = {
  * one is drawn is decided by the engine's animation layer, not by the renderer.
  */
 export const PLAYER_SHEETS = {
-  normal: 'x.png',
-  pointing_cannon: 'x_leftarm.png',
+  normal: "x.png",
+  pointing_cannon: "x_leftarm.png",
 } as const;
 
 /** Frame geometry: every player frame is 64x56 and the feet sit at local y=48. */
@@ -74,7 +74,13 @@ interface EnemyAnimData {
   sheets: Record<string, string>;
   actors: Record<
     string,
-    { sheet: string; animations: Record<string, { loop: boolean; speed: number; frames: { region: Region; duration: number }[] }> }
+    {
+      sheet: string;
+      animations: Record<
+        string,
+        { loop: boolean; speed: number; frames: { region: Region; duration: number }[] }
+      >;
+    }
   >;
 }
 

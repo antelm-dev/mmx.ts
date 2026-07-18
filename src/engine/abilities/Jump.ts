@@ -1,10 +1,6 @@
-import { Fall } from './Fall.js';
-import type { Character } from '../Character.js';
-import {
-  JUMP_FULLSPEED_PROPORTION,
-  JUMP_LEEWAY,
-  JUMP_MAX_TIME,
-} from '../../core/constants.js';
+import { Fall } from "./Fall.js";
+import type { Character } from "../Character.js";
+import { JUMP_FULLSPEED_PROPORTION, JUMP_LEEWAY, JUMP_MAX_TIME } from "../../core/constants.js";
 
 /**
  * Port of Jump.gd — variable-height jump (extends Fall).
@@ -13,9 +9,9 @@ import {
  * handing off to Fall for the descent.
  */
 export class Jump extends Fall {
-  readonly name: string = 'Jump';
+  readonly name: string = "Jump";
   priority = 5;
-  override animation = 'jump'; // Player.tscn
+  override animation = "jump"; // Player.tscn
 
   /** Jump.gd:play_animation_on_initialize — unlike Fall, always (re)start the clip. */
   override play_animation_on_initialize(): void {
@@ -33,23 +29,20 @@ export class Jump extends Fall {
 
   constructor(character: Character) {
     super(character);
-    this.actions = ['jump'];
-    character.events.on('headbump', () => this.on_headbump());
+    this.actions = ["jump"];
+    character.events.on("headbump", () => this.on_headbump());
   }
 
   override get_activation_leeway_time(): number {
-    return this.character.is_executing('Jump') ? 0 : this.leeway_time;
+    return this.character.is_executing("Jump") ? 0 : this.leeway_time;
   }
 
   override _StartCondition(): boolean {
-    return (
-      this.character.is_on_floor() &&
-      this.character.get_last_used_ability() !== 'DashJump'
-    );
+    return this.character.is_on_floor() && this.character.get_last_used_ability() !== "DashJump";
   }
 
   override _Setup(): void {
-    this.character.events.emit('jump');
+    this.character.events.emit("jump");
     this.fullspeed_time = 0;
     this.slowdown_time = 0;
     this.changed_animation = false;
@@ -73,13 +66,13 @@ export class Jump extends Fall {
   }
 
   private no_input_after_minimum_time(): boolean {
-    return this.timer > this.minimum_upwards_time && !this.character.get_action_pressed('jump');
+    return this.timer > this.minimum_upwards_time && !this.character.get_action_pressed("jump");
   }
 
   override change_animation_if_falling(_s: string): void {
     if (
       !this.changed_animation &&
-      this.character.get_animation() !== 'fall' &&
+      this.character.get_animation() !== "fall" &&
       this.character.get_vertical_speed() > 0
     ) {
       this.EndAbility();

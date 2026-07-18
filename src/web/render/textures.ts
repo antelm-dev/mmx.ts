@@ -1,6 +1,6 @@
-import { Assets, Rectangle, Texture, TextureSource } from 'pixi.js';
-import type { Region } from '../../engine/Animation.js';
-import { shotAnims } from './assets.js';
+import { Assets, Rectangle, Texture, TextureSource } from "pixi.js";
+import type { Region } from "../../engine/Animation.js";
+import { shotAnims } from "./assets.js";
 
 /**
  * Sheet loading and the sub-textures cut out of them.
@@ -15,7 +15,7 @@ import { shotAnims } from './assets.js';
 // Pixel art: nearest-neighbour sampling, never smoothing. Set on the global default
 // rather than per-texture because it has to be in place *before* the first source is
 // created — a source built under the linear default keeps it.
-TextureSource.defaultOptions.scaleMode = 'nearest';
+TextureSource.defaultOptions.scaleMode = "nearest";
 
 const sheets = new Map<string, Texture>();
 const regions = new Map<string, Texture>();

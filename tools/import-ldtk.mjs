@@ -14,14 +14,14 @@
  * need import attributes in Node ESM, and support differs across the three
  * toolchains this project builds with.
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
-import { basename } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
+import { basename } from "node:path";
 
-const SRC_DIR = new URL('../levels/', import.meta.url);
-const OUT_DIR = new URL('../src/engine/levels/', import.meta.url);
+const SRC_DIR = new URL("../levels/", import.meta.url);
+const OUT_DIR = new URL("../src/engine/levels/", import.meta.url);
 
 /** IntGrid value -> Tile enum member name. Mirrors Tile in src/engine/World.ts. */
-const VALUE_TO_TILE = { 0: 'Empty', 1: 'Solid', 2: 'SlopeUpRight', 3: 'SlopeUpLeft' };
+const VALUE_TO_TILE = { 0: "Empty", 1: "Solid", 2: "SlopeUpRight", 3: "SlopeUpLeft" };
 
 function convert(ldtk, sourceName) {
   const level = ldtk.levels?.[0];
@@ -33,7 +33,7 @@ function convert(ldtk, sourceName) {
   }
 
   const layers = level.layerInstances ?? [];
-  const collision = layers.find((l) => l.__type === 'IntGrid');
+  const collision = layers.find((l) => l.__type === "IntGrid");
   if (!collision) throw new Error(`${sourceName}: no IntGrid layer`);
 
   const cols = collision.__cWid;
@@ -54,7 +54,7 @@ function convert(ldtk, sourceName) {
   });
 
   const entityInstances = layers
-    .filter((l) => l.__type === 'Entities')
+    .filter((l) => l.__type === "Entities")
     .flatMap((l) => l.entityInstances ?? []);
 
   // The engine reads entity boxes as top-left + size, so a non-zero pivot would
@@ -69,21 +69,25 @@ function convert(ldtk, sourceName) {
     }
   }
 
-  const entities = entityInstances
-    .map((e) => ({
-      id: e.__identifier,
-      // px is pivot-adjusted; every entity def here pivots at 0,0, so this is
-      // the box's top-left and `width`/`height` extend right/down from it.
-      x: e.px[0],
-      y: e.px[1],
-      w: e.width,
-      h: e.height,
-      fields: Object.fromEntries(
-        (e.fieldInstances ?? []).map((f) => [f.__identifier, f.__value]),
-      ),
-    }));
+  const entities = entityInstances.map((e) => ({
+    id: e.__identifier,
+    // px is pivot-adjusted; every entity def here pivots at 0,0, so this is
+    // the box's top-left and `width`/`height` extend right/down from it.
+    x: e.px[0],
+    y: e.px[1],
+    w: e.width,
+    h: e.height,
+    fields: Object.fromEntries((e.fieldInstances ?? []).map((f) => [f.__identifier, f.__value])),
+  }));
 
-  return { identifier: level.identifier, gridSize: collision.__gridSize, cols, rows, tiles, entities };
+  return {
+    identifier: level.identifier,
+    gridSize: collision.__gridSize,
+    cols,
+    rows,
+    tiles,
+    entities,
+  };
 }
 
 /** Emit the tile grid one row per line so diffs on a level edit stay readable. */
@@ -91,9 +95,9 @@ function formatTiles(tiles, cols) {
   const lines = [];
   for (let y = 0; y < tiles.length / cols; y++) {
     const row = tiles.slice(y * cols, (y + 1) * cols);
-    lines.push('  ' + row.map((t) => `T.${t}`).join(', ') + ',');
+    lines.push("  " + row.map((t) => `T.${t}`).join(", ") + ",");
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function emit(level, sourceName) {
@@ -117,16 +121,16 @@ ${formatTiles(level.tiles, level.cols)}
 
 mkdirSync(OUT_DIR, { recursive: true });
 
-const sources = readdirSync(SRC_DIR).filter((f) => f.endsWith('.ldtk'));
+const sources = readdirSync(SRC_DIR).filter((f) => f.endsWith(".ldtk"));
 if (sources.length === 0) {
-  console.error('no .ldtk files in levels/');
+  console.error("no .ldtk files in levels/");
   process.exit(1);
 }
 
 for (const source of sources) {
-  const ldtk = JSON.parse(readFileSync(new URL(source, SRC_DIR), 'utf8'));
+  const ldtk = JSON.parse(readFileSync(new URL(source, SRC_DIR), "utf8"));
   const level = convert(ldtk, source);
-  const name = basename(source, '.ldtk');
+  const name = basename(source, ".ldtk");
   writeFileSync(new URL(`${name}.ts`, OUT_DIR), emit(level, source));
   console.log(
     `${source} -> src/engine/levels/${name}.ts (${level.cols}x${level.rows}, ${level.entities.length} entities)`,

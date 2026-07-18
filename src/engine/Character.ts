@@ -1,14 +1,14 @@
-import { AbilityUser } from './AbilityUser.js';
-import { World } from './World.js';
-import { Projectile } from './Projectile.js';
-import { Input, Action } from '../core/Input.js';
-import { Rng } from '../core/Rng.js';
+import { AbilityUser } from "./AbilityUser.js";
+import { World } from "./World.js";
+import { Projectile } from "./Projectile.js";
+import { Input, Action } from "../core/Input.js";
+import { Rng } from "../core/Rng.js";
 import {
   MAX_CHARGED_SHOTS_ALIVE,
   MAX_SHOTS_ALIVE,
   SHOT_POSITION,
   SHOT_POSITION_ADJUST,
-} from '../core/constants.js';
+} from "../core/constants.js";
 
 /**
  * Input + high-level player API — port of Character.gd (and the input-facing parts
@@ -37,7 +37,7 @@ export class Character extends AbilityUser {
     super(world, x, y);
     this.input = input;
     this.rng = new Rng(seed);
-    this.events.on('land', () => this.on_land());
+    this.events.on("land", () => this.on_land());
   }
 
   /**
@@ -68,9 +68,7 @@ export class Character extends AbilityUser {
    */
   can_shoot(charge: number): boolean {
     const cap = charge > 0 ? MAX_CHARGED_SHOTS_ALIVE : MAX_SHOTS_ALIVE;
-    const live = this.projectiles.filter(
-      (p) => p.isLive && (p.charge > 0) === (charge > 0),
-    ).length;
+    const live = this.projectiles.filter((p) => p.isLive && p.charge > 0 === charge > 0).length;
     return live < cap;
   }
 
@@ -80,7 +78,7 @@ export class Character extends AbilityUser {
     const muzzle = this.get_shot_position();
     const dir = this.get_facing_direction();
     this.projectiles.push(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
-    this.events.emit('shot_fired', charge);
+    this.events.emit("shot_fired", charge);
   }
 
   private updateProjectiles(dt: number): void {
@@ -103,10 +101,10 @@ export class Character extends AbilityUser {
     return this.input.axis();
   }
   has_just_pressed_left(): boolean {
-    return this.get_action_just_pressed('move_left');
+    return this.get_action_just_pressed("move_left");
   }
   has_just_pressed_right(): boolean {
-    return this.get_action_just_pressed('move_right');
+    return this.get_action_just_pressed("move_right");
   }
 
   // --- Player.gd helpers used by abilities ---
@@ -118,11 +116,11 @@ export class Character extends AbilityUser {
     if (!this.is_on_floor()) this.dashfall = true;
   }
   dashjump_signal(): void {
-    this.events.emit('dashjump');
+    this.events.emit("dashjump");
     this.dashjumps_since_jump += 1;
   }
   airdash_signal(): void {
-    this.events.emit('airdash');
+    this.events.emit("airdash");
   }
 
   // low walljump raycast toggles — cosmetic no-ops in this port
@@ -141,9 +139,9 @@ export class Character extends AbilityUser {
     this.clockMs += dt * 1000;
 
     // Character.check_for_dash — publish a dash press for DashJump timing.
-    if (this.get_action_just_pressed('dash')) {
+    if (this.get_action_just_pressed("dash")) {
       this.last_time_dashed = this.clockMs;
-      this.events.emit('input_dash');
+      this.events.emit("input_dash");
     }
 
     this.stepAbilities(dt);

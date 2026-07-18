@@ -1,11 +1,11 @@
-import { Movement } from '../ability/Movement.js';
-import { DASHFALL_SPEED } from '../../core/constants.js';
+import { Movement } from "../ability/Movement.js";
+import { DASHFALL_SPEED } from "../../core/constants.js";
 
 /** Port of Fall.gd — airborne, gravity + air control. */
 export class Fall extends Movement {
-  readonly name: string = 'Fall';
+  readonly name: string = "Fall";
   priority = 1;
-  override animation = 'fall'; // Fall.tscn
+  override animation = "fall"; // Fall.tscn
 
   override _StartCondition(): boolean {
     return !this.character.is_on_floor();
@@ -28,7 +28,7 @@ export class Fall extends Movement {
 
   override _Update(dt: number): void {
     this.process_gravity(dt);
-    this.change_animation_if_falling('fall');
+    this.change_animation_if_falling("fall");
     this.zero_bonus_horizontal_speed();
     if (this.character.dashfall) {
       this.set_movement_and_direction(DASHFALL_SPEED);

@@ -1,6 +1,6 @@
-import { Vec2 } from '../core/Vec2.js';
-import { EventBus } from '../core/Events.js';
-import { World } from './World.js';
+import { Vec2 } from "../core/Vec2.js";
+import { EventBus } from "../core/Events.js";
+import { World } from "./World.js";
 import {
   BODY_HALF_H,
   BODY_HALF_W,
@@ -8,7 +8,7 @@ import {
   GRAVITY,
   MAX_FALL_VELOCITY,
   MAX_HEALTH,
-} from '../core/constants.js';
+} from "../core/constants.js";
 
 /**
  * Physics body — port of Actor.gd.
@@ -57,7 +57,11 @@ export class Actor {
   /** Monotonic milliseconds clock (deterministic in sim, wall-clock in browser). */
   clockMs = 0;
 
-  constructor(public world: World, x: number, y: number) {
+  constructor(
+    public world: World,
+    x: number,
+    y: number,
+  ) {
     this.pos = new Vec2(x, y);
   }
 
@@ -152,7 +156,7 @@ export class Actor {
   damage(value: number): void {
     if (!this.is_invulnerable()) {
       this.current_health -= value;
-      this.events.emit('damage', value);
+      this.events.emit("damage", value);
     }
   }
 
@@ -197,9 +201,9 @@ export class Actor {
 
     // Landing bookkeeping (Character.check_for_land).
     if (this._onFloor) {
-      if (!this._wasOnFloor) this.events.emit('land');
+      if (!this._wasOnFloor) this.events.emit("land");
     }
-    if (this._onCeiling) this.events.emit('headbump');
+    if (this._onCeiling) this.events.emit("headbump");
     this._wasOnFloor = this._onFloor;
 
     this.update_facing_direction();

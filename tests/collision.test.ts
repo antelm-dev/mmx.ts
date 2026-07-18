@@ -1,36 +1,36 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { test } from "node:test";
+import assert from "node:assert/strict";
 
-import { Actor } from '../src/engine/Actor.js';
-import { Projectile } from '../src/engine/Projectile.js';
-import { World } from '../src/engine/World.js';
-import { BODY_HALF_H, BODY_HALF_W, DT, TILE_SIZE } from '../src/core/constants.js';
+import { Actor } from "../src/engine/Actor.js";
+import { Projectile } from "../src/engine/Projectile.js";
+import { World } from "../src/engine/World.js";
+import { BODY_HALF_H, BODY_HALF_W, DT, TILE_SIZE } from "../src/core/constants.js";
 
 /** A room with solid borders and whatever interior rows are given. */
 function room(interior: string[]): World {
   const width = interior[0].length + 2;
-  const rows = ['#'.repeat(width), ...interior.map((r) => '#' + r + '#'), '#'.repeat(width)];
+  const rows = ["#".repeat(width), ...interior.map((r) => "#" + r + "#"), "#".repeat(width)];
   return World.fromRows(rows);
 }
 
 /** Open room, 10 tiles wide and 6 tall inside the border. */
 function openRoom(): World {
-  return room(Array.from({ length: 6 }, () => '.'.repeat(10)));
+  return room(Array.from({ length: 6 }, () => ".".repeat(10)));
 }
 
-test('a falling body comes to rest exactly on the tile face, not near it', () => {
+test("a falling body comes to rest exactly on the tile face, not near it", () => {
   const world = openRoom();
   const a = new Actor(world, 5 * TILE_SIZE, 2 * TILE_SIZE);
   a.set_vertical_speed(200);
   for (let i = 0; i < 60; i++) a.physicsStep(DT);
 
   const floorTop = 7 * TILE_SIZE; // bottom border row starts at row 7
-  assert.equal(a.pos.y + a.hh, floorTop, 'feet flush with the floor face');
+  assert.equal(a.pos.y + a.hh, floorTop, "feet flush with the floor face");
   assert.equal(a.is_on_floor(), true);
-  assert.equal(world.overlaps(a.pos.x, a.pos.y, a.hw, a.hh), false, 'not embedded');
+  assert.equal(world.overlaps(a.pos.x, a.pos.y, a.hw, a.hh), false, "not embedded");
 });
 
-test('a single huge step cannot tunnel through a wall', () => {
+test("a single huge step cannot tunnel through a wall", () => {
   const world = openRoom();
   const a = new Actor(world, 3 * TILE_SIZE, 3 * TILE_SIZE);
   // 60000 px/s is ~1000px in one 60Hz step — far past the right border wall.
@@ -38,12 +38,12 @@ test('a single huge step cannot tunnel through a wall', () => {
   a.physicsStep(DT);
 
   const wallFace = 11 * TILE_SIZE; // right border column
-  assert.equal(a.pos.x + a.hw, wallFace, 'stopped flush against the wall');
+  assert.equal(a.pos.x + a.hw, wallFace, "stopped flush against the wall");
   assert.equal(a.is_colliding_with_wall(), 1);
-  assert.equal(a.velocity.x, 0, 'horizontal speed cancelled by the hit');
+  assert.equal(a.velocity.x, 0, "horizontal speed cancelled by the hit");
 });
 
-test('tunnelling is blocked in every direction', () => {
+test("tunnelling is blocked in every direction", () => {
   const world = openRoom();
   const bounds = {
     left: TILE_SIZE,
@@ -71,7 +71,7 @@ test('tunnelling is blocked in every direction', () => {
   }
 });
 
-test('a body resting against a wall stays put and keeps reporting the wall', () => {
+test("a body resting against a wall stays put and keeps reporting the wall", () => {
   const world = openRoom();
   const a = new Actor(world, 3 * TILE_SIZE, 3 * TILE_SIZE);
   // travel until it reaches the wall
@@ -80,43 +80,43 @@ test('a body resting against a wall stays put and keeps reporting the wall', () 
     a.physicsStep(DT);
   }
   const restX = a.pos.x;
-  assert.equal(restX + a.hw, 11 * TILE_SIZE, 'reached the wall face');
+  assert.equal(restX + a.hw, 11 * TILE_SIZE, "reached the wall face");
 
   // keep pushing into it for a while — it must not creep, jitter or embed
   for (let i = 0; i < 30; i++) {
     a.set_horizontal_speed(6000);
     a.physicsStep(DT);
-    assert.equal(a.pos.x, restX, 'no drift while pressed against the wall');
+    assert.equal(a.pos.x, restX, "no drift while pressed against the wall");
     assert.equal(a.is_colliding_with_wall(), 1);
   }
 });
 
-test('floor snap does not glue a body to a drop deeper than the snap length', () => {
+test("floor snap does not glue a body to a drop deeper than the snap length", () => {
   // A raised block ending mid-room; walking off it is a full 16px drop, more
   // than FLOOR_SNAP_LENGTH, so the body must leave the floor and fall.
   const world = room([
-    '..........',
-    '..........',
-    '..........',
-    '..........',
-    '#####.....',
-    '..........',
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "#####.....",
+    "..........",
   ]);
   const a = new Actor(world, 2 * TILE_SIZE, 0);
   a.pos.y = 5 * TILE_SIZE - BODY_HALF_H;
   a.physicsStep(DT);
-  assert.equal(a.is_on_floor(), true, 'starts grounded on the block');
+  assert.equal(a.is_on_floor(), true, "starts grounded on the block");
 
   // the block ends at x = 6 tiles; walk well past its edge
   for (let i = 0; i < 60; i++) {
     a.set_horizontal_speed(90);
     a.physicsStep(DT);
   }
-  assert.ok(a.pos.x - a.hw > 6 * TILE_SIZE, 'walked clear of the block');
-  assert.equal(a.is_on_floor(), false, 'a drop taller than the snap length falls');
+  assert.ok(a.pos.x - a.hw > 6 * TILE_SIZE, "walked clear of the block");
+  assert.equal(a.is_on_floor(), false, "a drop taller than the snap length falls");
 });
 
-test('floor snap bridges a dip shallower than FLOOR_SNAP_LENGTH', () => {
+test("floor snap bridges a dip shallower than FLOOR_SNAP_LENGTH", () => {
   const world = openRoom();
   const a = new Actor(world, 3 * TILE_SIZE, 0);
   a.pos.y = 7 * TILE_SIZE - BODY_HALF_H;
@@ -130,41 +130,41 @@ test('floor snap bridges a dip shallower than FLOOR_SNAP_LENGTH', () => {
   a.enable_floor_snap();
   a.physicsStep(DT);
 
-  assert.equal(a.pos.y + a.hh, 7 * TILE_SIZE, 'snapped flush back onto the floor');
-  assert.equal(a.is_on_floor(), true, 'never left the floor');
+  assert.equal(a.pos.y + a.hh, 7 * TILE_SIZE, "snapped flush back onto the floor");
+  assert.equal(a.is_on_floor(), true, "never left the floor");
 });
 
-test('a shot stops at the wall face rather than inside it', () => {
+test("a shot stops at the wall face rather than inside it", () => {
   const world = openRoom();
   const wallFace = 11 * TILE_SIZE;
   const p = new Projectile(wallFace, 3 * TILE_SIZE, 1, 3); // fast charged shot
   // Place it explicitly: the constructor applies the charged shot's muzzle pullback,
   // which is spawn-positioning noise for a test that is only about the sweep.
   p.x = wallFace - 4;
-  assert.ok(Math.abs(p.vx) * DT > 4, 'this step overshoots the wall');
+  assert.ok(Math.abs(p.vx) * DT > 4, "this step overshoots the wall");
 
   p.update(DT, world);
-  assert.equal(p.x, wallFace, 'impact registered on the surface');
+  assert.equal(p.x, wallFace, "impact registered on the surface");
   // A shot that connects is spent, not gone: it stops moving and stops colliding,
   // but stays in the list long enough for its hit particle to play out.
-  assert.equal(p.phase, 'spent');
-  assert.equal(p.isLive, false, 'no longer collides');
-  assert.equal(p.alive, true, 'still around for the impact effect');
+  assert.equal(p.phase, "spent");
+  assert.equal(p.isLive, false, "no longer collides");
+  assert.equal(p.alive, true, "still around for the impact effect");
 
   // ...and it does eventually clear itself out.
   for (let i = 0; i < 60; i++) p.update(DT, world);
-  assert.equal(p.alive, false, 'removed once the effect finishes');
-  assert.equal(p.x, wallFace, 'never drifted past the impact point');
+  assert.equal(p.alive, false, "removed once the effect finishes");
+  assert.equal(p.x, wallFace, "never drifted past the impact point");
 });
 
-test('sweep results always agree with the overlap test', () => {
+test("sweep results always agree with the overlap test", () => {
   const world = room([
-    '..........',
-    '...##.....',
-    '..........',
-    '.....#....',
-    '..........',
-    '..........',
+    "..........",
+    "...##.....",
+    "..........",
+    ".....#....",
+    "..........",
+    "..........",
   ]);
   // Sweep from a grid of start points in both axes and assert the resolved
   // position is never inside a solid tile.
@@ -189,15 +189,15 @@ test('sweep results always agree with the overlap test', () => {
   }
 });
 
-test('a body the floor sweep still supports reports is_on_floor, right to the ledge corner', () => {
+test("a body the floor sweep still supports reports is_on_floor, right to the ledge corner", () => {
   // Ledge occupying the left half of the interior; its right face is at x=6*TILE.
   const world = room([
-    '..........',
-    '..........',
-    '..........',
-    '#####.....',
-    '..........',
-    '..........',
+    "..........",
+    "..........",
+    "..........",
+    "#####.....",
+    "..........",
+    "..........",
   ]);
   const ledgeTop = 4 * TILE_SIZE;
 

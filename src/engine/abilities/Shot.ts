@@ -1,6 +1,6 @@
-import { Ability } from '../ability/Ability.js';
-import type { Character } from '../Character.js';
-import { SHOT_ARM_POINT_DURATION } from '../../core/constants.js';
+import { Ability } from "../ability/Ability.js";
+import type { Character } from "../Character.js";
+import { SHOT_ARM_POINT_DURATION } from "../../core/constants.js";
 
 /**
  * Port of Shot.gd (buster only) — fires an uncharged "lemon" on each fire tap and
@@ -15,7 +15,7 @@ import { SHOT_ARM_POINT_DURATION } from '../../core/constants.js';
  * cutting to a standing shoot pose.
  */
 export class Shot extends Ability {
-  readonly name = 'Shot';
+  readonly name = "Shot";
   override independent = true;
   private readonly arm_point_duration = SHOT_ARM_POINT_DURATION;
   private disabled_layer = true;
@@ -24,12 +24,12 @@ export class Shot extends Ability {
 
   constructor(character: Character) {
     super(character);
-    this.actions = ['fire'];
+    this.actions = ["fire"];
   }
 
   /** Weapon.gd:can_shoot — infinite ammo, but capped on shots already in flight. */
   override _StartCondition(): boolean {
-    return !this.character.is_executing('Damage') && this.character.can_shoot(0);
+    return !this.character.is_executing("Damage") && this.character.can_shoot(0);
   }
 
   /** Shot.gd:play_animation_on_initialize — raise the buster, don't change clip. */
@@ -67,9 +67,9 @@ export class Shot extends Ability {
 
   override _Update(_dt: number): void {
     // Shot.gd:_Update — being hit swallows the tap outright rather than queueing it.
-    if (this.character.is_executing('Damage')) return;
+    if (this.character.is_executing("Damage")) return;
 
-    if (this.character.get_action_just_pressed('fire') && !this.is_initial_frame()) {
+    if (this.character.get_action_just_pressed("fire") && !this.is_initial_frame()) {
       // Re-checked per tap, not just on start: with three lemons already in
       // flight the press still re-raises the arm but no shot comes out.
       if (this._StartCondition()) this.fire();
@@ -91,7 +91,7 @@ export class Shot extends Ability {
   /** Shot.gd:restart_animation — firing mid-`recover` skips its first frame so a
    *  rapid tap re-raises the arm instead of restarting the whole lowering pose. */
   private restart_animation(): void {
-    if (this.character.get_animation() === 'recover') {
+    if (this.character.get_animation() === "recover") {
       this.character.set_animation_frame(1);
     }
   }
@@ -99,15 +99,15 @@ export class Shot extends Ability {
   /** Shot.gd:enable_animation_layer — signalled on every shot, not just the first:
    *  that is what re-kicks Idle's `recover` pose for each tap of the buster. */
   private enable_animation_layer(): void {
-    this.character.set_animation_layer('pointing_cannon');
-    this.character.events.emit('shot_layer_enabled');
+    this.character.set_animation_layer("pointing_cannon");
+    this.character.events.emit("shot_layer_enabled");
     this.disabled_layer = false;
   }
 
   private disable_animation_layer(): void {
     if (this.disabled_layer) return;
-    this.character.set_animation_layer('normal');
-    this.character.events.emit('shot_layer_disabled');
+    this.character.set_animation_layer("normal");
+    this.character.events.emit("shot_layer_disabled");
     this.disabled_layer = true;
   }
 
@@ -121,6 +121,6 @@ export class Shot extends Ability {
   }
 
   override _EndCondition(): boolean {
-    return !this.character.get_action_just_pressed('fire') && this.Has_time_ran_out();
+    return !this.character.get_action_just_pressed("fire") && this.Has_time_ran_out();
   }
 }

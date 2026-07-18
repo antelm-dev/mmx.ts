@@ -1,15 +1,15 @@
-import { Movement } from '../ability/Movement.js';
-import type { Character } from '../Character.js';
-import { DASH_DURATION, DASH_LEEWAY, DASH_SPEED } from '../../core/constants.js';
+import { Movement } from "../ability/Movement.js";
+import type { Character } from "../Character.js";
+import { DASH_DURATION, DASH_LEEWAY, DASH_SPEED } from "../../core/constants.js";
 
 /**
  * Port of Dash.gd — grounded dash with a shrunk hitbox and an input buffer.
  * Dashing off a ledge ends the dash and starts a fast "dashfall".
  */
 export class Dash extends Movement {
-  readonly name: string = 'Dash';
+  readonly name: string = "Dash";
   priority = 4;
-  override animation = 'dash'; // Player.tscn (AirDash inherits it — there is a
+  override animation = "dash"; // Player.tscn (AirDash inherits it — there is a
   // separate `airdash` clip in the atlas, but X's AirDash node does not use it)
 
   dash_duration = DASH_DURATION;
@@ -21,12 +21,12 @@ export class Dash extends Movement {
    * of the SpriteEffect sheet on the ability's own `dash_particle` node — Dash has
    * dash.png, and AirDash a separate airdash.png (not ported yet).
    */
-  protected smoke_fx: string | null = 'dash';
+  protected smoke_fx: string | null = "dash";
   private emitted_smoke = false;
 
   constructor(character: Character) {
     super(character);
-    this.actions = ['dash'];
+    this.actions = ["dash"];
     this.horizontal_velocity = DASH_SPEED;
   }
 
@@ -44,7 +44,7 @@ export class Dash extends Movement {
   }
 
   override _Setup(): void {
-    this.character.events.emit('dash');
+    this.character.events.emit("dash");
     this.character.set_direction(this.get_pressed_direction());
     this.update_bonus_horizontal_only_conveyor();
     this.character.reduce_hitbox();
@@ -66,7 +66,7 @@ export class Dash extends Movement {
     this.emitted_smoke = true;
     const pressed = this.get_pressed_direction();
     const dir = pressed !== 0 ? pressed : this.character.get_facing_direction();
-    this.character.events.emit('dash_smoke', this.smoke_fx, dir);
+    this.character.events.emit("dash_smoke", this.smoke_fx, dir);
   }
 
   override _Update(dt: number): void {
@@ -82,7 +82,7 @@ export class Dash extends Movement {
         this.left_ground_timer = 0.01;
         this.character.set_vertical_speed(0);
       }
-      this.change_animation_if_falling('fall');
+      this.change_animation_if_falling("fall");
       this.set_movement_and_direction(this.horizontal_velocity);
       this.process_gravity(dt);
     }

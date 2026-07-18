@@ -1,12 +1,12 @@
-import { Enemy, type EnemyKind } from '../Enemy.js';
-import type { World } from '../World.js';
-import { Death } from '../enemy/Death.js';
-import { Hide } from '../enemy/Hide.js';
-import { Hover } from '../enemy/Hover.js';
-import { Patrol } from '../enemy/Patrol.js';
-import { Pursuit } from '../enemy/Pursuit.js';
-import { Recoil } from '../enemy/Recoil.js';
-import { Stun } from '../enemy/Stun.js';
+import { Enemy, type EnemyKind } from "../Enemy.js";
+import type { World } from "../World.js";
+import { Death } from "../enemy/Death.js";
+import { Hide } from "../enemy/Hide.js";
+import { Hover } from "../enemy/Hover.js";
+import { Patrol } from "../enemy/Patrol.js";
+import { Pursuit } from "../enemy/Pursuit.js";
+import { Recoil } from "../enemy/Recoil.js";
+import { Stun } from "../enemy/Stun.js";
 
 /**
  * The enemy scenes, as code — each function is the port of one .tscn's ability
@@ -30,7 +30,7 @@ import { Stun } from '../enemy/Stun.js';
  * deliberate in the original — the Metool's only reaction is its guard.
  */
 export function makeMetool(world: World, x: number, y: number, facing = -1, seed?: number): Enemy {
-  const enemy = new Enemy('metool', world, x, y, facing, seed);
+  const enemy = new Enemy("metool", world, x, y, facing, seed);
 
   enemy.add(new Patrol(enemy));
   enemy.add(new Hide(enemy));
@@ -39,11 +39,11 @@ export function makeMetool(world: World, x: number, y: number, facing = -1, seed
 
   // Metool.tscn's animatedSprite starts on "idle"; the AI raises Patrol on the
   // first frame, which is what actually puts it in motion.
-  enemy.play_animation('idle');
+  enemy.play_animation("idle");
   enemy.ai.configure({
-    on_idle: ['Patrol'],
-    on_see_player: ['Hide'],
-    on_guard_break: ['Stun'],
+    on_idle: ["Patrol"],
+    on_see_player: ["Hide"],
+    on_guard_break: ["Stun"],
   });
   return enemy;
 }
@@ -59,7 +59,7 @@ export function makeMetool(world: World, x: number, y: number, facing = -1, seed
  * is entirely in the movement.
  */
 export function makeBat(world: World, x: number, y: number, facing = -1, seed?: number): Enemy {
-  const enemy = new Enemy('bat', world, x, y, facing, seed);
+  const enemy = new Enemy("bat", world, x, y, facing, seed);
 
   const hover = new Hover(enemy);
   const recoil = new Recoil(enemy);
@@ -71,15 +71,15 @@ export function makeBat(world: World, x: number, y: number, facing = -1, seed?: 
   // BeePatrol.ability_who_updates_patrol_area = BatJump: the bat re-centres its
   // wandering wherever the recoil left it, so a bat that has been chasing the
   // player does not spring back to where it originally spawned.
-  enemy.events.on('ability_end', (name: string) => {
+  enemy.events.on("ability_end", (name: string) => {
     if (name === recoil.name) hover.reanchor();
   });
 
-  enemy.play_animation('idle');
+  enemy.play_animation("idle");
   enemy.ai.configure({
-    on_idle: ['Hover'],
-    on_see_player: ['Pursuit'],
-    on_touch_player: ['Recoil'],
+    on_idle: ["Hover"],
+    on_see_player: ["Pursuit"],
+    on_touch_player: ["Recoil"],
   });
   return enemy;
 }

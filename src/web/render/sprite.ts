@@ -1,7 +1,7 @@
-import { Sprite, Texture } from 'pixi.js';
-import { BODY_HALF_H } from '../../core/constants.js';
-import type { Player } from '../../engine/Player.js';
-import type { GhostSource } from '../Trail.js';
+import { Sprite, Texture } from "pixi.js";
+import { BODY_HALF_H } from "../../core/constants.js";
+import type { Player } from "../../engine/Player.js";
+import type { GhostSource } from "../Trail.js";
 
 /**
  * Where the player's sprite sits relative to his body, and how any sprite is

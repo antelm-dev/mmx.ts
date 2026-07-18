@@ -1,8 +1,8 @@
-import { Actor } from './Actor.js';
-import { BaseAbility } from './ability/BaseAbility.js';
-import { Ability } from './ability/Ability.js';
-import { AnimationPlayer, AnimData, AnimationLayer, Region } from './Animation.js';
-import type { World } from './World.js';
+import { Actor } from "./Actor.js";
+import { BaseAbility } from "./ability/BaseAbility.js";
+import { Ability } from "./ability/Ability.js";
+import { AnimationPlayer, AnimData, AnimationLayer, Region } from "./Animation.js";
+import type { World } from "./World.js";
 
 /**
  * Moveset owner + state-machine driver — port of AbilityUser.gd.
@@ -27,7 +27,7 @@ export class AbilityUser extends Actor {
 
   constructor(world: World, x: number, y: number) {
     super(world, x, y);
-    this.anim.onFinished = (animation) => this.events.emit('animation_finished', animation);
+    this.anim.onFinished = (animation) => this.events.emit("animation_finished", animation);
   }
 
   add(ability: BaseAbility): void {
@@ -85,7 +85,7 @@ export class AbilityUser extends Actor {
   }
 
   get_last_used_ability(): string {
-    return this.last_used_ability ? this.last_used_ability.name : '';
+    return this.last_used_ability ? this.last_used_ability.name : "";
   }
 
   is_executing(name: string): boolean {

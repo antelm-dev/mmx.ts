@@ -1,4 +1,4 @@
-import type { Tile } from './World.js';
+import type { Tile } from "./World.js";
 
 /** An entity placed on an LDtk Entities layer, in world pixels. */
 export interface LevelEntity {

@@ -1,6 +1,6 @@
-import { Dash } from './Dash.js';
-import type { Character } from '../Character.js';
-import { AIRDASH_DURATION, AIRDASH_MAX, AIRDASH_SPEED } from '../../core/constants.js';
+import { Dash } from "./Dash.js";
+import type { Character } from "../Character.js";
+import { AIRDASH_DURATION, AIRDASH_MAX, AIRDASH_SPEED } from "../../core/constants.js";
 
 /**
  * Port of AirDash.gd — a horizontal air dash with a limited count that refills on
@@ -8,7 +8,7 @@ import { AIRDASH_DURATION, AIRDASH_MAX, AIRDASH_SPEED } from '../../core/constan
  * Icarus legs is left out of this movement-core port.)
  */
 export class AirDash extends Dash {
-  readonly name = 'AirDash';
+  readonly name = "AirDash";
   priority = 5;
 
   max_airdashes = AIRDASH_MAX;
@@ -22,10 +22,10 @@ export class AirDash extends Dash {
     super(character);
     this.horizontal_velocity = AIRDASH_SPEED;
     this.dash_duration = AIRDASH_DURATION;
-    character.events.on('land', () => this.resetCount());
-    character.events.on('wallslide', () => this.resetCount());
-    character.events.on('walljump', () => this.resetCount());
-    character.events.on('dashjump', () => this.reduceCount());
+    character.events.on("land", () => this.resetCount());
+    character.events.on("wallslide", () => this.resetCount());
+    character.events.on("walljump", () => this.resetCount());
+    character.events.on("dashjump", () => this.reduceCount());
   }
 
   private resetCount(): void {

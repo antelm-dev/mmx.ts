@@ -1,5 +1,5 @@
-import type { Enemy } from './Enemy.js';
-import type { EnemyAbility } from './enemy/EnemyAbility.js';
+import type { Enemy } from "./Enemy.js";
+import type { EnemyAbility } from "./enemy/EnemyAbility.js";
 
 /**
  * The event lists an enemy scene declares on its AI node, by ability name.
@@ -43,9 +43,9 @@ export class EnemyAI {
   constructor(private readonly enemy: Enemy) {
     // AI.gd wires these in _ready. The AI reacts to what happened to the
     // character; it never polls the character's health or shield itself.
-    enemy.events.on('guard_break', () => this.fire(this.events.on_guard_break));
-    enemy.events.on('got_hit', () => this.fire(this.events.on_get_hit));
-    enemy.events.on('zero_health', () => this.onZeroHealth());
+    enemy.events.on("guard_break", () => this.fire(this.events.on_guard_break));
+    enemy.events.on("got_hit", () => this.fire(this.events.on_get_hit));
+    enemy.events.on("zero_health", () => this.onZeroHealth());
   }
 
   /** Declare the scene's event wiring. Returns the AI so enemies can chain it. */
