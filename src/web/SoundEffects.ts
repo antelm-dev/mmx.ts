@@ -44,12 +44,16 @@ export interface PlayOptions {
   rate?: number | [number, number];
   /** Loop until stop(name), used by the charge streams. */
   loop?: boolean;
+  /** Loop points from Godot's WAV import metadata, expressed as PCM frames. */
+  loopFrames?: [number, number];
+  /** Retain a non-looping source so an interruption can stop it. */
+  tracked?: boolean;
 }
 
 export class SoundEffects {
   private readonly context = new AudioContext();
   private readonly buffers = new Map<SoundName, AudioBuffer>();
-  private readonly loops = new Map<SoundName, AudioBufferSourceNode>();
+  private readonly active = new Map<SoundName, AudioBufferSourceNode>();
 
   /** Decode all samples up front so the first frame of an action is never late. */
   async load(): Promise<void> {
@@ -76,27 +80,31 @@ export class SoundEffects {
     const buffer = this.buffers.get(name);
     if (!buffer) return;
 
-    if (options.loop) this.stop(name);
+    if (options.loop || options.tracked) this.stop(name);
     const source = this.context.createBufferSource();
     const gain = this.context.createGain();
     source.buffer = buffer;
     source.loop = options.loop ?? false;
+    if (options.loopFrames) {
+      source.loopStart = options.loopFrames[0] / buffer.sampleRate;
+      source.loopEnd = options.loopFrames[1] / buffer.sampleRate;
+    }
     source.playbackRate.value = randomRate(options.rate ?? 1);
     gain.gain.value = Math.pow(10, (options.db ?? 0) / 20);
     source.connect(gain).connect(this.context.destination);
-    if (options.loop) {
-      this.loops.set(name, source);
+    if (options.loop || options.tracked) {
+      this.active.set(name, source);
       source.addEventListener("ended", () => {
-        if (this.loops.get(name) === source) this.loops.delete(name);
+        if (this.active.get(name) === source) this.active.delete(name);
       });
     }
     source.start();
   }
 
   stop(name: SoundName): void {
-    const source = this.loops.get(name);
+    const source = this.active.get(name);
     if (!source) return;
-    this.loops.delete(name);
+    this.active.delete(name);
     source.stop();
   }
 }

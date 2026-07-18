@@ -125,8 +125,9 @@ tuning constant are ported line-for-line so the _feel_ matches.
   DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
 - **Collision** is flat-tile AABB (no slopes / moving platforms / conveyors); the
   raycast wall/reach queries become edge samples.
-- **Cosmetics dropped**: particles, sounds, shaders, camera. Animation is _not_
-  dropped — see below.
+- **Some cosmetics remain scoped**: the player/enemy effects used by the current
+  room and their original sounds are ported; unrelated shaders are not. Animation
+  is engine state rather than a cosmetic — see below.
 
 ### Animation
 

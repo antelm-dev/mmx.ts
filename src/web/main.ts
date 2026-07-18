@@ -56,9 +56,10 @@ player.events.on("shot_fired", (charge: number) => {
   else sounds.play("chargedShot", { rate: [0.95, 1] });
 });
 player.events.on("charge_started", () => {
-  sounds.play("charge", { db: -13.5, loop: true });
+  // MMX - Charge.wav.import: forward loop from PCM frame 51645 to 56497.
+  sounds.play("charge", { db: -13.5, loop: true, loopFrames: [51645, 56497] });
 });
-player.events.on("charge_max", () => sounds.play("chargeMax", { loop: true }));
+player.events.on("charge_max", () => sounds.play("chargeMax", { tracked: true }));
 player.events.on("charge_stopped", () => {
   sounds.stop("charge");
   sounds.stop("chargeMax");
