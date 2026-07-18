@@ -63,7 +63,14 @@ export class Scene {
       // so one shared generator would make a Metool's patrol depend on how often
       // a bat happened to reroll its hover. Derived from the scene seed so the
       // whole run still keys off one number.
-      const enemy = spawnEnemy(spawn.kind, this.world, spawn.x, spawn.y, spawn.facing, enemySeed(seed, i));
+      const enemy = spawnEnemy(
+        spawn.kind,
+        this.world,
+        spawn.x,
+        spawn.y,
+        spawn.facing,
+        enemySeed(seed, i),
+      );
       options.onEnemySpawned?.(enemy, i);
       this.stage.add(enemy);
     }

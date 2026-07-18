@@ -11,7 +11,6 @@ export type SoundName =
   | "wallslide"
   | "damage"
   | "charge"
-  | "chargeMax"
   | "lemon"
   | "mediumShot"
   | "chargedShot"
@@ -27,7 +26,6 @@ const URLS: Record<SoundName, string> = {
   wallslide: new URL("./assets/sfx/wallslide.wav", import.meta.url).href,
   damage: new URL("./assets/sfx/damage.wav", import.meta.url).href,
   charge: new URL("./assets/sfx/charge.wav", import.meta.url).href,
-  chargeMax: new URL("./assets/sfx/charge-max.wav", import.meta.url).href,
   lemon: new URL("./assets/sfx/lemon.wav", import.meta.url).href,
   mediumShot: new URL("./assets/sfx/medium-shot.wav", import.meta.url).href,
   chargedShot: new URL("./assets/sfx/charged-shot.wav", import.meta.url).href,
@@ -44,16 +42,30 @@ export interface PlayOptions {
   rate?: number | [number, number];
   /** Loop until stop(name), used by the charge streams. */
   loop?: boolean;
-  /** Loop points from Godot's WAV import metadata, expressed as PCM frames. */
-  loopFrames?: [number, number];
+  /**
+   * Loop points in seconds. Deliberately not PCM frames: decodeAudioData
+   * resamples every sample to the context's rate, so the decoded buffer's
+   * sampleRate is the output device's and not the file's. Converting frames
+   * against it silently lands the loop somewhere in the middle of the sound.
+   */
+  loopSeconds?: [number, number];
   /** Retain a non-looping source so an interruption can stop it. */
   tracked?: boolean;
 }
 
 export class SoundEffects {
   private readonly context = new AudioContext();
+  private readonly master = this.context.createGain();
   private readonly buffers = new Map<SoundName, AudioBuffer>();
   private readonly active = new Map<SoundName, AudioBufferSourceNode>();
+
+  constructor() {
+    this.master.connect(this.context.destination);
+  }
+
+  setMasterVolume(volume: number): void {
+    this.master.gain.value = Math.max(0, Math.min(1, volume));
+  }
 
   /** Decode all samples up front so the first frame of an action is never late. */
   async load(): Promise<void> {
@@ -85,13 +97,13 @@ export class SoundEffects {
     const gain = this.context.createGain();
     source.buffer = buffer;
     source.loop = options.loop ?? false;
-    if (options.loopFrames) {
-      source.loopStart = options.loopFrames[0] / buffer.sampleRate;
-      source.loopEnd = options.loopFrames[1] / buffer.sampleRate;
+    if (options.loopSeconds) {
+      source.loopStart = options.loopSeconds[0];
+      source.loopEnd = Math.min(options.loopSeconds[1], buffer.duration);
     }
     source.playbackRate.value = randomRate(options.rate ?? 1);
     gain.gain.value = Math.pow(10, (options.db ?? 0) / 20);
-    source.connect(gain).connect(this.context.destination);
+    source.connect(gain).connect(this.master);
     if (options.loop || options.tracked) {
       this.active.set(name, source);
       source.addEventListener("ended", () => {

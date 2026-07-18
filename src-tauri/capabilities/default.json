@@ -3,5 +3,12 @@
   "identifier": "default",
   "description": "Default capability for the main game window",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-size",
+    "core:window:allow-set-min-size",
+    "core:window:allow-set-max-size",
+    "core:window:allow-set-resizable",
+    "core:window:allow-set-fullscreen"
+  ]
 }

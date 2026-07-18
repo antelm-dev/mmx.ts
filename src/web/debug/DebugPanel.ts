@@ -174,7 +174,9 @@ function sign(v: number): string {
   return v > 0 ? "+" : "-";
 }
 
-function zoneLabel(camera: { activeZone: { x: number; y: number; w: number; h: number } | null }): string {
+function zoneLabel(camera: {
+  activeZone: { x: number; y: number; w: number; h: number } | null;
+}): string {
   const z = camera.activeZone;
   return z ? `${z.x},${z.y} ${z.w}x${z.h}` : "none";
 }

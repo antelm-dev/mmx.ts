@@ -52,7 +52,9 @@ function main(): void {
   const replay = decodeReplay(readFileSync(options.file, "utf8"));
 
   console.log(`replay: ${options.file}`);
-  console.log(`  level ${replay.level}   seed 0x${replay.seed.toString(16)}   ${replay.frames.length} frames`);
+  console.log(
+    `  level ${replay.level}   seed 0x${replay.seed.toString(16)}   ${replay.frames.length} frames`,
+  );
   if (replay.tainted) {
     console.log("  WARNING: recorded with a debug cheat active — it will not reproduce faithfully");
   }
@@ -66,7 +68,9 @@ function main(): void {
     // printed as it goes; the state sequence is identical either way.
     scene = Scene.create({ seed: replay.seed });
     console.log("frame |    posX |    posY |   velX |   velY | floor | hp | input      | state");
-    console.log("------+---------+---------+--------+--------+-------+----+------------+--------------");
+    console.log(
+      "------+---------+---------+--------+--------+-------+----+------------+--------------",
+    );
     for (const [i, mask] of replay.frames.entries()) {
       scene.step(mask);
       if (i % 5 !== 0) continue;

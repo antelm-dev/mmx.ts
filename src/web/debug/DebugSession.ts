@@ -36,6 +36,18 @@ export interface DebugSessionOptions extends SceneOptions {
   onSceneReplaced: (scene: Scene) => void;
   /** Extra lines appended to the clipboard dump, for renderer-side counters. */
   extraDiagnostics?: () => Record<string, string | number>;
+  /** Native dialogs on desktop, browser downloads and file inputs on the web. */
+  replayFiles: ReplayFileAccess;
+}
+
+export interface ReplayText {
+  path: string;
+  contents: string;
+}
+
+export interface ReplayFileAccess {
+  save: (contents: string, suggestedName: string) => Promise<string | null>;
+  open: () => Promise<ReplayText | null>;
 }
 
 export class DebugSession {
@@ -159,6 +171,14 @@ export class DebugSession {
     return true;
   }
 
+  registerCommand(command: DebugCommand): void {
+    this.commands.push(command);
+  }
+
+  notify(message: string): void {
+    this.say(message);
+  }
+
   private nudgeSpeed(delta: number): void {
     this.scaleIndex = Math.max(0, Math.min(TIME_SCALES.length - 1, this.scaleIndex + delta));
     this.say(`time x${this.timeScale}`);
@@ -174,34 +194,34 @@ export class DebugSession {
 
   private saveReplay(): void {
     const replay = this.recorder.toReplay();
-    const blob = new Blob([encodeReplay(replay)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `mmx-${replay.level}-${replay.frames.length}f${replay.tainted ? "-tainted" : ""}.replay.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    this.say(`saved ${replay.frames.length} frames${replay.tainted ? " (tainted)" : ""}`);
+    const name = `mmx-${replay.level}-${replay.frames.length}f${replay.tainted ? "-tainted" : ""}.replay.json`;
+    void this.options.replayFiles
+      .save(encodeReplay(replay), name)
+      .then((path) => {
+        if (path)
+          this.say(`saved ${replay.frames.length} frames${replay.tainted ? " (tainted)" : ""}`);
+      })
+      .catch((error: unknown) => this.say(`save failed: ${String(error)}`));
   }
 
   private promptLoadReplay(): void {
-    const picker = document.createElement("input");
-    picker.type = "file";
-    picker.accept = ".json,application/json";
-    picker.addEventListener("change", () => {
-      const file = picker.files?.[0];
-      if (!file) return;
-      void file
-        .text()
-        .then((text) => {
-          const replay = decodeReplay(text);
-          this.replaceScene(this.recorder.load(replay));
-          this.paused = true;
-          this.say(`loaded ${replay.frames.length} frames — paused at the end`);
-        })
-        .catch((error: unknown) => this.say(`load failed: ${String(error)}`));
-    });
-    picker.click();
+    void this.options.replayFiles
+      .open()
+      .then((file) => {
+        if (file) this.loadReplayText(file.contents, file.path);
+      })
+      .catch((error: unknown) => this.say(`load failed: ${String(error)}`));
+  }
+
+  loadReplayText(text: string, source = "replay"): void {
+    try {
+      const replay = decodeReplay(text);
+      this.replaceScene(this.recorder.load(replay));
+      this.paused = true;
+      this.say(`loaded ${replay.frames.length} frames from ${source} — paused at the end`);
+    } catch (error) {
+      this.say(`load failed: ${String(error)}`);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -253,7 +273,10 @@ export class DebugSession {
     put("health", `${player.current_health} / ${player.max_health}`);
     put("facing", player.get_facing_direction() > 0 ? "right" : "left");
     put("abilities", player.stateString());
-    put("animation", `${player.get_animation()} #${player.anim.frame} (${player.get_animation_layer()})`);
+    put(
+      "animation",
+      `${player.get_animation()} #${player.anim.frame} (${player.get_animation_layer()})`,
+    );
     put("floor", String(player.is_on_floor()));
     put("ceiling", String(player.is_on_ceiling()));
     put("wall", player.is_colliding_with_wall());

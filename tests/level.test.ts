@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { World } from "../src/engine/World.js";
+import { Tile, World } from "../src/engine/World.js";
 import { makeWorld, LEVEL, SPAWN, CAMERA_ZONES, entities } from "../src/engine/level.js";
+import { applySlopes, slopeRects, TILE } from "../tools/slope-bake.mjs";
 import { Camera } from "../src/engine/Camera.js";
 import { Player } from "../src/engine/Player.js";
 import { Input } from "../src/core/Input.js";
@@ -19,27 +20,102 @@ import { readFileSync } from "node:fs";
  * Parsed here rather than imported from tools/export-ldtk.mjs: that module writes
  * the .ldtk file and calls process.exit at import time.
  */
-function readAscii(url: URL): string[] {
+const SOURCE = new URL("../levels/stage1.ascii", import.meta.url);
+
+function readFixture(url: URL): { legend: string[]; grid: string[] } {
   const text = readFileSync(url, "utf8").replaceAll("\r\n", "\n");
   const blank = text.indexOf("\n\n");
-  return (blank === -1 ? text : text.slice(blank + 2)).split("\n").filter((l) => l.length > 0);
+  const body = blank === -1 ? text : text.slice(blank + 2);
+  return {
+    legend: (blank === -1 ? "" : text.slice(0, blank)).split("\n"),
+    grid: body.split("\n").filter((l) => l.length > 0),
+  };
 }
 
-const AUTHORED = readAscii(new URL("../levels/stage1.ascii", import.meta.url));
+const { legend: LEGEND, grid: AUTHORED } = readFixture(SOURCE);
 
 /** 'S' marks the spawn entity and leaves the tile itself empty. */
 const SPAWN_MARK = "S";
 
+const CHAR_TO_NAME: Record<string, string> = {
+  "#": "Solid",
+  "/": "SlopeUpRight",
+  "\\": "SlopeUpLeft",
+};
+
+const NAME_TO_TILE: Record<string, Tile> = {
+  Empty: Tile.Empty,
+  Solid: Tile.Solid,
+  SlopeUpRight: Tile.SlopeUpRight,
+  SlopeUpLeft: Tile.SlopeUpLeft,
+};
+
+/**
+ * The Slope boxes the fixture declares in its legend, as `4x2 UpRight at 12,27`.
+ *
+ * A ramp shallower than 45 degrees has no character that could stand for it in
+ * the grid — the whole point of the Slope entity is that steepness is not a
+ * property a tile can carry — so the fixture names its boxes in prose instead
+ * and this reads them back. Without it the .ascii would stop being the single
+ * authority for the level's geometry the moment a ramp stopped being diagonal.
+ */
+const DECLARED_SLOPES = LEGEND.flatMap((line) => {
+  const m = /^\s+(\d+)x(\d+)\s+(\w+)\s+at\s+(\d+),(\d+)$/.exec(line);
+  if (!m) return [];
+  const [, run, rise, dir, col, row] = m;
+  return [
+    {
+      x: Number(col) * TILE,
+      y: Number(row) * TILE,
+      w: Number(run) * TILE,
+      h: Number(rise) * TILE,
+      dir,
+    },
+  ];
+});
+
+/**
+ * The authored grid with the fixture's Slope boxes baked over it, through the
+ * same code the importer uses.
+ */
+function authoredWorld(): World {
+  const rows = AUTHORED.map((r) => r.replaceAll(SPAWN_MARK, "."));
+  const cols = Math.max(...rows.map((r) => r.length));
+  const names: string[] = [];
+  for (let y = 0; y < rows.length; y++) {
+    for (let x = 0; x < cols; x++) names.push(CHAR_TO_NAME[rows[y][x]] ?? "Empty");
+  }
+  const slopes = applySlopes(names, cols, DECLARED_SLOPES, "levels/stage1.ascii");
+  return new World(
+    names.map((n) => NAME_TO_TILE[n]),
+    cols,
+    rows.length,
+    slopes,
+  );
+}
+
+test("the level's Slope boxes are the ones the fixture declares", () => {
+  assert.deepEqual(slopeRects(entities("Slope")), DECLARED_SLOPES);
+});
+
 test("the imported level reproduces the authored geometry tile for tile", () => {
   const imported = makeWorld();
-  const expected = World.fromRows(AUTHORED.map((r) => r.replaceAll(SPAWN_MARK, ".")));
+  const expected = authoredWorld();
 
   assert.equal(imported.cols, expected.cols);
   assert.equal(imported.rows, expected.rows);
 
   for (let y = 0; y < expected.rows; y++) {
     for (let x = 0; x < expected.cols; x++) {
-      assert.equal(imported.tileAt(x, y), expected.tileAt(x, y), `tile mismatch at ${x},${y}`);
+      const kind = expected.tileAt(x, y);
+      assert.equal(imported.tileAt(x, y), kind, `tile mismatch at ${x},${y}`);
+      // Two ramp tiles of the same kind can still be different ramps, so the
+      // shape has to be compared too — this is what a mis-baked slope shows up as.
+      assert.deepEqual(
+        imported.slopeProfile(x, y, kind),
+        expected.slopeProfile(x, y, kind),
+        `slope profile mismatch at ${x},${y}`,
+      );
     }
   }
 });

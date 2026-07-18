@@ -8,6 +8,11 @@
  * hence the --force guard. The importer, tools/import-ldtk.mjs, is the one that
  * runs routinely.
  *
+ * Note that this only ever wrote what a character grid can say. It has no Slope
+ * entity def and emits no Slope boxes, so re-running it drops every ramp that
+ * is not 45 degrees — the .ascii lists those in its legend precisely because it
+ * cannot draw them. Rebuilding from here means putting them back by hand.
+ *
  *   node tools/export-ldtk.mjs [--force]
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";

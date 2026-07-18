@@ -24,12 +24,21 @@ import { level as stage1 } from "./levels/stage1.js";
  *    each chute so every region can be wall-jumped back out of (see the dead-end
  *    tests in tests/level.test.ts — obstacles down there hang from the ceiling
  *    rather than reaching the floor precisely so they never strand the player).
+ *
+ * The cavern's four hills are the slope showcase, each a different gradient so
+ * a change to the ramp maths shows up as something visibly wrong rather than
+ * subtly off: 45 degrees at cols 4-9, 1-in-2 and three tiles tall at 12-25,
+ * 1-in-3 up with a 45-degree drop at 34-43, and the shallowest 1-in-4 at 68-79.
+ * They are authored as Slope boxes on the Entities layer, not painted into the
+ * IntGrid — see tools/slope-bake.mjs.
  */
 export const LEVEL: LevelData = stage1;
 
 export function makeWorld(): World {
   // Copied so each World owns its grid; the generated module is a shared const.
-  return new World(LEVEL.tiles.slice(), LEVEL.cols, LEVEL.rows);
+  // The slope map needs no copy — World reads it into its own Map and never
+  // holds the object.
+  return new World(LEVEL.tiles.slice(), LEVEL.cols, LEVEL.rows, LEVEL.slopes);
 }
 
 /** All entities placed on the level's LDtk Entities layer with the given id. */

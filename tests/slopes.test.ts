@@ -113,6 +113,75 @@ test("a ramp does not disturb a body standing well clear of it", () => {
   assert.equal(a.is_on_floor(), true);
 });
 
+/** Column the shallow ramps below all start climbing from. */
+const RAMP_FOOT = 4;
+
+/**
+ * A one-tile climb spread over `k` columns, built the way tools/slope-bake.mjs
+ * bakes a Slope box: a run of ramp tiles whose profiles chain from one to the
+ * next. Row 5 is the floor and the ramp climbs to a plateau at row 4.
+ *
+ *   1-in-2, cols 4-5:  0->8, 8->16
+ *   1-in-4, cols 4-7:  0->4, 4->8, 8->12, 12->16
+ *
+ * Every ramp shares a foot rather than a crest, so two of them can be compared
+ * at the same x partway up.
+ */
+function shallowRamp(k: number): World {
+  const rows = [
+    "################",
+    "#..............#",
+    "#..............#",
+    "#..............#",
+    "#" + ".".repeat(RAMP_FOOT - 1) + "/".repeat(k) + "#".repeat(16 - RAMP_FOOT - k),
+    "################",
+  ];
+  const slopes: Record<string, [number, number]> = {};
+  for (let i = 0; i < k; i++) {
+    slopes[`${RAMP_FOOT + i},4`] = [(i * TILE_SIZE) / k, ((i + 1) * TILE_SIZE) / k];
+  }
+  return World.fromRows(rows, slopes);
+}
+
+for (const k of [2, 4]) {
+  test(`a 1-in-${k} ramp carries a body up to the plateau without a step`, () => {
+    const world = shallowRamp(k);
+    const a = settle(world, 2 * TILE_SIZE, 2 * TILE_SIZE);
+    assert.equal(a.pos.y + a.hh, FLOOR_TOP, "starts on the flat floor");
+
+    let lastFeet = a.pos.y + a.hh;
+    for (let i = 0; i < 90; i++) {
+      step(a, WALK_SPEED);
+      const feet = a.pos.y + a.hh;
+      assert.equal(world.overlaps(a.pos.x, a.pos.y, a.hw, a.hh), false, `embedded at x=${a.pos.x}`);
+      assert.equal(a.is_on_floor(), true, `left the ground at x=${a.pos.x}`);
+      // The whole point of a shallow ramp: it lifts by a fraction of a tile per
+      // step. A jump here would mean the run of tiles is not chaining and the
+      // body is climbing one 45-degree face after another.
+      assert.ok(
+        lastFeet - feet <= TILE_SIZE / 2,
+        `rose ${lastFeet - feet}px in one step at x=${a.pos.x}; ramp is not shallow`,
+      );
+      lastFeet = feet;
+    }
+
+    assert.equal(a.pos.y + a.hh, PLATEAU_TOP, "ended flush with the plateau surface");
+  });
+}
+
+test("a shallower ramp lifts a body less for the same distance walked", () => {
+  /** Feet height one tile into the climb — still on the ramp for either k. */
+  const feetAfter = (k: number): number => {
+    const world = shallowRamp(k);
+    const a = settle(world, 2 * TILE_SIZE, 2 * TILE_SIZE);
+    for (let i = 0; i < 200 && a.pos.x < (RAMP_FOOT + 1) * TILE_SIZE; i++) step(a, WALK_SPEED);
+    return a.pos.y + a.hh;
+  };
+
+  // Feet y grows downward, so the shallower ramp leaves them lower.
+  assert.ok(feetAfter(4) > feetAfter(2), "the 1-in-4 ramp climbed at least as fast as the 1-in-2");
+});
+
 test("a ramp surface stops a fast fall rather than letting it tunnel through", () => {
   const world = upRamp();
   const a = new Actor(world, 6 * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE);

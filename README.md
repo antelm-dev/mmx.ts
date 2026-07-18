@@ -54,6 +54,28 @@ Production artifacts are written below `src-tauri/target/release/`. Windows buil
 produce the standalone executable along with MSI and NSIS installers under
 `src-tauri/target/release/bundle/`.
 
+### Desktop integration
+
+The Tauri build adds a small native layer without moving gameplay out of the
+shared TypeScript engine:
+
+- **U / O** use native Save/Open dialogs for deterministic replay files. Dialogs
+  start in the app's platform-specific `replays` data directory; dropping a replay
+  JSON file onto the desktop window loads it too.
+- **F8** toggles automatic pause when the window loses focus.
+- **F9 / F10** lower or raise master volume in 10% steps.
+- **F11** toggles fullscreen.
+
+Volume, fullscreen and focus-pause preferences are validated by Rust and stored
+as `settings.json` in the operating system's application-data directory. The web
+build keeps the same controls and falls back to `localStorage`, browser file
+pickers/downloads and the browser Fullscreen API.
+
+Native filesystem access is intentionally confined to commands in
+`src-tauri/src/lib.rs`. Replay contents still pass through the strict TypeScript
+decoder before they can replace a running scene, keeping one authority for the
+on-disk replay format.
+
 ---
 
 ## How the original works (analysis)
@@ -137,8 +159,12 @@ tuning constant are ported line-for-line so the _feel_ matches.
   the current state's `_EndCondition`) driving transitions. This reproduces the
   intended ordering **Idle < Walk/Fall < WallSlide < Dash/AirDash < Jump <
   DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
-- **Collision** is flat-tile AABB (no slopes / moving platforms / conveyors); the
-  raycast wall/reach queries become edge samples.
+- **Collision** is tile AABB (no moving platforms / conveyors); the raycast
+  wall/reach queries become edge samples. Ramps are supported up to 45 degrees:
+  a slope tile carries a linear surface between its two edge heights, and
+  shallower ramps are a run of tiles whose surfaces chain. Level designers draw
+  them as resizable `Slope` boxes in LDtk — width is the run, height the rise —
+  which `tools/slope-bake.mjs` expands into those tiles at import.
 - **Some cosmetics remain scoped**: the player/enemy effects used by the current
   room and their original sounds are ported; unrelated shaders are not. Animation
   is engine state rather than a cosmetic — see below.

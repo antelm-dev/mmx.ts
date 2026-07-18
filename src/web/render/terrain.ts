@@ -13,13 +13,12 @@ import { Tile, World } from "../../engine/World.js";
  * rebuilding a Graphics to match the view would re-tessellate and re-upload every
  * frame to save drawing a few thousand already-resident triangles.
  *
- * Style: a faint green grid over a near-black backdrop, with collision geometry
- * drawn as dark blocks whose *exposed* faces are outlined in a bright edge colour —
- * so what the physics treats as solid is exactly what reads as solid.
+ * Style: near-black backdrop, with collision geometry drawn as dark blocks whose
+ * *exposed* faces are outlined in a bright edge colour — so what the physics
+ * treats as solid is exactly what reads as solid.
  */
 
 export const COLOR_BG = 0x050a16;
-const COLOR_GRID = 0x123f2b;
 const COLOR_TILE_FILL = 0x080d1c;
 export const COLOR_TILE_EDGE = 0xe8eefc;
 
@@ -42,33 +41,43 @@ const NEIGHBOUR: Record<Side, [number, number]> = {
 };
 
 /**
- * Does a tile of this kind fill the whole of one of its sides? Used to hide the
- * seam between touching geometry: a ramp's tall vertical edge and its base are
- * full faces, its diagonal side is not.
+ * Does the tile at this position fill the whole of one of its sides? Used to
+ * hide the seam between touching geometry: a ramp's vertical edge is a full
+ * face only where its profile reaches the top of the tile, which for the
+ * shallow ramps built from a run of tiles is just the last one in the run.
  */
-function coversSide(kind: Tile, side: Side): boolean {
-  switch (kind) {
-    case Tile.Solid:
-      return true;
-    case Tile.SlopeUpRight:
-      return side === "right" || side === "bottom";
-    case Tile.SlopeUpLeft:
-      return side === "left" || side === "bottom";
+function coversSide(world: World, tx: number, ty: number, side: Side): boolean {
+  const kind = world.tileAt(tx, ty);
+  if (kind === Tile.Solid) return true;
+  if (kind !== Tile.SlopeUpRight && kind !== Tile.SlopeUpLeft) return false;
+
+  const { l, r } = world.slopeProfile(tx, ty, kind);
+  switch (side) {
+    case "left":
+      return l >= TILE_SIZE;
+    case "right":
+      return r >= TILE_SIZE;
+    case "bottom":
+      return l > 0 || r > 0;
     default:
-      return false;
+      return false; // the top is the ramp surface, never a full face
   }
 }
 
-/** Add one tile's solid area — a full square, or the triangle under a ramp. */
-function fillTile(g: Graphics, kind: Tile, x: number, y: number): void {
+/** Add one tile's solid area — a full square, or the wedge under a ramp. */
+function fillTile(g: Graphics, world: World, kind: Tile, tx: number, ty: number): void {
+  const x = tx * TILE_SIZE;
+  const y = ty * TILE_SIZE;
   const x1 = x + TILE_SIZE;
   const y1 = y + TILE_SIZE;
   if (kind === Tile.Solid) {
     g.rect(x, y, TILE_SIZE, TILE_SIZE);
     return;
   }
-  const apexX = kind === Tile.SlopeUpRight ? x1 : x;
-  g.poly([x, y1, x1, y1, apexX, y]);
+  // A trapezoid rather than a triangle: a shallow ramp's tiles are cut at both
+  // edges, and only the 45-degree case degenerates to a corner-to-corner wedge.
+  const { l, r } = world.slopeProfile(tx, ty, kind);
+  g.poly([x, y1, x1, y1, x1, y1 - r, x, y1 - l]);
 }
 
 /**
@@ -101,33 +110,19 @@ function traceExposedEdges(g: Graphics, world: World, kind: Tile, tx: number, ty
   const x = tx * TILE_SIZE;
   const y = ty * TILE_SIZE;
 
-  // A ramp's diagonal is always exposed — nothing sits flush against it.
-  if (kind === Tile.SlopeUpRight) {
-    g.moveTo(x, y + TILE_SIZE).lineTo(x + TILE_SIZE, y);
-  } else if (kind === Tile.SlopeUpLeft) {
-    g.moveTo(x, y).lineTo(x + TILE_SIZE, y + TILE_SIZE);
+  // A ramp's surface is always exposed — nothing sits flush against it.
+  if (kind === Tile.SlopeUpRight || kind === Tile.SlopeUpLeft) {
+    const { l, r } = world.slopeProfile(tx, ty, kind);
+    const y1 = y + TILE_SIZE;
+    g.moveTo(x, y1 - l).lineTo(x + TILE_SIZE, y1 - r);
   }
 
   for (const side of SIDES) {
-    if (!coversSide(kind, side)) continue;
+    if (!coversSide(world, tx, ty, side)) continue;
     const [dx, dy] = NEIGHBOUR[side];
-    if (coversSide(world.tileAt(tx + dx, ty + dy), OPPOSITE[side])) continue;
+    if (coversSide(world, tx + dx, ty + dy, OPPOSITE[side])) continue;
     traceSide(g, side, x, y);
   }
-}
-
-/**
- * The one-pixel grid ruled on every tile boundary.
- *
- * Drawn as 1px rects rather than strokes: a stroked line straddles the boundary and
- * lands on half a device pixel once the view is scaled, which blurs it. Filled rects
- * stay crisp at any scale.
- */
-function buildGrid(world: World): Graphics {
-  const g = new Graphics();
-  for (let tx = 1; tx < world.cols; tx++) g.rect(tx * TILE_SIZE, 0, 1, world.heightPx);
-  for (let ty = 1; ty < world.rows; ty++) g.rect(0, ty * TILE_SIZE, world.widthPx, 1);
-  return g.fill(COLOR_GRID);
 }
 
 /** Fills the collision geometry, then strokes only the faces open to air. */
@@ -138,7 +133,7 @@ function buildTiles(world: World): Graphics {
     for (let tx = 0; tx < world.cols; tx++) {
       const kind = world.tileAt(tx, ty);
       if (kind === Tile.Empty) continue;
-      fillTile(g, kind, tx * TILE_SIZE, ty * TILE_SIZE);
+      fillTile(g, world, kind, tx, ty);
     }
   }
   g.fill(COLOR_TILE_FILL);
@@ -155,6 +150,6 @@ function buildTiles(world: World): Graphics {
 
 export function buildTerrain(world: World): Container {
   const view = new Container();
-  view.addChild(buildGrid(world), buildTiles(world));
+  view.addChild(buildTiles(world));
   return view;
 }
