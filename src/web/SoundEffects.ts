@@ -52,8 +52,17 @@ export interface PlayOptions {
 
 export class SoundEffects {
   private readonly context = new AudioContext();
+  private readonly master = this.context.createGain();
   private readonly buffers = new Map<SoundName, AudioBuffer>();
   private readonly active = new Map<SoundName, AudioBufferSourceNode>();
+
+  constructor() {
+    this.master.connect(this.context.destination);
+  }
+
+  setMasterVolume(volume: number): void {
+    this.master.gain.value = Math.max(0, Math.min(1, volume));
+  }
 
   /** Decode all samples up front so the first frame of an action is never late. */
   async load(): Promise<void> {
@@ -91,7 +100,7 @@ export class SoundEffects {
     }
     source.playbackRate.value = randomRate(options.rate ?? 1);
     gain.gain.value = Math.pow(10, (options.db ?? 0) / 20);
-    source.connect(gain).connect(this.context.destination);
+    source.connect(gain).connect(this.master);
     if (options.loop || options.tracked) {
       this.active.set(name, source);
       source.addEventListener("ended", () => {

@@ -54,6 +54,28 @@ Production artifacts are written below `src-tauri/target/release/`. Windows buil
 produce the standalone executable along with MSI and NSIS installers under
 `src-tauri/target/release/bundle/`.
 
+### Desktop integration
+
+The Tauri build adds a small native layer without moving gameplay out of the
+shared TypeScript engine:
+
+- **U / O** use native Save/Open dialogs for deterministic replay files. Dialogs
+  start in the app's platform-specific `replays` data directory; dropping a replay
+  JSON file onto the desktop window loads it too.
+- **F8** toggles automatic pause when the window loses focus.
+- **F9 / F10** lower or raise master volume in 10% steps.
+- **F11** toggles fullscreen.
+
+Volume, fullscreen and focus-pause preferences are validated by Rust and stored
+as `settings.json` in the operating system's application-data directory. The web
+build keeps the same controls and falls back to `localStorage`, browser file
+pickers/downloads and the browser Fullscreen API.
+
+Native filesystem access is intentionally confined to commands in
+`src-tauri/src/lib.rs`. Replay contents still pass through the strict TypeScript
+decoder before they can replace a running scene, keeping one authority for the
+on-disk replay format.
+
 ---
 
 ## How the original works (analysis)

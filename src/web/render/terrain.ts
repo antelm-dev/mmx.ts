@@ -13,13 +13,12 @@ import { Tile, World } from "../../engine/World.js";
  * rebuilding a Graphics to match the view would re-tessellate and re-upload every
  * frame to save drawing a few thousand already-resident triangles.
  *
- * Style: a faint green grid over a near-black backdrop, with collision geometry
- * drawn as dark blocks whose *exposed* faces are outlined in a bright edge colour —
- * so what the physics treats as solid is exactly what reads as solid.
+ * Style: near-black backdrop, with collision geometry drawn as dark blocks whose
+ * *exposed* faces are outlined in a bright edge colour — so what the physics
+ * treats as solid is exactly what reads as solid.
  */
 
 export const COLOR_BG = 0x050a16;
-const COLOR_GRID = 0x123f2b;
 const COLOR_TILE_FILL = 0x080d1c;
 export const COLOR_TILE_EDGE = 0xe8eefc;
 
@@ -116,20 +115,6 @@ function traceExposedEdges(g: Graphics, world: World, kind: Tile, tx: number, ty
   }
 }
 
-/**
- * The one-pixel grid ruled on every tile boundary.
- *
- * Drawn as 1px rects rather than strokes: a stroked line straddles the boundary and
- * lands on half a device pixel once the view is scaled, which blurs it. Filled rects
- * stay crisp at any scale.
- */
-function buildGrid(world: World): Graphics {
-  const g = new Graphics();
-  for (let tx = 1; tx < world.cols; tx++) g.rect(tx * TILE_SIZE, 0, 1, world.heightPx);
-  for (let ty = 1; ty < world.rows; ty++) g.rect(0, ty * TILE_SIZE, world.widthPx, 1);
-  return g.fill(COLOR_GRID);
-}
-
 /** Fills the collision geometry, then strokes only the faces open to air. */
 function buildTiles(world: World): Graphics {
   const g = new Graphics();
@@ -155,6 +140,6 @@ function buildTiles(world: World): Graphics {
 
 export function buildTerrain(world: World): Container {
   const view = new Container();
-  view.addChild(buildGrid(world), buildTiles(world));
+  view.addChild(buildTiles(world));
   return view;
 }

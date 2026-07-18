@@ -587,7 +587,7 @@
 							"__tile": null,
 							"__smartColor": "#FFCC66",
 							"iid": "camera-upper-0000-0000-000000000000",
-							"width": 1600,
+							"width": 800,
 							"height": 176,
 							"defUid": 100,
 							"px": [0,0],
@@ -619,25 +619,6 @@
 						},
 						{
 							"__identifier": "CameraZone",
-							"__grid": [0,10],
-							"__pivot": [0,0],
-							"__tags": [],
-							"__tile": null,
-							"__smartColor": "#FFCC66",
-							"iid": "camera-cavern-0000-0000-0000000000",
-							"width": 1600,
-							"height": 224,
-							"defUid": 100,
-							"px": [0,160],
-							"fieldInstances": [
-								{ "__identifier": "BindX", "__type": "Bool", "__value": true, "__tile": null, "defUid": 101, "realEditorValues": [] },
-								{ "__identifier": "BindY", "__type": "Bool", "__value": true, "__tile": null, "defUid": 102, "realEditorValues": [] }
-							],
-							"__worldX": 0,
-							"__worldY": 160
-						},
-						{
-							"__identifier": "CameraZone",
 							"__grid": [0,23],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -654,6 +635,25 @@
 							],
 							"__worldX": 0,
 							"__worldY": 368
+						},
+						{
+							"__identifier": "CameraZone",
+							"__grid": [50,0],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#FFCC66",
+							"iid": "bc26f8d0-6fc0-11f1-8e32-c345da5cdf87",
+							"width": 800,
+							"height": 176,
+							"defUid": 100,
+							"px": [800,0],
+							"fieldInstances": [
+								{ "__identifier": "BindX", "__type": "Bool", "__value": true, "__tile": null, "defUid": 101, "realEditorValues": [] },
+								{ "__identifier": "BindY", "__type": "Bool", "__value": true, "__tile": null, "defUid": 102, "realEditorValues": [] }
+							],
+							"__worldX": 800,
+							"__worldY": 0
 						}
 					]
 				},

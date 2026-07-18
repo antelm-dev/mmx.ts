@@ -11,6 +11,7 @@ import { animData, enemyAnims } from "./render/assets.js";
 import { Renderer } from "./render/Renderer.js";
 import { spriteSnapshot } from "./render/sprite.js";
 import { SoundEffects } from "./SoundEffects.js";
+import { DEFAULT_SETTINGS, DesktopBridge, type DesktopSettings } from "./DesktopBridge.js";
 import { DebugOverlay } from "./debug/DebugOverlay.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
 import { DebugSession } from "./debug/DebugSession.js";
@@ -31,6 +32,8 @@ const sounds = new SoundEffects();
 const trail = new Trail();
 const smoke = new DashSmoke();
 const overlay = new DebugOverlay();
+const desktop = new DesktopBridge();
+let settings: DesktopSettings = { ...DEFAULT_SETTINGS };
 
 /**
  * The keys physically held right now.
@@ -50,6 +53,66 @@ const debug = new DebugSession({
   onEnemySpawned: bindEnemy,
   onSceneReplaced: bindScene,
   extraDiagnostics: () => renderer?.stats() ?? {},
+  replayFiles: desktop.replays,
+});
+
+function persistSettings(): void {
+  void desktop.saveSettings(settings).catch((error: unknown) => {
+    console.warn("Could not save desktop settings", error);
+    debug.notify(`settings save failed: ${String(error)}`);
+  });
+}
+
+function adjustVolume(delta: number): void {
+  settings = {
+    ...settings,
+    masterVolume: Math.round(Math.max(0, Math.min(1, settings.masterVolume + delta)) * 10) / 10,
+  };
+  sounds.setMasterVolume(settings.masterVolume);
+  persistSettings();
+  debug.notify(`volume ${Math.round(settings.masterVolume * 100)}%`);
+}
+
+debug.registerCommand({
+  code: "F8",
+  label: "F8",
+  description: "toggle pause on focus loss",
+  run: () => {
+    settings = { ...settings, pauseOnBlur: !settings.pauseOnBlur };
+    persistSettings();
+    debug.notify(`pause on focus loss ${settings.pauseOnBlur ? "on" : "off"}`);
+  },
+});
+debug.registerCommand({
+  code: "F9",
+  label: "F9",
+  description: "volume down",
+  run: () => adjustVolume(-0.1),
+});
+debug.registerCommand({
+  code: "F10",
+  label: "F10",
+  description: "volume up",
+  run: () => adjustVolume(0.1),
+});
+debug.registerCommand({
+  code: "F11",
+  label: "F11",
+  description: "toggle fullscreen",
+  run: () => {
+    const previous = settings.fullscreen;
+    settings = { ...settings, fullscreen: !settings.fullscreen };
+    void desktop
+      .setFullscreen(settings.fullscreen)
+      .then(() => {
+        persistSettings();
+        debug.notify(settings.fullscreen ? "fullscreen" : "windowed");
+      })
+      .catch((error: unknown) => {
+        settings = { ...settings, fullscreen: previous };
+        debug.notify(`fullscreen failed: ${String(error)}`);
+      });
+  },
 });
 
 // --- per-scene wiring -------------------------------------------------------
@@ -184,6 +247,13 @@ window.addEventListener("keyup", (e) => {
     e.preventDefault();
   }
 });
+window.addEventListener("blur", () => {
+  for (const action of Object.values(KEYMAP)) held.setDown(action, false);
+  if (settings.pauseOnBlur && !debug.paused) {
+    debug.paused = true;
+    debug.notify("paused — focus lost");
+  }
+});
 
 // --- afterimage trail ---
 // Dash.gd keeps its ghost sprite synchronized with the live one every frame
@@ -224,6 +294,16 @@ function stepOnce(): void {
 const MAX_FRAME_SECONDS = 0.25;
 
 async function main(): Promise<void> {
+  settings = await desktop.loadSettings();
+  sounds.setMasterVolume(settings.masterVolume);
+  if (settings.fullscreen) {
+    await desktop.setFullscreen(true).catch((error: unknown) => {
+      settings = { ...settings, fullscreen: false };
+      console.warn("Could not restore fullscreen", error);
+    });
+  }
+  await desktop.onReplayDropped((file) => debug.loadReplayText(file.contents, file.path));
+
   const canvas = document.getElementById("game") as HTMLCanvasElement;
   const panel = new DebugPanel(debug);
 
@@ -294,7 +374,11 @@ async function main(): Promise<void> {
     performance.mark("mmx:render:start");
     created.render(scene.stage, scene.camera, trail, smoke);
     performance.mark("mmx:render:end");
-    const rendering = performance.measure("mmx:render", "mmx:render:start", "mmx:render:end").duration;
+    const rendering = performance.measure(
+      "mmx:render",
+      "mmx:render:start",
+      "mmx:render:end",
+    ).duration;
     performance.mark("mmx:frame-work:end");
     const frameWork = performance.measure(
       "mmx:frame-work",
@@ -302,7 +386,14 @@ async function main(): Promise<void> {
       "mmx:frame-work:end",
     ).duration;
 
-    debug.stats.record({ frameTime, simulation, rendering, frameWork, simulationSteps, accumulator: acc });
+    debug.stats.record({
+      frameTime,
+      simulation,
+      rendering,
+      frameWork,
+      simulationSteps,
+      accumulator: acc,
+    });
     panel.update(now);
     requestAnimationFrame(frame);
   }
