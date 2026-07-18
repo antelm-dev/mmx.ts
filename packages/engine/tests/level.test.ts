@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Tile, World } from "../src/engine/World.js";
-import { makeWorld, LEVEL, SPAWN, CAMERA_ZONES, entities } from "../src/engine/level.js";
+import { LEVEL } from "../src/engine/level.js";
+import { level as STAGE1 } from "../src/engine/levels/stage1.js";
 import { applySlopes, slopeRects, TILE } from "../../../tools/slope-bake.mjs";
 import { Camera } from "../src/engine/Camera.js";
 import { Player } from "../src/engine/Player.js";
@@ -33,6 +34,20 @@ function readFixture(url: URL): { legend: string[]; grid: string[] } {
 }
 
 const { legend: LEGEND, grid: AUTHORED } = readFixture(SOURCE);
+
+const stage1Entities = (id: string) => STAGE1.entities.filter((entity) => entity.id === id);
+const stage1World = () => new World(STAGE1.tiles.slice(), STAGE1.cols, STAGE1.rows, STAGE1.slopes);
+const spawnEntity = stage1Entities("Spawn")[0];
+const STAGE1_SPAWN = { x: spawnEntity.x, y: spawnEntity.y };
+const STAGE1_CAMERA_ZONES = stage1Entities("CameraZone").map((e) => ({
+  id: e.iid,
+  x: e.x,
+  y: e.y,
+  w: e.w,
+  h: e.h,
+  bindX: typeof e.fields.BindX === "boolean" ? e.fields.BindX : true,
+  bindY: typeof e.fields.BindY === "boolean" ? e.fields.BindY : true,
+}));
 
 /** 'S' marks the spawn entity and leaves the tile itself empty. */
 const SPAWN_MARK = "S";
@@ -95,11 +110,11 @@ function authoredWorld(): World {
 }
 
 test("the level's Slope boxes are the ones the fixture declares", () => {
-  assert.deepEqual(slopeRects(entities("Slope")), DECLARED_SLOPES);
+  assert.deepEqual(slopeRects(stage1Entities("Slope")), DECLARED_SLOPES);
 });
 
 test("the imported level reproduces the authored geometry tile for tile", () => {
-  const imported = makeWorld();
+  const imported = stage1World();
   const expected = authoredWorld();
 
   assert.equal(imported.cols, expected.cols);
@@ -126,7 +141,7 @@ test("the grid size the level was authored at matches the engine tile size", () 
 
 test("spawn comes from the LDtk Spawn entity and sits in open air above a floor", () => {
   assert.deepEqual(
-    entities("Spawn").map((e) => e.id),
+    stage1Entities("Spawn").map((e) => e.id),
     ["Spawn"],
   );
 
@@ -134,37 +149,37 @@ test("spawn comes from the LDtk Spawn entity and sits in open air above a floor"
   // need this expectation restated.
   const markY = AUTHORED.findIndex((r) => r.includes(SPAWN_MARK));
   const markX = AUTHORED[markY].indexOf(SPAWN_MARK);
-  assert.deepEqual(SPAWN, { x: markX * TILE_SIZE, y: markY * TILE_SIZE });
+  assert.deepEqual(STAGE1_SPAWN, { x: markX * TILE_SIZE, y: markY * TILE_SIZE });
 
   // The bug the old hand-counted constant documented: no ceiling directly above.
-  const world = makeWorld();
-  const cx = Math.floor(SPAWN.x / TILE_SIZE);
-  const cy = Math.floor(SPAWN.y / TILE_SIZE);
+  const world = stage1World();
+  const cx = Math.floor(STAGE1_SPAWN.x / TILE_SIZE);
+  const cy = Math.floor(STAGE1_SPAWN.y / TILE_SIZE);
   assert.equal(world.isSolidTile(cx, cy), false, "spawn tile is inside geometry");
   assert.equal(world.isSolidTile(cx, cy - 1), false, "no headroom above spawn");
 });
 
 test("level camera holds each vertical tier in a stable frame", () => {
-  const world = makeWorld();
+  const world = stage1World();
   const camera = new Camera(world.widthPx, world.heightPx);
-  camera.setZones(CAMERA_ZONES);
-  camera.snapTo(SPAWN.x, SPAWN.y);
+  camera.setZones(STAGE1_CAMERA_ZONES);
+  camera.snapTo(STAGE1_SPAWN.x, STAGE1_SPAWN.y);
 
-  assert.ok(CAMERA_ZONES.length >= 3, "upper, ground, and cavern framing must be authored");
+  assert.ok(STAGE1_CAMERA_ZONES.length >= 3, "upper, ground, and cavern framing must be authored");
   assert.equal(camera.y, 224, "spawn should use the ground frame");
 
   // Running and ordinary jumps within a tier should not bob the whole screen.
-  for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 400, DT);
+  for (let i = 0; i < 180; i++) camera.follow(STAGE1_SPAWN.x + 300, 400, DT);
   assert.equal(camera.y, 224, "ground traversal changed the vertical frame");
 
   // Crossing a tier boundary hands over to the next authored frame and eases
   // there using the regular camera transition rather than cutting immediately.
-  camera.follow(SPAWN.x + 300, 480, DT);
+  camera.follow(STAGE1_SPAWN.x + 300, 480, DT);
   assert.ok(camera.y > 224 && camera.y < 288, "cavern transition did not ease");
-  for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 480, DT);
+  for (let i = 0; i < 180; i++) camera.follow(STAGE1_SPAWN.x + 300, 480, DT);
   assert.equal(camera.y, 288, "cavern did not settle on its frame");
 
-  for (let i = 0; i < 180; i++) camera.follow(SPAWN.x + 300, 200, DT);
+  for (let i = 0; i < 180; i++) camera.follow(STAGE1_SPAWN.x + 300, 200, DT);
   assert.equal(camera.y, 0, "upper route did not settle on its frame");
 });
 
@@ -175,7 +190,7 @@ test("level camera holds each vertical tier in a stable frame", () => {
  */
 function climbOutFrom(startX: number, wallX: number): number {
   const input = new Input();
-  const world = makeWorld();
+  const world = stage1World();
   const player = new Player(world, startX, 25 * TILE_SIZE, input);
 
   for (let i = 0; i < 60; i++) player.tick(DT); // drop to the cavern floor
@@ -213,6 +228,6 @@ test("the right cavern region can be escaped by wall-jumping", () => {
 });
 
 test("each World gets its own tile grid", () => {
-  assert.notEqual(makeWorld(), makeWorld());
-  assert.equal(makeWorld().tileAt(0, 0), makeWorld().tileAt(0, 0));
+  assert.notEqual(stage1World(), stage1World());
+  assert.equal(stage1World().tileAt(0, 0), stage1World().tileAt(0, 0));
 });

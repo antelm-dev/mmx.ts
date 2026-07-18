@@ -2,37 +2,20 @@ import { World } from "./World.js";
 import type { CameraZone } from "./Camera.js";
 import type { LevelData, LevelEntity } from "./LevelData.js";
 import type { EnemyKind } from "./Enemy.js";
-import { level as stage1 } from "./levels/stage1.js";
+import type { Conveyor, Hazard, MovingPlatformSpawn } from "./Environment.js";
+import { level as mechanicsDemo } from "./levels/stage2.js";
 
 /**
- * The playable level. Authored in LDtk (levels/stage1.ldtk) and compiled to
- * this package's src/engine/levels/stage1.ts by `pnpm level:import` — edit the .ldtk file
- * in LDtk and re-run that, never the generated module. levels/stage1.ascii is
- * the text form the LDtk project was bootstrapped from and the fixture the
- * import is pinned against in tests.
+ * The active mechanics demo, authored in levels/stage2.ldtk and generated into
+ * levels/stage2.ts by `pnpm level:import`. Its 160x48 grid has three tiers:
  *
- * At 100x32 tiles it is several screens wide and over two tall, so it is only
- * playable through the scrolling view in {@link Camera}. Three tiers, each
- * exercising a different part of the movement set:
+ *  - ground: opposing conveyors, spike strips, and three moving bridges;
+ *  - upper: staggered air-dash ledges, enemies, ceilings, and a wall-jump shaft;
+ *  - cavern: a safe descent and ramps ranging from 45 degrees to 1-in-4.
  *
- *  - ground (rows 22-23): flat running (walk/dash) broken by three chutes, with
- *    a wall-jump shaft at cols 39-43 climbing to the upper walkway;
- *  - upper (rows 1-21): the walkway at cols 44-70 plus staggered platforms and
- *    ceiling stubs — jump/airdash, headbump, and a descent back to ground;
- *  - cavern (rows 24-29): under the ground slab, reached by falling down a
- *    chute. Ramped hills for slope traversal, and a floor-to-ceiling wall beside
- *    each chute so every region can be wall-jumped back out of (see the dead-end
- *    tests in tests/level.test.ts — obstacles down there hang from the ceiling
- *    rather than reaching the floor precisely so they never strand the player).
- *
- * The cavern's four hills are the slope showcase, each a different gradient so
- * a change to the ramp maths shows up as something visibly wrong rather than
- * subtly off: 45 degrees at cols 4-9, 1-in-2 and three tiles tall at 12-25,
- * 1-in-3 up with a 45-degree drop at 34-43, and the shallowest 1-in-4 at 68-79.
- * They are authored as Slope boxes on the Entities layer, not painted into the
- * IntGrid — see tools/slope-bake.mjs.
+ * The smaller Stage1 remains as the collision and movement regression fixture.
  */
-export const LEVEL: LevelData = stage1;
+export const LEVEL: LevelData = mechanicsDemo;
 
 export function makeWorld(): World {
   // Copied so each World owns its grid; the generated module is a shared const.
@@ -70,6 +53,41 @@ function boolField(e: LevelEntity, name: string, fallback: boolean): boolean {
   const v = e.fields[name];
   return typeof v === "boolean" ? v : fallback;
 }
+
+function numberField(e: LevelEntity, name: string, fallback: number): number {
+  const value = e.fields[name];
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/** Lethal volumes, conveyor strips, and moving floors authored in LDtk. */
+export const HAZARDS: Hazard[] = entities("Hazard").map((e) => ({
+  id: e.iid,
+  x: e.x,
+  y: e.y,
+  w: e.w,
+  h: e.h,
+}));
+
+export const CONVEYORS: Conveyor[] = entities("Conveyor").map((e) => ({
+  id: e.iid,
+  x: e.x,
+  y: e.y,
+  w: e.w,
+  h: e.h,
+  speed: numberField(e, "Speed", 60),
+}));
+
+export const MOVING_PLATFORM_SPAWNS: MovingPlatformSpawn[] = entities("MovingPlatform").map(
+  (e) => ({
+    id: e.iid,
+    x: e.x,
+    y: e.y,
+    w: e.w,
+    h: e.h,
+    travel: Math.max(0, numberField(e, "Travel", 96)),
+    speed: Math.max(0, numberField(e, "Speed", 48)),
+  }),
+);
 
 /**
  * Where each enemy starts, in the order they were placed.

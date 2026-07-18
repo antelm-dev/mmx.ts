@@ -10,6 +10,7 @@ export * from "./engine/Actor.js";
 export * from "./engine/Animation.js";
 export * from "./engine/Camera.js";
 export * from "./engine/Enemy.js";
+export * from "./engine/Environment.js";
 export * from "./engine/LevelData.js";
 export * from "./engine/Player.js";
 export * from "./engine/Projectile.js";

@@ -487,7 +487,7 @@ async function main(): Promise<void> {
   // the menu's labels are built at module scope and Pixi rasterises a Text the
   // first time it draws, so the face has to be in before any frame goes out.
   const [created] = await Promise.all([
-    Renderer.create(canvas, debug.scene.world),
+    Renderer.create(canvas, debug.scene.stage),
     sounds.load(),
     loadUiFont(),
   ]);

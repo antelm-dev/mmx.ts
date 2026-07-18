@@ -17,6 +17,7 @@
     "sim": "pnpm --filter @mmx/sim start",
     "replay": "pnpm --filter @mmx/sim replay",
     "level:import": "node tools/import-ldtk.mjs",
+    "level:demo": "node tools/build-demo-stage.mjs && node tools/import-ldtk.mjs",
     "enemies:import": "node tools/build-enemies.mjs",
     "test": "pnpm --filter @mmx/engine test",
     "lint": "oxlint packages apps tools",

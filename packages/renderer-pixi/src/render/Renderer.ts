@@ -9,14 +9,13 @@ import type { Charge } from "@mmx/engine/engine/abilities/Charge.js";
 import type { Camera } from "@mmx/engine/engine/Camera.js";
 import type { Player } from "@mmx/engine/engine/Player.js";
 import type { Stage } from "@mmx/engine/engine/Stage.js";
-import type { World } from "@mmx/engine/engine/World.js";
 import { DashSmoke } from "../DashSmoke.js";
 import { Trail } from "../Trail.js";
 import { enemyAnims, PLAYER_SHEETS, SHEET_URLS, validateAnimationAssets } from "./assets.js";
 import { Hud } from "./Hud.js";
 import { place, spriteSnapshot } from "./sprite.js";
 import { SpritePool } from "./SpritePool.js";
-import { buildTerrain, COLOR_BG } from "./terrain.js";
+import { buildTerrain, COLOR_BG, type TerrainView } from "./terrain.js";
 import { loadSheets, regionTexture, shotTexture, textureCounts } from "./textures.js";
 
 /**
@@ -66,6 +65,7 @@ export class Renderer {
   private readonly player = new Sprite();
   private readonly aura = new Sprite();
   private readonly hud = new Hud();
+  private terrain?: TerrainView;
 
   /**
    * Where the debug overlay draws. Inside the scrolling scene and above every
@@ -108,7 +108,7 @@ export class Renderer {
     this.app.stage.addChild(this.viewport, this.hudLayer, this.uiLayer);
   }
 
-  static async create(canvas: HTMLCanvasElement, world: World): Promise<Renderer> {
+  static async create(canvas: HTMLCanvasElement, stage: Stage): Promise<Renderer> {
     validateAnimationAssets();
     const app = new Application();
     await app.init({
@@ -137,7 +137,8 @@ export class Renderer {
     // Spector.js can discover the canvas directly; this also exposes Pixi's
     // renderer/backend for targeted GPU inspection from DevTools.
     (window as any).__mmxRenderer = { app, canvas };
-    renderer.scene.addChildAt(buildTerrain(world), 0);
+    renderer.terrain = buildTerrain(stage);
+    renderer.scene.addChildAt(renderer.terrain.view, 0);
     renderer.fit();
     return renderer;
   }
@@ -219,6 +220,7 @@ export class Renderer {
     // position stands in for it here and both quantise in step.
     this.scene.position.set(camera.renderOffsetX(player.pos.x), camera.renderOffsetY(player.pos.y));
 
+    this.terrain?.sync(stage);
     this.syncEnemies(stage);
     this.syncGhosts(trail);
     this.syncPlayer(player);

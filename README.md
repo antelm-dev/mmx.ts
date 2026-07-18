@@ -160,12 +160,16 @@ tuning constant are ported line-for-line so the _feel_ matches.
   the current state's `_EndCondition`) driving transitions. This reproduces the
   intended ordering **Idle < Walk/Fall < WallSlide < Dash/AirDash < Jump <
   DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
-- **Collision** is tile AABB (no moving platforms / conveyors); the raycast
+- **Collision** uses tile AABBs for static terrain; the raycast
   wall/reach queries become edge samples. Ramps are supported up to 45 degrees:
   a slope tile carries a linear surface between its two edge heights, and
   shallower ramps are a run of tiles whose surfaces chain. Level designers draw
   them as resizable `Slope` boxes in LDtk — width is the run, height the rise —
   which `tools/slope-bake.mjs` expands into those tiles at import.
+- **Interactive terrain** is authored as LDtk entities. `Conveyor` strips add
+  signed ground velocity, `MovingPlatform` boxes patrol horizontally as one-way
+  floors and carry their riders, and `Hazard` boxes bypass ordinary damage
+  protection to start the death/restart sequence immediately.
 - **Some cosmetics remain scoped**: the player/enemy effects used by the current
   room and their original sounds are ported; unrelated shaders are not. Animation
   is engine state rather than a cosmetic — see below.
@@ -256,6 +260,13 @@ subclasses exactly as the original does.
 ---
 
 ## Project layout
+
+The active `MechanicsDemo` level is authored in `levels/stage2.ldtk`. At 160x48
+tiles it combines the complete movement kit with three moving bridges, opposing
+conveyors, lethal spike pits, several ramp gradients, a wall-jump shaft, upper
+air-dash routes, camera tiers, and both enemy types. Run `pnpm level:demo` to
+rebuild the reproducible demo project and import every LDtk level. The original
+`Stage1` remains as the compact movement regression level.
 
 ```
 packages/

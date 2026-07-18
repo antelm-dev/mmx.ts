@@ -64,6 +64,12 @@ export class Player extends Character {
     if (this.current_health <= 0) this.emit_zero_health();
   }
 
+  /** Lethal terrain bypasses ordinary damage protection and invulnerability. */
+  kill(): void {
+    if (!this.has_health()) return;
+    this.emit_zero_health();
+  }
+
   /** Space-separated names of the currently executing abilities (debug). */
   stateString(): string {
     return this.executing_moves.map((m) => m.name).join(" ") || "-";

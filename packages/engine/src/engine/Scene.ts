@@ -4,7 +4,16 @@ import { applyInput } from "../core/Replay.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
-import { CAMERA_ZONES, ENEMY_SPAWNS, LEVEL, SPAWN, makeWorld } from "./level.js";
+import {
+  CAMERA_ZONES,
+  CONVEYORS,
+  ENEMY_SPAWNS,
+  HAZARDS,
+  LEVEL,
+  MOVING_PLATFORM_SPAWNS,
+  SPAWN,
+  makeWorld,
+} from "./level.js";
 import { Player } from "./Player.js";
 import { Stage } from "./Stage.js";
 import type { World } from "./World.js";
@@ -56,7 +65,11 @@ export class Scene {
     this.camera = new Camera(this.world.widthPx, this.world.heightPx);
     this.camera.setZones(CAMERA_ZONES);
     this.camera.snapTo(this.player.pos.x, this.player.pos.y);
-    this.stage = new Stage(this.world, this.player);
+    this.stage = new Stage(this.world, this.player, {
+      hazards: HAZARDS,
+      conveyors: CONVEYORS,
+      platforms: MOVING_PLATFORM_SPAWNS,
+    });
 
     for (const [i, spawn] of ENEMY_SPAWNS.entries()) {
       // Each enemy needs its own stream — they draw from it at different rates,
@@ -132,6 +145,9 @@ export class Scene {
     ];
     for (const enemy of this.stage.enemies) {
       parts.push(enemy.kind, q(enemy.pos.x), q(enemy.pos.y), enemy.current_health);
+    }
+    for (const platform of this.stage.platforms) {
+      parts.push("platform", q(platform.x), platform.direction);
     }
     return fnv1a(parts.join("|"));
   }

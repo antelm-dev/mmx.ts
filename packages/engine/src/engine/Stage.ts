@@ -2,6 +2,18 @@ import { Enemy } from "./Enemy.js";
 import { Player } from "./Player.js";
 import type { Projectile } from "./Projectile.js";
 import type { World } from "./World.js";
+import {
+  MovingPlatform,
+  type Conveyor,
+  type Hazard,
+  type MovingPlatformSpawn,
+} from "./Environment.js";
+
+export interface StageEnvironment {
+  hazards?: readonly Hazard[];
+  conveyors?: readonly Conveyor[];
+  platforms?: readonly MovingPlatformSpawn[];
+}
 
 /**
  * The room: the player, the enemies in it, and the interactions between them.
@@ -19,11 +31,20 @@ import type { World } from "./World.js";
  */
 export class Stage {
   readonly enemies: Enemy[] = [];
+  readonly hazards: readonly Hazard[];
+  readonly conveyors: readonly Conveyor[];
+  readonly platforms: MovingPlatform[];
 
   constructor(
     readonly world: World,
     readonly player: Player,
-  ) {}
+    environment: StageEnvironment = {},
+  ) {
+    this.hazards = environment.hazards ?? [];
+    this.conveyors = environment.conveyors ?? [];
+    this.platforms = (environment.platforms ?? []).map((spawn) => new MovingPlatform(spawn));
+    this.player.setPlatforms(this.platforms);
+  }
 
   add(enemy: Enemy): Enemy {
     this.enemies.push(enemy);
@@ -32,7 +53,13 @@ export class Stage {
 
   /** One fixed step of the whole room. */
   tick(dt: number): void {
+    for (const platform of this.platforms) platform.tick(dt);
+    this.player.conveyor_belt_speed = this.conveyorSpeedUnderPlayer();
     this.player.tick(dt);
+
+    if (this.hazards.some((hazard) => bodyOverlapsRect(this.player, hazard))) {
+      this.player.kill();
+    }
 
     for (const enemy of this.enemies) {
       // AI.gd's vision Area2D, re-evaluated before the enemy thinks. A dead
@@ -49,6 +76,19 @@ export class Stage {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       if (!this.enemies[i].alive) this.enemies.splice(i, 1);
     }
+  }
+
+  private conveyorSpeedUnderPlayer(): number {
+    if (!this.player.is_on_floor()) return 0;
+    const feet = this.player.pos.y + this.player.hh;
+    const belt = this.conveyors.find(
+      (conveyor) =>
+        this.player.pos.x + this.player.hw > conveyor.x &&
+        this.player.pos.x - this.player.hw < conveyor.x + conveyor.w &&
+        feet >= conveyor.y - 2 &&
+        feet <= conveyor.y + conveyor.h,
+    );
+    return belt?.speed ?? 0;
   }
 
   /**
@@ -113,5 +153,17 @@ function bodiesOverlap(enemy: Enemy, player: Player): boolean {
   return (
     Math.abs(enemy.pos.x - player.pos.x) < enemy.hw + player.hw &&
     Math.abs(enemy.pos.y - player.pos.y) < enemy.hh + player.hh
+  );
+}
+
+function bodyOverlapsRect(
+  body: { pos: { x: number; y: number }; hw: number; hh: number },
+  rect: { x: number; y: number; w: number; h: number },
+): boolean {
+  return (
+    body.pos.x + body.hw > rect.x &&
+    body.pos.x - body.hw < rect.x + rect.w &&
+    body.pos.y + body.hh > rect.y &&
+    body.pos.y - body.hh < rect.y + rect.h
   );
 }

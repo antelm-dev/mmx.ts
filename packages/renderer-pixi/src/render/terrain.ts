@@ -1,6 +1,7 @@
 import { Container, Graphics } from "pixi.js";
 import { TILE_SIZE } from "@mmx/engine/core/constants.js";
 import { Tile, World } from "@mmx/engine/engine/World.js";
+import type { Stage } from "@mmx/engine/engine/Stage.js";
 
 /**
  * The level's backdrop and collision geometry, built once.
@@ -148,8 +149,62 @@ function buildTiles(world: World): Graphics {
   return g.stroke({ width: 1, color: COLOR_TILE_EDGE, alignment: 0.5 });
 }
 
-export function buildTerrain(world: World): Container {
-  const view = new Container();
-  view.addChild(buildTiles(world));
-  return view;
+/** Static terrain plus the authored mechanics that live in world space. */
+export class TerrainView {
+  readonly view = new Container();
+  private readonly moving = new Graphics();
+
+  constructor(stage: Stage) {
+    this.view.addChild(buildTiles(stage.world), this.buildFeatures(stage), this.moving);
+    this.sync(stage);
+  }
+
+  sync(stage: Stage): void {
+    this.moving.clear();
+    for (const platform of stage.platforms) {
+      this.moving.rect(platform.x, platform.y, platform.w, platform.h);
+      this.moving.fill(0xffd166);
+      this.moving
+        .moveTo(platform.x, platform.y + 0.5)
+        .lineTo(platform.x + platform.w, platform.y + 0.5);
+      this.moving.stroke({ width: 1, color: 0xfff0b3 });
+    }
+  }
+
+  private buildFeatures(stage: Stage): Graphics {
+    const g = new Graphics();
+
+    for (const hazard of stage.hazards) {
+      const spike = 8;
+      const visibleBottom = Math.min(hazard.y + hazard.h, hazard.y + spike);
+      for (let x = hazard.x; x < hazard.x + hazard.w; x += spike) {
+        g.poly([
+          x,
+          visibleBottom,
+          x + spike / 2,
+          hazard.y,
+          Math.min(x + spike, hazard.x + hazard.w),
+          visibleBottom,
+        ]);
+      }
+      g.fill(0xff4057);
+    }
+
+    for (const belt of stage.conveyors) {
+      g.rect(belt.x, belt.y, belt.w, belt.h).fill(0x174f59);
+      const direction = Math.sign(belt.speed) || 1;
+      for (let x = belt.x + 5; x < belt.x + belt.w - 3; x += 12) {
+        const tip = x + direction * 4;
+        g.moveTo(x - direction * 3, belt.y + 2)
+          .lineTo(tip, belt.y + belt.h / 2)
+          .lineTo(x - direction * 3, belt.y + belt.h - 2);
+      }
+      g.stroke({ width: 1, color: 0x55dde0 });
+    }
+    return g;
+  }
+}
+
+export function buildTerrain(stage: Stage): TerrainView {
+  return new TerrainView(stage);
 }
