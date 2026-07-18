@@ -6,7 +6,7 @@ import { level as stage1 } from "./levels/stage1.js";
 
 /**
  * The playable level. Authored in LDtk (levels/stage1.ldtk) and compiled to
- * src/engine/levels/stage1.ts by `npm run level:import` — edit the .ldtk file
+ * src/engine/levels/stage1.ts by `pnpm run level:import` — edit the .ldtk file
  * in LDtk and re-run that, never the generated module. levels/stage1.ascii is
  * the text form the LDtk project was bootstrapped from and the fixture the
  * import is pinned against in tests.

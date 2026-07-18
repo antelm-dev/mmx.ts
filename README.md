@@ -7,27 +7,41 @@ dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
 The engine is **pure TypeScript** with no runtime dependencies. It runs three ways:
 
-- **Headless** in Node (deterministic, scripted input) — `npm run sim`
-- **In the browser** on a canvas with real keyboard input — `npm run play`
-- **As a desktop app** through Tauri 2 — `npm run desktop:dev`
+- **Headless** in Node (deterministic, scripted input) — `pnpm run sim`
+- **In the browser** on a canvas with real keyboard input — `pnpm run play`
+- **As a desktop app** through Tauri 2 — `pnpm run desktop:dev`
 
 ---
 
 ## Quick start
 
 ```bash
-npm install
+pnpm install
 
-npm run sim      # deterministic headless simulation, prints a state trace
-npm test         # unit tests (node:test) for the movement/shooting behaviour
-npm run play     # build + serve -> open http://localhost:8080 and play
-npm run desktop:dev    # launch the desktop app with Vite hot reload
-npm run desktop:build  # build the native executable and platform installers
+pnpm run sim      # deterministic headless simulation, prints a state trace
+pnpm test         # unit tests (node:test) for the movement/shooting behaviour
+pnpm run play     # build + serve -> open http://localhost:8080 and play
+pnpm run desktop:dev    # launch the desktop app with Vite hot reload
+pnpm run desktop:build  # build the native executable and platform installers
 ```
 
 Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
 hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
+
+### Browser and GPU profiling
+
+- Press **F2**, or open the game with `?profile`, for a rolling 240-frame graph and
+  median / p95 / worst timings. `frame` is the animation-frame interval; `sim`,
+  `render`, and `work` isolate CPU time spent in each part of the loop.
+- Chrome/Edge Performance recordings include `mmx:simulation`, `mmx:render`, and
+  `mmx:frame-work` User Timing measures. Use the Memory panel for heap snapshots
+  and allocation sampling during longer runs.
+- For difficult WebGL frames, load Spector.js and capture the game canvas. The
+  Pixi application, renderer, and canvas are available at `window.__mmxRenderer`
+  for console inspection and targeted captures.
+- Compare median, p95, and worst frame time after a representative run. Average
+  FPS alone hides intermittent long frames.
 
 ### Desktop prerequisites
 
@@ -196,7 +210,7 @@ ability answers which event.
 
 ### Enemy sprites
 
-[`tools/build-enemies.mjs`](tools/build-enemies.mjs) (`npm run enemies:import`)
+[`tools/build-enemies.mjs`](tools/build-enemies.mjs) (`pnpm run enemies:import`)
 builds `src/web/assets/enemy_anims.json` from the Godot project's **Aseprite**
 sidecars, not its `.res` SpriteFrames — the enemies still have their source
 `.json` checked in, and it carries per-frame atlas rects, per-frame durations in

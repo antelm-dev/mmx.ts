@@ -12,7 +12,7 @@ import { Hud } from "./Hud.js";
 import { place, spriteSnapshot } from "./sprite.js";
 import { SpritePool } from "./SpritePool.js";
 import { buildTerrain, COLOR_BG } from "./terrain.js";
-import { loadSheets, regionTexture, shotTexture } from "./textures.js";
+import { loadSheets, regionTexture, shotTexture, textureCounts } from "./textures.js";
 
 /**
  * Browser front-end: renders the ported gameplay with PixiJS. The scene graph is
@@ -62,6 +62,13 @@ export class Renderer {
   private readonly aura = new Sprite();
   private readonly hud = new Hud();
 
+  /**
+   * Where the debug overlay draws. Inside the scrolling scene and above every
+   * sprite layer, so its boxes land on the same world pixels as the bodies they
+   * describe and are never occluded by them.
+   */
+  readonly worldOverlay = new Container();
+
   /** Whole device pixels per world pixel. Recomputed by {@link fit}. */
   private scale = 0;
 
@@ -83,6 +90,7 @@ export class Renderer {
       this.aura,
       this.shots.view,
       this.smoke.view,
+      this.worldOverlay,
     );
     this.viewport.addChild(this.scene);
     this.hudLayer.addChild(this.hud.view);
@@ -114,6 +122,9 @@ export class Renderer {
     await loadSheets(SHEET_URLS);
 
     const renderer = new Renderer(app);
+    // Spector.js can discover the canvas directly; this also exposes Pixi's
+    // renderer/backend for targeted GPU inspection from DevTools.
+    (window as any).__mmxRenderer = { app, canvas };
     renderer.scene.addChildAt(buildTerrain(world), 0);
     renderer.fit();
     return renderer;
@@ -194,6 +205,32 @@ export class Renderer {
     this.hud.update(player, camera);
 
     this.app.render();
+  }
+
+  /**
+   * What the last frame cost in objects — for the debug HUD.
+   *
+   * Sprites are reported as drawn/pooled because the difference is the
+   * interesting number: the pools never shrink, so a gap that keeps widening
+   * means some frame drew far more than the steady state does.
+   */
+  stats(): Record<string, string | number> {
+    const pools = { ghosts: this.ghosts, enemies: this.enemies, shots: this.shots, smoke: this.smoke };
+    const drawn = Object.values(pools).reduce((sum, pool) => sum + pool.counts.active, 0);
+    const pooled = Object.values(pools).reduce((sum, pool) => sum + pool.counts.pooled, 0);
+    const textures = textureCounts();
+    return {
+      // The player and the aura are single sprites outside the pools.
+      sprites: `${drawn + (this.player.visible ? 1 : 0) + (this.aura.visible ? 1 : 0)} drawn / ${pooled + 2} pooled`,
+      ...Object.fromEntries(
+        Object.entries(pools).map(([name, pool]) => [
+          `  ${name}`,
+          `${pool.counts.active} / ${pool.counts.pooled}`,
+        ]),
+      ),
+      textures: `${textures.regions} regions from ${textures.sheets} sheets`,
+      resolution: `${this.app.renderer.width}x${this.app.renderer.height} @ ${this.scale}x`,
+    };
   }
 
   /**

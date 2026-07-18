@@ -5,7 +5,7 @@ import { extname, join, normalize } from "node:path";
 /**
  * Zero-dependency static server. Serves public/index.html and the compiled ESM in
  * dist/ so the browser can import the game modules directly (no bundler needed).
- * Run:  npm run build && npm start   (or `npm run play`)
+ * Run:  pnpm run build && pnpm start   (or `pnpm run play`)
  */
 
 const ROOT = process.cwd();
