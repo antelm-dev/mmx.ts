@@ -1,15 +1,15 @@
 # mmx-core-ts
 
 A faithful **TypeScript / Node** port of the _core player gameplay_ from the
-[Mega Man X8 16-bit](../Mega-Man-X8-16-bit) Godot project — the movement state
+[Mega Man X8 16-bit](https://github.com/AlyssonDaPaz/Mega-Man-X8-16-bit) Godot project — the movement state
 machine (walk / dash / variable jump / air-dash / wall-slide / wall-jump /
 dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
 The engine is **pure TypeScript** with no runtime dependencies. It runs three ways:
 
-- **Headless** in Node (deterministic, scripted input) — `pnpm run sim`
-- **In the browser** on a canvas with real keyboard input — `pnpm run play`
-- **As a desktop app** through Tauri 2 — `pnpm run desktop:dev`
+- **Headless** in Node (deterministic, scripted input) — `pnpm sim`
+- **In the browser** on a canvas with real keyboard input — `pnpm play`
+- **As a desktop app** through Tauri 2 — `pnpm desktop:dev`
 
 ---
 
@@ -18,11 +18,11 @@ The engine is **pure TypeScript** with no runtime dependencies. It runs three wa
 ```bash
 pnpm install
 
-pnpm run sim      # deterministic headless simulation, prints a state trace
-pnpm test         # unit tests (node:test) for the movement/shooting behaviour
-pnpm run play     # build + serve -> open http://localhost:8080 and play
-pnpm run desktop:dev    # launch the desktop app with Vite hot reload
-pnpm run desktop:build  # build the native executable and platform installers
+pnpm sim          # deterministic headless simulation, prints a state trace
+pnpm test         # unit tests (node:test) for gameplay behaviour
+pnpm play         # Vite development server -> http://localhost:5173
+pnpm desktop:dev    # launch the desktop app with Vite hot reload
+pnpm desktop:build  # build the native executable and platform installers
 ```
 
 Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
@@ -50,9 +50,9 @@ renderer unchanged. Install Rust plus the native prerequisites for your operatin
 system before using the desktop commands. On Windows that means Microsoft C++ Build
 Tools and WebView2; current Windows releases normally already include WebView2.
 
-Production artifacts are written below `src-tauri/target/release/`. Windows builds
+Production artifacts are written below `apps/desktop/src-tauri/target/release/`. Windows builds
 produce the standalone executable along with MSI and NSIS installers under
-`src-tauri/target/release/bundle/`.
+`apps/desktop/src-tauri/target/release/bundle/`.
 
 ### Desktop integration
 
@@ -72,7 +72,7 @@ build keeps the same controls and falls back to `localStorage`, browser file
 pickers/downloads and the browser Fullscreen API.
 
 Native filesystem access is intentionally confined to commands in
-`src-tauri/src/lib.rs`. Replay contents still pass through the strict TypeScript
+`apps/desktop/src-tauri/src/lib.rs`. Replay contents still pass through the strict TypeScript
 decoder before they can replace a running scene, keeping one authority for the
 on-disk replay format.
 
@@ -115,7 +115,7 @@ ExecuteOnce ─ Initialize ─ _Setup ─┐
 EndAbility ─ Finalize ─ _Interrupt
 ```
 
-Key numbers (all reproduced in [`src/core/constants.ts`](src/core/constants.ts)):
+Key numbers (all reproduced in [`packages/engine/src/core/constants.ts`](packages/engine/src/core/constants.ts)):
 gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 `0.55s`, jump max time `0.625s`, jump buffer `0.1s`, charge thresholds
 `0.5 / 1.75 / 2.75s`.
@@ -124,27 +124,28 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 
 ## How this port maps to it
 
-| Godot source                                                                   | This project                                                                                                  |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `Actor.gd` (physics, health, sensors)                                          | [`src/engine/Actor.ts`](src/engine/Actor.ts)                                                                  |
-| `move_and_slide()` + `RayCast2D` columns                                       | [`src/engine/World.ts`](src/engine/World.ts) AABB tile collision + edge sensors                               |
-| `AbilityUser.gd` (moveset + runtime)                                           | [`src/engine/AbilityUser.ts`](src/engine/AbilityUser.ts)                                                      |
-| `Character.gd` (input, wall/land)                                              | [`src/engine/Character.ts`](src/engine/Character.ts)                                                          |
-| `Player.gd` / `Player.tscn` node list                                          | [`src/engine/Player.ts`](src/engine/Player.ts)                                                                |
-| `BaseAbility.gd` / `Ability.gd` / `Movement.gd`                                | [`src/engine/ability/`](src/engine/ability/)                                                                  |
-| `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/)                                                              |
-| `Shot.gd` (PrimaryShot) / `Charge.gd`                                          | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
-| `Damage.gd` (hurt, knockback, invulnerability)                                 | [`src/engine/abilities/Damage.ts`](src/engine/abilities/Damage.ts)                                            |
-| `Lemon.gd` / `WeaponShot.gd`                                                   | [`src/engine/Projectile.ts`](src/engine/Projectile.ts)                                                        |
-| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch`    | [`src/engine/Enemy.ts`](src/engine/Enemy.ts)                                                                  |
-| `AI.gd` (event -> ability lists)                                               | [`src/engine/EnemyAI.ts`](src/engine/EnemyAI.ts)                                                              |
-| `EnemyAbility.gd` / `AttackAbility.gd`                                         | [`src/engine/enemy/EnemyAbility.ts`](src/engine/enemy/EnemyAbility.ts)                                        |
-| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump`   | [`src/engine/enemy/`](src/engine/enemy/)                                                                      |
-| `Metool.tscn` / `SmallBat.tscn` node lists                                     | [`src/engine/enemies/index.ts`](src/engine/enemies/index.ts)                                                  |
-| Area2D layer/mask overlaps (shots, contact damage)                             | [`src/engine/Stage.ts`](src/engine/Stage.ts)                                                                  |
-| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res`                        | [`src/engine/Animation.ts`](src/engine/Animation.ts)                                                          |
-| Godot `Input` singleton                                                        | [`src/core/Input.ts`](src/core/Input.ts)                                                                      |
-| Godot signals                                                                  | [`src/core/Events.ts`](src/core/Events.ts)                                                                    |
+| Godot source                                                                   | This project                                                                                                                                                  |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Actor.gd` (physics, health, sensors)                                          | [`packages/engine/src/engine/Actor.ts`](packages/engine/src/engine/Actor.ts)                                                                                  |
+| `move_and_slide()` + `RayCast2D` columns                                       | [`packages/engine/src/engine/World.ts`](packages/engine/src/engine/World.ts) AABB tile collision + edge sensors                                               |
+| `AbilityUser.gd` (moveset + runtime)                                           | [`packages/engine/src/engine/AbilityUser.ts`](packages/engine/src/engine/AbilityUser.ts)                                                                      |
+| `Character.gd` (input, wall/land)                                              | [`packages/engine/src/engine/Character.ts`](packages/engine/src/engine/Character.ts)                                                                          |
+| `Player.gd` / `Player.tscn` node list                                          | [`packages/engine/src/engine/Player.ts`](packages/engine/src/engine/Player.ts)                                                                                |
+| `BaseAbility.gd` / `Ability.gd` / `Movement.gd`                                | [`packages/engine/src/engine/ability/`](packages/engine/src/engine/ability/)                                                                                  |
+| `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`packages/engine/src/engine/abilities/`](packages/engine/src/engine/abilities/)                                                                              |
+| `Shot.gd` (PrimaryShot) / `Charge.gd`                                          | [`packages/engine/src/engine/abilities/Shot.ts`](packages/engine/src/engine/abilities/Shot.ts), [`Charge.ts`](packages/engine/src/engine/abilities/Charge.ts) |
+| `Damage.gd` (hurt, knockback, invulnerability)                                 | [`packages/engine/src/engine/abilities/Damage.ts`](packages/engine/src/engine/abilities/Damage.ts)                                                            |
+| `PlayerDeath.gd` (trimmed — see the file for what was dropped)                 | [`packages/engine/src/engine/abilities/Death.ts`](packages/engine/src/engine/abilities/Death.ts)                                                              |
+| `Lemon.gd` / `WeaponShot.gd`                                                   | [`packages/engine/src/engine/Projectile.ts`](packages/engine/src/engine/Projectile.ts)                                                                        |
+| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch`    | [`packages/engine/src/engine/Enemy.ts`](packages/engine/src/engine/Enemy.ts)                                                                                  |
+| `AI.gd` (event -> ability lists)                                               | [`packages/engine/src/engine/EnemyAI.ts`](packages/engine/src/engine/EnemyAI.ts)                                                                              |
+| `EnemyAbility.gd` / `AttackAbility.gd`                                         | [`packages/engine/src/engine/enemy/EnemyAbility.ts`](packages/engine/src/engine/enemy/EnemyAbility.ts)                                                        |
+| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump`   | [`packages/engine/src/engine/enemy/`](packages/engine/src/engine/enemy/)                                                                                      |
+| `Metool.tscn` / `SmallBat.tscn` node lists                                     | [`packages/engine/src/engine/enemies/index.ts`](packages/engine/src/engine/enemies/index.ts)                                                                  |
+| Area2D layer/mask overlaps (shots, contact damage)                             | [`packages/engine/src/engine/Stage.ts`](packages/engine/src/engine/Stage.ts)                                                                                  |
+| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res`                        | [`packages/engine/src/engine/Animation.ts`](packages/engine/src/engine/Animation.ts)                                                                          |
+| Godot `Input` singleton                                                        | [`packages/engine/src/core/Input.ts`](packages/engine/src/core/Input.ts)                                                                                      |
+| Godot signals                                                                  | [`packages/engine/src/core/Events.ts`](packages/engine/src/core/Events.ts)                                                                                    |
 
 The per-state logic (`_StartCondition` / `_Update` / `_EndCondition`) and every
 tuning constant are ported line-for-line so the _feel_ matches.
@@ -159,12 +160,16 @@ tuning constant are ported line-for-line so the _feel_ matches.
   the current state's `_EndCondition`) driving transitions. This reproduces the
   intended ordering **Idle < Walk/Fall < WallSlide < Dash/AirDash < Jump <
   DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
-- **Collision** is tile AABB (no moving platforms / conveyors); the raycast
+- **Collision** uses tile AABBs for static terrain; the raycast
   wall/reach queries become edge samples. Ramps are supported up to 45 degrees:
   a slope tile carries a linear surface between its two edge heights, and
   shallower ramps are a run of tiles whose surfaces chain. Level designers draw
   them as resizable `Slope` boxes in LDtk — width is the run, height the rise —
   which `tools/slope-bake.mjs` expands into those tiles at import.
+- **Interactive terrain** is authored as LDtk entities. `Conveyor` strips add
+  signed ground velocity, `MovingPlatform` boxes patrol horizontally as one-way
+  floors and carry their riders, and `Hazard` boxes bypass ordinary damage
+  protection to start the death/restart sequence immediately.
 - **Some cosmetics remain scoped**: the player/enemy effects used by the current
   room and their original sounds are ported; unrelated shaders are not. Animation
   is engine state rather than a cosmetic — see below.
@@ -175,7 +180,7 @@ The sprite is part of the engine, not the renderer, because the original's abili
 read it back: `Movement.change_animation_if_falling` tests `get_animation() != "fall"`,
 `Walk` advances `walk_start -> walk` on Godot's `animation_finished` signal, and
 `IdleWeak` settles `recover -> idle` (or `weak` at low health) the same way.
-[`Animation.ts`](src/engine/Animation.ts) reproduces `AnimatedSprite2D` playback —
+[`Animation.ts`](packages/engine/src/engine/Animation.ts) reproduces `AnimatedSprite2D` playback —
 clip, frame index, loop/hold, `animation_finished` — and `AbilityUser` exposes the
 same `play_animation` / `get_animation` / `set_animation_layer` API as the Godot node.
 
@@ -211,7 +216,7 @@ Two are ported, chosen to exercise opposite halves of the enemy framework: the
 
 They do _not_ reuse the player's state machine. `AbilityUser` picks the player's
 locomotion by a priority race between abilities that all want to run; an enemy's
-state is chosen by [`EnemyAI`](src/engine/EnemyAI.ts) from the event lists its
+state is chosen by [`EnemyAI`](packages/engine/src/engine/EnemyAI.ts) from the event lists its
 scene declares, and the abilities arbitrate between themselves using Godot's
 `conflicting_moves` rules — which, unlike `Player.tscn`'s, _are_ present in the
 enemy scenes, so they are ported as written rather than replaced:
@@ -236,8 +241,8 @@ ability answers which event.
 
 ### Enemy sprites
 
-[`tools/build-enemies.mjs`](tools/build-enemies.mjs) (`pnpm run enemies:import`)
-builds `src/web/assets/enemy_anims.json` from the Godot project's **Aseprite**
+[`tools/build-enemies.mjs`](tools/build-enemies.mjs) (`pnpm enemies:import`)
+builds `packages/renderer-pixi/src/assets/enemy_anims.json` from the Godot project's **Aseprite**
 sidecars, not its `.res` SpriteFrames — the enemies still have their source
 `.json` checked in, and it carries per-frame atlas rects, per-frame durations in
 milliseconds, and `meta.frameTags` naming the clips. The one thing it cannot carry
@@ -248,42 +253,38 @@ Metool stunned forever, since `EnemyStun` advances on `animation_finished`).
 ### Not ported (extension points)
 
 Documented but out of scope: armor sets (Hermes / Icarus and their gameplay
-modifiers), boss weapons, Ride Armor, sub-tanks, player death, and the AirJump
-double-jump. The ability framework is built to accept these as additional
-`BaseAbility` subclasses exactly as the original does.
+modifiers), boss weapons, Ride Armor, sub-tanks, and the AirJump double-jump.
+The ability framework is built to accept these as additional `BaseAbility`
+subclasses exactly as the original does.
 
 ---
 
 ## Project layout
 
+The active `MechanicsDemo` level is authored in `levels/stage2.ldtk`. At 160x48
+tiles it combines the complete movement kit with three moving bridges, opposing
+conveyors, lethal spike pits, several ramp gradients, a wall-jump shaft, upper
+air-dash routes, camera tiers, and both enemy types. Run `pnpm level:demo` to
+rebuild the reproducible demo project and import every LDtk level. The original
+`Stage1` remains as the compact movement regression level.
+
 ```
-src/
-  core/        Vec2, Input, EventBus, constants
-  engine/
-    World.ts        tile collision world
-    Actor.ts        physics body + sensors
-    AbilityUser.ts  state-machine driver
-    Character.ts    input + player API
-    Player.ts       assembles the moveset ("X")
-    Projectile.ts   buster shots
-    Animation.ts    AnimatedSprite playback + the shot layer
-    Stage.ts        the room: player + enemies + the damage between them
-    Enemy.ts        enemy body, shield, damage and death
-    EnemyAI.ts      AI.gd's event -> ability dispatch
-    level.ts        a test chamber exercising every state
-    ability/        BaseAbility / Ability / Movement
-    abilities/      Idle, Walk, Fall, Jump, Dash, AirDash, WallSlide,
-                    WallJump, DashWallJump, DashJump, Shot, Charge
-    enemy/          EnemyAbility + Patrol, Hide, Stun, Death,
-                    Hover, Pursuit, Recoil
-    enemies/        Metool and Bat, as ports of their .tscn node lists
-  sim/run.ts   deterministic headless simulation
-  web/main.ts  canvas renderer + keyboard input
-  web/assets/  x.png, x_leftarm.png (arm-pointing), x_anims.json,
-               metool.png, sbat.png, enemy_anims.json
-  server.ts    zero-dependency static server
-tests/         node:test behaviour tests
-tools/         build-anims.mjs    — re-derives x_anims.json from the Godot project
-               build-enemies.mjs  — builds enemy_anims.json from its Aseprite sheets
-               import-ldtk.mjs    — compiles levels/*.ldtk into src/engine/levels/
+packages/
+  engine/             dependency-free simulation package
+    src/core/         Vec2, Input, EventBus, replay format, constants
+    src/engine/       world, actors, abilities, enemies, scene and level data
+    tests/            node:test gameplay and determinism tests
+  renderer-pixi/      PixiJS game renderer, visual effects and sprite assets
+apps/
+  web/                browser composition, input, audio, UI and debug tools
+  sim/                deterministic headless runner and replay CLI
+  desktop/            Tauri shell around the web app
+levels/               LDtk and authored level sources
+tools/                level and animation asset importers
 ```
+
+The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
+on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends
+only on the engine, and the engine has no browser, rendering, or native-shell
+dependency. Run commands from the repository root so pnpm can select the correct
+workspace project.

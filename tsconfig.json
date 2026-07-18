@@ -1,17 +1,9 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ES2020",
-    "moduleResolution": "Bundler",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "noUnusedLocals": false,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2020", "DOM"]
-  },
-  "include": ["src/**/*.ts"]
+  "files": [],
+  "references": [
+    { "path": "./packages/engine" },
+    { "path": "./packages/renderer-pixi" },
+    { "path": "./apps/web" },
+    { "path": "./apps/sim" }
+  ]
 }
