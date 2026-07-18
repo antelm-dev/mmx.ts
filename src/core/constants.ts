@@ -61,7 +61,14 @@ export const MAX_HEALTH = 32.0; // Actor.gd:6
 
 // World / rendering
 export const TILE_SIZE = 16;
-export const VIEW_WIDTH = 398; // project.godot resolution
+
+// The SNES framebuffer is 256x224. Keeping the original's 224 scanlines preserves
+// the vertical framing every jump arc and camera dead zone was tuned against —
+// widening instead is what turns 8:7 into 16:9. Exact 16:9 of 224 is 398.22, so
+// 398 is the nearest integer width (1.7768 vs 1.7778) and, being even, keeps
+// half-view arithmetic on whole pixels. That is 142px of extra horizontal view
+// over the SNES, which only ever shows more of the room — never less.
+export const VIEW_WIDTH = 398;
 export const VIEW_HEIGHT = 224;
 
 // Player AABB half-extents (approx of Player.tscn collision shape)

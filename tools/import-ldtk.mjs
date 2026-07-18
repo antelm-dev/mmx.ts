@@ -53,13 +53,31 @@ function convert(ldtk, sourceName) {
     return name;
   });
 
-  const entities = layers
+  const entityInstances = layers
     .filter((l) => l.__type === 'Entities')
-    .flatMap((l) => l.entityInstances ?? [])
+    .flatMap((l) => l.entityInstances ?? []);
+
+  // The engine reads entity boxes as top-left + size, so a non-zero pivot would
+  // silently shift every zone and spawn. Caught here rather than debugged later
+  // as a camera that stops half a screen short of where the rectangle was drawn.
+  for (const e of entityInstances) {
+    const [px, py] = e.__pivot ?? [0, 0];
+    if (px !== 0 || py !== 0) {
+      throw new Error(
+        `${sourceName}: entity '${e.__identifier}' pivots at ${px},${py}; set its pivot to top-left (0,0) in LDtk`,
+      );
+    }
+  }
+
+  const entities = entityInstances
     .map((e) => ({
       id: e.__identifier,
+      // px is pivot-adjusted; every entity def here pivots at 0,0, so this is
+      // the box's top-left and `width`/`height` extend right/down from it.
       x: e.px[0],
       y: e.px[1],
+      w: e.width,
+      h: e.height,
       fields: Object.fromEntries(
         (e.fieldInstances ?? []).map((f) => [f.__identifier, f.__value]),
       ),

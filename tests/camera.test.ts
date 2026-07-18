@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { Camera } from '../src/engine/Camera.js';
+import { Camera, type CameraZone } from '../src/engine/Camera.js';
 import { DT, VIEW_WIDTH, VIEW_HEIGHT } from '../src/core/constants.js';
 
 // A world comfortably larger than the view on both axes, so clamping is not what
@@ -108,4 +108,118 @@ test('the camera settles exactly instead of drifting forever', () => {
   cam.follow(1000, 400, DT);
   assert.equal(cam.x, x, 'x still creeping after settling');
   assert.equal(cam.y, y, 'y still creeping after settling');
+});
+
+// --- camera zones ---------------------------------------------------------
+//
+// A zone is a rectangle of the level the view is confined to while the player
+// is inside it, which is how the originals frame a room independently of how
+// much empty space happens to surround it.
+
+function zoned(...zones: CameraZone[]): Camera {
+  const cam = makeCamera();
+  cam.setZones(zones);
+  return cam;
+}
+
+test('the view stays inside the active zone even where the world allows more', () => {
+  // Inset from the world's left edge, so world-bounds clamping alone would not
+  // produce this answer: it would let the view slide on to x = 245.
+  const cam = zoned({ x: 400, y: 0, w: 800, h: WORLD_H });
+  cam.snapTo(800, 256);
+
+  settle(cam, 420, 256);
+  assert.equal(cam.x, 400, 'view scrolled past the zone edge');
+});
+
+test('a zone smaller than the view on an axis centres the view on it', () => {
+  // A 100px-tall band cannot fill 224 scanlines, so the overflow is split
+  // evenly rather than dumped above or below the band.
+  const cam = zoned({ x: 0, y: 300, w: WORLD_W, h: 100 });
+  cam.snapTo(800, 350);
+  assert.equal(cam.centerY, 350);
+
+  settle(cam, 800, 396);
+  assert.equal(cam.centerY, 350, 'a short zone did not stay centred');
+});
+
+test('an unbound axis scrolls freely while the other stays locked', () => {
+  // The corridor case: hold the vertical framing, let the player run its length.
+  const cam = zoned({ x: 0, y: 256, w: WORLD_W, h: 256, bindX: false });
+  cam.snapTo(200, 400);
+
+  settle(cam, 1400, 500);
+  assert.equal(cam.centerX, 1400 - 24, 'horizontal scrolling was constrained');
+  assert.equal(cam.centerY, 512 - 112, 'vertical lock was not applied');
+});
+
+test('crossing into a new zone scrolls rather than cutting', () => {
+  const left: CameraZone = { x: 0, y: 0, w: 800, h: 224 };
+  const right: CameraZone = { x: 800, y: 288, w: 800, h: 224 };
+  const cam = zoned(left, right);
+
+  cam.snapTo(400, 112);
+  assert.equal(cam.y, 0);
+
+  // One step after the crossing the camera must be on its way to the new zone's
+  // framing, not already sitting in it — a hard clamp would teleport it.
+  cam.follow(900, 400, DT);
+  assert.ok(cam.centerY > 112, 'camera did not start moving to the new zone');
+  assert.ok(cam.centerY < 400, 'camera cut straight to the new zone');
+
+  settle(cam, 900, 400);
+  assert.equal(cam.centerY, 400, 'camera never finished arriving');
+});
+
+test('an overlap keeps the zone already in force', () => {
+  const first: CameraZone = { x: 0, y: 0, w: 800, h: WORLD_H };
+  const second: CameraZone = { x: 600, y: 0, w: 800, h: WORLD_H };
+  const cam = zoned(first, second);
+
+  cam.snapTo(300, 256);
+  assert.equal(cam.activeZone, first);
+
+  // 700 is inside both. Whichever zone was already active must win, or the two
+  // would trade control frame to frame while the player stands on the seam.
+  settle(cam, 700, 256);
+  assert.equal(cam.activeZone, first);
+
+  settle(cam, 1300, 256);
+  assert.equal(cam.activeZone, second, 'never handed over on leaving the first');
+
+  settle(cam, 700, 256);
+  assert.equal(cam.activeZone, second, 'handed back inside the overlap');
+});
+
+test('a target between zones keeps the last one instead of unlocking', () => {
+  const cam = zoned(
+    { x: 0, y: 0, w: 400, h: WORLD_H },
+    { x: 1000, y: 0, w: 400, h: WORLD_H },
+  );
+  cam.snapTo(200, 256);
+
+  settle(cam, 700, 256);
+  assert.equal(cam.x, 400 - VIEW_WIDTH, 'the gap released the zone lock');
+});
+
+test('a zone hugging the level floor still cannot show past it', () => {
+  // 128px tall, flush with the bottom of the world: too short for the view, so
+  // centring on it alone would put 64px of nothing below the level.
+  const cam = zoned({ x: 0, y: WORLD_H - 128, w: WORLD_W, h: 128 });
+  cam.snapTo(800, WORLD_H - 64);
+
+  settle(cam, 800, WORLD_H - 16);
+  assert.equal(cam.y, WORLD_H - VIEW_HEIGHT, 'view fell off the bottom of the level');
+});
+
+test('with no zones the camera behaves exactly as before', () => {
+  const cam = zoned();
+  cam.snapTo(800, 256);
+
+  settle(cam, 1000, 256);
+  assert.equal(cam.centerX, 1000 - 24);
+
+  settle(cam, WORLD_W + 500, WORLD_H + 500);
+  assert.equal(cam.x, WORLD_W - VIEW_WIDTH);
+  assert.equal(cam.y, WORLD_H - VIEW_HEIGHT);
 });

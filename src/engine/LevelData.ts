@@ -6,6 +6,13 @@ export interface LevelEntity {
   id: string;
   x: number;
   y: number;
+  /**
+   * The instance's box, in world pixels. Point-like entities keep their
+   * definition's default size; resizable ones (CameraZone) carry whatever the
+   * author dragged out in the editor, which is the whole content of the entity.
+   */
+  w: number;
+  h: number;
   /** Custom LDtk fields, keyed by field identifier. */
   fields: Record<string, unknown>;
 }

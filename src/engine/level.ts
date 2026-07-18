@@ -1,4 +1,5 @@
 import { World } from './World.js';
+import type { CameraZone } from './Camera.js';
 import type { LevelData, LevelEntity } from './LevelData.js';
 import { level as stage1 } from './levels/stage1.js';
 
@@ -51,3 +52,27 @@ function requireEntity(id: string): LevelEntity {
  */
 const spawn = requireEntity('Spawn');
 export const SPAWN = { x: spawn.x, y: spawn.y };
+
+/** Read an optional LDtk boolean field, defaulting when it is absent or null. */
+function boolField(e: LevelEntity, name: string, fallback: boolean): boolean {
+  const v = e.fields[name];
+  return typeof v === 'boolean' ? v : fallback;
+}
+
+/**
+ * The level's camera zones, in the order they were placed.
+ *
+ * Drawn as resizable CameraZone entities on the Entities layer, which is the
+ * whole point of authoring them in LDtk: a zone is a rectangle you can see
+ * against the tiles it is meant to frame, and getting one wrong by a tile is
+ * obvious in the editor and invisible in a table of numbers. Their BindX/BindY
+ * fields default to true so a plain undecorated rectangle locks both axes.
+ */
+export const CAMERA_ZONES: CameraZone[] = entities('CameraZone').map((e) => ({
+  x: e.x,
+  y: e.y,
+  w: e.w,
+  h: e.h,
+  bindX: boolField(e, 'BindX', true),
+  bindY: boolField(e, 'BindY', true),
+}));

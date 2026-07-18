@@ -2,7 +2,7 @@ import { Input, Action } from '../core/Input.js';
 import { BODY_HALF_H, DT, TILE_SIZE, VIEW_WIDTH, VIEW_HEIGHT } from '../core/constants.js';
 import { Player } from '../engine/Player.js';
 import { Camera } from '../engine/Camera.js';
-import { makeWorld, SPAWN } from '../engine/level.js';
+import { makeWorld, SPAWN, CAMERA_ZONES } from '../engine/level.js';
 import { Tile } from '../engine/World.js';
 import { AnimData, Region, AnimationLayer } from '../engine/Animation.js';
 import { Trail, GhostSource, TrailStyle, DASH_TRAIL, WALLSLIDE_TRAIL } from './Trail.js';
@@ -12,7 +12,7 @@ import armAtlasUrl from './assets/x_leftarm.png';
 
 /**
  * Browser front-end: renders the ported gameplay with the Canvas 2D API. The
- * context is scaled by SCALE and left in the engine's coordinate system — world
+ * context is scaled by a whole-number factor and left in the engine's coordinate system — world
  * pixels with y pointing down and the origin at the top-left — so the engine's 2D
  * coordinates map straight to canvas space, offset by the camera's scroll. The
  * player is drawn with the X spritesheet (x.png / x.json) animated per movement
@@ -20,43 +20,74 @@ import armAtlasUrl from './assets/x_leftarm.png';
  * only I/O + drawing.
  */
 
-const SCALE = 3;
 const input = new Input();
 const world = makeWorld();
 const player = new Player(world, SPAWN.x, SPAWN.y, input);
 const camera = new Camera(world.widthPx, world.heightPx);
+camera.setZones(CAMERA_ZONES);
 camera.snapTo(player.pos.x, player.pos.y);
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 
 // --- canvas 2d context ---
-// The backing store is a fixed VIEW_WIDTH x VIEW_HEIGHT * SCALE * devicePixelRatio
-// grid so the picture is always crisp; all drawing is done in world-pixel units via
-// a single base transform plus the camera translation. Sizing to the *view* rather
-// than the level is what makes a level larger than the screen possible at all. The
-// CSS *display* size is computed separately to fill the window while preserving the
-// view's aspect ratio (see fitCanvas), so the picture is never stretched — capping
-// width and height independently (max-width/height) would.
-const ctx = canvas.getContext('2d')!;
-const dpr = window.devicePixelRatio || 1;
-canvas.width = VIEW_WIDTH * SCALE * dpr;
-canvas.height = VIEW_HEIGHT * SCALE * dpr;
-ctx.imageSmoothingEnabled = false; // pixel-art: nearest-neighbour sampling
+// All drawing is done in world-pixel units via a single base transform plus the
+// camera translation. Sizing to the *view* rather than the level is what makes a
+// level larger than the screen possible at all.
+//
+// Pixel-perfect rule: one world pixel must land on an exact, whole, equal number
+// of *device* pixels. So the scale is chosen as an integer in device space and the
+// backing store is VIEW * scale device pixels, with the CSS size derived back down
+// by dividing out devicePixelRatio. Picking the scale in CSS space instead (the
+// usual `VIEW * SCALE * dpr`) breaks on any fractional dpr — 1.25 and 1.5 are
+// ordinary on Windows — because the browser then resamples the backing store onto
+// a grid it does not divide evenly, and the sprite grid crawls as the camera eases.
+const ctx = canvas.getContext('2d', { alpha: false })!;
 
-/** Fit the canvas into the viewport, preserving the view's aspect ratio. */
+/** Whole device pixels per world pixel. Recomputed by fitCanvas. */
+let scale = 1;
+
+/**
+ * Size the canvas to the largest whole-number multiple of the view that fits the
+ * window. Integer-only is the point: a 2.7x fit would be bigger, but every third
+ * world pixel would be drawn one device pixel wider than its neighbours.
+ */
 function fitCanvas(): void {
-  const aspect = VIEW_WIDTH / VIEW_HEIGHT;
-  let w = window.innerWidth;
-  let h = w / aspect;
-  if (h > window.innerHeight) {
-    h = window.innerHeight;
-    w = h * aspect;
+  const dpr = window.devicePixelRatio || 1;
+  const availW = window.innerWidth * dpr;
+  const availH = window.innerHeight * dpr;
+
+  // Clamped to 1: on a window too small for even a single 1:1 view we keep the
+  // integer backing store and let CSS letterbox it down (see max-width in the
+  // page style) rather than emit a fractional scale.
+  scale = Math.max(1, Math.floor(Math.min(availW / VIEW_WIDTH, availH / VIEW_HEIGHT)));
+
+  const w = VIEW_WIDTH * scale;
+  const h = VIEW_HEIGHT * scale;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
   }
-  canvas.style.width = `${Math.floor(w)}px`;
-  canvas.style.height = `${Math.floor(h)}px`;
+  // Back down to CSS pixels, so the backing store maps 1:1 onto device pixels.
+  canvas.style.width = `${w / dpr}px`;
+  canvas.style.height = `${h / dpr}px`;
+
+  // Resizing the backing store resets all context state, this flag included.
+  ctx.imageSmoothingEnabled = false; // pixel-art: nearest-neighbour sampling
 }
+
 window.addEventListener('resize', fitCanvas);
+// Dragging the window to a monitor with a different scaling factor changes dpr
+// without necessarily resizing the viewport, and the media query only matches the
+// dpr it was created with — so re-arm it against the new value on every change.
+function watchDpr(): void {
+  const mq = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+  mq.addEventListener('change', () => {
+    fitCanvas();
+    watchDpr();
+  }, { once: true });
+}
 fitCanvas();
+watchDpr();
 
 // --- player sprite atlas ---
 // Frame geometry: every frame is 64x56 and the character's feet sit at local y=48.
@@ -217,7 +248,7 @@ function drawBackground(view: ViewTiles): void {
 
   // Drawn as 1px rects rather than strokes: a stroked line straddles the
   // boundary and lands on half a device pixel once the context is scaled, which
-  // blurs it. Filled rects stay crisp at any SCALE.
+  // blurs it. Filled rects stay crisp at any scale.
   ctx.fillStyle = COLOR_GRID;
   const top = view.ty0 * TILE_SIZE;
   const left = view.tx0 * TILE_SIZE;
@@ -394,6 +425,14 @@ function drawHud(): void {
  *
  * `layer` picks the sheet the way Shot.gd's SpriteFrames swap does, and `opacity`
  * carries the trail fade; at 1 the alpha is left untouched.
+ *
+ * The centre is rounded to whole world pixels before drawing. The body's position
+ * is a float — walk speed is 90px/s on a 60Hz tick, so 1.5px a frame — and blitting
+ * at x.5 would resample the frame across two device-pixel columns, softening the
+ * sprite and making its interior pixels visibly wobble as it moves. Rounding here
+ * rather than in the engine keeps physics at full precision: only the picture is
+ * quantised. Frame half-extents are integers (32, 28), so the rounded centre keeps
+ * the sheet's own pixel grid aligned to the screen's.
  */
 function drawSprite(
   region: Region,
@@ -410,7 +449,7 @@ function drawSprite(
   const sheet = layer === 'pointing_cannon' && armAtlasReady ? armAtlas : atlas;
   ctx.save();
   if (opacity < 1) ctx.globalAlpha = opacity;
-  ctx.translate(cx, cy);
+  ctx.translate(Math.round(cx), Math.round(cy));
   ctx.scale(facing, 1); // facing === -1 mirrors left
   ctx.drawImage(sheet, sx, sy, sw, sh, -FRAME_W / 2, -FRAME_H / 2, FRAME_W, FRAME_H);
   ctx.restore();
@@ -421,7 +460,7 @@ function render() {
   // by the camera. The scroll offset is rounded to whole world pixels: at a
   // fractional offset every sprite and tile edge would resample against the pixel
   // grid and the whole picture would shimmer as the camera eases.
-  ctx.setTransform(SCALE * dpr, 0, 0, SCALE * dpr, 0, 0);
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
 
   const view = visibleTiles();
@@ -449,7 +488,7 @@ function render() {
 
   // The HUD is screen furniture, not part of the scene: drop the camera offset so
   // it stays pinned to the corner of the view instead of scrolling away with it.
-  ctx.setTransform(SCALE * dpr, 0, 0, SCALE * dpr, 0, 0);
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
   drawHud();
 }
 
