@@ -29,6 +29,20 @@ Controls (browser and desktop): **← →** / **A D** move · **Space** jump (ho
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
 hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
 
+### Browser and GPU profiling
+
+- Press **F2**, or open the game with `?profile`, for a rolling 240-frame graph and
+  median / p95 / worst timings. `frame` is the animation-frame interval; `sim`,
+  `render`, and `work` isolate CPU time spent in each part of the loop.
+- Chrome/Edge Performance recordings include `mmx:simulation`, `mmx:render`, and
+  `mmx:frame-work` User Timing measures. Use the Memory panel for heap snapshots
+  and allocation sampling during longer runs.
+- For difficult WebGL frames, load Spector.js and capture the game canvas. The
+  Pixi application, renderer, and canvas are available at `window.__mmxRenderer`
+  for console inspection and targeted captures.
+- Compare median, p95, and worst frame time after a representative run. Average
+  FPS alone hides intermittent long frames.
+
 ### Desktop prerequisites
 
 The desktop shell uses **Tauri 2** and leaves the TypeScript engine and PixiJS

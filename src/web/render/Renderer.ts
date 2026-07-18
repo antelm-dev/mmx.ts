@@ -114,6 +114,9 @@ export class Renderer {
     await loadSheets(SHEET_URLS);
 
     const renderer = new Renderer(app);
+    // Spector.js can discover the canvas directly; this also exposes Pixi's
+    // renderer/backend for targeted GPU inspection from DevTools.
+    (window as any).__mmxRenderer = { app, canvas };
     renderer.scene.addChildAt(buildTerrain(world), 0);
     renderer.fit();
     return renderer;

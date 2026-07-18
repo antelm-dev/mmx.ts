@@ -24,6 +24,35 @@
         max-width: 100%;
         max-height: 100%;
       }
+      #debug-profiler {
+        position: fixed;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        box-sizing: border-box;
+        width: 256px;
+        padding: 8px;
+        border: 1px solid #395564;
+        background: rgb(5 10 16 / 92%);
+        color: #d7edf7;
+        font: 11px/1.35 ui-monospace, "Cascadia Mono", monospace;
+        pointer-events: none;
+      }
+      #debug-profiler strong,
+      #debug-profiler small { display: block; }
+      #debug-profiler small {
+        color: #7f9daa;
+        margin-bottom: 5px;
+      }
+      #debug-profiler canvas {
+        width: 240px;
+        height: 64px;
+        margin-bottom: 5px;
+      }
+      #debug-profiler pre {
+        margin: 0;
+        font: inherit;
+      }
     </style>
   </head>
   <body>

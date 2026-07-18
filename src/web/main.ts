@@ -12,6 +12,7 @@ import { animData, enemyAnims } from "./render/assets.js";
 import { Renderer } from "./render/Renderer.js";
 import { spriteSnapshot } from "./render/sprite.js";
 import { SoundEffects } from "./SoundEffects.js";
+import { FrameProfiler } from "./FrameProfiler.js";
 
 /**
  * Entry point: input, the fixed-timestep loop, and nothing else. The simulation
@@ -150,6 +151,16 @@ player.events.on("dash_smoke", (clip: string, dir: number) => {
 
 async function main(): Promise<void> {
   const canvas = document.getElementById("game") as HTMLCanvasElement;
+  const profiler = new FrameProfiler();
+  (window as any).__mmxProfiler = profiler;
+
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "F2") {
+      profiler.toggle();
+      event.preventDefault();
+    }
+  });
+
   const [renderer] = await Promise.all([Renderer.create(canvas, world), sounds.load()]);
 
   window.addEventListener("resize", () => renderer.fit());
@@ -173,8 +184,17 @@ async function main(): Promise<void> {
   let acc = 0;
   let last = performance.now();
   function frame(now: number): void {
+    const frameTime = now - last;
+    for (const name of ["mmx:frame-work", "mmx:simulation", "mmx:render"]) {
+      performance.clearMeasures(name);
+      performance.clearMarks(`${name}:start`);
+      performance.clearMarks(`${name}:end`);
+    }
+    performance.mark("mmx:frame-work:start");
     acc += Math.min(0.25, (now - last) / 1000);
     last = now;
+    let simulationSteps = 0;
+    performance.mark("mmx:simulation:start");
     while (acc >= DT) {
       stage.tick(DT); // player, enemies and the damage between them; sprites too
       camera.follow(player.pos.x, player.pos.y, DT); // same fixed step, so scrolling is deterministic
@@ -182,8 +202,25 @@ async function main(): Promise<void> {
       trail.sample(DT, style ? spriteSnapshot(player) : null, style ?? DASH_TRAIL);
       smoke.tick(DT); // SpriteEffect ages in _physics_process, so on the fixed step
       acc -= DT;
+      simulationSteps++;
     }
+    performance.mark("mmx:simulation:end");
+    const simulation = performance.measure(
+      "mmx:simulation",
+      "mmx:simulation:start",
+      "mmx:simulation:end",
+    ).duration;
+    performance.mark("mmx:render:start");
     renderer.render(stage, camera, trail, smoke);
+    performance.mark("mmx:render:end");
+    const rendering = performance.measure("mmx:render", "mmx:render:start", "mmx:render:end").duration;
+    performance.mark("mmx:frame-work:end");
+    const frameWork = performance.measure(
+      "mmx:frame-work",
+      "mmx:frame-work:start",
+      "mmx:frame-work:end",
+    ).duration;
+    profiler.record({ frameTime, simulation, rendering, frameWork, simulationSteps }, now);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
