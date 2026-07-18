@@ -1,4 +1,9 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["src-tauri/**", "dist*/**", "public/**"]
+  "ignorePatterns": [
+    "apps/desktop/src-tauri/**",
+    "**/dist/**",
+    "**/public/**",
+    "packages/engine/src/engine/levels/**"
+  ]
 }

@@ -1,7 +1,7 @@
 /**
- * Builds src/web/assets/enemy_anims.json from the Godot project's Aseprite sheets.
+ * Builds packages/renderer-pixi/src/assets/enemy_anims.json from the Godot project's Aseprite sheets.
  *
- *   node tools/build-enemies.mjs [path-to-godot-project]   # or: npm run enemies:import
+ *   node tools/build-enemies.mjs [path-to-godot-project]   # or: pnpm enemies:import
  *
  * The player's clips came out of Godot .res SpriteFrames resources (binary, and
  * already exported to x_anims.json). The enemies still have their *source*
@@ -23,13 +23,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "..");
 const godot = resolve(repo, process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const enemies = join(godot, "src/Actors/Enemies");
-const assets = join(repo, "src/web/assets");
+const assets = join(repo, "packages/renderer-pixi/src/assets");
 
 /**
  * Which sheets to import, and which clips of each hold their last frame.
  *
  * `sheet` is the file name the renderer keys textures by (see SHEET_URLS), and
- * doubles as the name of the copy written into src/web/assets.
+ * doubles as the name of the copy written into the renderer package assets.
  */
 const ACTORS = {
   metool: {
@@ -97,4 +97,4 @@ for (const [name, actor] of Object.entries(out.actors)) {
     .join(" ");
   console.log(`${name}: ${clips}`);
 }
-console.log("enemy_anims.json + sheets written to src/web/assets");
+console.log("enemy_anims.json + sheets written to packages/renderer-pixi/src/assets");

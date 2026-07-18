@@ -1,0 +1,19 @@
+{
+  "name": "@mmx/sim",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/run.ts",
+    "replay": "tsx src/replay.ts"
+  },
+  "dependencies": {
+    "@mmx/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

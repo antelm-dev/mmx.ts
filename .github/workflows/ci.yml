@@ -17,32 +17,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Format
-        run: npm run fmt:check
+        run: pnpm fmt:check
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
       - name: Typecheck / compile
-        run: npm run build
-
-      - name: Build web
-        run: npm run build:web
+        run: pnpm build
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dist-web
-          path: dist-web
+          name: web-dist
+          path: apps/web/dist
           if-no-files-found: error
 
   desktop:
@@ -65,10 +64,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: npm
+          cache: pnpm
 
       - uses: dtolnay/rust-toolchain@1.93.0
         with:
@@ -76,27 +77,27 @@ jobs:
 
       - uses: swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri -> target
+          workspaces: apps/desktop/src-tauri -> target
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Cargo fmt
-        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+        run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check
 
       - name: Cargo clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets -- -D warnings
 
       - name: Cargo check
-        run: cargo check --manifest-path src-tauri/Cargo.toml --locked
+        run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked
 
       - name: Build desktop
-        run: npm run desktop:build -- -- --locked
+        run: pnpm --filter @mmx/desktop build -- --locked
 
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.platform }}
           path: |
-            src-tauri/target/release/bundle
-            src-tauri/target/release/mmx-core-ts
-            src-tauri/target/release/mmx-core-ts.exe
+            apps/desktop/src-tauri/target/release/bundle
+            apps/desktop/src-tauri/target/release/mmx-core-ts
+            apps/desktop/src-tauri/target/release/mmx-core-ts.exe
           if-no-files-found: warn

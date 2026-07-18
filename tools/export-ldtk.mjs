@@ -35,7 +35,7 @@ function readAscii(url) {
 
 const ASCII = readAscii(SOURCE);
 
-// Must match the Tile enum in src/engine/World.ts. 'S' marks the spawn entity
+// Must match the Tile enum in packages/engine/src/engine/World.ts. 'S' marks the spawn entity
 // and leaves the tile itself empty.
 const CHAR_TO_VALUE = { "#": 1, "/": 2, "\\": 3 };
 
