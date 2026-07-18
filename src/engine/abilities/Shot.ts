@@ -25,8 +25,9 @@ export class Shot extends Ability {
     this.actions = ['fire'];
   }
 
+  /** Weapon.gd:can_shoot — infinite ammo, but capped on shots already in flight. */
   override _StartCondition(): boolean {
-    return true; // buster has infinite ammo
+    return this.character.can_shoot(0);
   }
 
   /** Shot.gd:play_animation_on_initialize — raise the buster, don't change clip. */
@@ -39,8 +40,13 @@ export class Shot extends Ability {
   }
 
   override _Update(_dt: number): void {
+    // Shot.gd:_Update — being hit swallows the tap outright rather than queueing it.
+    if (this.character.is_executing('Damage')) return;
+
     if (this.character.get_action_just_pressed('fire') && !this.is_initial_frame()) {
-      this.fire();
+      // Re-checked per tap, not just on start: with three lemons already in
+      // flight the press still re-raises the arm but no shot comes out.
+      if (this._StartCondition()) this.fire();
     }
   }
 

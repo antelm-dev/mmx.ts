@@ -2,6 +2,13 @@ import { AbilityUser } from './AbilityUser.js';
 import { World } from './World.js';
 import { Projectile } from './Projectile.js';
 import { Input, Action } from '../core/Input.js';
+import { Rng } from '../core/Rng.js';
+import {
+  MAX_CHARGED_SHOTS_ALIVE,
+  MAX_SHOTS_ALIVE,
+  SHOT_POSITION,
+  SHOT_POSITION_ADJUST,
+} from '../core/constants.js';
 
 /**
  * Input + high-level player API — port of Character.gd (and the input-facing parts
@@ -19,18 +26,61 @@ export class Character extends AbilityUser {
 
   projectiles: Projectile[] = [];
 
-  constructor(world: World, x: number, y: number, input: Input) {
+  /**
+   * Owned, seeded randomness for the cosmetic rolls the original takes with the
+   * global `randf` (spawn jitter, lemon start frame, particle flip). Seeding it
+   * per character is what keeps the headless sim and the tests reproducible.
+   */
+  rng: Rng;
+
+  constructor(world: World, x: number, y: number, input: Input, seed?: number) {
     super(world, x, y);
     this.input = input;
+    this.rng = new Rng(seed);
     this.events.on('land', () => this.on_land());
   }
 
-  /** Spawn a buster shot from the front of the body (Shot/Charge -> weapon.fire). */
-  spawnBuster(charge: number): void {
+  /**
+   * Muzzle position in world space — Character.gd's "Shot Position" node plus the
+   * adjustments the currently-running abilities contribute (Ability.gd:176). X's
+   * cannon is not in a fixed spot: dashing pushes it forward and down, falling
+   * pulls it up, so the shot leaves from wherever the pose actually puts it.
+   */
+  get_shot_position(): { x: number; y: number } {
+    let ox = SHOT_POSITION.x;
+    let oy = SHOT_POSITION.y;
+    for (const move of this.executing_moves) {
+      const adjust = SHOT_POSITION_ADJUST[move.name];
+      if (adjust) {
+        ox += adjust.x;
+        oy += adjust.y;
+      }
+    }
     const dir = this.get_facing_direction();
-    const x = this.pos.x + dir * (this.hw + 2);
-    const y = this.pos.y - 2;
-    this.projectiles.push(new Projectile(x, y, dir, charge));
+    return { x: this.pos.x + ox * dir, y: this.pos.y + oy };
+  }
+
+  /**
+   * Weapon.gd:can_shoot — the buster refuses to fire while its shots are already
+   * on screen. That cap is the whole reason buster fire has a rhythm instead of
+   * being a hose: three lemons out means you wait for one to land or fly off.
+   * Spent shots (still playing their hit particle) do not count against it.
+   */
+  can_shoot(charge: number): boolean {
+    const cap = charge > 0 ? MAX_CHARGED_SHOTS_ALIVE : MAX_SHOTS_ALIVE;
+    const live = this.projectiles.filter(
+      (p) => p.isLive && (p.charge > 0) === (charge > 0),
+    ).length;
+    return live < cap;
+  }
+
+  /** Spawn a buster shot from the cannon (Shot/Charge -> Weapon.fire). */
+  spawnBuster(charge: number): void {
+    if (!this.can_shoot(charge)) return;
+    const muzzle = this.get_shot_position();
+    const dir = this.get_facing_direction();
+    this.projectiles.push(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
+    this.events.emit('shot_fired', charge);
   }
 
   private updateProjectiles(dt: number): void {

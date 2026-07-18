@@ -30,6 +30,13 @@ const script: Cue[] = [
   { frame: 200, action: 'fire', down: true }, // charge...
   { frame: 260, action: 'fire', down: false }, // ...release charged shot
   { frame: 300, action: 'move_right', down: false },
+  // Mash fire: six taps, four frames apart. The buster's three-shots-alive cap
+  // (Weapon.gd:can_shoot) should hold the volley to three in flight, which is
+  // what gives buster fire its rhythm instead of a continuous stream.
+  ...Array.from({ length: 6 }, (_, i) => [
+    { frame: 330 + i * 4, action: 'fire' as Action, down: true },
+    { frame: 331 + i * 4, action: 'fire' as Action, down: false },
+  ]).flat(),
 ];
 
 function label(n: number): string {
@@ -40,7 +47,22 @@ console.log('Mega Man X — TypeScript gameplay core (headless sim)\n');
 console.log('frame |    posX |    posY |   velX |   velY | floor | state');
 console.log('------+---------+---------+--------+--------+-------+----------------------');
 
-const TOTAL = 320;
+/**
+ * Live shots by type, plus any that are spent and only playing their hit
+ * particle — the two phases are easy to confuse from a bare count.
+ */
+function shotsColumn(): string {
+  if (player.projectiles.length === 0) return '';
+  const live = player.projectiles.filter((p) => p.isLive);
+  const spent = player.projectiles.length - live.length;
+  const byKind = new Map<string, number>();
+  for (const p of live) byKind.set(p.kind, (byKind.get(p.kind) ?? 0) + 1);
+  const parts = [...byKind].map(([kind, n]) => `${n} ${kind}`);
+  if (spent) parts.push(`${spent} impacting`);
+  return `  (${parts.join(', ')})`;
+}
+
+const TOTAL = 380;
 let cueIdx = 0;
 for (let f = 0; f <= TOTAL; f++) {
   while (cueIdx < script.length && script[cueIdx].frame === f) {
@@ -55,7 +77,7 @@ for (let f = 0; f <= TOTAL; f++) {
       `${String(f).padStart(5)} | ${label(player.pos.x)} | ${label(player.pos.y)} | ` +
         `${label(player.velocity.x)} | ${label(player.velocity.y)} | ` +
         `${(player.is_on_floor() ? 'yes' : 'no').padStart(5)} | ${player.stateString()}` +
-        (player.projectiles.length ? `  (${player.projectiles.length} shots)` : ''),
+        shotsColumn(),
     );
   }
 }

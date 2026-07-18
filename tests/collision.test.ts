@@ -137,12 +137,24 @@ test('floor snap bridges a dip shallower than FLOOR_SNAP_LENGTH', () => {
 test('a shot stops at the wall face rather than inside it', () => {
   const world = openRoom();
   const wallFace = 11 * TILE_SIZE;
-  const p = new Projectile(wallFace - 4, 3 * TILE_SIZE, 1, 3); // fast charged shot
+  const p = new Projectile(wallFace, 3 * TILE_SIZE, 1, 3); // fast charged shot
+  // Place it explicitly: the constructor applies the charged shot's muzzle pullback,
+  // which is spawn-positioning noise for a test that is only about the sweep.
+  p.x = wallFace - 4;
   assert.ok(Math.abs(p.vx) * DT > 4, 'this step overshoots the wall');
 
   p.update(DT, world);
-  assert.equal(p.alive, false);
   assert.equal(p.x, wallFace, 'impact registered on the surface');
+  // A shot that connects is spent, not gone: it stops moving and stops colliding,
+  // but stays in the list long enough for its hit particle to play out.
+  assert.equal(p.phase, 'spent');
+  assert.equal(p.isLive, false, 'no longer collides');
+  assert.equal(p.alive, true, 'still around for the impact effect');
+
+  // ...and it does eventually clear itself out.
+  for (let i = 0; i < 60; i++) p.update(DT, world);
+  assert.equal(p.alive, false, 'removed once the effect finishes');
+  assert.equal(p.x, wallFace, 'never drifted past the impact point');
 });
 
 test('sweep results always agree with the overlap test', () => {

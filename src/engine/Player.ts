@@ -26,8 +26,8 @@ import { Charge } from './abilities/Charge.js';
  * boss weapons, Ride Armor, damage/knockback/death, subtanks, AirJump double-jump.
  */
 export class Player extends Character {
-  constructor(world: World, x: number, y: number, input: Input) {
-    super(world, x, y, input);
+  constructor(world: World, x: number, y: number, input: Input, seed?: number) {
+    super(world, x, y, input, seed);
 
     this.add(new Idle(this));
     this.add(new Walk(this));

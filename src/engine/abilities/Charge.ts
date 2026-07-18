@@ -17,6 +17,11 @@ export class Charge extends Ability {
   override independent = true;
   charged_time = 0;
 
+  /** VFX latches — Charge.gd's `charging` / `mid_charge` / `max_charge`. */
+  charging = false;
+  mid_charge = false;
+  max_charge = false;
+
   constructor(character: Character) {
     super(character);
     this.actions = ['fire'];
@@ -32,11 +37,13 @@ export class Charge extends Ability {
 
   override _Setup(): void {
     this.charged_time = 0;
+    this.charging = false;
+    this.mid_charge = false;
   }
 
   override _Update(dt: number): void {
     if (this.character.get_action_pressed('fire')) {
-      if (this.charged_time < CHARGE_MAX_TIME) this.charged_time += dt;
+      this.charge(dt);
     } else {
       if (this.charged_time > CHARGE_MIN_TIME) {
         this.character.spawnBuster(this.get_charge_level());
@@ -45,11 +52,40 @@ export class Charge extends Ability {
     }
   }
 
+  /**
+   * Charge.gd:charge — accumulate, and announce the two thresholds as they are
+   * crossed. The original drives sound, a shader tint and three particle sprites
+   * off these; here they are events so the renderer can do the same without the
+   * engine knowing anything about drawing.
+   */
+  private charge(dt: number): void {
+    if (this.charged_time < CHARGE_MAX_TIME) this.charged_time += dt;
+
+    if (this.charged_time > CHARGE_MIN_TIME && !this.charging) {
+      this.charging = true;
+      this.character.events.emit('charge_started');
+    }
+    if (this.get_charge_level() > 1 && !this.mid_charge) {
+      this.mid_charge = true;
+      this.character.events.emit('charge_mid');
+    }
+    // The level-4 threshold no longer selects a projectile, but it still marks
+    // where the original switches to the super-charge tint and particle.
+    if (this.charged_time > CHARGE_LEVEL_4 && !this.max_charge) {
+      this.max_charge = true;
+      this.character.events.emit('charge_max');
+    }
+  }
+
+  /**
+   * Charge.gd:get_charge_level. Level 3 exists only for an upgraded arm cannon,
+   * which this port does not model — and the buster's `shots` array has no fourth
+   * projectile anyway, so it would clamp straight back onto the charged shot.
+   */
   get_charge_level(): number {
     if (this.charged_time < CHARGE_MIN_TIME) return 0;
     if (this.charged_time < CHARGE_LEVEL_3) return 1;
-    if (this.charged_time < CHARGE_LEVEL_4) return 2;
-    return 3;
+    return 2;
   }
 
   override _EndCondition(): boolean {
@@ -57,7 +93,14 @@ export class Charge extends Ability {
     return false;
   }
 
+  /** Charge.gd:_Interrupt -> stop_vfx — drop the charge and clear every latch. */
   override _Interrupt(): void {
     this.charged_time = 0;
+    if (this.charging || this.mid_charge || this.max_charge) {
+      this.character.events.emit('charge_stopped');
+    }
+    this.charging = false;
+    this.mid_charge = false;
+    this.max_charge = false;
   }
 }

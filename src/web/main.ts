@@ -9,6 +9,12 @@ import { Trail, GhostSource, TrailStyle, DASH_TRAIL, WALLSLIDE_TRAIL } from './T
 import animData from './assets/x_anims.json';
 import atlasUrl from './assets/x.png';
 import armAtlasUrl from './assets/x_leftarm.png';
+import shotAnimData from './assets/shot_anims.json';
+import lemonUrl from './assets/lemon.png';
+import mediumShotUrl from './assets/medium_shot.png';
+import heavyShotUrl from './assets/heavy_shot.png';
+import lemonHitUrl from './assets/lemon_hit.png';
+import chargeHitUrl from './assets/charge_hit.png';
 
 /**
  * Browser front-end: renders the ported gameplay with the Canvas 2D API. The
@@ -119,6 +125,63 @@ armAtlas.onload = () => {
 };
 atlas.src = atlasUrl;
 armAtlas.src = armAtlasUrl;
+
+// --- buster shot + hit-effect sheets ---
+// Each clip in shot_anims.json names the sheet it cuts from (tools/build-shots.mjs),
+// so the whole set loads through one small table instead of a variable per image.
+const SHOT_SHEET_URLS: Record<string, string> = {
+  'lemon.png': lemonUrl,
+  'medium_shot.png': mediumShotUrl,
+  'heavy_shot.png': heavyShotUrl,
+  'lemon_hit.png': lemonHitUrl,
+  'charge_hit.png': chargeHitUrl,
+};
+
+const shotSheets = new Map<string, { img: HTMLImageElement; ready: boolean }>();
+for (const [name, url] of Object.entries(SHOT_SHEET_URLS)) {
+  const img = new Image();
+  const entry = { img, ready: false };
+  img.onload = () => {
+    entry.ready = true;
+  };
+  img.src = url;
+  shotSheets.set(name, entry);
+}
+
+// Same widening as the player atlas: JSON imports type each region as number[],
+// which does not narrow to the fixed-length Region tuple on its own.
+const shotAnims = shotAnimData as unknown as {
+  sheets: Record<string, string>;
+  animations: Record<string, { loop: boolean; speed: number; frames: { region: Region }[] }>;
+};
+
+/**
+ * Blit one frame of a shot/effect clip, centered on a world position.
+ * `frame` is clamped rather than wrapped: the engine already wraps looping shot
+ * spin, and a finished one-shot hit effect should hold its last frame, not restart.
+ */
+function drawShotClip(
+  clipName: string,
+  frame: number,
+  cx: number,
+  cy: number,
+  facing: number,
+  flipV = false,
+): void {
+  const clip = shotAnims.animations[clipName];
+  if (!clip) return;
+  const sheet = shotSheets.get(shotAnims.sheets[clipName]);
+  if (!sheet?.ready) return;
+
+  const idx = Math.max(0, Math.min(frame, clip.frames.length - 1));
+  const [sx, sy, sw, sh] = clip.frames[idx].region;
+
+  ctx.save();
+  ctx.translate(Math.round(cx), Math.round(cy));
+  ctx.scale(facing, flipV ? -1 : 1);
+  ctx.drawImage(sheet.img, sx, sy, sw, sh, -sw / 2, -sh / 2, sw, sh);
+  ctx.restore();
+}
 
 // Clip data (loop flags, per-clip fps, frame sequences and both atlases' regions)
 // goes into the engine: the abilities pick and read the current clip exactly as the
@@ -479,11 +542,19 @@ function render() {
   }
 
   // --- projectiles ---
-  ctx.fillStyle = '#fdfd96';
+  // A live shot draws its spin loop; a spent one has already been replaced by its
+  // hit particle, pinned to where the impact happened rather than where the shot
+  // would have drifted to. Both come out of the engine's own frame counters, so a
+  // paused or stepped frame shows exactly what the simulation says it should.
   for (const p of player.projectiles) {
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-    ctx.fill();
+    if (p.isLive) {
+      drawShotClip(p.kind, p.frame, p.x, p.y, p.dir);
+    } else {
+      const fx = p.stats.hitFx;
+      const clip = shotAnims.animations[fx];
+      const frame = Math.floor(p.hitParticleSec * clip.speed);
+      drawShotClip(fx, frame, p.hitX, p.hitY, p.dir, p.hitFlipV);
+    }
   }
 
   // The HUD is screen furniture, not part of the scene: drop the camera offset so

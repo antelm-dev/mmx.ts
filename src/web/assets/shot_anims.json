@@ -1,0 +1,329 @@
+{
+  "sheets": {
+    "lemon": "lemon.png",
+    "medium": "medium_shot.png",
+    "charged": "heavy_shot.png",
+    "lemon_hit": "lemon_hit.png",
+    "charge_hit": "charge_hit.png"
+  },
+  "animations": {
+    "lemon": {
+      "loop": true,
+      "speed": 23.80952380952381,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            64,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            64,
+            32,
+            32
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "medium": {
+      "loop": true,
+      "speed": 27.77777777777778,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            0,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            48,
+            48,
+            48,
+            48
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "charged": {
+      "loop": true,
+      "speed": 27.77777777777778,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            0,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            128,
+            0,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            64,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            64,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            128,
+            64,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            128,
+            64,
+            64
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            64,
+            128,
+            64,
+            64
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "lemon_hit": {
+      "loop": false,
+      "speed": 32,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            0,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            32,
+            32,
+            32,
+            32
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "charge_hit": {
+      "loop": false,
+      "speed": 32,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            80,
+            80
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            80,
+            0,
+            80,
+            80
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            0,
+            80,
+            80,
+            80
+          ],
+          "duration": 1
+        },
+        {
+          "region": [
+            80,
+            80,
+            80,
+            80
+          ],
+          "duration": 1
+        }
+      ]
+    }
+  }
+}
