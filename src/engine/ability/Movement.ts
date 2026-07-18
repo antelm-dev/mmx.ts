@@ -1,5 +1,5 @@
-import { Ability } from './Ability.js';
-import { GRAVITY, JUMP_VELOCITY, WALK_SPEED } from '../../core/constants.js';
+import { Ability } from "./Ability.js";
+import { GRAVITY, JUMP_VELOCITY, WALK_SPEED } from "../../core/constants.js";
 
 /**
  * Physics/movement helpers — port of Movement.gd.
@@ -31,9 +31,7 @@ export abstract class Movement extends Ability {
 
   update_bonus_horizontal_only_conveyor(extra = 0): void {
     if (this.character.is_on_floor()) {
-      this.character.set_bonus_horizontal_speed(
-        this.character.get_conveyor_belt_speed() + extra,
-      );
+      this.character.set_bonus_horizontal_speed(this.character.get_conveyor_belt_speed() + extra);
     }
   }
 
@@ -78,7 +76,7 @@ export abstract class Movement extends Ability {
   change_animation_if_falling(anim: string): void {
     if (
       !this.changed_animation &&
-      this.character.get_animation() !== 'fall' &&
+      this.character.get_animation() !== "fall" &&
       this.character.get_vertical_speed() > 0
     ) {
       this.play_animation(anim);

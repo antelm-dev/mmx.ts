@@ -6,13 +6,13 @@
  *   move_left, move_right, move_up, move_down, jump, dash, fire.
  */
 export type Action =
-  | 'move_left'
-  | 'move_right'
-  | 'move_up'
-  | 'move_down'
-  | 'jump'
-  | 'dash'
-  | 'fire';
+  | "move_left"
+  | "move_right"
+  | "move_up"
+  | "move_down"
+  | "jump"
+  | "dash"
+  | "fire";
 
 export class Input {
   private cur = new Set<Action>();
@@ -44,15 +44,15 @@ export class Input {
   /** get_pressed_axis(): -1 left, +1 right, 0 none (Character.gd:236). */
   axis(): number {
     let a = 0;
-    if (this.isPressed('move_left')) a -= 1;
-    if (this.isPressed('move_right')) a += 1;
+    if (this.isPressed("move_left")) a -= 1;
+    if (this.isPressed("move_right")) a += 1;
     return a;
   }
 
   justPressedLeft(): boolean {
-    return this.justPressed('move_left');
+    return this.justPressed("move_left");
   }
   justPressedRight(): boolean {
-    return this.justPressed('move_right');
+    return this.justPressed("move_right");
   }
 }

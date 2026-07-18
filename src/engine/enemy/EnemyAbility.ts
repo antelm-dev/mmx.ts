@@ -1,6 +1,6 @@
-import { BaseAbility } from '../ability/BaseAbility.js';
-import { GRAVITY } from '../../core/constants.js';
-import type { Enemy } from '../Enemy.js';
+import { BaseAbility } from "../ability/BaseAbility.js";
+import { GRAVITY } from "../../core/constants.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * Base for every enemy state — the merge of EnemyAbility.gd and AttackAbility.gd.
@@ -29,15 +29,15 @@ export abstract class EnemyAbility extends BaseAbility<Enemy> {
   attack_stage = 0;
 
   /** The last clip this ability asked for, and whether it has played out. */
-  private current_animation = '';
-  private finished_animation = '';
+  private current_animation = "";
+  private finished_animation = "";
 
   constructor(enemy: Enemy) {
     super(enemy);
     // EnemyAbility.connect_animation_finished_event. Recorded rather than acted
     // on: the abilities *poll* has_finished_last_animation from their _Update,
     // so a clip that ends between two stage checks is not missed.
-    enemy.events.on('animation_finished', (name: string) => {
+    enemy.events.on("animation_finished", (name: string) => {
       this.finished_animation = name;
     });
   }
@@ -94,18 +94,18 @@ export abstract class EnemyAbility extends BaseAbility<Enemy> {
     // A restart of a clip that already finished must clear the flag, or the
     // next stage check reads the previous playthrough's completion and the
     // state machine skips a beat.
-    this.finished_animation = '';
+    this.finished_animation = "";
   }
 
   override play_animation_once(a: string): void {
     if (this.current_animation === a) return;
     super.play_animation_once(a);
     this.current_animation = a;
-    this.finished_animation = '';
+    this.finished_animation = "";
   }
 
   has_finished_last_animation(): boolean {
-    return this.current_animation !== '' && this.finished_animation === this.current_animation;
+    return this.current_animation !== "" && this.finished_animation === this.current_animation;
   }
 
   is_current_animation(a: string): boolean {
@@ -160,7 +160,7 @@ export abstract class EnemyAbility extends BaseAbility<Enemy> {
    * off-screen Metool still reasons about a player it cannot see; here the stage
    * assigns `target` and the queries answer conservatively without one.
    */
-  protected get target(): Enemy['target'] {
+  protected get target(): Enemy["target"] {
     return this.character.target;
   }
 

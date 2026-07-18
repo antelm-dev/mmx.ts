@@ -46,15 +46,15 @@ export interface AnimData {
  * while the buster is out, keeping the clip name and frame index — that is how X
  * points his cannon in every state instead of having a separate "shoot" clip.
  */
-export type AnimationLayer = 'normal' | 'pointing_cannon';
+export type AnimationLayer = "normal" | "pointing_cannon";
 
 export class AnimationPlayer {
   private clips = new Map<string, ClipData>();
-  private current = 'idle';
+  private current = "idle";
   private frameIdx = 0;
   private accSec = 0;
   private finished = false;
-  private layer: AnimationLayer = 'normal';
+  private layer: AnimationLayer = "normal";
 
   /** Fired once when a non-looping clip reaches its last frame (Godot's
    *  `animation_finished`). Set by AbilityUser to re-emit on the event bus. */
@@ -109,7 +109,7 @@ export class AnimationPlayer {
   currentRegion(): Region | null {
     const frame = this.currentFrame();
     if (!frame) return null;
-    if (this.layer === 'pointing_cannon' && frame.armRegion) return frame.armRegion;
+    if (this.layer === "pointing_cannon" && frame.armRegion) return frame.armRegion;
     return frame.region;
   }
 

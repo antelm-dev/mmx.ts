@@ -1,4 +1,4 @@
-import { Region, AnimationLayer } from '../engine/Animation.js';
+import { Region, AnimationLayer } from "../engine/Animation.js";
 
 /**
  * Afterimage trail — the visual half of SpriteEffect.gd.

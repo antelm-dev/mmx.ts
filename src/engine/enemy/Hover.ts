@@ -1,6 +1,6 @@
-import { EnemyAbility } from './EnemyAbility.js';
-import { Vec2 } from '../../core/Vec2.js';
-import type { Enemy } from '../Enemy.js';
+import { EnemyAbility } from "./EnemyAbility.js";
+import { Vec2 } from "../../core/Vec2.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * Idle drift around an anchor — port of BeePatrol.gd, which the bat's scene
@@ -14,7 +14,7 @@ import type { Enemy } from '../Enemy.js';
  * than velocity would be visible.
  */
 export class Hover extends EnemyAbility {
-  readonly name = 'Hover';
+  readonly name = "Hover";
 
   /** BeePatrol exports, as set on SmallBat.tscn. */
   area = 16;
@@ -29,8 +29,8 @@ export class Hover extends EnemyAbility {
 
   constructor(enemy: Enemy) {
     super(enemy);
-    this.animation = 'idle';
-    this.conflicts = ['Pursuit'];
+    this.animation = "idle";
+    this.conflicts = ["Pursuit"];
     this.anchor.set(enemy.pos.x, enemy.pos.y);
   }
 
@@ -57,7 +57,7 @@ export class Hover extends EnemyAbility {
         this.from.y + (this.to.y - this.from.y) * e,
       );
       if (this.timer > this.travel_time) {
-        this.play_animation('idle');
+        this.play_animation("idle");
         this.next_attack_stage();
       }
     }

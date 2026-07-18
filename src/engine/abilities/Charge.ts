@@ -1,6 +1,6 @@
-import { Ability } from '../ability/Ability.js';
-import { Shot } from './Shot.js';
-import type { Character } from '../Character.js';
+import { Ability } from "../ability/Ability.js";
+import { Shot } from "./Shot.js";
+import type { Character } from "../Character.js";
 import {
   CHARGE_FX_FRAME_COUNT,
   CHARGE_FX_LIFETIME,
@@ -9,7 +9,7 @@ import {
   CHARGE_MAX_TIME,
   CHARGE_MIN_TIME,
   ChargeTier,
-} from '../../core/constants.js';
+} from "../../core/constants.js";
 
 /**
  * Port of Charge.gd (buster) — holding fire accumulates charge; releasing above
@@ -17,7 +17,7 @@ import {
  * Independent action layer; coexists with Shot (tap = lemon, hold+release = charge).
  */
 export class Charge extends Ability {
-  readonly name = 'Charge';
+  readonly name = "Charge";
   override independent = true;
   charged_time = 0;
 
@@ -36,7 +36,7 @@ export class Charge extends Ability {
 
   constructor(character: Character) {
     super(character);
-    this.actions = ['fire'];
+    this.actions = ["fire"];
   }
 
   override should_execute_on_hold(): boolean {
@@ -45,8 +45,8 @@ export class Charge extends Ability {
 
   override _StartCondition(): boolean {
     return (
-      !this.character.is_executing('Damage') &&
-      this.character.get_action_pressed('fire') &&
+      !this.character.is_executing("Damage") &&
+      this.character.get_action_pressed("fire") &&
       !this.character.block_charging
     );
   }
@@ -58,7 +58,7 @@ export class Charge extends Ability {
   }
 
   override _Update(dt: number): void {
-    if (this.character.get_action_pressed('fire')) {
+    if (this.character.get_action_pressed("fire")) {
       this.charge(dt);
     } else {
       if (this.charged_time > CHARGE_MIN_TIME) {
@@ -66,7 +66,7 @@ export class Charge extends Ability {
         // Charge owns the projectile but not the pose — Shot does. Without this
         // the charged shot leaves the cannon while X is still standing neutral,
         // since the initial tap's arm-point window expired during the hold.
-        const shot = this.character.get_ability('Shot');
+        const shot = this.character.get_ability("Shot");
         if (shot instanceof Shot) shot.arm_point();
       }
       this.EndAbility();
@@ -86,17 +86,17 @@ export class Charge extends Ability {
     if (this.charged_time > CHARGE_MIN_TIME && !this.charging) {
       this.charging = true;
       this.vfx_timer = 0;
-      this.character.events.emit('charge_started');
+      this.character.events.emit("charge_started");
     }
     if (this.get_charge_level() > 1 && !this.mid_charge) {
       this.mid_charge = true;
-      this.character.events.emit('charge_mid');
+      this.character.events.emit("charge_mid");
     }
     // The level-4 threshold no longer selects a projectile, but it still marks
     // where the original switches to the super-charge tint and particle.
     if (this.charged_time > CHARGE_LEVEL_4 && !this.max_charge) {
       this.max_charge = true;
-      this.character.events.emit('charge_max');
+      this.character.events.emit("charge_max");
     }
   }
 
@@ -138,7 +138,7 @@ export class Charge extends Ability {
   override _Interrupt(): void {
     this.charged_time = 0;
     if (this.charging || this.mid_charge || this.max_charge) {
-      this.character.events.emit('charge_stopped');
+      this.character.events.emit("charge_stopped");
     }
     this.charging = false;
     this.mid_charge = false;

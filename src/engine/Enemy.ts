@@ -1,12 +1,12 @@
-import { AbilityUser } from './AbilityUser.js';
-import { Actor } from './Actor.js';
-import { World } from './World.js';
-import { Rng } from '../core/Rng.js';
-import { EnemyAI } from './EnemyAI.js';
-import type { EnemyAbility } from './enemy/EnemyAbility.js';
-import { ENEMY_FLASH_TIME, ENEMY_STATS, type EnemyStats } from '../core/constants.js';
+import { AbilityUser } from "./AbilityUser.js";
+import { Actor } from "./Actor.js";
+import { World } from "./World.js";
+import { Rng } from "../core/Rng.js";
+import { EnemyAI } from "./EnemyAI.js";
+import type { EnemyAbility } from "./enemy/EnemyAbility.js";
+import { ENEMY_FLASH_TIME, ENEMY_STATS, type EnemyStats } from "../core/constants.js";
 
-export type EnemyKind = 'metool' | 'bat';
+export type EnemyKind = "metool" | "bat";
 
 /**
  * Enemy actor — port of Enemy.gd plus the per-enemy modules its scenes hang off
@@ -139,10 +139,10 @@ export class Enemy extends AbilityUser {
   hit_shield(breaks_guard: boolean): boolean {
     if (breaks_guard && this.shield_breakable) {
       this.deactivate_shield();
-      this.events.emit('guard_break');
+      this.events.emit("guard_break");
       return true;
     }
-    this.events.emit('shield_hit');
+    this.events.emit("shield_hit");
     return false;
   }
 
@@ -172,11 +172,11 @@ export class Enemy extends AbilityUser {
     if (!this.can_be_damaged()) return;
     this.current_health -= value;
     this.flash = ENEMY_FLASH_TIME;
-    this.events.emit('damage', value);
+    this.events.emit("damage", value);
     if (this.current_health <= 0) {
       this.emit_zero_health();
     } else {
-      this.events.emit('got_hit');
+      this.events.emit("got_hit");
     }
   }
 
@@ -186,7 +186,7 @@ export class Enemy extends AbilityUser {
     this.emitted_zero_health = true;
     this.current_health = 0;
     this.interrupt_all_moves();
-    this.events.emit('zero_health');
+    this.events.emit("zero_health");
   }
 
   /** Enemy.gd:interrupt_all_moves. */

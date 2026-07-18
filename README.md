@@ -1,6 +1,6 @@
 # mmx-core-ts
 
-A faithful **TypeScript / Node** port of the *core player gameplay* from the
+A faithful **TypeScript / Node** port of the _core player gameplay_ from the
 [Mega Man X8 16-bit](../Mega-Man-X8-16-bit) Godot project — the movement state
 machine (walk / dash / variable jump / air-dash / wall-slide / wall-jump /
 dash-jump), hurt/knockback, plus buster shooting and charge shots.
@@ -27,7 +27,7 @@ npm run desktop:build  # build the native executable and platform installers
 
 Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
-hold *into* a wall while falling to wall-slide, then **Space** to wall-kick.
+hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
 
 ### Desktop prerequisites
 
@@ -67,7 +67,7 @@ CharacterBody2D
 
 Conflicts between moves are handled by per-ability `conflicting_moves` arrays and
 priorities. Independent moves (Shot, Charge — configured "Nothing") run
-*concurrently* with movement, which is why you can walk-and-charge.
+_concurrently_ with movement, which is why you can walk-and-charge.
 
 Ability lifecycle (`BaseAbility.gd`):
 
@@ -88,30 +88,30 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 
 ## How this port maps to it
 
-| Godot source | This project |
-|---|---|
-| `Actor.gd` (physics, health, sensors) | [`src/engine/Actor.ts`](src/engine/Actor.ts) |
-| `move_and_slide()` + `RayCast2D` columns | [`src/engine/World.ts`](src/engine/World.ts) AABB tile collision + edge sensors |
-| `AbilityUser.gd` (moveset + runtime) | [`src/engine/AbilityUser.ts`](src/engine/AbilityUser.ts) |
-| `Character.gd` (input, wall/land) | [`src/engine/Character.ts`](src/engine/Character.ts) |
-| `Player.gd` / `Player.tscn` node list | [`src/engine/Player.ts`](src/engine/Player.ts) |
-| `BaseAbility.gd` / `Ability.gd` / `Movement.gd` | [`src/engine/ability/`](src/engine/ability/) |
-| `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/) |
-| `Shot.gd` (PrimaryShot) / `Charge.gd` | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
-| `Damage.gd` (hurt, knockback, invulnerability) | [`src/engine/abilities/Damage.ts`](src/engine/abilities/Damage.ts) |
-| `Lemon.gd` / `WeaponShot.gd` | [`src/engine/Projectile.ts`](src/engine/Projectile.ts) |
-| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch` | [`src/engine/Enemy.ts`](src/engine/Enemy.ts) |
-| `AI.gd` (event -> ability lists) | [`src/engine/EnemyAI.ts`](src/engine/EnemyAI.ts) |
-| `EnemyAbility.gd` / `AttackAbility.gd` | [`src/engine/enemy/EnemyAbility.ts`](src/engine/enemy/EnemyAbility.ts) |
-| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump` | [`src/engine/enemy/`](src/engine/enemy/) |
-| `Metool.tscn` / `SmallBat.tscn` node lists | [`src/engine/enemies/index.ts`](src/engine/enemies/index.ts) |
-| Area2D layer/mask overlaps (shots, contact damage) | [`src/engine/Stage.ts`](src/engine/Stage.ts) |
-| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res` | [`src/engine/Animation.ts`](src/engine/Animation.ts) |
-| Godot `Input` singleton | [`src/core/Input.ts`](src/core/Input.ts) |
-| Godot signals | [`src/core/Events.ts`](src/core/Events.ts) |
+| Godot source                                                                   | This project                                                                                                  |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `Actor.gd` (physics, health, sensors)                                          | [`src/engine/Actor.ts`](src/engine/Actor.ts)                                                                  |
+| `move_and_slide()` + `RayCast2D` columns                                       | [`src/engine/World.ts`](src/engine/World.ts) AABB tile collision + edge sensors                               |
+| `AbilityUser.gd` (moveset + runtime)                                           | [`src/engine/AbilityUser.ts`](src/engine/AbilityUser.ts)                                                      |
+| `Character.gd` (input, wall/land)                                              | [`src/engine/Character.ts`](src/engine/Character.ts)                                                          |
+| `Player.gd` / `Player.tscn` node list                                          | [`src/engine/Player.ts`](src/engine/Player.ts)                                                                |
+| `BaseAbility.gd` / `Ability.gd` / `Movement.gd`                                | [`src/engine/ability/`](src/engine/ability/)                                                                  |
+| `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`src/engine/abilities/`](src/engine/abilities/)                                                              |
+| `Shot.gd` (PrimaryShot) / `Charge.gd`                                          | [`src/engine/abilities/Shot.ts`](src/engine/abilities/Shot.ts), [`Charge.ts`](src/engine/abilities/Charge.ts) |
+| `Damage.gd` (hurt, knockback, invulnerability)                                 | [`src/engine/abilities/Damage.ts`](src/engine/abilities/Damage.ts)                                            |
+| `Lemon.gd` / `WeaponShot.gd`                                                   | [`src/engine/Projectile.ts`](src/engine/Projectile.ts)                                                        |
+| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch`    | [`src/engine/Enemy.ts`](src/engine/Enemy.ts)                                                                  |
+| `AI.gd` (event -> ability lists)                                               | [`src/engine/EnemyAI.ts`](src/engine/EnemyAI.ts)                                                              |
+| `EnemyAbility.gd` / `AttackAbility.gd`                                         | [`src/engine/enemy/EnemyAbility.ts`](src/engine/enemy/EnemyAbility.ts)                                        |
+| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump`   | [`src/engine/enemy/`](src/engine/enemy/)                                                                      |
+| `Metool.tscn` / `SmallBat.tscn` node lists                                     | [`src/engine/enemies/index.ts`](src/engine/enemies/index.ts)                                                  |
+| Area2D layer/mask overlaps (shots, contact damage)                             | [`src/engine/Stage.ts`](src/engine/Stage.ts)                                                                  |
+| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res`                        | [`src/engine/Animation.ts`](src/engine/Animation.ts)                                                          |
+| Godot `Input` singleton                                                        | [`src/core/Input.ts`](src/core/Input.ts)                                                                      |
+| Godot signals                                                                  | [`src/core/Events.ts`](src/core/Events.ts)                                                                    |
 
 The per-state logic (`_StartCondition` / `_Update` / `_EndCondition`) and every
-tuning constant are ported line-for-line so the *feel* matches.
+tuning constant are ported line-for-line so the _feel_ matches.
 
 ### Deliberate divergences
 
@@ -125,8 +125,9 @@ tuning constant are ported line-for-line so the *feel* matches.
   DashJump < WallJump/DashWallJump** (wall context outranks grounded moves).
 - **Collision** is flat-tile AABB (no slopes / moving platforms / conveyors); the
   raycast wall/reach queries become edge samples.
-- **Cosmetics dropped**: particles, sounds, shaders, camera. Animation is *not*
-  dropped — see below.
+- **Some cosmetics remain scoped**: the player/enemy effects used by the current
+  room and their original sounds are ported; unrelated shaders are not. Animation
+  is engine state rather than a cosmetic — see below.
 
 ### Animation
 
@@ -141,21 +142,21 @@ same `play_animation` / `get_animation` / `set_animation_layer` API as the Godot
 Each ability names its clip in an `animation` field, taken from the exported node in
 `Player.tscn` (or `Idle.tscn` / `Fall.tscn`):
 
-| Ability | Clip | Notes |
-|---|---|---|
-| Idle | `recover` | settles to `idle` / `weak` when the clip finishes |
-| Walk | `walk` | `walk_start` lead-in only when the last state was Idle |
-| Fall | `fall` | does *not* restart if `fall` is already playing |
-| Jump / DashJump / AirJump | `jump` | always restarts (overrides Fall's rule) |
-| Dash / AirDash | `dash` | the atlas' `airdash` clip is unused by X |
-| WallSlide | `slide` | |
-| WallJump / DashWallJump | `walljump` | |
+| Ability                   | Clip       | Notes                                                  |
+| ------------------------- | ---------- | ------------------------------------------------------ |
+| Idle                      | `recover`  | settles to `idle` / `weak` when the clip finishes      |
+| Walk                      | `walk`     | `walk_start` lead-in only when the last state was Idle |
+| Fall                      | `fall`     | does _not_ restart if `fall` is already playing        |
+| Jump / DashJump / AirJump | `jump`     | always restarts (overrides Fall's rule)                |
+| Dash / AirDash            | `dash`     | the atlas' `airdash` clip is unused by X               |
+| WallSlide                 | `slide`    |                                                        |
+| WallJump / DashWallJump   | `walljump` |                                                        |
 
 Shooting plays **no clip of its own**. `Shot.gd` swaps the whole SpriteFrames
 resource (`x.res` -> `x_leftarm.res`, "pointing_cannon") while keeping the current
-clip name *and* frame index, so every state has an arm-out twin and X keeps walking,
+clip name _and_ frame index, so every state has an arm-out twin and X keeps walking,
 jumping or wall-sliding with the buster raised. The port models this as an animation
-*layer*: [`tools/build-anims.mjs`](tools/build-anims.mjs) writes both atlases' regions
+_layer_: [`tools/build-anims.mjs`](tools/build-anims.mjs) writes both atlases' regions
 into `x_anims.json`, and the renderer picks the sheet the layer asks for.
 
 Clip data is optional. The headless sim and tests run without loading it — clips then
@@ -168,22 +169,22 @@ have no frames and finish on the next tick, so the handoffs still resolve and
 Two are ported, chosen to exercise opposite halves of the enemy framework: the
 **Metool** (grounded, shielded, 2 HP) and the **SmallBat** (flying, fragile, 1 HP).
 
-They do *not* reuse the player's state machine. `AbilityUser` picks the player's
+They do _not_ reuse the player's state machine. `AbilityUser` picks the player's
 locomotion by a priority race between abilities that all want to run; an enemy's
 state is chosen by [`EnemyAI`](src/engine/EnemyAI.ts) from the event lists its
 scene declares, and the abilities arbitrate between themselves using Godot's
-`conflicting_moves` rules — which, unlike `Player.tscn`'s, *are* present in the
+`conflicting_moves` rules — which, unlike `Player.tscn`'s, _are_ present in the
 enemy scenes, so they are ported as written rather than replaced:
 
-| Godot | Metool | Bat |
-|---|---|---|
-| `on_idle` | `Patrol` — walk a leg, rest, reverse | `Hover` — ease to a random point near its anchor |
-| `on_see_player` | `Hide` — helmet down, guard up | `Pursuit` — swooping homing flight |
-| `on_touch_player` | — | `Recoil` — hop up and away |
-| `on_guard_break` | `Stun` — 1.65s, wide open | — |
+| Godot             | Metool                               | Bat                                              |
+| ----------------- | ------------------------------------ | ------------------------------------------------ |
+| `on_idle`         | `Patrol` — walk a leg, rest, reverse | `Hover` — ease to a random point near its anchor |
+| `on_see_player`   | `Hide` — helmet down, guard up       | `Pursuit` — swooping homing flight               |
+| `on_touch_player` | —                                    | `Recoil` — hop up and away                       |
+| `on_guard_break`  | `Stun` — 1.65s, wide open            | —                                                |
 
 The Metool is the interesting one. It only comes out from under its helmet when the
-player is *looking away*, so you cannot stand and shoot it: facing it is what keeps
+player is _looking away_, so you cannot stand and shoot it: facing it is what keeps
 it shut. While the guard is up the body cannot be damaged at all
 (`Damage.ignore_hits_if_shield`), and a shot that lands on the shield is consumed
 without doing anything — unless it is a **charged** shot, which breaks the guard and

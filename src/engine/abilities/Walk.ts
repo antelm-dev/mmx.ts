@@ -1,5 +1,5 @@
-import { Movement } from '../ability/Movement.js';
-import type { Character } from '../Character.js';
+import { Movement } from "../ability/Movement.js";
+import type { Character } from "../Character.js";
 
 /**
  * Port of Walk.gd — grounded locomotion with a short slow-start from Idle.
@@ -9,15 +9,15 @@ import type { Character } from '../Character.js';
  * other state (landing, ending a dash) skips it and joins the loop directly.
  */
 export class Walk extends Movement {
-  readonly name = 'Walk';
+  readonly name = "Walk";
   priority = 1;
-  override animation = 'walk'; // Player.tscn
+  override animation = "walk"; // Player.tscn
   private minimum_time = 0.02;
   private starting_from_stop = false;
 
   constructor(character: Character) {
     super(character);
-    character.events.on('animation_finished', () => this.onAnimationFinished());
+    character.events.on("animation_finished", () => this.onAnimationFinished());
   }
 
   override should_execute_on_hold(): boolean {
@@ -38,13 +38,13 @@ export class Walk extends Movement {
   }
 
   override _Setup(): void {
-    this.starting_from_stop = this.character.get_last_used_ability() === 'Idle';
+    this.starting_from_stop = this.character.get_last_used_ability() === "Idle";
   }
 
   /** Walk.gd:play_animation_on_initialize — lead-in only when leaving Idle. */
   override play_animation_on_initialize(): void {
-    if (this.character.get_last_used_ability() === 'Idle') {
-      this.play_animation('walk_start');
+    if (this.character.get_last_used_ability() === "Idle") {
+      this.play_animation("walk_start");
     } else {
       this.play_animation(this.animation);
     }
@@ -52,8 +52,8 @@ export class Walk extends Movement {
 
   /** Walk.gd:_on_animatedSprite_animation_finished — walk_start -> walk. */
   private onAnimationFinished(): void {
-    if (this.executing && this.character.get_animation() === 'walk_start') {
-      this.play_animation('walk');
+    if (this.executing && this.character.get_animation() === "walk_start") {
+      this.play_animation("walk");
     }
   }
 

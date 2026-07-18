@@ -1,4 +1,4 @@
-import { EnemyAbility } from './EnemyAbility.js';
+import { EnemyAbility } from "./EnemyAbility.js";
 import {
   HIDE_ADVANCE_RANGE_X,
   HIDE_ADVANCE_RANGE_Y,
@@ -6,8 +6,8 @@ import {
   HIDE_OPEN_DELAY,
   HIDE_RESHIELD_DELAY,
   WALK_SPEED,
-} from '../../core/constants.js';
-import type { Enemy } from '../Enemy.js';
+} from "../../core/constants.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * The Metool's whole fight — port of Hide.gd.
@@ -22,7 +22,7 @@ import type { Enemy } from '../Enemy.js';
  * turns around again.
  */
 export class Hide extends EnemyAbility {
-  readonly name = 'Hide';
+  readonly name = "Hide";
 
   /**
    * Hide.gd advances with `horizontal_velocity`, which the Metool scene does not
@@ -36,8 +36,8 @@ export class Hide extends EnemyAbility {
 
   constructor(enemy: Enemy) {
     super(enemy);
-    this.animation = 'defense';
-    this.conflicts = ['Stun'];
+    this.animation = "defense";
+    this.conflicts = ["Stun"];
   }
 
   override _Setup(): void {
@@ -53,7 +53,7 @@ export class Hide extends EnemyAbility {
     if (this.attack_stage === 0) {
       if (this.timer > HIDE_OPEN_DELAY && this.is_player_looking_away()) {
         this.turn_and_face_player();
-        this.play_animation_once('open');
+        this.play_animation_once("open");
         this.character.deactivate_shield();
         this.next_attack_stage();
       }
@@ -69,7 +69,7 @@ export class Hide extends EnemyAbility {
         this.is_player_nearby_vertically(HIDE_ADVANCE_RANGE_Y)
       ) {
         this.turn_and_face_player();
-        this.play_animation_once('walk');
+        this.play_animation_once("walk");
         this.force_movement(this.horizontal_velocity);
         this.next_attack_stage();
       } else {
@@ -88,7 +88,7 @@ export class Hide extends EnemyAbility {
         // The shield comes back a beat *after* the helmet starts closing, so a
         // shot already in the air during the turn still connects.
         this.reshield_in = HIDE_RESHIELD_DELAY;
-        this.play_animation_once('defense');
+        this.play_animation_once("defense");
         this.go_to_attack_stage(0);
       }
     }

@@ -1,5 +1,5 @@
-import { PHYSICS_FPS } from '../../core/constants.js';
-import type { AbilityUser } from '../AbilityUser.js';
+import { PHYSICS_FPS } from "../../core/constants.js";
+import type { AbilityUser } from "../AbilityUser.js";
 
 /**
  * Lifecycle base — port of BaseAbility.gd.
@@ -22,7 +22,7 @@ export abstract class BaseAbility<TOwner extends AbilityUser = AbilityUser> {
   executing = false;
   timer = 0;
   last_time_used = 0;
-  animation = '';
+  animation = "";
 
   /** Independent action layer (Shot/Charge): runs concurrently, never blocks movement. */
   independent = false;
@@ -58,12 +58,7 @@ export abstract class BaseAbility<TOwner extends AbilityUser = AbilityUser> {
 
   /** Central start gate used by AbilityUser. */
   wantsToStart(): boolean {
-    return (
-      this.active &&
-      !this.executing &&
-      this._StartCondition() &&
-      this.shouldExecute()
-    );
+    return this.active && !this.executing && this._StartCondition() && this.shouldExecute();
   }
 
   ExecuteOnce(): void {
@@ -79,6 +74,9 @@ export abstract class BaseAbility<TOwner extends AbilityUser = AbilityUser> {
     if (!this.character.executing_moves.includes(this)) {
       this.character.executing_moves.push(this);
     }
+    // Ability.gd plays its configured sound during Initialize. Keep the engine
+    // renderer-agnostic and announce the same lifecycle point for browser audio.
+    this.character.events.emit("ability_started", this.name);
   }
 
   BeforeEveryFrame(dt: number): void {
@@ -104,7 +102,7 @@ export abstract class BaseAbility<TOwner extends AbilityUser = AbilityUser> {
     // BaseAbility.gd emits `ability_end` here. The player port had no listener
     // for it so it was dropped; the bat's patrol re-anchors on it (see
     // BeePatrol.ability_who_updates_patrol_area), so it is emitted again.
-    this.character.events.emit('ability_end', this.name);
+    this.character.events.emit("ability_end", this.name);
   }
 
   ResetAbility(): void {

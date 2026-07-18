@@ -15,15 +15,15 @@
  * it is load-bearing rather than cosmetic: EnemyStun advances out of its stun on
  * `animation_finished`, so a looping "stun" would leave the enemy stunned forever.
  */
-import { readFileSync, writeFileSync, copyFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import { readFileSync, writeFileSync, copyFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '..');
-const godot = resolve(repo, process.argv[2] ?? '../Mega-Man-X8-16-bit');
-const enemies = join(godot, 'src/Actors/Enemies');
-const assets = join(repo, 'src/web/assets');
+const repo = resolve(here, "..");
+const godot = resolve(repo, process.argv[2] ?? "../Mega-Man-X8-16-bit");
+const enemies = join(godot, "src/Actors/Enemies");
+const assets = join(repo, "src/web/assets");
 
 /**
  * Which sheets to import, and which clips of each hold their last frame.
@@ -33,20 +33,20 @@ const assets = join(repo, 'src/web/assets');
  */
 const ACTORS = {
   metool: {
-    dir: 'Metool',
-    json: 'metool.json',
-    sheet: 'metool.png',
+    dir: "Metool",
+    json: "metool.json",
+    sheet: "metool.png",
     // "open" hands off to the walk on animation_finished and "stun" ends the
     // stun state the same way; both must terminate. The resting/locomotion
     // clips cycle.
-    looping: ['idle', 'walk', 'defense'],
+    looping: ["idle", "walk", "defense"],
   },
   bat: {
-    dir: 'SmallBat',
-    json: 'sbat.json',
-    sheet: 'sbat.png',
+    dir: "SmallBat",
+    json: "sbat.json",
+    sheet: "sbat.png",
     // "jump" is the recoil hop, played once per contact.
-    looping: ['idle'],
+    looping: ["idle"],
   },
 };
 
@@ -60,7 +60,7 @@ const ACTORS = {
 const SPEED = 1000;
 
 function buildActor({ dir, json, looping }) {
-  const src = JSON.parse(readFileSync(join(enemies, dir, json), 'utf8'));
+  const src = JSON.parse(readFileSync(join(enemies, dir, json), "utf8"));
   const tags = src.meta?.frameTags ?? [];
   if (tags.length === 0) throw new Error(`${json}: no frameTags; nothing to name the clips`);
 
@@ -89,12 +89,12 @@ for (const [name, actor] of Object.entries(ACTORS)) {
   copyFileSync(join(enemies, actor.dir, actor.sheet), join(assets, actor.sheet));
 }
 
-writeFileSync(join(assets, 'enemy_anims.json'), JSON.stringify(out, null, 2) + '\n');
+writeFileSync(join(assets, "enemy_anims.json"), JSON.stringify(out, null, 2) + "\n");
 
 for (const [name, actor] of Object.entries(out.actors)) {
   const clips = Object.entries(actor.animations)
-    .map(([clip, data]) => `${clip}(${data.frames.length}${data.loop ? ' loop' : ''})`)
-    .join(' ');
+    .map(([clip, data]) => `${clip}(${data.frames.length}${data.loop ? " loop" : ""})`)
+    .join(" ");
   console.log(`${name}: ${clips}`);
 }
-console.log('enemy_anims.json + sheets written to src/web/assets');
+console.log("enemy_anims.json + sheets written to src/web/assets");

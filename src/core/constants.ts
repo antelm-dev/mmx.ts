@@ -91,7 +91,7 @@ export const SHOT_POSITION_ADJUST: Readonly<Record<string, { x: number; y: numbe
  */
 export interface ShotStats {
   /** Clip name in shot_anims.json. */
-  kind: 'lemon' | 'medium' | 'charged';
+  kind: "lemon" | "medium" | "charged";
   damage: number;
   speed: number; // WeaponShot.gd horizontal_velocity
   /** collisionShape2D half-extents and its offset from the projectile origin. */
@@ -105,7 +105,7 @@ export interface ShotStats {
   verticalRange: number;
   /** Lingering time after the shot dies, while its hit particle plays. */
   timeOutsideScreen: number;
-  hitFx: 'lemon_hit' | 'charge_hit';
+  hitFx: "lemon_hit" | "charge_hit";
   /** Lemon.references_setup randomises the start frame so shots desync visually. */
   randomStartFrame: boolean;
   /** Per-frame milliseconds of the 8-frame spin loop (from the Aseprite sheets). */
@@ -161,7 +161,7 @@ export const enum ChargeTier {
 
 export const BUSTER_SHOTS: readonly ShotStats[] = [
   {
-    kind: 'lemon',
+    kind: "lemon",
     damage: 1, // WeaponShot.gd:4 default
     speed: 360, // WeaponShot.gd:7 default
     halfW: 15,
@@ -171,12 +171,12 @@ export const BUSTER_SHOTS: readonly ShotStats[] = [
     spawnY: 0,
     verticalRange: 1,
     timeOutsideScreen: 0.2, // Lemon.tscn:20
-    hitFx: 'lemon_hit', // Basic Hit.tscn
+    hitFx: "lemon_hit", // Basic Hit.tscn
     randomStartFrame: true,
     frameMs: 42, // lemon.json
   },
   {
-    kind: 'medium',
+    kind: "medium",
     damage: 5, // Medium Buster.tscn:20
     speed: 360,
     halfW: 15,
@@ -186,12 +186,12 @@ export const BUSTER_SHOTS: readonly ShotStats[] = [
     spawnY: 0,
     verticalRange: 1,
     timeOutsideScreen: 0.4,
-    hitFx: 'lemon_hit', // Medium Buster.tscn:6 — Basic Hit, same as the lemon
+    hitFx: "lemon_hit", // Medium Buster.tscn:6 — Basic Hit, same as the lemon
     randomStartFrame: true,
     frameMs: 36, // medium_shot.json
   },
   {
-    kind: 'charged',
+    kind: "charged",
     damage: 10, // Charged Buster.tscn:31
     speed: 420, // Charged Buster.tscn:34
     halfW: 17,
@@ -202,7 +202,7 @@ export const BUSTER_SHOTS: readonly ShotStats[] = [
     spawnY: -1,
     verticalRange: 0, // ChargedBuster.position_setup drops the jitter
     timeOutsideScreen: 0.4,
-    hitFx: 'charge_hit', // Big Hit.tscn
+    hitFx: "charge_hit", // Big Hit.tscn
     randomStartFrame: false,
     frameMs: 36, // heavy_shot.json
   },
@@ -225,7 +225,7 @@ export const MAX_HEALTH = 32.0; // Actor.gd:6
  */
 export interface EnemyStats {
   /** Key into enemy_anims.json's `actors` table. */
-  sheet: 'metool' | 'bat';
+  sheet: "metool" | "bat";
   max_health: number;
   /** DamageOnTouch.damage — dealt to the player on contact. */
   touch_damage: number;
@@ -243,11 +243,11 @@ export interface EnemyStats {
   flying: boolean;
 }
 
-export const ENEMY_STATS: Readonly<Record<'metool' | 'bat', EnemyStats>> = {
+export const ENEMY_STATS: Readonly<Record<"metool" | "bat", EnemyStats>> = {
   // Metool.tscn: max_health 2, DamageOnTouch.damage 3, body extents (12,10),
   // area2D extents (9,10), AI/vision extents (158,18) at y -6.
   metool: {
-    sheet: 'metool',
+    sheet: "metool",
     max_health: 2,
     touch_damage: 3,
     hw: 12,
@@ -263,7 +263,7 @@ export const ENEMY_STATS: Readonly<Record<'metool' | 'bat', EnemyStats>> = {
   // (13.5,15.5), area2D a default-sized RectangleShape2D (10,10), AI/vision
   // extents (102,86.5) at y 1.5.
   bat: {
-    sheet: 'bat',
+    sheet: "bat",
     max_health: 1,
     touch_damage: 1,
     hw: 13.5,

@@ -1,6 +1,6 @@
-import { EnemyAbility } from './EnemyAbility.js';
-import { PATROL_SPEED, PATROL_TRAVEL_TIME } from '../../core/constants.js';
-import type { Enemy } from '../Enemy.js';
+import { EnemyAbility } from "./EnemyAbility.js";
+import { PATROL_SPEED, PATROL_TRAVEL_TIME } from "../../core/constants.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * Walk one leg, then rest — port of CrabPatrol.gd, which the Metool's scene
@@ -12,7 +12,7 @@ import type { Enemy } from '../Enemy.js';
  * paces without any ability tracking where it started or how far it has gone.
  */
 export class Patrol extends EnemyAbility {
-  readonly name = 'Patrol';
+  readonly name = "Patrol";
 
   /** Metool.tscn: random_turn = false, so it simply reverses each leg. */
   random_turn = false;
@@ -29,8 +29,8 @@ export class Patrol extends EnemyAbility {
 
   constructor(enemy: Enemy) {
     super(enemy);
-    this.animation = 'walk';
-    this.conflicts = ['Hide', 'Stun'];
+    this.animation = "walk";
+    this.conflicts = ["Hide", "Stun"];
   }
 
   override _Setup(): void {
@@ -59,7 +59,7 @@ export class Patrol extends EnemyAbility {
 
       if (this.timer > this.travel_time) {
         this.force_movement(0);
-        this.play_animation('idle');
+        this.play_animation("idle");
         this.next_attack_stage();
       }
       return;

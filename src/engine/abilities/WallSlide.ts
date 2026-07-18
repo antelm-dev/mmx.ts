@@ -1,14 +1,14 @@
-import { Movement } from '../ability/Movement.js';
-import { WALLSLIDE_SPEED, WALLSLIDE_START_DELAY } from '../../core/constants.js';
+import { Movement } from "../ability/Movement.js";
+import { WALLSLIDE_SPEED, WALLSLIDE_START_DELAY } from "../../core/constants.js";
 
 /**
  * Port of Wallslide.gd — cling to a wall while pressing into it, then slide.
  * A short block_timer prevents immediately re-gripping right after leaving.
  */
 export class WallSlide extends Movement {
-  readonly name = 'WallSlide';
+  readonly name = "WallSlide";
   priority = 3;
-  override animation = 'slide'; // Player.tscn (the clip is `slide`, not `wallslide`)
+  override animation = "slide"; // Player.tscn (the clip is `slide`, not `wallslide`)
 
   start_delay = WALLSLIDE_START_DELAY;
   block_timer = 0;
@@ -34,7 +34,7 @@ export class WallSlide extends Movement {
   }
 
   override _Setup(): void {
-    this.character.events.emit('wallslide');
+    this.character.events.emit("wallslide");
     this.character.set_direction(-this.get_pressed_direction());
     this.wallgrab_direction = this.get_pressed_direction();
   }

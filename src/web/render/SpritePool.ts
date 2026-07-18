@@ -1,4 +1,4 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite } from "pixi.js";
 
 /**
  * A container whose child sprites are recycled from frame to frame.

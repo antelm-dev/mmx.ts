@@ -1,8 +1,8 @@
-import { Container, NineSliceSprite, Sprite } from 'pixi.js';
-import { DT } from '../../core/constants.js';
-import type { Camera } from '../../engine/Camera.js';
-import type { Player } from '../../engine/Player.js';
-import { regionTexture } from './textures.js';
+import { Container, NineSliceSprite, Sprite } from "pixi.js";
+import { DT } from "../../core/constants.js";
+import type { Camera } from "../../engine/Camera.js";
+import type { Player } from "../../engine/Player.js";
+import { regionTexture } from "./textures.js";
 
 /**
  * X's life bar, ported from Hud.tscn's "X Bar" node.
@@ -68,7 +68,7 @@ export class Hud {
 
   constructor() {
     this.frame = new NineSliceSprite({
-      texture: regionTexture('x_bar.png', [0, 0, BAR_W, 22])!,
+      texture: regionTexture("x_bar.png", [0, 0, BAR_W, 22])!,
       leftWidth: 0,
       rightWidth: 0,
       topHeight: CAP_TOP,
@@ -115,7 +115,7 @@ export class Hud {
     // inside of the bottom cap. Cropping from the bottom rather than scaling keeps
     // the source's segment ticks fixed to the column instead of sliding with health.
     const { y, h } = barMetrics(this.lastMaxHealth);
-    this.fill.texture = regionTexture('hp_fill.png', [0, FILL_H - filled, FILL_W, filled])!;
+    this.fill.texture = regionTexture("hp_fill.png", [0, FILL_H - filled, FILL_W, filled])!;
     this.fill.y = y + h - CAP_BOTTOM - filled;
   }
 

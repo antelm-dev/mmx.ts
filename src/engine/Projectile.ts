@@ -1,12 +1,12 @@
-import { World } from './World.js';
-import { Rng } from '../core/Rng.js';
+import { World } from "./World.js";
+import { Rng } from "../core/Rng.js";
 import {
   BUSTER_SHOTS,
   HIT_FX_FPS,
   HIT_FX_FRAME_COUNT,
   SHOT_FRAME_COUNT,
   type ShotStats,
-} from '../core/constants.js';
+} from "../core/constants.js";
 
 /**
  * Buster projectile — port of WeaponShot.gd / Lemon.gd / Medium Buster.gd /
@@ -23,7 +23,7 @@ import {
  * So a projectile moves through: live -> spent (invisible, harmless, particle
  * playing) -> gone. Only the live phase collides.
  */
-export type ShotPhase = 'live' | 'spent';
+export type ShotPhase = "live" | "spent";
 
 export class Projectile {
   readonly stats: ShotStats;
@@ -37,7 +37,7 @@ export class Projectile {
   /** Vertical flip on the hit particle (SpriteEffect vertical_flip_chance = 0.5). */
   hitFlipV = false;
 
-  phase: ShotPhase = 'live';
+  phase: ShotPhase = "live";
   alive = true;
 
   private animSec = 0;
@@ -92,7 +92,7 @@ export class Projectile {
   }
   /** Whether this shot can still collide — `can_be_hit` / the damage box. */
   get isLive(): boolean {
-    return this.phase === 'live';
+    return this.phase === "live";
   }
 
   /** World-space AABB of the damage box (collisionShape2D + its node offset). */
@@ -112,8 +112,8 @@ export class Projectile {
    * the burst at the post-step position puts it visibly inside the wall.
    */
   hit(atX = this.x, atY = this.y): void {
-    if (this.phase !== 'live') return;
-    this.phase = 'spent';
+    if (this.phase !== "live") return;
+    this.phase = "spent";
     this.hitX = atX;
     this.hitY = atY;
     this.emittedHitParticle = true;
@@ -122,7 +122,7 @@ export class Projectile {
   }
 
   update(dt: number, world: World): void {
-    if (this.phase === 'spent') {
+    if (this.phase === "spent") {
       // Still on screen only as a particle; hold position and run out the clock.
       this.countdown += dt;
       this.animSec += dt;
@@ -158,7 +158,7 @@ export class Projectile {
    * frame there is simply nothing left to draw.
    */
   get hitParticleFrame(): number {
-    if (this.phase !== 'spent') return -1;
+    if (this.phase !== "spent") return -1;
     const frame = Math.floor(this.animSec * HIT_FX_FPS);
     return frame < HIT_FX_FRAME_COUNT ? frame : -1;
   }

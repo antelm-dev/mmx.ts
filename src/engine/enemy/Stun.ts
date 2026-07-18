@@ -1,6 +1,6 @@
-import { EnemyAbility } from './EnemyAbility.js';
-import { STUN_DURATION } from '../../core/constants.js';
-import type { Enemy } from '../Enemy.js';
+import { EnemyAbility } from "./EnemyAbility.js";
+import { STUN_DURATION } from "../../core/constants.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * Guard-break stun — port of EnemyStun.gd.
@@ -13,7 +13,7 @@ import type { Enemy } from '../Enemy.js';
  * own accord.
  */
 export class Stun extends EnemyAbility {
-  readonly name = 'Stun';
+  readonly name = "Stun";
 
   gravity = true;
   stun_duration = STUN_DURATION;
@@ -23,11 +23,11 @@ export class Stun extends EnemyAbility {
    * EnemyStun.recover_animation, "" on Metool.tscn. With no recover clip, stage 1
    * tests the *stun* clip for completion — which is why "stun" must not loop.
    */
-  recover_animation = '';
+  recover_animation = "";
 
   constructor(enemy: Enemy) {
     super(enemy);
-    this.animation = 'stun';
+    this.animation = "stun";
     // Conflicts with nothing, so it interrupts everything that names it and
     // nothing can start on top of it.
     this.conflicts = [];
@@ -42,7 +42,7 @@ export class Stun extends EnemyAbility {
     if (this.gravity) this.process_gravity(dt);
 
     if (this.attack_stage === 0 && this.timer > this.stun_duration) {
-      if (this.recover_animation !== '') this.play_animation(this.recover_animation);
+      if (this.recover_animation !== "") this.play_animation(this.recover_animation);
       this.next_attack_stage();
     } else if (this.attack_stage === 1 && this.has_finished_last_animation()) {
       this.EndAbility();

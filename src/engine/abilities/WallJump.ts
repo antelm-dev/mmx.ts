@@ -1,10 +1,10 @@
-import { Jump } from './Jump.js';
-import type { DashWallJump } from './DashWallJump.js';
+import { Jump } from "./Jump.js";
+import type { DashWallJump } from "./DashWallJump.js";
 import {
   WALLJUMP_MOVEAWAY_DURATION,
   WALLJUMP_MOVEAWAY_SPEED,
   WALLJUMP_START_DELAY,
-} from '../../core/constants.js';
+} from "../../core/constants.js";
 
 /**
  * Port of Walljump.gd — kick off a wall (extends Jump). A start_delay freezes X
@@ -13,10 +13,10 @@ import {
  * dash within the first 0.25s converts an in-progress wall-kick into a DashWallJump.
  */
 export class WallJump extends Jump {
-  readonly name: string = 'WallJump';
+  readonly name: string = "WallJump";
   // Wall context outranks grounded moves (Jump/DashJump) when on a wall.
   priority = 7;
-  override animation = 'walljump'; // Player.tscn (DashWallJump inherits it)
+  override animation = "walljump"; // Player.tscn (DashWallJump inherits it)
 
   start_delay = WALLJUMP_START_DELAY;
   move_away_duration = WALLJUMP_MOVEAWAY_DURATION;
@@ -28,14 +28,14 @@ export class WallJump extends Jump {
   override _StartCondition(): boolean {
     const c = this.character;
     if (c.is_on_floor()) return false;
-    if (c.is_in_reach_for_walljump() !== 0 && !c.get_action_pressed('dash')) return true;
+    if (c.is_in_reach_for_walljump() !== 0 && !c.get_action_pressed("dash")) return true;
     return false;
   }
 
   override _Setup(): void {
     super._Setup();
     this.emitted_jump_signal = false;
-    this.character.events.emit('walljump');
+    this.character.events.emit("walljump");
     this.walljump_direction = -this.character.is_in_reach_for_walljump();
     this.character.set_direction(-this.walljump_direction);
     this.headbumped = false;
@@ -53,8 +53,8 @@ export class WallJump extends Jump {
   }
 
   protected tryConvertToDashWallJump(): boolean {
-    if (this.timer < 0.25 && this.character.get_action_just_pressed('dash')) {
-      const dwj = this.character.get_ability('DashWallJump') as DashWallJump | undefined;
+    if (this.timer < 0.25 && this.character.get_action_just_pressed("dash")) {
+      const dwj = this.character.get_ability("DashWallJump") as DashWallJump | undefined;
       if (dwj && !dwj.executing) {
         const t = this.timer;
         this.EndAbility();
@@ -94,7 +94,7 @@ export class WallJump extends Jump {
   protected override ascent_with_slowdown_after_delay(dt: number): void {
     if (this.delay_has_expired()) {
       if (!this.emitted_jump_signal) {
-        this.character.events.emit('jump');
+        this.character.events.emit("jump");
         this.emitted_jump_signal = true;
       }
       super.ascent_with_slowdown_after_delay(dt);
@@ -106,11 +106,15 @@ export class WallJump extends Jump {
   }
 
   protected move_away_from_wall(): void {
-    this.character.set_horizontal_speed(this.move_away_speed * -this.character.get_facing_direction());
+    this.character.set_horizontal_speed(
+      this.move_away_speed * -this.character.get_facing_direction(),
+    );
   }
 
   override pressing_towards_wall(): boolean {
-    return this.get_pressed_direction() !== 0 && this.get_pressed_direction() !== this.walljump_direction;
+    return (
+      this.get_pressed_direction() !== 0 && this.get_pressed_direction() !== this.walljump_direction
+    );
   }
 
   private delay_and_move_away_duration_have_expired(): boolean {

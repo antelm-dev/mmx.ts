@@ -1,7 +1,7 @@
-import { Enemy } from './Enemy.js';
-import { Player } from './Player.js';
-import type { Projectile } from './Projectile.js';
-import type { World } from './World.js';
+import { Enemy } from "./Enemy.js";
+import { Player } from "./Player.js";
+import type { Projectile } from "./Projectile.js";
+import type { World } from "./World.js";
 
 /**
  * The room: the player, the enemies in it, and the interactions between them.

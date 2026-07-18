@@ -1,6 +1,6 @@
-import { BaseAbility } from './BaseAbility.js';
-import type { Action } from '../../core/Input.js';
-import type { Character } from '../Character.js';
+import { BaseAbility } from "./BaseAbility.js";
+import type { Action } from "../../core/Input.js";
+import type { Character } from "../Character.js";
 
 /**
  * Input-aware ability — port of Ability.gd.
@@ -36,10 +36,7 @@ export abstract class Ability extends BaseAbility<Character> {
   }
 
   protected bufferedRecently(): boolean {
-    return (
-      this.get_time() - this.lastPressMs <=
-      this.get_activation_leeway_time() * 1000
-    );
+    return this.get_time() - this.lastPressMs <= this.get_activation_leeway_time() * 1000;
   }
 
   consumeBuffer(): void {

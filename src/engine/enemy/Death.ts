@@ -1,5 +1,5 @@
-import { EnemyAbility } from './EnemyAbility.js';
-import type { Enemy } from '../Enemy.js';
+import { EnemyAbility } from "./EnemyAbility.js";
+import type { Enemy } from "../Enemy.js";
 
 /**
  * Death sequence — port of EnemyDeath.gd.
@@ -16,14 +16,14 @@ import type { Enemy } from '../Enemy.js';
  * the AI happens to be active — the AI has in fact just switched itself off.
  */
 export class Death extends EnemyAbility {
-  readonly name = 'Death';
+  readonly name = "Death";
 
   explosion_duration = 0;
 
   constructor(enemy: Enemy) {
     super(enemy);
     this.conflicts = [];
-    enemy.events.on('zero_health', () => {
+    enemy.events.on("zero_health", () => {
       if (!this.executing) this.ExecuteOnce();
     });
   }
@@ -42,7 +42,7 @@ export class Death extends EnemyAbility {
     if (this.timer > this.explosion_duration && this.character.exploding) {
       this.character.exploding = false;
       this.character.sprite_visible = false;
-      this.character.events.emit('death');
+      this.character.events.emit("death");
     }
   }
 

@@ -1,4 +1,4 @@
-import { VIEW_WIDTH, VIEW_HEIGHT } from '../core/constants.js';
+import { VIEW_WIDTH, VIEW_HEIGHT } from "../core/constants.js";
 
 /**
  * Half-extents of the dead zone: the box around the view centre the target can
