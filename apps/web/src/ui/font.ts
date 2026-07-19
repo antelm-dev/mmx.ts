@@ -1,7 +1,8 @@
 import type { TextStyleOptions } from "pixi.js";
+import uiFontUrl from "../../../../resources/fonts/mega-man-x.ttf";
 
 /**
- * The UI typeface: Mega Man X (public/mega-man-x.ttf).
+ * The UI typeface: Mega Man X (resources/fonts/mega-man-x.ttf).
  *
  * One module because the face is not a free choice of family name — it carries
  * hard metric constraints that every caller has to respect, and duplicating them
@@ -65,7 +66,9 @@ export function uiTextStyle(fill: number): TextStyleOptions {
 export async function loadUiFont(): Promise<void> {
   if (typeof document === "undefined" || !("fonts" in document)) return;
   try {
-    await document.fonts.load(`${UI_FONT_SIZE}px "${UI_FONT_NAME}"`);
+    const face = new FontFace(UI_FONT_NAME, `url(${JSON.stringify(uiFontUrl)})`);
+    document.fonts.add(face);
+    await face.load();
   } catch (error) {
     console.warn("Could not load the UI font; falling back to monospace", error);
   }

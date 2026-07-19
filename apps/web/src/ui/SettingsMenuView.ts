@@ -15,18 +15,17 @@ import {
 } from "./theme.js";
 
 /**
- * The pause menu: key bindings, window scale and master volume, on Escape.
+ * Pure rendering for the pause menu: key bindings, window scale, fullscreen
+ * and master volume. Owns no state of its own beyond what it needs to avoid
+ * repainting the static backdrop every frame — everything it draws comes
+ * from the {@link SettingsMenuViewState} passed to {@link render}, and every
+ * key press or settings mutation is handled by {@link SettingsMenuController}.
  *
  * Drawn into the Pixi scene rather than overlaid as DOM — unlike the debug panel
  * (see {@link DebugPanel}, which is deliberately DOM), this is player-facing
  * furniture, so it belongs on the same pixel grid as the game and has to survive
  * fullscreen and the integer-zoom fit. It lives in the renderer's screen-space UI
  * layer, so its coordinates are the 398x224 view and the zoom is applied above it.
- *
- * The menu owns *no* settings state. It reads the live object through
- * {@link SettingsMenuOptions.getSettings} and reports every change back out, so
- * there is exactly one copy of the settings and persistence stays with the code
- * that owns the bridge.
  */
 
 // Sized around the UI face rather than around the strings: every glyph advances
@@ -50,10 +49,9 @@ const LABEL_X = PANEL_X + PAD;
 const SLOT_X = [PANEL_X + 132, PANEL_X + 208] as const;
 const SLOT_W = 68;
 
-const VOLUME_STEP = 0.1;
 const METER_CELLS = 10;
 
-type Row =
+export type Row =
   | { kind: "binding"; action: Action }
   | { kind: "scale" }
   | { kind: "fullscreen" }
@@ -61,7 +59,7 @@ type Row =
   | { kind: "resetBindings" }
   | { kind: "mainMenu" };
 
-const ROWS: readonly Row[] = [
+export const ROWS: readonly Row[] = [
   ...BINDABLE_ACTIONS.map((action): Row => ({ kind: "binding", action })),
   { kind: "scale" },
   { kind: "fullscreen" },
@@ -69,6 +67,10 @@ const ROWS: readonly Row[] = [
   { kind: "resetBindings" },
   { kind: "mainMenu" },
 ];
+
+export function rowIndex(kind: Row["kind"]): number {
+  return ROWS.findIndex((row) => row.kind === kind);
+}
 
 const ACTION_LABELS: Record<Action, string> = {
   move_left: "Left",
@@ -79,10 +81,6 @@ const ACTION_LABELS: Record<Action, string> = {
   dash: "Dash",
   fire: "Fire",
 };
-
-function isReserved(code: string): boolean {
-  return code === "Escape" || /^F\d+$/.test(code);
-}
 
 const KEY_LABELS: Record<string, string> = {
   ArrowLeft: "Left",
@@ -125,21 +123,18 @@ export function keyLabel(code: string): string {
   return code;
 }
 
-export interface SettingsMenuOptions {
-  getSettings: () => DesktopSettings;
-  setVolume: (volume: number) => void;
-  setScale: (scale: number) => void;
-  setFullscreen: (fullscreen: boolean) => void;
-  /** Upper bound for the scale row; refreshed whenever the menu opens. */
-  getMaxScale: () => number;
-  setBinding: (action: Action, slot: number, code: string) => void;
-  /** Reset every action's bindings back to {@link DEFAULT_BINDINGS}. */
-  resetBindings: () => void;
-  onMainMenu: () => void;
-  onVisibilityChange?: (visible: boolean) => void;
+export interface SettingsMenuViewState {
+  settings: DesktopSettings;
+  maxScale: number;
+  row: number;
+  column: number;
+  capturing: { action: Action; slot: number } | null;
+  opaque: boolean;
+  /** Overrides the row hint with a transient message, e.g. "F1 is reserved". */
+  notice?: string;
 }
 
-export class SettingsMenu {
+export class SettingsMenuView {
   readonly view = new Container();
 
   private readonly backdrop = new Graphics();
@@ -153,12 +148,10 @@ export class SettingsMenu {
   private readonly volumeValue: Text;
   private readonly hint: Text;
 
-  private row = 0;
-  private column = 0;
-  private capturing: { action: Action; slot: number } | null = null;
-  private opaque = false;
+  /** Whichever `opaque` {@link render} last painted the backdrop for. */
+  private opaquePainted = false;
 
-  constructor(private readonly options: SettingsMenuOptions) {
+  constructor() {
     this.view.visible = false;
     this.view.eventMode = "none";
 
@@ -207,15 +200,8 @@ export class SettingsMenu {
     return this.view.visible;
   }
 
-  /**
-   * True while a slot is waiting for a key press.
-   *
-   * Exposed for the gamepad, which drives the menu by synthesizing key codes:
-   * those are not keys the player pressed, and binding one would put a code in
-   * the settings file that no keyboard can ever produce again.
-   */
-  get isCapturing(): boolean {
-    return this.capturing !== null;
+  setVisible(visible: boolean): void {
+    this.view.visible = visible;
   }
 
   /**
@@ -231,159 +217,51 @@ export class SettingsMenu {
     this.labels.setPixelScale(scale);
   }
 
-  /**
-   * @param opaque Hide whatever is behind the menu entirely instead of dimly
-   * showing it through the scrim. Set from the title screen, where "behind"
-   * is only ever the idle scene the game boots into, not a run in progress —
-   * showing it through the scrim reads as a rendering glitch, not a pause.
-   */
-  open(opaque = false): void {
-    if (this.view.visible) return;
-    this.view.visible = true;
-    this.capturing = null;
-    if (opaque !== this.opaque) {
-      this.opaque = opaque;
+  render(state: SettingsMenuViewState): void {
+    if (state.opaque !== this.opaquePainted) {
+      this.opaquePainted = state.opaque;
       this.paintFrame();
     }
-    this.refresh();
-    this.options.onVisibilityChange?.(true);
-  }
 
-  close(): void {
-    if (!this.view.visible) return;
-    this.view.visible = false;
-    this.capturing = null;
-    this.options.onVisibilityChange?.(false);
-  }
+    const { settings, row, column, capturing, notice } = state;
+    const current = ROWS[row];
 
-  /**
-   * Handle a key press. Returns true when the menu consumed it.
-   *
-   * While open it consumes *everything*: the menu's own navigation keys are also
-   * gameplay bindings by default, so anything that fell through would have X
-   * walking around behind the panel.
-   */
-  handleKey(code: string): boolean {
-    if (!this.view.visible) {
-      if (code !== "Escape") return false;
-      this.open();
-      return true;
+    this.highlight.clear();
+    const rowY = ROWS_Y + row * ROW_H;
+    this.highlight
+      .rect(PANEL_X + PAD - 3, rowY - 2, PANEL_W - (PAD - 3) * 2, ROW_H - 2)
+      .fill({ color: COLOR_BORDER, alpha: 0.3 });
+    if (current.kind === "binding") {
+      this.highlight
+        .rect(SLOT_X[column], rowY - 2, SLOT_W, ROW_H - 2)
+        .fill({ color: capturing ? COLOR_CAPTURING : COLOR_SELECTED, alpha: 0.25 });
     }
 
-    if (this.capturing) {
-      this.captureKey(code);
-      return true;
-    }
+    ROWS.forEach((entry, index) => {
+      const selected = index === row;
+      this.rowLabels[index].style.fill = selected ? COLOR_SELECTED : COLOR_TEXT;
+      if (entry.kind !== "binding") return;
 
-    switch (code) {
-      case "Escape":
-        this.close();
-        return true;
-      case "ArrowUp":
-      case "KeyW":
-        this.moveRow(-1);
-        return true;
-      case "ArrowDown":
-      case "KeyS":
-        this.moveRow(1);
-        return true;
-      case "ArrowLeft":
-      case "KeyA":
-        this.moveColumn(-1);
-        return true;
-      case "ArrowRight":
-      case "KeyD":
-        this.moveColumn(1);
-        return true;
-      case "Enter":
-      case "Space":
-        this.activate();
-        return true;
-      case "Delete":
-      case "Backspace":
-        this.clearBinding();
-        return true;
-      default:
-        return true;
-    }
-  }
+      const bindings = settings.bindings[entry.action];
+      this.slotLabels[index].forEach((text, slot) => {
+        const isCapturing = capturing?.action === entry.action && capturing.slot === slot;
+        text.text = isCapturing ? "press..." : keyLabel(bindings[slot]);
+        text.style.fill = isCapturing ? COLOR_CAPTURING : bindings[slot] ? COLOR_TEXT : COLOR_DIM;
+      });
+    });
 
-  private moveRow(delta: number): void {
-    this.row = (this.row + delta + ROWS.length) % ROWS.length;
-    this.refresh();
-  }
-
-  private moveColumn(delta: number): void {
-    const row = ROWS[this.row];
-    if (row.kind === "volume") {
-      const current = this.options.getSettings().masterVolume;
-      const next = Math.round((current + delta * VOLUME_STEP) * 10) / 10;
-      this.options.setVolume(Math.max(0, Math.min(1, next)));
-    } else if (row.kind === "scale") {
-      const current = this.options.getSettings().scale ?? DEFAULT_WINDOW_SCALE;
-      const max = Math.max(1, this.options.getMaxScale());
-      this.options.setScale(Math.max(1, Math.min(max, current + delta)));
-    } else if (row.kind === "fullscreen") {
-      this.toggleFullscreen();
-    } else {
-      this.column = Math.max(0, Math.min(1, this.column + delta));
-    }
-    this.refresh();
-  }
-
-  private activate(): void {
-    const row = ROWS[this.row];
-    if (row.kind === "mainMenu") {
-      this.options.onMainMenu();
-      return;
-    }
-    if (row.kind === "fullscreen") {
-      this.toggleFullscreen();
-      this.refresh();
-      return;
-    }
-    if (row.kind === "resetBindings") {
-      this.options.resetBindings();
-      this.refresh();
-      return;
-    }
-    if (row.kind !== "binding") return;
-    this.capturing = { action: row.action, slot: this.column };
-    this.refresh();
-  }
-
-  private toggleFullscreen(): void {
-    this.options.setFullscreen(!this.options.getSettings().fullscreen);
-  }
-
-  private clearBinding(): void {
-    const row = ROWS[this.row];
-    if (row.kind !== "binding") return;
-    this.options.setBinding(row.action, this.column, "");
-    this.refresh();
-  }
-
-  private captureKey(code: string): void {
-    const capturing = this.capturing;
-    if (!capturing) return;
-    if (code === "Escape") {
-      this.capturing = null;
-      this.refresh();
-      return;
-    }
-    if (isReserved(code)) {
-      this.refresh(`${keyLabel(code)} is reserved`);
-      return;
-    }
-    this.capturing = null;
-    this.options.setBinding(capturing.action, capturing.slot, code);
-    this.refresh();
+    this.scaleValue.text = `${settings.scale ?? DEFAULT_WINDOW_SCALE}x`;
+    this.fullscreenValue.text = settings.fullscreen ? "On" : "Off";
+    this.paintVolume(settings.masterVolume);
+    this.hint.text = notice ?? (capturing ? "press a key to bind, Esc to cancel" : rowHint(current));
+    this.hint.style.fill = notice ? COLOR_CAPTURING : COLOR_DIM;
   }
 
   private paintFrame(): void {
     this.backdrop.clear();
-    if (this.opaque) this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill(COLOR_BG);
-    else this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill({ color: COLOR_SCRIM, alpha: 0.78 });
+    if (this.opaquePainted) this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill(COLOR_BG);
+    else
+      this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill({ color: COLOR_SCRIM, alpha: 0.78 });
     this.backdrop
       .rect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H)
       .fill({ color: COLOR_PANEL, alpha: 0.96 })
@@ -391,42 +269,6 @@ export class SettingsMenu {
       .stroke({ color: COLOR_BORDER, width: 1 })
       .rect(PANEL_X + PAD, RULE_Y, PANEL_W - PAD * 2, 1)
       .fill(COLOR_BORDER);
-  }
-
-  private refresh(notice?: string): void {
-    const settings = this.options.getSettings();
-    const row = ROWS[this.row];
-
-    this.highlight.clear();
-    const rowY = ROWS_Y + this.row * ROW_H;
-    this.highlight
-      .rect(PANEL_X + PAD - 3, rowY - 2, PANEL_W - (PAD - 3) * 2, ROW_H - 2)
-      .fill({ color: COLOR_BORDER, alpha: 0.3 });
-    if (row.kind === "binding") {
-      this.highlight
-        .rect(SLOT_X[this.column], rowY - 2, SLOT_W, ROW_H - 2)
-        .fill({ color: this.capturing ? COLOR_CAPTURING : COLOR_SELECTED, alpha: 0.25 });
-    }
-
-    ROWS.forEach((current, index) => {
-      const selected = index === this.row;
-      this.rowLabels[index].style.fill = selected ? COLOR_SELECTED : COLOR_TEXT;
-      if (current.kind !== "binding") return;
-
-      const bindings = settings.bindings[current.action];
-      this.slotLabels[index].forEach((text, slot) => {
-        const capturing = this.capturing?.action === current.action && this.capturing.slot === slot;
-        text.text = capturing ? "press..." : keyLabel(bindings[slot]);
-        text.style.fill = capturing ? COLOR_CAPTURING : bindings[slot] ? COLOR_TEXT : COLOR_DIM;
-      });
-    });
-
-    this.scaleValue.text = `${settings.scale ?? DEFAULT_WINDOW_SCALE}x`;
-    this.fullscreenValue.text = settings.fullscreen ? "On" : "Off";
-    this.paintVolume(settings.masterVolume);
-    this.hint.text =
-      notice ?? (this.capturing ? "press a key to bind, Esc to cancel" : rowHint(row));
-    this.hint.style.fill = notice ? COLOR_CAPTURING : COLOR_DIM;
   }
 
   private paintVolume(volume: number): void {
@@ -446,10 +288,6 @@ export class SettingsMenu {
     // loses nothing that a fallback-font `%` would have bought.
     this.volumeValue.text = `${Math.round(volume * 100)}`;
   }
-}
-
-function rowIndex(kind: Row["kind"]): number {
-  return ROWS.findIndex((row) => row.kind === kind);
 }
 
 function rowLabel(row: Row): string {

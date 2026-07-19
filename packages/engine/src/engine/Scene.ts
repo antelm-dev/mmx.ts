@@ -6,6 +6,7 @@ import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
 import { LEVEL, loadLevel } from "./level.js";
 import type { LevelData } from "./LevelData.js";
+import type { LifeCapsule } from "./Pickup.js";
 import { Player } from "./Player.js";
 import { Stage } from "./Stage.js";
 import type { World } from "./World.js";
@@ -38,6 +39,11 @@ export interface SceneOptions {
    * enemies run without either.
    */
   onEnemySpawned?: (enemy: Enemy, index: number) => void;
+  /**
+   * Called for each Life Energy capsule as it spawns, before the first tick —
+   * the browser uses it to attach clip data, same as {@link onEnemySpawned}.
+   */
+  onPickupSpawned?: (pickup: LifeCapsule, index: number) => void;
 }
 
 export class Scene {
@@ -66,6 +72,7 @@ export class Scene {
       hazards: level.hazards,
       conveyors: level.conveyors,
       platforms: level.platforms,
+      pickups: level.pickups,
     });
 
     for (const [i, spawn] of level.enemies.entries()) {
@@ -83,6 +90,10 @@ export class Scene {
       );
       options.onEnemySpawned?.(enemy, i);
       this.stage.add(enemy);
+    }
+
+    for (const [i, pickup] of this.stage.pickups.entries()) {
+      options.onPickupSpawned?.(pickup, i);
     }
   }
 
@@ -105,17 +116,20 @@ export class Scene {
    */
   step(mask: number): void {
     applyInput(this.input, mask);
+    const recoveryWasActive = this.stage.recovering;
     this.stage.tick(DT);
-    this.camera.followTarget(
-      {
-        x: this.player.pos.x,
-        y: this.player.pos.y,
-        velocityX: this.player.final_velocity.x,
-        velocityY: this.player.final_velocity.y,
-        grounded: this.player.is_on_floor(),
-      },
-      DT,
-    );
+    if (!recoveryWasActive && !this.stage.recovering) {
+      this.camera.followTarget(
+        {
+          x: this.player.pos.x,
+          y: this.player.pos.y,
+          velocityX: this.player.final_velocity.x,
+          velocityY: this.player.final_velocity.y,
+          grounded: this.player.is_on_floor(),
+        },
+        DT,
+      );
+    }
     this.frame++;
   }
 
@@ -145,6 +159,9 @@ export class Scene {
     }
     for (const platform of this.stage.platforms) {
       parts.push("platform", q(platform.x), platform.direction);
+    }
+    for (const pickup of this.stage.pickups) {
+      parts.push("pickup", pickup.id, pickup.collecting ? 1 : 0);
     }
     return fnv1a(parts.join("|"));
   }

@@ -58,6 +58,7 @@ export class DebugSession {
 
   panelVisible = false;
   overlayVisible = false;
+  animationInspectorVisible = false;
   paused = false;
   invulnerable = false;
   /** Index into {@link TIME_SCALES}; starts at real time. */
@@ -132,6 +133,10 @@ export class DebugSession {
     });
     add("F2", "F2", "toggle shape overlay", () => {
       this.overlayVisible = !this.overlayVisible;
+    });
+    add("F3", "F3", "toggle animation inspector", () => {
+      this.animationInspectorVisible = !this.animationInspectorVisible;
+      this.say(`animation inspector ${this.animationInspectorVisible ? "open" : "closed"}`);
     });
     add("KeyP", "P", "pause / resume", () => {
       this.paused = !this.paused;

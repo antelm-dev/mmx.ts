@@ -6,9 +6,11 @@ import { PLAYER_DEATH_RESTART_DELAY } from "../../core/constants.js";
  * X's death sequence — port of PlayerDeath.gd, trimmed to what this port's Stage
  * and Scene actually need: freeze in place, hide the sprite, let the death sound
  * play out, then hand off to a room restart. The white-fade backdrop and the
- * 16-shard particle burst are cosmetic embellishments this renderer has no
- * equivalent machinery for — enemy death has none either (see enemy/Death.ts) —
- * so they are left out rather than half-ported.
+ * 16-shard particle burst are cosmetic embellishments left out rather than
+ * half-ported — unlike an enemy's death burst (ScenePresenter.attachEnemy,
+ * EnemyExplosion/EnemyDebris in renderer-pixi), nothing in this port's Stage or
+ * Scene needs X's shards to be more than decorative, and PlayerDeath.gd's fade
+ * has no equivalent machinery here at all.
  *
  * Highest-priority state in the game and, like Damage, event-driven rather than
  * polled: Character.emit_zero_health is the only thing that ever starts it, and

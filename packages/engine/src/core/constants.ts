@@ -280,6 +280,32 @@ export const ENEMY_STATS: Readonly<Record<"metool" | "bat", EnemyStats>> = {
 /** EnemyDamage.max_flash_time — how long the white hit flash stays on. */
 export const ENEMY_FLASH_TIME = 0.035;
 
+// --- Enemy death burst (Shared/QuickEnemyDeath.tscn "Explosion Particles") ---
+// A GPUParticles2D, amount 15, emitting into a 25px sphere with no velocity and
+// no gravity — each particle just sits at its spawn offset and plays the 4x4
+// explosion sheet once (see EXPLOSION_FX_FPS in build-shots.mjs for why the
+// rate is chosen rather than read off the source). Both current enemies set
+// explosion_duration to 0 (EnemyDeath._Setup), so the burst starts on the same
+// tick the sprite disappears — see enemy/Death.ts.
+export const ENEMY_EXPLOSION_FRAME_COUNT = 16; // 4 h_frames * 4 v_frames
+export const ENEMY_EXPLOSION_PUFF_COUNT = 6; // amount 15, thinned for a 32px sprite
+export const ENEMY_EXPLOSION_RADIUS = 10; // emission_sphere_radius 25, same reason
+
+// --- Enemy death debris (Shared/QuickEnemyDeath.tscn "Remains/remains_particles") ---
+// A second GPUParticles2D, amount 4, one-shot and fully explosive (all four leave
+// at once): RemainsParticle.tres launches them within the material's default 45
+// degree spread of straight up at up to 400px/s (initial_velocity_random 0.69,
+// so as slow as 400 * (1 - 0.69) = 124px/s) and pulls them down with a flat
+// 800px/s gravity independent of GRAVITY above. Each chunk shows one still icon
+// from the 6x3 remains sheet for its whole flight rather than animating.
+export const ENEMY_DEBRIS_COUNT = 4;
+export const ENEMY_DEBRIS_FRAME_COUNT = 18; // 6 h_frames * 3 v_frames
+export const ENEMY_DEBRIS_SPEED = 400; // initial_velocity
+export const ENEMY_DEBRIS_SPEED_RANDOM = 0.69; // initial_velocity_random
+export const ENEMY_DEBRIS_SPREAD_DEGREES = 45; // ParticleProcessMaterial default spread
+export const ENEMY_DEBRIS_GRAVITY = 800; // RemainsParticle.tres gravity.y
+export const ENEMY_DEBRIS_LIFETIME = 1.1; // remains_particles lifetime 2.0, trimmed — see EnemyDebris.ts
+
 // --- Patrol.gd (CrabPatrol, as configured on Metool.tscn's Patrol node) ---
 export const PATROL_TRAVEL_TIME = 0.8; // Metool.tscn Patrol.travel_time
 export const PATROL_SPEED = 25.0; // Metool.tscn Patrol.travel_speed
@@ -315,6 +341,33 @@ export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
 /** How long the death sequence holds before handing off to a room restart — long
  *  enough for "11 - MMX - X Die.wav" (~3.83s) to finish playing out. */
 export const PLAYER_DEATH_RESTART_DELAY = 3.8;
+
+// ---------------------------------------------------------------------------
+// Life Energy capsules
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-capsule data, read off Heal.tscn / SmallHeal.tscn.
+ *
+ * Both scenes are PickUp.gd with only the exported `heal` and the sprite
+ * differing — see engine/Pickup.ts for the shared tick-heal behaviour.
+ */
+export interface LifeCapsuleStats {
+  /** Key into pickup_anims.json's `actors` table. */
+  sheet: "heal" | "sheal";
+  heal: number;
+}
+
+export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleStats>> = {
+  small: { sheet: "sheal", heal: 2 }, // SmallHeal.tscn: heal = 2
+  large: { sheet: "heal", heal: 8 }, // Heal.tscn: heal = 8
+};
+
+/** PickUp.gd do_heal(): `timer > last_time_increased + 0.06` — 1 HP per tick. */
+export const LIFE_CAPSULE_HEAL_TICK_INTERVAL = 0.06;
+
+/** PickUp.gd process_gravity(gravity := 800) — its own default, independent of GRAVITY above. */
+export const LIFE_CAPSULE_GRAVITY = 800;
 
 // World / rendering
 export const TILE_SIZE = 16;

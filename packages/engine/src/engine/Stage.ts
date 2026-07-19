@@ -1,5 +1,6 @@
 import { Enemy } from "./Enemy.js";
 import { Player } from "./Player.js";
+import { LifeCapsule, type LifeCapsuleSpawn } from "./Pickup.js";
 import type { Projectile } from "./Projectile.js";
 import type { World } from "./World.js";
 import {
@@ -13,6 +14,7 @@ export interface StageEnvironment {
   hazards?: readonly Hazard[];
   conveyors?: readonly Conveyor[];
   platforms?: readonly MovingPlatformSpawn[];
+  pickups?: readonly LifeCapsuleSpawn[];
 }
 
 /**
@@ -34,6 +36,7 @@ export class Stage {
   readonly hazards: readonly Hazard[];
   readonly conveyors: readonly Conveyor[];
   readonly platforms: MovingPlatform[];
+  readonly pickups: LifeCapsule[];
 
   constructor(
     readonly world: World,
@@ -43,6 +46,7 @@ export class Stage {
     this.hazards = environment.hazards ?? [];
     this.conveyors = environment.conveyors ?? [];
     this.platforms = (environment.platforms ?? []).map((spawn) => new MovingPlatform(spawn));
+    this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn));
     this.player.setPlatforms(this.platforms);
   }
 
@@ -51,8 +55,23 @@ export class Stage {
     return enemy;
   }
 
+  /** Whether a Life Energy capsule currently owns the room's recovery pause. */
+  get recovering(): boolean {
+    return this.pickups.some((pickup) => pickup.collecting);
+  }
+
   /** One fixed step of the whole room. */
   tick(dt: number): void {
+    // PickUp.gd switches the collecting capsule to PAUSE_MODE_PROCESS before it
+    // pauses the scene tree. While its HP ticks continue, absolutely everything
+    // else in the room retains its current simulation state.
+    const recovery = this.pickups.find((pickup) => pickup.collecting);
+    if (recovery) {
+      recovery.tick(dt, this.player, this.world);
+      this.reapConsumedPickups();
+      return;
+    }
+
     for (const platform of this.platforms) platform.tick(dt);
     this.player.conveyor_belt_speed = this.conveyorSpeedUnderPlayer();
     this.player.tick(dt);
@@ -60,6 +79,12 @@ export class Stage {
     if (this.hazards.some((hazard) => bodyOverlapsRect(this.player, hazard))) {
       this.player.kill();
     }
+
+    this.resolvePickups(dt);
+
+    // Collection can begin during this step. Pause before enemies, projectiles,
+    // or contact damage get another update on the collection frame.
+    if (this.recovering) return;
 
     for (const enemy of this.enemies) {
       // AI.gd's vision Area2D, re-evaluated before the enemy thinks. A dead
@@ -75,6 +100,33 @@ export class Stage {
     // EnemyDeath frees the node at the end of its sequence.
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       if (!this.enemies[i].alive) this.enemies.splice(i, 1);
+    }
+
+    this.reapConsumedPickups();
+  }
+
+  /**
+   * Life Energy capsules — PickUp's area2D overlap against the player, plus
+   * the ticking heal it starts once touched. Only one capsule may own the
+   * scene-tree-style recovery pause at a time.
+   */
+  private resolvePickups(dt: number): void {
+    if (!this.player.has_health()) return;
+    for (const pickup of this.pickups) {
+      if (pickup.consumed) continue;
+      if (!pickup.collecting && bodyOverlapsRect(this.player, pickup)) {
+        pickup.beginConsuming();
+        pickup.tick(dt, this.player, this.world);
+        return;
+      }
+      pickup.tick(dt, this.player, this.world);
+    }
+  }
+
+  /** PickUp.queue_free once amount_to_heal is spent. */
+  private reapConsumedPickups(): void {
+    for (let i = this.pickups.length - 1; i >= 0; i--) {
+      if (this.pickups[i].consumed) this.pickups.splice(i, 1);
     }
   }
 

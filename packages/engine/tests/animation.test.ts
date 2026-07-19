@@ -16,7 +16,7 @@ import type { AnimData } from "../src/engine/Animation.js";
  */
 
 const animData = JSON.parse(
-  readFileSync(new URL("../../renderer-pixi/src/assets/x_anims.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../../resources/sprites/player/x_anims.json", import.meta.url), "utf8"),
 ) as AnimData;
 
 // A flat 30x12 room with a solid floor and walls on both sides.

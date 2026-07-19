@@ -29,11 +29,14 @@ Controls (browser and desktop): **← →** / **A D** move · **Space** jump (ho
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
 hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
 
-### Browser and GPU profiling
+### Browser debugging and GPU profiling
 
-- Press **F2**, or open the game with `?profile`, for a rolling 240-frame graph and
+- Press **F1**, or open the game with `?profile`, for a rolling 240-frame graph and
   median / p95 / worst timings. `frame` is the animation-frame interval; `sim`,
   `render`, and `work` isolate CPU time spent in each part of the loop.
+- Press **F2** for collision geometry and **F3** for the interactive animation
+  inspector. The inspector can pause/step, select clips, scrub frames, swap the
+  normal/cannon atlas, show frame timing and regions, and outline sprite bounds.
 - Chrome/Edge Performance recordings include `mmx:simulation`, `mmx:render`, and
   `mmx:frame-work` User Timing measures. Use the Memory panel for heap snapshots
   and allocation sampling during longer runs.
@@ -242,7 +245,7 @@ ability answers which event.
 ### Enemy sprites
 
 [`scripts/build-enemies.mjs`](scripts/build-enemies.mjs) (`pnpm enemies:import`)
-builds `packages/renderer-pixi/src/assets/enemy_anims.json` from the Godot project's **Aseprite**
+builds `resources/sprites/enemies/enemy_anims.json` from the Godot project's **Aseprite**
 sidecars, not its `.res` SpriteFrames — the enemies still have their source
 `.json` checked in, and it carries per-frame atlas rects, per-frame durations in
 milliseconds, and `meta.frameTags` naming the clips. The one thing it cannot carry
@@ -262,10 +265,10 @@ subclasses exactly as the original does.
 ## Project layout
 
 The active `MechanicsDemo` level is authored in `levels/stage2.ldtk`. At 160x48
-tiles it combines the complete movement kit with three moving bridges, opposing
-conveyors, lethal spike pits, several ramp gradients, a wall-jump shaft, upper
-air-dash routes, camera tiers, and both enemy types. Run `pnpm level:demo` to
-rebuild the reproducible demo project and import every LDtk level. The original
+tiles it combines the complete movement kit with three moving bridges, conveyor
+runs, a lethal spike pit, several ramp gradients, wall-jump shafts, upper
+air-dash routes, camera zones, and both enemy types. Run `pnpm level:import` after
+editing an LDtk project to regenerate the engine level modules. The original
 `Stage1` remains as the compact movement regression level.
 
 ```
@@ -274,13 +277,14 @@ packages/
     src/core/         Vec2, Input, EventBus, replay format, constants
     src/engine/       world, actors, abilities, enemies, scene and level data
     tests/            node:test gameplay and determinism tests
-  renderer-pixi/      PixiJS game renderer, visual effects and sprite assets
+  renderer-pixi/      PixiJS game renderer and visual effects
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
+resources/            Shared sprites, sounds, fonts and animation metadata
 scripts/              animation/sprite asset importers and demo-stage authoring
 ```
 

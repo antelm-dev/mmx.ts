@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "pnpm --filter @mmx/web dev",
     "play": "pnpm dev",
-    "build": "pnpm --filter @mmx/engine --filter @mmx/renderer-pixi --filter @mmx/web --filter @mmx/sim -r build",
+    "build": "pnpm --filter @mmx/engine --filter @mmx/renderer-pixi --filter @mmx/ldtk-tools --filter @mmx/web --filter @mmx/sim -r build",
     "build:web": "pnpm --filter @mmx/web build",
     "preview": "pnpm --filter @mmx/web preview",
     "start": "pnpm preview",
@@ -18,8 +18,9 @@
     "replay": "pnpm --filter @mmx/sim replay",
     "level:export": "pnpm --filter @mmx/ldtk-tools run export",
     "level:import": "pnpm --filter @mmx/ldtk-tools run import",
-    "level:demo": "node scripts/build-demo-stage.mjs && pnpm --filter @mmx/ldtk-tools run import",
+    "level:check": "pnpm level:import && git diff --exit-code -- packages/engine/src/engine/levels",
     "enemies:import": "node scripts/build-enemies.mjs",
+    "pickups:import": "node scripts/build-pickups.mjs",
     "test": "pnpm --filter @mmx/engine test",
     "lint": "oxlint packages apps scripts",
     "lint:fix": "oxlint --fix packages apps scripts",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
+    
     "typescript": "^5.4.0"
   },
   "engines": {
