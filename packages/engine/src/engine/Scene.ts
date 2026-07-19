@@ -116,17 +116,20 @@ export class Scene {
    */
   step(mask: number): void {
     applyInput(this.input, mask);
+    const recoveryWasActive = this.stage.recovering;
     this.stage.tick(DT);
-    this.camera.followTarget(
-      {
-        x: this.player.pos.x,
-        y: this.player.pos.y,
-        velocityX: this.player.final_velocity.x,
-        velocityY: this.player.final_velocity.y,
-        grounded: this.player.is_on_floor(),
-      },
-      DT,
-    );
+    if (!recoveryWasActive && !this.stage.recovering) {
+      this.camera.followTarget(
+        {
+          x: this.player.pos.x,
+          y: this.player.pos.y,
+          velocityX: this.player.final_velocity.x,
+          velocityY: this.player.final_velocity.y,
+          grounded: this.player.is_on_floor(),
+        },
+        DT,
+      );
+    }
     this.frame++;
   }
 

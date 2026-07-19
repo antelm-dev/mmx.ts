@@ -80,6 +80,36 @@ test("a large capsule picked up near full health discards the unused overflow", 
   assert.equal(stage.pickups.length, 0, "capsule was fully consumed despite the overflow");
 });
 
+test("the stage freezes while a Life Energy capsule restores health, then resumes", () => {
+  const world = room();
+  const input = new Input();
+  const player = new Player(world, 16, 16, input);
+  player.current_health = player.max_health - LIFE_CAPSULE_STATS.large.heal;
+  const stage = new Stage(world, player, {
+    platforms: [{ id: "platform", x: 48, y: 16, w: 16, h: 8, travel: 32, speed: 60 }],
+    pickups: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+  });
+
+  stage.tick(DT); // overlap detected; recovery pause begins
+  assert.equal(stage.pickups[0].collecting, true);
+
+  const playerX = player.pos.x;
+  const playerY = player.pos.y;
+  const platformX = stage.platforms[0].x;
+  input.setDown("move_right", true);
+
+  stage.tick(DT);
+  assert.equal(player.pos.x, playerX, "player moved horizontally during recovery");
+  assert.equal(player.pos.y, playerY, "player moved vertically during recovery");
+  assert.equal(stage.platforms[0].x, platformX, "platform moved during recovery");
+
+  while (stage.pickups.length > 0) stage.tick(DT);
+  stage.tick(DT);
+
+  assert.ok(player.pos.x > playerX, "player did not resume after recovery");
+  assert.notEqual(stage.platforms[0].x, platformX, "platform did not resume");
+});
+
 test("a capsule outside the player's reach is left untouched", () => {
   const world = room();
   const player = new Player(world, 16, 16, new Input());

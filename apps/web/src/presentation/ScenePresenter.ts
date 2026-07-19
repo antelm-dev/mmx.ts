@@ -8,6 +8,8 @@ import type { Stage } from "@mmx/engine/engine/Stage.js";
 import type { AnimData } from "@mmx/engine/engine/Animation.js";
 import {
   DashSmoke,
+  EnemyDebris,
+  EnemyExplosion,
   Trail,
   type TrailStyle,
   DASH_TRAIL,
@@ -31,9 +33,9 @@ const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
 
 /**
  * Everything about drawing a scene: the {@link Renderer} itself, the
- * cosmetic-only afterimage trail and dash smoke that ride alongside the
- * simulation, the debug shape overlay, and attaching sound/animation data to
- * a scene's player and enemies.
+ * cosmetic-only afterimage trail, dash smoke, and enemy death burst/debris
+ * that ride alongside the simulation, the debug shape overlay, and attaching
+ * sound/animation data to a scene's player and enemies.
  *
  * Split out of main.ts because all of it has to be re-run on every scene
  * rebuild (restart, replay load) — {@link attach} is called once at startup
@@ -52,6 +54,8 @@ export interface ScenePresenterOptions {
 export class ScenePresenter {
   private readonly trail = new Trail();
   private readonly smoke = new DashSmoke();
+  private readonly explosion = new EnemyExplosion();
+  private readonly debris = new EnemyDebris();
   private readonly overlay = new DebugOverlay();
   private renderer: Renderer | null = null;
   private readonly sounds: SoundEffects;
@@ -92,6 +96,8 @@ export class ScenePresenter {
     this.attachPlayer(scene.player);
     this.trail.clear();
     this.smoke.clear();
+    this.explosion.clear();
+    this.debris.clear();
     this.overlay.reset();
     // Sustained sounds outlive the frame that started them, so a restart or replay
     // load must not leave a loop from the previous scene playing.
@@ -177,7 +183,14 @@ export class ScenePresenter {
       this.sounds.play("shieldHit", { db: -6.832 });
       this.sounds.play("guardBreak", { db: -8, rate: 0.78 });
     });
-    enemy.events.on("zero_health", () => this.sounds.play("enemyDeath", { db: -4.267 }));
+    enemy.events.on("zero_health", () => {
+      this.sounds.play("enemyDeath", { db: -4.267 });
+      // EnemyDeath._Setup: the burst and the debris both start on the same tick
+      // the death sequence takes over, pinned to where the enemy died rather
+      // than following it — see EnemyExplosion/EnemyDebris.
+      this.explosion.spawn(enemy.pos.x, enemy.pos.y);
+      this.debris.spawn(enemy.pos.x, enemy.pos.y);
+    });
   }
 
   /** {@link DebugSession}'s `onPickupSpawned` callback. */
@@ -202,6 +215,8 @@ export class ScenePresenter {
     const style = this.trailStyle(player);
     this.trail.sample(dt, style ? spriteSnapshot(player) : null, style ?? DASH_TRAIL);
     this.smoke.tick(dt); // SpriteEffect ages in _physics_process, so on the fixed step
+    this.explosion.tick(dt);
+    this.debris.tick(dt);
   }
 
   updateOverlay(scene: Scene, visible: boolean): void {
@@ -210,7 +225,14 @@ export class ScenePresenter {
   }
 
   render(scene: Scene): void {
-    this.renderer?.render(scene.stage, scene.camera, this.trail, this.smoke);
+    this.renderer?.render(
+      scene.stage,
+      scene.camera,
+      this.trail,
+      this.smoke,
+      this.explosion,
+      this.debris,
+    );
   }
 
   stats(): Record<string, string | number> {

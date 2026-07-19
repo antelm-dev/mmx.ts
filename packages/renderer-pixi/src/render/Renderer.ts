@@ -10,6 +10,8 @@ import type { Camera } from "@mmx/engine/engine/Camera.js";
 import type { Player } from "@mmx/engine/engine/Player.js";
 import type { Stage } from "@mmx/engine/engine/Stage.js";
 import { DashSmoke } from "../DashSmoke.js";
+import { EnemyDebris } from "../EnemyDebris.js";
+import { EnemyExplosion } from "../EnemyExplosion.js";
 import { Trail } from "../Trail.js";
 import {
   enemyAnims,
@@ -43,7 +45,8 @@ import { loadSheets, regionTexture, shotTexture, textureCounts } from "./texture
  *   stage
  *    +- viewport   (integer zoom)
  *    |   +- world  (camera scroll)
- *    |       +- terrain, enemies, capsules, ghosts, player, charge aura, projectiles, dash smoke
+ *    |       +- terrain, enemies, capsules, ghosts, player, charge aura, projectiles,
+ *    |          death burst, death debris, dash smoke
  *    +- hud        (integer zoom, no scroll — screen furniture)
  */
 
@@ -68,6 +71,8 @@ export class Renderer {
   private readonly enemies = new SpritePool();
   private readonly pickups = new SpritePool();
   private readonly shots = new SpritePool();
+  private readonly explosionPuffs = new SpritePool();
+  private readonly debris = new SpritePool();
   private readonly smoke = new SpritePool();
   private readonly player = new Sprite();
   private readonly aura = new Sprite();
@@ -98,9 +103,11 @@ export class Renderer {
     // trail; the aura after it, as the emitter is a child of animatedSprite with
     // z_index 4 and so rides in front. Enemies sit behind the player and in front
     // of the terrain (Metool.tscn animatedSprite z_index = 1), and shots stay on
-    // top of everything so an impact is never hidden by what it hit. Dash smoke is
-    // above even those: dash_particle carries z_index 45, so the dust reads over X
-    // on the frames he has not yet cleared it.
+    // top of everything so an impact is never hidden by what it hit. The death
+    // burst and its debris draw above shots for the same reason (Explosion
+    // Particles z_index 2, Remains z_index 10 — both outrank the enemy sprite
+    // they replace). Dash smoke is above even those: dash_particle carries
+    // z_index 45, so the dust reads over X on the frames he has not yet cleared it.
     this.scene.addChild(
       this.enemies.view,
       this.pickups.view,
@@ -108,6 +115,8 @@ export class Renderer {
       this.player,
       this.aura,
       this.shots.view,
+      this.explosionPuffs.view,
+      this.debris.view,
       this.smoke.view,
       this.worldOverlay,
     );
@@ -215,7 +224,14 @@ export class Renderer {
   }
 
   /** Bring the scene graph in line with the simulation, then draw it. */
-  render(stage: Stage, camera: Camera, trail: Trail, smoke: DashSmoke): void {
+  render(
+    stage: Stage,
+    camera: Camera,
+    trail: Trail,
+    smoke: DashSmoke,
+    explosion: EnemyExplosion,
+    debris: EnemyDebris,
+  ): void {
     const { player } = stage;
     // The scroll offset is rounded to whole world pixels: at a fractional offset
     // every sprite and tile edge would resample against the pixel grid and the whole
@@ -245,6 +261,8 @@ export class Renderer {
     this.syncPlayer(player);
     this.syncAura(player);
     this.syncShots(player);
+    this.syncExplosion(explosion);
+    this.syncDebris(debris);
     this.syncSmoke(smoke);
     this.hud.update(player, camera);
 
@@ -264,6 +282,8 @@ export class Renderer {
       enemies: this.enemies,
       pickups: this.pickups,
       shots: this.shots,
+      explosionPuffs: this.explosionPuffs,
+      debris: this.debris,
       smoke: this.smoke,
     };
     const drawn = Object.values(pools).reduce((sum, pool) => sum + pool.counts.active, 0);
@@ -403,6 +423,36 @@ export class Renderer {
       if (texture) place(this.shots.next(), texture, p.hitX, p.hitY, p.dir, p.hitFlipV);
     }
     this.shots.end();
+  }
+
+  /**
+   * The death burst — a handful of static puffs scattered around where an enemy
+   * died, each just playing out its own clip in place (see {@link EnemyExplosion}).
+   */
+  private syncExplosion(explosion: EnemyExplosion): void {
+    this.explosionPuffs.begin();
+    for (const puff of explosion.puffs) {
+      const texture = shotTexture("explosion", EnemyExplosion.frame(puff));
+      if (texture) place(this.explosionPuffs.next(), texture, puff.x, puff.y, 1);
+    }
+    this.explosionPuffs.end();
+  }
+
+  /**
+   * The chunks a dead enemy scatters — unlike the burst these actually move (see
+   * {@link EnemyDebris}), and fade out near the end of their flight rather than
+   * just vanishing when their clip runs out.
+   */
+  private syncDebris(debris: EnemyDebris): void {
+    this.debris.begin();
+    for (const chunk of debris.chunks) {
+      const texture = shotTexture("remains", chunk.frame);
+      if (!texture) continue;
+      const sprite = this.debris.next();
+      place(sprite, texture, chunk.x, chunk.y, 1);
+      sprite.alpha = EnemyDebris.alpha(chunk);
+    }
+    this.debris.end();
   }
 
   /**

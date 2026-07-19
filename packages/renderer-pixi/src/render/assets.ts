@@ -12,6 +12,8 @@ import chargeHitUrl from "../../../../resources/sprites/effects/charge_hit.png";
 import charge1Url from "../../../../resources/sprites/effects/charge_1.png";
 import charge2Url from "../../../../resources/sprites/effects/charge_2.png";
 import dashUrl from "../../../../resources/sprites/effects/dash.png";
+import explosionUrl from "../../../../resources/sprites/effects/explosion.png";
+import remainsUrl from "../../../../resources/sprites/effects/remains.png";
 import xBarUrl from "../../../../resources/sprites/hud/x_bar.png";
 import hpFillUrl from "../../../../resources/sprites/hud/hp_fill.png";
 import enemyAnimDataJson from "../../../../resources/sprites/enemies/enemy_anims.json?raw";
@@ -40,6 +42,8 @@ export const SHEET_URLS: Record<string, string> = {
   "charge_1.png": charge1Url,
   "charge_2.png": charge2Url,
   "dash.png": dashUrl,
+  "explosion.png": explosionUrl,
+  "remains.png": remainsUrl,
   // HUD furniture, from the original's src/HUD.
   "x_bar.png": xBarUrl,
   "hp_fill.png": hpFillUrl,

@@ -1,6 +1,6 @@
 /**
  * Builds resources/sprites/effects/shot_anims.json (+ copies the sheets) for buster shots,
- * their hit effects, and the charge-up aura.
+ * their hit effects, the charge-up aura, and the enemy death burst.
  *
  * Three different sources, because the Godot project stores them three ways:
  *
@@ -8,11 +8,12 @@
  *    sibling .json describing every frame's region and duration, exactly like x.json.
  *    Those are read frame-for-frame.
  *
- *  - The hit effects (lemon_hit / charge_hit) have no .json: they are plain Sprite2D
- *    sheets sliced by `hframes`/`vframes` in Basic Hit.tscn / Big Hit.tscn (2x2 each)
- *    and played by SpriteEffect.gd at its own `animation_speed`. Their frame grid is
- *    derived from the PNG's own dimensions, read out of the IHDR chunk so the script
- *    stays dependency-free.
+ *  - The hit effects (lemon_hit / charge_hit / explosion / remains) have no .json:
+ *    they are plain Sprite2D sheets sliced by `hframes`/`vframes` — in Basic
+ *    Hit.tscn / Big Hit.tscn (2x2 each) or the equivalent GPUParticles2D
+ *    CanvasItemMaterial for explosion/remains — and played at their own
+ *    `animation_speed`. Their frame grid is derived from the PNG's own
+ *    dimensions, read out of the IHDR chunk so the script stays dependency-free.
  *
  * Usage:  node scripts/build-shots.mjs [path-to-godot-project]
  */
@@ -93,6 +94,20 @@ const animations = {
   // Dash kick-up smoke: another SpriteEffect Sprite2D, 3x2 @ 24fps one-shot
   // (Player.tscn Dash/dash_particle).
   dash: clipFromGrid(join(textures, "dash.png"), 3, 2, 24),
+  // Enemy death burst: EnemyDeath's "Explosion Particles" GPUParticles2D, 4x4
+  // particles_animation, one-shot (Shared/QuickEnemyDeath.tscn /
+  // Effects/Explosion Particles.tscn). The sheet is played by
+  // ExplosionParticles.tres' anim_speed_curve, which starts at 3x and decays to
+  // 0 over the particle's 2s lifetime rather than a flat fps — there is no flat
+  // rate to read off it, so 24fps here is chosen to read as a quick, snappy pop
+  // rather than replicate the curve's slow tail.
+  explosion: clipFromGrid(join(textures, "explosion.png"), 4, 4, 24),
+  // Enemy death debris: EnemyDeath's "Remains/remains_particles" GPUParticles2D,
+  // 6x3 particles_animation (Shared/QuickEnemyDeath.tscn). Each chunk shows one
+  // still icon for its whole flight rather than animating — RemainsParticle.tres
+  // sets no anim_speed, only a random per-particle anim_offset — so this clip is
+  // only ever used to pick a single frame, never advanced.
+  remains: clipFromGrid(join(textures, "remains.png"), 6, 3, 1),
 };
 
 /** Which sheet each clip draws from, so the renderer can pick the right image. */
@@ -105,6 +120,8 @@ const sheets = {
   charge_1: "charge_1.png",
   charge_2: "charge_2.png",
   dash: "dash.png",
+  explosion: "explosion.png",
+  remains: "remains.png",
 };
 
 writeFileSync(
@@ -121,6 +138,8 @@ for (const [src, dir] of [
   ["charge_1.png", textures],
   ["charge_2.png", textures],
   ["dash.png", textures],
+  ["explosion.png", textures],
+  ["remains.png", textures],
 ]) {
   copyFileSync(join(dir, src), join(assets, src));
 }
@@ -132,4 +151,4 @@ for (const [name, clip] of Object.entries(animations)) {
       `${w}x${h}  ${clip.speed.toFixed(1)}fps${clip.loop ? " loop" : ""}`,
   );
 }
-console.log("\nshot_anims.json + 8 sheets written to resources/sprites/effects");
+console.log("\nshot_anims.json + 10 sheets written to resources/sprites/effects");

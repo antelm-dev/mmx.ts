@@ -13,10 +13,10 @@ export interface LifeCapsuleSpawn extends EnvironmentRect {
  * Life Energy capsule — port of PickUp.gd (Heal.tscn / SmallHeal.tscn).
  *
  * Godot pauses the whole scene tree while a capsule's HP-bar-fill animation
- * plays (`GameManager.pause`, undone once `amount_to_heal` reaches 0); nothing
- * else in this engine ever freezes, so that step is deliberately not ported —
- * the capsule instead ticks the same 1 HP / 0.06s rate as PickUp.do_heal()
- * while the rest of the room keeps moving under it.
+ * plays (`GameManager.pause`, undone once `amount_to_heal` reaches 0). Stage
+ * mirrors that by advancing only the collecting capsule until this effect is
+ * complete. The capsule itself remains active, like Godot's PAUSE_MODE_PROCESS,
+ * and ticks the same 1 HP / 0.06s rate as PickUp.do_heal().
  *
  * Overflow healing (do_heal's "amount_to_heal > 0 -> add_health_to_subtank"
  * branch) has nothing to redirect into without a sub-tank system — an
