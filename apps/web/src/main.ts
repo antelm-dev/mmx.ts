@@ -40,6 +40,7 @@ const model = new SettingsModel({ desktop, onNotice: (message) => debug.notify(m
 const presenter = new ScenePresenter({
   sounds,
   onPlayerDeath: () => debug.restartLevel(),
+  onWeaponChanged: (weapon) => debug.notify(`weapon: ${weapon}`),
 });
 
 const lifecycle = new AppLifecycle(desktop, model, presenter, (message) => debug.notify(message));
@@ -47,6 +48,7 @@ const lifecycle = new AppLifecycle(desktop, model, presenter, (message) => debug
 debug = new DebugSession({
   onEnemySpawned: (enemy) => presenter.attachEnemy(enemy),
   onPickupSpawned: (pickup) => presenter.attachPickup(pickup),
+  onWeaponCapsuleSpawned: (capsule) => presenter.attachWeaponCapsule(capsule),
   onSceneReplaced: (scene) => presenter.attach(scene),
   extraDiagnostics: () => presenter.stats(),
   replayFiles: desktop.replays,

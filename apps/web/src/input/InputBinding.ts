@@ -53,10 +53,15 @@ export class InputBinding {
    */
   private readonly pad = new GamepadInput();
 
+  /** Set only when {@link onBlur} is what paused the game, so {@link onFocus}
+   * resumes exactly that and never a pause the player set deliberately. */
+  private pausedByBlur = false;
+
   constructor(private readonly options: InputBindingOptions) {
     window.addEventListener("keydown", (e) => this.onKeyDown(e));
     window.addEventListener("keyup", (e) => this.onKeyUp(e));
     window.addEventListener("blur", () => this.onBlur());
+    window.addEventListener("focus", () => this.onFocus());
     // A pad is not enumerable until it reports something, so these are the only
     // notice the player gets that it was seen at all.
     window.addEventListener("gamepadconnected", (e) => {
@@ -91,6 +96,9 @@ export class InputBinding {
       if (menu.isCapturing && code !== "Escape") continue;
       if (menu.visible) menu.handleKey(code);
       else if (home.visible) home.handleKey(code);
+      // Neither modal is up: this is gameplay, and Escape (Start on the pad) must
+      // still open the pause menu, exactly as it does from the keyboard.
+      else menu.handleKey(code);
     }
   }
 
@@ -158,7 +166,20 @@ export class InputBinding {
     this.pad.releaseAll();
     if (this.options.isPauseOnBlur() && !debug.paused) {
       debug.paused = true;
+      this.pausedByBlur = true;
       debug.notify("paused — focus lost");
     }
+  }
+
+  /**
+   * Resumes only the pause {@link onBlur} itself applied. A pause the player set
+   * deliberately (the P key) before tabbing away must survive refocus — otherwise
+   * alt-tabbing back would silently unpause a game they meant to leave stopped.
+   */
+  private onFocus(): void {
+    if (!this.pausedByBlur) return;
+    this.pausedByBlur = false;
+    this.options.debug.paused = false;
+    this.options.debug.notify("resumed — focus regained");
   }
 }

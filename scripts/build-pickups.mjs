@@ -1,17 +1,18 @@
 /**
  * Builds resources/sprites/pickups/pickup_anims.json from the Godot project's
- * Life Energy capsule scenes.
+ * Life Energy and Weapon Energy capsule scenes.
  *
  *   node scripts/build-pickups.mjs [path-to-godot-project]   # or: pnpm pickups:import
  *
  * Unlike the enemies (which carry Aseprite JSON sidecars — see
- * build-enemies.mjs), Heal.tscn / SmallHeal.tscn only ever had Godot's own
- * SpriteFrames .tres resource, so this reads that text format directly: each
- * numbered `[sub_resource ... AtlasTexture]` block is one atlas rect, and the
- * trailing `[resource]` section's `animations` array names which rects belong
- * to which clip, in order, at a fixed fps. Godot bakes per-frame timing into
- * that one `speed` value rather than a per-frame duration, so — unlike the
- * Aseprite-sourced clips — every frame here gets an equal share of it.
+ * build-enemies.mjs), Heal.tscn / SmallHeal.tscn / Ammo.tscn / SmallAmmo.tscn
+ * only ever had Godot's own SpriteFrames .tres resource, so this reads that
+ * text format directly: each numbered `[sub_resource ... AtlasTexture]` block
+ * is one atlas rect, and the trailing `[resource]` section's `animations`
+ * array names which rects belong to which clip, in order, at a fixed fps.
+ * Godot bakes per-frame timing into that one `speed` value rather than a
+ * per-frame duration, so — unlike the Aseprite-sourced clips — every frame
+ * here gets an equal share of it.
  */
 import { readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -26,10 +27,24 @@ const assets = join(repo, "resources/sprites/pickups");
 /**
  * `small` -> SmallHeal.tscn (heal = 2), `large` -> Heal.tscn (heal = 8). These
  * kinds match LIFE_CAPSULE_STATS in packages/engine/src/core/constants.ts.
+ *
+ * The Weapon Energy capsules (Ammo.tscn / SmallAmmo.tscn, matching
+ * WEAPON_CAPSULE_STATS) are a second actor table built by this same script —
+ * exact same PickUp.gd-derived SpriteFrames format, a different pair of
+ * scenes under the same Objects/Pickups directory. Keyed by *sheet* name
+ * ("ammo"/"sammo") rather than by capsule size like CAPSULES above: both
+ * tables are merged into one `actors` object in the output JSON, and Life/
+ * Weapon capsules already spend "small"/"large" on their own (differently
+ * sized) kind — reusing it here would silently overwrite the heal sprites.
  */
 const CAPSULES = {
   small: { png: "sheal.png", tres: "sheal.tres" },
   large: { png: "heal.png", tres: "heal.tres" },
+};
+
+const WEAPON_CAPSULES = {
+  sammo: { png: "sammo.png", tres: "sammo.tres" },
+  ammo: { png: "ammo.png", tres: "ammo.tres" },
 };
 
 const ATLAS_RE =
@@ -66,7 +81,7 @@ function buildCapsule({ tres }) {
 }
 
 const out = { sheets: {}, actors: {} };
-for (const [name, capsule] of Object.entries(CAPSULES)) {
+for (const [name, capsule] of Object.entries({ ...CAPSULES, ...WEAPON_CAPSULES })) {
   out.sheets[name] = capsule.png;
   out.actors[name] = { sheet: capsule.png, animations: buildCapsule(capsule) };
   copyFileSync(join(pickupsDir, capsule.png), join(assets, capsule.png));

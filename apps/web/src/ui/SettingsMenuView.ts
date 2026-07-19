@@ -33,8 +33,9 @@ import {
 // things that have to fit are the hint line at 36 characters (252px inside the
 // padding) and "press..." in a key slot (56px).
 const PANEL_W = 296;
-// +ROW_H (11) over the 11-row baseline to make room for the "Restore Defaults" row.
-const PANEL_H = 199;
+// +ROW_H (11) per row added over the 11-row baseline: one for "Restore Defaults",
+// two more for weapon_left/weapon_right once weapon switching became bindable.
+const PANEL_H = 221;
 const PANEL_X = Math.round((VIEW_WIDTH - PANEL_W) / 2);
 const PANEL_Y = Math.round((VIEW_HEIGHT - PANEL_H) / 2);
 
@@ -80,6 +81,8 @@ const ACTION_LABELS: Record<Action, string> = {
   jump: "Jump",
   dash: "Dash",
   fire: "Fire",
+  weapon_left: "Prev Weapon",
+  weapon_right: "Next Weapon",
 };
 
 const KEY_LABELS: Record<string, string> = {

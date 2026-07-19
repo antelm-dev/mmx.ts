@@ -1,6 +1,6 @@
 import { Enemy } from "./Enemy.js";
 import { Player } from "./Player.js";
-import { LifeCapsule, type LifeCapsuleSpawn } from "./Pickup.js";
+import { LifeCapsule, WeaponCapsule, type LifeCapsuleSpawn, type WeaponCapsuleSpawn } from "./Pickup.js";
 import type { Projectile } from "./Projectile.js";
 import type { World } from "./World.js";
 import {
@@ -15,6 +15,7 @@ export interface StageEnvironment {
   conveyors?: readonly Conveyor[];
   platforms?: readonly MovingPlatformSpawn[];
   pickups?: readonly LifeCapsuleSpawn[];
+  weaponCapsules?: readonly WeaponCapsuleSpawn[];
 }
 
 /**
@@ -37,6 +38,7 @@ export class Stage {
   readonly conveyors: readonly Conveyor[];
   readonly platforms: MovingPlatform[];
   readonly pickups: LifeCapsule[];
+  readonly weaponCapsules: WeaponCapsule[];
 
   constructor(
     readonly world: World,
@@ -47,6 +49,7 @@ export class Stage {
     this.conveyors = environment.conveyors ?? [];
     this.platforms = (environment.platforms ?? []).map((spawn) => new MovingPlatform(spawn));
     this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn));
+    this.weaponCapsules = (environment.weaponCapsules ?? []).map((spawn) => new WeaponCapsule(spawn));
     this.player.setPlatforms(this.platforms);
   }
 
@@ -55,20 +58,25 @@ export class Stage {
     return enemy;
   }
 
-  /** Whether a Life Energy capsule currently owns the room's recovery pause. */
+  /** Whether a Life Energy or Weapon Energy capsule currently owns the room's recovery pause. */
   get recovering(): boolean {
-    return this.pickups.some((pickup) => pickup.collecting);
+    return this.pickups.some((pickup) => pickup.collecting) || this.weaponCapsules.some((c) => c.collecting);
   }
 
   /** One fixed step of the whole room. */
   tick(dt: number): void {
     // PickUp.gd switches the collecting capsule to PAUSE_MODE_PROCESS before it
-    // pauses the scene tree. While its HP ticks continue, absolutely everything
-    // else in the room retains its current simulation state.
-    const recovery = this.pickups.find((pickup) => pickup.collecting);
+    // pauses the scene tree. While its fill ticks continue, absolutely
+    // everything else in the room retains its current simulation state — a
+    // Life Energy and a Weapon Energy capsule share the same single-pause rule,
+    // so only ever one of either kind is "recovery" at a time.
+    const recovery =
+      this.pickups.find((pickup) => pickup.collecting) ??
+      this.weaponCapsules.find((c) => c.collecting);
     if (recovery) {
       recovery.tick(dt, this.player, this.world);
       this.reapConsumedPickups();
+      this.reapConsumedWeaponCapsules();
       return;
     }
 
@@ -81,6 +89,7 @@ export class Stage {
     }
 
     this.resolvePickups(dt);
+    this.resolveWeaponCapsules(dt);
 
     // Collection can begin during this step. Pause before enemies, projectiles,
     // or contact damage get another update on the collection frame.
@@ -103,6 +112,7 @@ export class Stage {
     }
 
     this.reapConsumedPickups();
+    this.reapConsumedWeaponCapsules();
   }
 
   /**
@@ -127,6 +137,35 @@ export class Stage {
   private reapConsumedPickups(): void {
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       if (this.pickups[i].consumed) this.pickups.splice(i, 1);
+    }
+  }
+
+  /**
+   * Weapon Energy capsules — AmmoPickup's half of the same PickUp.gd overlap
+   * behaviour as {@link resolvePickups}. Guarded on `this.recovering` because
+   * it runs *after* resolvePickups in the same tick: without the guard, a Life
+   * Energy capsule that just started collecting would not stop a Weapon Energy
+   * capsule from also starting one this same frame, and the single-recovery
+   * invariant `tick()`'s top branch relies on would leave whichever one loses
+   * that race frozen mid-collection forever.
+   */
+  private resolveWeaponCapsules(dt: number): void {
+    if (!this.player.has_health()) return;
+    if (this.recovering) return;
+    for (const capsule of this.weaponCapsules) {
+      if (capsule.consumed) continue;
+      if (!capsule.collecting && bodyOverlapsRect(this.player, capsule)) {
+        capsule.beginConsuming();
+        capsule.tick(dt, this.player, this.world);
+        return;
+      }
+      capsule.tick(dt, this.player, this.world);
+    }
+  }
+
+  private reapConsumedWeaponCapsules(): void {
+    for (let i = this.weaponCapsules.length - 1; i >= 0; i--) {
+      if (this.weaponCapsules[i].consumed) this.weaponCapsules.splice(i, 1);
     }
   }
 

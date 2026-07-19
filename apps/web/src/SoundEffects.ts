@@ -14,12 +14,15 @@ export type SoundName =
   | "lemon"
   | "mediumShot"
   | "chargedShot"
+  | "darkArrow"
   | "enemyHit"
   | "shieldHit"
   | "guardBreak"
   | "enemyDeath"
   | "playerDeath"
-  | "heal";
+  | "heal"
+  | "introAppear"
+  | "introThunder";
 
 const URLS: Record<SoundName, string> = {
   jump: new URL("../../../resources/sounds/player/jump.wav", import.meta.url).href,
@@ -31,12 +34,15 @@ const URLS: Record<SoundName, string> = {
   lemon: new URL("../../../resources/sounds/weapons/lemon.wav", import.meta.url).href,
   mediumShot: new URL("../../../resources/sounds/weapons/medium-shot.wav", import.meta.url).href,
   chargedShot: new URL("../../../resources/sounds/weapons/charged-shot.wav", import.meta.url).href,
+  darkArrow: new URL("../../../resources/sounds/weapons/dark-arrow.ogg", import.meta.url).href,
   enemyHit: new URL("../../../resources/sounds/enemies/enemy-hit.wav", import.meta.url).href,
   shieldHit: new URL("../../../resources/sounds/enemies/shield-hit.ogg", import.meta.url).href,
   guardBreak: new URL("../../../resources/sounds/enemies/guard-break.wav", import.meta.url).href,
   enemyDeath: new URL("../../../resources/sounds/enemies/enemy-death.wav", import.meta.url).href,
   playerDeath: new URL("../../../resources/sounds/player/player-death.wav", import.meta.url).href,
   heal: new URL("../../../resources/sounds/pickups/heal.wav", import.meta.url).href,
+  introAppear: new URL("../../../resources/sounds/player/intro-appear.wav", import.meta.url).href,
+  introThunder: new URL("../../../resources/sounds/player/intro-thunder.wav", import.meta.url).href,
 };
 
 export interface PlayOptions {

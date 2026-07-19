@@ -1,12 +1,36 @@
 import type { Actor } from "./Actor.js";
+import type { Character } from "./Character.js";
 import { AnimationPlayer, type AnimData, type Region } from "./Animation.js";
 import type { EnvironmentRect } from "./Environment.js";
 import type { World } from "./World.js";
 import {
-  LIFE_CAPSULE_GRAVITY,
-  LIFE_CAPSULE_HEAL_TICK_INTERVAL,
   LIFE_CAPSULE_STATS,
+  PICKUP_GRAVITY,
+  PICKUP_TICK_INTERVAL,
+  SUB_WEAPON_MAX_AMMO,
+  WEAPON_CAPSULE_STATS,
 } from "../core/constants.js";
+
+/**
+ * PickUp.process_gravity + process_movement — a plain vertical fall (the
+ * spawner in the source only ever launches a capsule straight up, never
+ * sideways, so there is no horizontal component to port). Resolved against the
+ * tile world exactly like Actor's sweepY, so a capsule authored a few pixels
+ * off the floor settles onto it instead of hanging in the air. Shared by every
+ * PickUp.gd subclass — {@link LifeCapsule} and {@link WeaponCapsule} alike.
+ */
+function fallUnderGravity(
+  box: { x: number; y: number; w: number; h: number },
+  velocityY: number,
+  dt: number,
+  world: World,
+): { y: number; velocityY: number } {
+  const nextVelocityY = velocityY + PICKUP_GRAVITY * dt;
+  const hw = box.w / 2;
+  const hh = box.h / 2;
+  const { pos, hit } = world.sweepY(box.x + hw, box.y + hh, hw, hh, nextVelocityY * dt);
+  return { y: pos - hh, velocityY: hit ? 0 : nextVelocityY };
+}
 
 export type LifeCapsuleKind = "small" | "large";
 
@@ -85,16 +109,18 @@ export class LifeCapsule implements EnvironmentRect {
   /** PickUp.process_effect / do_heal, run once per tick after being touched. */
   tick(dt: number, player: Actor, world: World): void {
     this.anim.advance(dt);
-    this.applyGravity(dt, world);
+    const fall = fallUnderGravity(this, this.velocityY, dt, world);
+    this.y = fall.y;
+    this.velocityY = fall.velocityY;
     if (!this.consuming) return;
 
     this.timer += dt;
-    while (this.remaining > 0 && this.timer >= LIFE_CAPSULE_HEAL_TICK_INTERVAL) {
+    while (this.remaining > 0 && this.timer >= PICKUP_TICK_INTERVAL) {
       if (player.current_health >= player.max_health) {
         this.remaining = 0; // nothing left to redirect without a sub-tank
         break;
       }
-      this.timer -= LIFE_CAPSULE_HEAL_TICK_INTERVAL;
+      this.timer -= PICKUP_TICK_INTERVAL;
       player.heal(1);
       this.remaining--;
     }
@@ -104,20 +130,107 @@ export class LifeCapsule implements EnvironmentRect {
       this.consumed = true;
     }
   }
+}
+
+export type WeaponCapsuleKind = "small" | "large";
+
+export interface WeaponCapsuleSpawn extends EnvironmentRect {
+  kind: WeaponCapsuleKind;
+}
+
+/**
+ * Weapon Energy capsule — port of AmmoPickup.gd (Ammo.tscn / SmallAmmo.tscn),
+ * PickUp.gd's other direct subclass. It shares every mechanical beat with
+ * {@link LifeCapsule} (falls under the same gravity, metered in at the same
+ * 0.06s tick rate, freezes the room the same way while draining) — the only
+ * real difference is *what* it fills: whichever sub-weapon the player has
+ * equipped when it is touched (AmmoPickup.gd:
+ * `player.get_node("Shot").current_weapon`), via {@link Character.refillWeaponAmmo}.
+ *
+ * Topping up the buster is a no-op there (Weapon.gd's own ammo counter is
+ * untracked and unused — see can_shoot), so a capsule collected with the
+ * buster equipped is simply spent for nothing, the same as the original.
+ */
+export class WeaponCapsule implements EnvironmentRect {
+  readonly id: string;
+  readonly kind: WeaponCapsuleKind;
+  readonly x: number;
+  y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly ammo: number;
+
+  private velocityY = 0;
+
+  private consuming = false;
+  private remaining = 0;
+  private timer = 0;
+  consumed = false;
+
+  private readonly anim = new AnimationPlayer();
+
+  constructor(spawn: WeaponCapsuleSpawn) {
+    this.id = spawn.id;
+    this.kind = spawn.kind;
+    this.x = spawn.x;
+    this.y = spawn.y;
+    this.w = spawn.w;
+    this.h = spawn.h;
+    this.ammo = WEAPON_CAPSULE_STATS[spawn.kind].ammo;
+  }
+
+  get collecting(): boolean {
+    return this.consuming;
+  }
 
   /**
-   * PickUp.process_gravity + process_movement — a plain vertical fall (the
-   * spawner in the source only ever launches a capsule straight up, never
-   * sideways, so there is no horizontal component to port). Resolved against
-   * the tile world exactly like Actor's sweepY, so a capsule authored a few
-   * pixels off the floor settles onto it instead of hanging in the air.
+   * Which sheet this capsule draws from — "ammo" or "sammo" in pickup_anims.json.
+   * A separate key from {@link kind}: WeaponCapsuleKind ("small"/"large") is
+   * already spent on LifeCapsule's own differently-sized sprites, so reusing
+   * it to key the sheet table would collide with those.
    */
-  private applyGravity(dt: number, world: World): void {
-    this.velocityY += LIFE_CAPSULE_GRAVITY * dt;
-    const hw = this.w / 2;
-    const hh = this.h / 2;
-    const { pos, hit } = world.sweepY(this.x + hw, this.y + hh, hw, hh, this.velocityY * dt);
-    this.y = pos - hh;
-    if (hit) this.velocityY = 0;
+  get sheet(): "ammo" | "sammo" {
+    return WEAPON_CAPSULE_STATS[this.kind].sheet;
+  }
+
+  loadAnimations(data: AnimData): void {
+    this.anim.load(data);
+    this.anim.play("idle");
+  }
+
+  currentRegion(): Region | null {
+    return this.anim.currentRegion();
+  }
+
+  beginConsuming(): void {
+    if (this.consuming || this.consumed) return;
+    this.consuming = true;
+    this.remaining = this.ammo;
+    this.timer = 0;
+  }
+
+  /** AmmoPickup.process_effect / do_ammo, run once per tick after being touched. */
+  tick(dt: number, player: Character, world: World): void {
+    this.anim.advance(dt);
+    const fall = fallUnderGravity(this, this.velocityY, dt, world);
+    this.y = fall.y;
+    this.velocityY = fall.velocityY;
+    if (!this.consuming) return;
+
+    this.timer += dt;
+    while (this.remaining > 0 && this.timer >= PICKUP_TICK_INTERVAL) {
+      if (player.getWeaponAmmo(player.activeWeapon) >= SUB_WEAPON_MAX_AMMO) {
+        this.remaining = 0; // nothing left to redirect without an ammo reserve
+        break;
+      }
+      this.timer -= PICKUP_TICK_INTERVAL;
+      player.refillWeaponAmmo(1);
+      this.remaining--;
+    }
+
+    if (this.remaining <= 0) {
+      this.consuming = false;
+      this.consumed = true;
+    }
   }
 }

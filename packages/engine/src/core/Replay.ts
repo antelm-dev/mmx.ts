@@ -33,6 +33,8 @@ export const REPLAY_ACTIONS: readonly Action[] = [
   "jump",
   "dash",
   "fire",
+  "weapon_left",
+  "weapon_right",
 ];
 
 export const REPLAY_VERSION = 1;

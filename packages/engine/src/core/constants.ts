@@ -91,7 +91,7 @@ export const SHOT_POSITION_ADJUST: Readonly<Record<string, { x: number; y: numbe
  */
 export interface ShotStats {
   /** Clip name in shot_anims.json. */
-  kind: "lemon" | "medium" | "charged";
+  kind: string;
   damage: number;
   speed: number; // WeaponShot.gd horizontal_velocity
   /** collisionShape2D half-extents and its offset from the projectile origin. */
@@ -105,11 +105,14 @@ export interface ShotStats {
   verticalRange: number;
   /** Lingering time after the shot dies, while its hit particle plays. */
   timeOutsideScreen: number;
-  hitFx: "lemon_hit" | "charge_hit";
+  hitFx: string;
   /** Lemon.references_setup randomises the start frame so shots desync visually. */
   randomStartFrame: boolean;
-  /** Per-frame milliseconds of the 8-frame spin loop (from the Aseprite sheets). */
+  /** Per-frame milliseconds of the clip's spin loop (from the Aseprite sheets). */
   frameMs: number;
+  /** Frames in the clip loop. Defaults to {@link SHOT_FRAME_COUNT} (the buster's
+   *  8-frame spin) when unset — Dark Arrow overrides this to 1, a static sprite. */
+  frameCount?: number;
 }
 
 /** Every buster projectile sheet is an 8-frame loop. */
@@ -207,6 +210,104 @@ export const BUSTER_SHOTS: readonly ShotStats[] = [
     frameMs: 36, // heavy_shot.json
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Weapon switching (WeaponChanger.gd / BossWeapon.gd)
+// ---------------------------------------------------------------------------
+
+/**
+ * Every weapon the player can cycle through with weapon_left/weapon_right.
+ * The buster is always slot 0 — WeaponChanger.gd's "reset_weapon" returns here.
+ *
+ * Dark Arrow (Dark Mantis's sub-weapon, BossWeapons/DarkArrow) is the one boss
+ * weapon ported so far, as a second slot that proves the switch mechanism and
+ * the ammo-gated (rather than shot-cooldown-gated) firing path both work end
+ * to end. Its charged shot and homing tracker are not ported — see Projectile.ts.
+ */
+export const WEAPON_ORDER = ["buster", "dark_arrow"] as const;
+export type WeaponId = (typeof WEAPON_ORDER)[number];
+
+/**
+ * Dark Arrow's regular shot (DarkArrow.tscn / DarkArrow.gd). A straight shot
+ * here rather than the original's brief homing burst (Tracker.gd) — this port
+ * targets the weapon-switch plumbing (ammo, active-weapon dispatch, HUD
+ * feedback), not every sub-weapon's bespoke flight behaviour.
+ */
+export const DARK_ARROW_SHOT: ShotStats = {
+  kind: "dark_arrow",
+  damage: 3, // DarkArrow.tscn:52
+  speed: 420, // DarkArrow.gd:3
+  halfW: 15,
+  halfH: 7.5, // DarkArrow.tscn CircleShape2D radius 7.5
+  offsetX: -2, // DarkArrow.tscn collisionShape2D position
+  spawnX: 0,
+  spawnY: 0,
+  verticalRange: 0,
+  timeOutsideScreen: 0.2,
+  hitFx: "lemon_hit", // no bespoke burst ported; reuses the buster's Basic Hit
+  randomStartFrame: false,
+  frameMs: 1000,
+  frameCount: 1, // dark_arrow.png's "default" frame — a static sprite, not a spin loop
+};
+
+/** Every weapon's shot table, indexed like {@link BUSTER_SHOTS} by charge level. */
+export const WEAPON_SHOTS: Readonly<Record<WeaponId, readonly ShotStats[]>> = {
+  buster: BUSTER_SHOTS,
+  dark_arrow: [DARK_ARROW_SHOT],
+};
+
+// --- BossWeapon.gd (as configured on Dark Arrow.tres) ---
+/** BossWeapon.gd max_ammo — every sub-weapon shares this tank size. */
+export const SUB_WEAPON_MAX_AMMO = 28;
+/**
+ * Dark Arrow.tres regular_ammo_cost is 0.333 (three shots per point, so many
+ * sub-weapons can share one energy scale); simplified to a flat 1 here so a
+ * full tank is an easy-to-reason-about 28 shots rather than 84.
+ */
+export const DARK_ARROW_AMMO_COST = 1;
+/** Shots-in-flight cap, mirroring the buster's MAX_SHOTS_ALIVE rather than
+ *  porting BossWeapon.gd's cooldown-timer throttle. */
+export const DARK_ARROW_MAX_SHOTS_ALIVE = 3;
+
+/**
+ * Per-slot ammo config for every non-buster weapon (the buster has none — see
+ * Weapon.gd:has_ammo, unconditionally true). Keyed by {@link WeaponId} rather
+ * than hard-coded per call site so a second sub-weapon is one more entry here,
+ * not a new branch in {@link Character.canFireActiveWeapon}.
+ */
+export interface SubWeaponConfig {
+  ammoCost: number;
+  maxShotsAlive: number;
+}
+export const SUB_WEAPON_CONFIG: Readonly<Partial<Record<WeaponId, SubWeaponConfig>>> = {
+  dark_arrow: { ammoCost: DARK_ARROW_AMMO_COST, maxShotsAlive: DARK_ARROW_MAX_SHOTS_ALIVE },
+};
+
+/**
+ * A weapon's 6-color palette (WeaponResource.gd's MainColor1-6 / Weapon.gd's
+ * own MainColor1-6 for the buster). In the original, `PrimaryShot.gd:
+ * update_character_palette` writes these into X's body-sprite shader as
+ * `R_MainColor1-6` on every weapon switch (Player.gd:change_palette), and
+ * `WeaponBar.gd` separately tints the HUD ammo fill from MainColor2 (the same
+ * color `Weapon.gd:get_charge_color` reports). See PaletteSwapFilter
+ * (renderer-pixi) for the body recolor and Hud.ts for the HUD tint — both
+ * keyed off this one table so there is exactly one place a weapon's colors
+ * are recorded.
+ */
+export type Palette6 = readonly [number, number, number, number, number, number];
+
+/**
+ * The buster's own palette — Hermes Buster.tscn's MainColor1-6 — is also the
+ * *source* palette baked into Player_Material_Shader.tres: X's ordinary blue.
+ * Equipping the buster is therefore an identity recolor (source == target),
+ * which is why `update_character_palette` special-cases it as a no-armor-tint
+ * palette change rather than skipping the recolor outright.
+ */
+export const WEAPON_PALETTE: Readonly<Record<WeaponId, Palette6>> = {
+  buster: [0x0080f8, 0x0040f0, 0x203080, 0x78d8f0, 0x50a0f0, 0x1858b0],
+  // Dark Arrow.tres MainColor1-6.
+  dark_arrow: [0x717171, 0x3d415c, 0x2f2e48, 0xb68ec7, 0x7c5d90, 0x3c3249],
+};
 
 // --- Actor.gd ---
 export const MAX_HEALTH = 32.0; // Actor.gd:6
@@ -342,6 +443,15 @@ export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
  *  enough for "11 - MMX - X Die.wav" (~3.83s) to finish playing out. */
 export const PLAYER_DEATH_RESTART_DELAY = 3.8;
 
+// --- Intro.gd (as configured on Player.tscn's Intro node; see engine/abilities/Intro.ts) ---
+/** Intro.gd:6 — how far above the spawn point the descent starts. */
+export const PLAYER_INTRO_DROP_HEIGHT = 160.0;
+/** Intro.gd:5 beam_speed — descent rate, in pixels/second. */
+export const PLAYER_INTRO_BEAM_SPEED = 420.0;
+/** Intro.gd:41 — the window within `beam_equip` (seconds since it started) that
+ *  fires the equip clang and the `x_appear` cue. */
+export const PLAYER_INTRO_THUNDER_WINDOW: readonly [number, number] = [0.55, 1.0];
+
 // ---------------------------------------------------------------------------
 // Life Energy capsules
 // ---------------------------------------------------------------------------
@@ -363,11 +473,29 @@ export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleS
   large: { sheet: "heal", heal: 8 }, // Heal.tscn: heal = 8
 };
 
-/** PickUp.gd do_heal(): `timer > last_time_increased + 0.06` — 1 HP per tick. */
-export const LIFE_CAPSULE_HEAL_TICK_INTERVAL = 0.06;
+/**
+ * PickUp.gd's own shared behaviour — do_heal()'s `timer > last_time_increased +
+ * 0.06` metering and process_gravity(gravity := 800) — inherited unchanged by
+ * every PickUp subclass, not just HealthPickup.gd. AmmoPickup.gd (see
+ * WeaponCapsule in Pickup.ts) reuses both rather than restating them.
+ */
+export const PICKUP_TICK_INTERVAL = 0.06;
+export const PICKUP_GRAVITY = 800;
 
-/** PickUp.gd process_gravity(gravity := 800) — its own default, independent of GRAVITY above. */
-export const LIFE_CAPSULE_GRAVITY = 800;
+// ---------------------------------------------------------------------------
+// Weapon Energy capsules (Objects/Pickups/AmmoPickup.gd / Ammo.tscn / SmallAmmo.tscn)
+// ---------------------------------------------------------------------------
+
+export interface WeaponCapsuleStats {
+  /** Key into pickup_anims.json's `actors` table. */
+  sheet: "ammo" | "sammo";
+  ammo: number;
+}
+
+export const WEAPON_CAPSULE_STATS: Readonly<Record<"small" | "large", WeaponCapsuleStats>> = {
+  small: { sheet: "sammo", ammo: 2 }, // SmallAmmo.tscn: ammo = 2
+  large: { sheet: "ammo", ammo: 8 }, // Ammo.tscn: ammo = 8 (AmmoPickup.gd default)
+};
 
 // World / rendering
 export const TILE_SIZE = 16;

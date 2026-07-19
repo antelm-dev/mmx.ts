@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { DT, LIFE_CAPSULE_HEAL_TICK_INTERVAL, LIFE_CAPSULE_STATS } from "../src/core/constants.js";
+import { DT, PICKUP_TICK_INTERVAL, LIFE_CAPSULE_STATS } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
 import { Actor } from "../src/engine/Actor.js";
 import { Player } from "../src/engine/Player.js";
@@ -57,7 +57,7 @@ test("a small Life Energy capsule heals 2 HP over several ticks, then despawns",
   );
 
   const ticksNeeded =
-    Math.ceil(LIFE_CAPSULE_HEAL_TICK_INTERVAL / DT) * LIFE_CAPSULE_STATS.small.heal + 5;
+    Math.ceil(PICKUP_TICK_INTERVAL / DT) * LIFE_CAPSULE_STATS.small.heal + 5;
   for (let i = 0; i < ticksNeeded; i++) stage.tick(DT);
 
   assert.equal(player.current_health, player.max_health - 10 + LIFE_CAPSULE_STATS.small.heal);
