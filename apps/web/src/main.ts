@@ -234,7 +234,10 @@ home = new HomeScreen({
   onSettings: () => {
     settingsFromHome = true;
     home.close();
-    menu.open();
+    // Opaque: there is no run in progress behind the title screen, just the
+    // idle scene the game boots into, and showing it through the pause scrim
+    // would read as a glitch rather than a paused game.
+    menu.open(true);
   },
 });
 
@@ -617,8 +620,7 @@ async function main(): Promise<void> {
     // A no-op unless the window moved to a display that changed the integer zoom.
     menu.setPixelScale(created.pixelScale);
     home.setPixelScale(created.pixelScale);
-    // A no-op once a screen's open-transition fade has finished.
-    menu.update(now);
+    // Drives the home screen's idle cursor bob.
     home.update(now);
 
     performance.mark("mmx:render:start");

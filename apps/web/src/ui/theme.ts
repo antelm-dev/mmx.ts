@@ -14,6 +14,3 @@ export const COLOR_DIM = 0x7f9daa;
 export const COLOR_SELECTED = 0xffd166;
 export const COLOR_ACCENT = 0x55dde0;
 export const COLOR_CAPTURING = 0xff6b6b;
-
-/** Duration of the open/close cross-fade, in milliseconds. */
-export const MENU_FADE_MS = 120;

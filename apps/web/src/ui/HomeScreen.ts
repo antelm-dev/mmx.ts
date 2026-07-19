@@ -10,7 +10,6 @@ import {
   COLOR_PANEL,
   COLOR_SELECTED,
   COLOR_TEXT,
-  MENU_FADE_MS,
 } from "./theme.js";
 
 type Row = "play" | "level" | "settings";
@@ -43,7 +42,7 @@ export class HomeScreen {
   private readonly levelText: Text;
   private row = 0;
   private level = 0;
-  private fadeStart = 0;
+  private cursorBob = 0;
 
   constructor(private readonly options: HomeScreenOptions) {
     if (options.levels.length === 0) throw new Error("home screen needs at least one level");
@@ -63,7 +62,7 @@ export class HomeScreen {
     labels.forEach((label, index) => {
       this.rowTexts.push(this.labels.add(label, 112, rowY(index) + ROW_LABEL_OFFSET, COLOR_TEXT));
     });
-    this.levelText = this.labels.add("", 202, rowY(1) + ROW_LABEL_OFFSET, COLOR_TEXT);
+    this.levelText = this.labels.add("", 165, rowY(1) + ROW_LABEL_OFFSET, COLOR_TEXT);
     this.labels.add("Arrows select   Enter confirm", 96, 199, COLOR_DIM);
     this.refresh();
   }
@@ -74,8 +73,6 @@ export class HomeScreen {
 
   open(): void {
     this.view.visible = true;
-    this.view.alpha = 0;
-    this.fadeStart = performance.now();
     // Re-setting the short subtitle invalidates Pixi's cached text quad after
     // the much larger settings overlay has been hidden at a different scale.
     this.coreText.position.set(185, 49);
@@ -87,10 +84,11 @@ export class HomeScreen {
     this.view.visible = false;
   }
 
-  /** Advance the open-transition fade; a no-op once it has reached full alpha. */
+  /** Advance the cursor's idle bob. */
   update(now: number): void {
-    if (!this.view.visible || this.view.alpha >= 1) return;
-    this.view.alpha = Math.min(1, (now - this.fadeStart) / MENU_FADE_MS);
+    if (!this.view.visible) return;
+    this.cursorBob = Math.sin(now / 220) * 1.5;
+    this.paintHighlight();
   }
 
   setPixelScale(scale: number): void {
@@ -139,15 +137,29 @@ export class HomeScreen {
   }
 
   private refresh(): void {
-    const y = rowY(this.row);
-    this.highlight.clear().roundRect(94, y, 210, 20, 2).fill({ color: COLOR_BORDER, alpha: 0.55 });
-    this.highlight.rect(99, y + 8, 4, 4).fill(COLOR_SELECTED);
+    this.paintHighlight();
     this.rowTexts.forEach((text, index) => {
       text.style.fill = index === this.row ? COLOR_SELECTED : COLOR_TEXT;
     });
     const selected = this.options.levels[this.level];
     this.levelText.text = `< ${friendlyName(selected.identifier)} >`;
     this.levelText.style.fill = this.row === 1 ? COLOR_SELECTED : COLOR_TEXT;
+  }
+
+  /**
+   * The selection band and its cursor. Redrawn every frame (not just on input)
+   * so the cursor's idle bob — a small side-to-side drift, the one bit of motion
+   * on an otherwise static screen — stays smooth between key presses.
+   */
+  private paintHighlight(): void {
+    const y = rowY(this.row);
+    this.highlight.clear().roundRect(94, y, 210, 20, 2).fill({ color: COLOR_BORDER, alpha: 0.55 });
+    const cx = 99 + this.cursorBob;
+    // A right-pointing chevron reads as "select this" the way the square dot it
+    // replaced didn't, and costs the same one draw call.
+    this.highlight
+      .poly([cx, y + 6, cx, y + 14, cx + 6, y + 10])
+      .fill(COLOR_SELECTED);
   }
 
   private paint(): void {
@@ -167,6 +179,32 @@ export class HomeScreen {
       .moveTo(62, 73)
       .lineTo(336, 73)
       .stroke({ color: COLOR_BORDER, width: 1 });
+    paintCorners(this.art, 54, 24, 290, 43);
+    paintCorners(this.art, 84, 94, 230, 88);
+  }
+}
+
+/**
+ * Small L-shaped brackets just outside a panel's corners, in the accent color —
+ * a targeting-frame accent borrowed from the series' own HUD furniture, cheap
+ * enough to be worth it on a screen that otherwise has no motion or artwork.
+ */
+function paintCorners(g: Graphics, x: number, y: number, w: number, h: number): void {
+  const len = 6;
+  const o = 3;
+  const corners: [number, number, 1 | -1, 1 | -1][] = [
+    [x - o, y - o, 1, 1],
+    [x + w + o, y - o, -1, 1],
+    [x - o, y + h + o, 1, -1],
+    [x + w + o, y + h + o, -1, -1],
+  ];
+  for (const [cx, cy, dx, dy] of corners) {
+    g.moveTo(cx, cy)
+      .lineTo(cx + dx * len, cy)
+      .stroke({ color: COLOR_ACCENT, width: 1 });
+    g.moveTo(cx, cy)
+      .lineTo(cx, cy + dy * len)
+      .stroke({ color: COLOR_ACCENT, width: 1 });
   }
 }
 

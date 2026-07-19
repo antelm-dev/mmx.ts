@@ -4,6 +4,7 @@ import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
 import { BINDABLE_ACTIONS, DEFAULT_WINDOW_SCALE, type DesktopSettings } from "../DesktopBridge.js";
 import { TextLayer } from "./TextLayer.js";
 import {
+  COLOR_BG,
   COLOR_BORDER,
   COLOR_CAPTURING,
   COLOR_DIM,
@@ -11,7 +12,6 @@ import {
   COLOR_SCRIM,
   COLOR_SELECTED,
   COLOR_TEXT,
-  MENU_FADE_MS,
 } from "./theme.js";
 
 /**
@@ -156,7 +156,7 @@ export class SettingsMenu {
   private row = 0;
   private column = 0;
   private capturing: { action: Action; slot: number } | null = null;
-  private fadeStart = 0;
+  private opaque = false;
 
   constructor(private readonly options: SettingsMenuOptions) {
     this.view.visible = false;
@@ -231,18 +231,20 @@ export class SettingsMenu {
     this.labels.setPixelScale(scale);
   }
 
-  /** Advance the open-transition fade; a no-op once it has reached full alpha. */
-  update(now: number): void {
-    if (!this.view.visible || this.view.alpha >= 1) return;
-    this.view.alpha = Math.min(1, (now - this.fadeStart) / MENU_FADE_MS);
-  }
-
-  open(): void {
+  /**
+   * @param opaque Hide whatever is behind the menu entirely instead of dimly
+   * showing it through the scrim. Set from the title screen, where "behind"
+   * is only ever the idle scene the game boots into, not a run in progress —
+   * showing it through the scrim reads as a rendering glitch, not a pause.
+   */
+  open(opaque = false): void {
     if (this.view.visible) return;
     this.view.visible = true;
-    this.view.alpha = 0;
-    this.fadeStart = performance.now();
     this.capturing = null;
+    if (opaque !== this.opaque) {
+      this.opaque = opaque;
+      this.paintFrame();
+    }
     this.refresh();
     this.options.onVisibilityChange?.(true);
   }
@@ -379,9 +381,10 @@ export class SettingsMenu {
   }
 
   private paintFrame(): void {
+    this.backdrop.clear();
+    if (this.opaque) this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill(COLOR_BG);
+    else this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill({ color: COLOR_SCRIM, alpha: 0.78 });
     this.backdrop
-      .rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT)
-      .fill({ color: COLOR_SCRIM, alpha: 0.78 })
       .rect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H)
       .fill({ color: COLOR_PANEL, alpha: 0.96 })
       .rect(PANEL_X + 0.5, PANEL_Y + 0.5, PANEL_W - 1, PANEL_H - 1)
