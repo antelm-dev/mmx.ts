@@ -5,6 +5,7 @@ import type { Enemy } from "@mmx/engine/engine/Enemy.js";
 import type { Player } from "@mmx/engine/engine/Player.js";
 import type { Scene } from "@mmx/engine/engine/Scene.js";
 import type { AnimData } from "@mmx/engine/engine/Animation.js";
+import { LEVEL_CATALOG } from "@mmx/engine/engine/level.js";
 import { GamepadInput } from "./Gamepad.js";
 import {
   DashSmoke,
@@ -28,6 +29,7 @@ import {
   type DesktopSettings,
 } from "./DesktopBridge.js";
 import { SettingsMenu } from "./ui/SettingsMenu.js";
+import { HomeScreen } from "./ui/HomeScreen.js";
 import { loadUiFont } from "./ui/font.js";
 import { DebugOverlay } from "./debug/DebugOverlay.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
@@ -160,7 +162,10 @@ function setFullscreen(fullscreen: boolean): void {
     });
 }
 
-// --- settings menu (Escape) -------------------------------------------------
+// --- home and settings menus ------------------------------------------------
+
+let settingsFromHome = false;
+let home: HomeScreen;
 
 const menu = new SettingsMenu({
   getSettings: () => settings,
@@ -192,6 +197,12 @@ const menu = new SettingsMenu({
     releaseAllKeys();
     persistSettings();
   },
+  onMainMenu: () => {
+    settingsFromHome = false;
+    menu.close();
+    releaseAllKeys();
+    home.open();
+  },
   onVisibilityChange: (visible) => {
     // Keys held on the way in would stay held for as long as the menu is up,
     // and X would be mid-run the instant it closes.
@@ -200,7 +211,24 @@ const menu = new SettingsMenu({
       void desktop.maxWindowScale().then((max) => {
         maxWindowScale = max;
       });
+    } else if (settingsFromHome) {
+      settingsFromHome = false;
+      home.open();
     }
+  },
+});
+
+home = new HomeScreen({
+  levels: LEVEL_CATALOG,
+  onPlay: (level) => {
+    debug.loadLevel(level);
+    home.close();
+    releaseAllKeys();
+  },
+  onSettings: () => {
+    settingsFromHome = true;
+    home.close();
+    menu.open();
   },
 });
 
@@ -338,6 +366,7 @@ function bindScene(scene: Scene): void {
   // load must not leave a loop from the previous scene playing.
   sounds.stop("wallslide");
   sounds.stop("charge");
+  renderer?.setStage(scene.stage);
 }
 
 bindScene(debug.scene);
@@ -361,13 +390,22 @@ function releaseAllKeys(): void {
 
 window.addEventListener("keydown", (e) => {
   sounds.unlock();
-  // The menu first: while it is open it swallows everything, including the keys
-  // that are also gameplay bindings, and while it is closed it takes only Escape.
-  if (!e.repeat || menu.visible) {
+  // Modal UI first: while either screen is open gameplay never sees the same key.
+  if (menu.visible) {
     if (menu.handleKey(e.code)) {
       e.preventDefault();
       return;
     }
+  }
+  if (home.visible) {
+    if (home.handleKey(e.code)) {
+      e.preventDefault();
+      return;
+    }
+  }
+  if (!e.repeat && menu.handleKey(e.code)) {
+    e.preventDefault();
+    return;
   }
 
   // Gameplay before debug, so a key the player has explicitly bound always does
@@ -412,7 +450,7 @@ window.addEventListener("gamepaddisconnected", (e) => {
   debug.notify(`gamepad ${e.gamepad.index} disconnected`);
 });
 
-/** Feed the frame's pad presses to the settings menu as the key codes it speaks. */
+/** Feed the frame's pad presses to whichever player-facing screen is open. */
 function applyPadMenuCodes(): void {
   const codes = pad.takeMenuCodes();
   if (codes.length > 0) sounds.unlock();
@@ -421,7 +459,8 @@ function applyPadMenuCodes(): void {
     // synthesized — binding one would write a key into the settings file that no
     // keyboard can ever press again. Only the cancel gets through.
     if (menu.isCapturing && code !== "Escape") continue;
-    menu.handleKey(code);
+    if (menu.visible) menu.handleKey(code);
+    else if (home.visible) home.handleKey(code);
   }
 }
 
@@ -493,7 +532,7 @@ async function main(): Promise<void> {
   ]);
   renderer = created;
   renderer.worldOverlay.addChild(overlay.view);
-  renderer.uiLayer.addChild(menu.view);
+  renderer.uiLayer.addChild(home.view, menu.view);
 
   window.addEventListener("resize", () => fitRenderer());
   // Dragging the window to a monitor with a different scaling factor changes dpr
@@ -529,7 +568,8 @@ async function main(): Promise<void> {
     // state rather than the previous one's. The repeat clock is clamped for the
     // same reason the accumulator is: a tab that was backgrounded for ten seconds
     // must not come back and scroll the menu to the bottom.
-    pad.poll(Math.min(frameTime / 1000, MAX_FRAME_SECONDS), menu.visible);
+    const modalVisible = menu.visible || home.visible;
+    pad.poll(Math.min(frameTime / 1000, MAX_FRAME_SECONDS), modalVisible);
     applyPadMenuCodes();
 
     // Scaled before clamping, so slow motion buys a longer wall-clock budget
@@ -537,7 +577,7 @@ async function main(): Promise<void> {
     // An open menu contributes no simulation time, for the same reason a pause
     // does: the accumulator must not fill behind it and then discharge the whole
     // backlog the moment it closes.
-    const elapsed = menu.visible ? 0 : debug.scaleElapsed((now - last) / 1000);
+    const elapsed = modalVisible ? 0 : debug.scaleElapsed((now - last) / 1000);
     if (elapsed > MAX_FRAME_SECONDS) debug.stats.droppedFrames++;
     acc += Math.min(MAX_FRAME_SECONDS, elapsed);
     last = now;
@@ -567,6 +607,7 @@ async function main(): Promise<void> {
     overlay.update(scene, scene.camera);
     // A no-op unless the window moved to a display that changed the integer zoom.
     menu.setPixelScale(created.pixelScale);
+    home.setPixelScale(created.pixelScale);
 
     performance.mark("mmx:render:start");
     created.render(scene.stage, scene.camera, trail, smoke);

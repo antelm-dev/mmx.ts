@@ -29,7 +29,7 @@ const PANEL_X = Math.round((VIEW_WIDTH - PANEL_W) / 2);
 const PANEL_Y = Math.round((VIEW_HEIGHT - PANEL_H) / 2);
 
 const PAD = 12;
-const ROW_H = 12;
+const ROW_H = 11;
 const TITLE_Y = PANEL_Y + PAD;
 const RULE_Y = PANEL_Y + 24;
 const HEADER_Y = PANEL_Y + 28;
@@ -54,13 +54,15 @@ type Row =
   | { kind: "binding"; action: Action }
   | { kind: "scale" }
   | { kind: "fullscreen" }
-  | { kind: "volume" };
+  | { kind: "volume" }
+  | { kind: "mainMenu" };
 
 const ROWS: readonly Row[] = [
   ...BINDABLE_ACTIONS.map((action): Row => ({ kind: "binding", action })),
   { kind: "scale" },
   { kind: "fullscreen" },
   { kind: "volume" },
+  { kind: "mainMenu" },
 ];
 
 const ACTION_LABELS: Record<Action, string> = {
@@ -126,6 +128,7 @@ export interface SettingsMenuOptions {
   /** Upper bound for the scale row; refreshed whenever the menu opens. */
   getMaxScale: () => number;
   setBinding: (action: Action, slot: number, code: string) => void;
+  onMainMenu: () => void;
   onVisibilityChange?: (visible: boolean) => void;
 }
 
@@ -315,6 +318,10 @@ export class SettingsMenu {
 
   private activate(): void {
     const row = ROWS[this.row];
+    if (row.kind === "mainMenu") {
+      this.options.onMainMenu();
+      return;
+    }
     if (row.kind === "fullscreen") {
       this.toggleFullscreen();
       this.refresh();
@@ -444,6 +451,8 @@ function rowLabel(row: Row): string {
       return "Fullscreen";
     case "binding":
       return ACTION_LABELS[row.action];
+    case "mainMenu":
+      return "Main Menu";
   }
 }
 
@@ -457,5 +466,7 @@ function rowHint(row: Row): string {
       return "Enter toggle - Esc close";
     case "binding":
       return "Enter rebind - Del clear - Esc close";
+    case "mainMenu":
+      return "Enter return to home";
   }
 }

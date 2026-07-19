@@ -4,6 +4,7 @@ import type { LevelData, LevelEntity } from "./LevelData.js";
 import type { EnemyKind } from "./Enemy.js";
 import type { Conveyor, Hazard, MovingPlatformSpawn } from "./Environment.js";
 import { level as mechanicsDemo } from "./levels/stage2.js";
+import { level as stageOne } from "./levels/stage1.js";
 
 /**
  * The active mechanics demo, authored in levels/stage2.ldtk and generated into
@@ -16,6 +17,80 @@ import { level as mechanicsDemo } from "./levels/stage2.js";
  * The smaller Stage1 remains as the collision and movement regression fixture.
  */
 export const LEVEL: LevelData = mechanicsDemo;
+
+/** Levels available to player-facing clients, in menu order. */
+export const LEVEL_CATALOG: readonly LevelData[] = [stageOne, mechanicsDemo];
+
+export interface LevelRuntime {
+  data: LevelData;
+  world: World;
+  spawn: { x: number; y: number };
+  hazards: Hazard[];
+  conveyors: Conveyor[];
+  platforms: MovingPlatformSpawn[];
+  enemies: EnemySpawn[];
+  cameraZones: CameraZone[];
+}
+
+/** Turn authored level data into the runtime objects owned by one scene. */
+export function loadLevel(data: LevelData): LevelRuntime {
+  const matching = (id: string): LevelEntity[] => data.entities.filter((e) => e.id === id);
+  const spawns = matching("Spawn");
+  if (spawns.length !== 1) {
+    throw new Error(
+      `level ${data.identifier}: expected exactly one 'Spawn', found ${spawns.length}`,
+    );
+  }
+
+  const enemies: EnemySpawn[] = matching("Enemy").map((e) => {
+    const kind = e.fields.Kind;
+    if (typeof kind !== "string" || !ENEMY_KINDS.includes(kind as EnemyKind)) {
+      throw new Error(
+        `level ${data.identifier}: Enemy at ${e.x},${e.y} has Kind '${String(kind)}'; expected one of ${ENEMY_KINDS.join(", ")}`,
+      );
+    }
+    return {
+      kind: kind as EnemyKind,
+      x: e.x,
+      y: e.y,
+      facing: boolField(e, "FacesRight", false) ? 1 : -1,
+    };
+  });
+
+  return {
+    data,
+    world: new World(data.tiles.slice(), data.cols, data.rows, data.slopes),
+    spawn: { x: spawns[0].x, y: spawns[0].y },
+    hazards: matching("Hazard").map((e) => ({ id: e.iid, x: e.x, y: e.y, w: e.w, h: e.h })),
+    conveyors: matching("Conveyor").map((e) => ({
+      id: e.iid,
+      x: e.x,
+      y: e.y,
+      w: e.w,
+      h: e.h,
+      speed: numberField(e, "Speed", 60),
+    })),
+    platforms: matching("MovingPlatform").map((e) => ({
+      id: e.iid,
+      x: e.x,
+      y: e.y,
+      w: e.w,
+      h: e.h,
+      travel: Math.max(0, numberField(e, "Travel", 96)),
+      speed: Math.max(0, numberField(e, "Speed", 48)),
+    })),
+    enemies,
+    cameraZones: matching("CameraZone").map((e) => ({
+      id: e.iid,
+      x: e.x,
+      y: e.y,
+      w: e.w,
+      h: e.h,
+      bindX: boolField(e, "BindX", true),
+      bindY: boolField(e, "BindY", true),
+    })),
+  };
+}
 
 export function makeWorld(): World {
   // Copied so each World owns its grid; the generated module is a shared const.
