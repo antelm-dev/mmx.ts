@@ -1,19 +1,20 @@
 import { World } from "./World.js";
 import { Rng } from "../core/Rng.js";
-import { AnimationCursor, uniformClip } from "../core/AnimationCursor.js";
+import { AnimationCursor, uniformClip, type TimedClip } from "../core/AnimationCursor.js";
 import {
-  BUSTER_SHOTS,
   HIT_FX_FPS,
   HIT_FX_FRAME_COUNT,
   SHOT_FRAME_COUNT,
+  WEAPON_SHOTS,
   type ShotStats,
+  type WeaponId,
 } from "../core/constants.js";
 
 /**
- * Buster projectile — port of WeaponShot.gd / Lemon.gd / Medium Buster.gd /
- * Charged Buster.gd, which form an inheritance chain rather than three separate
- * things. The differences between them are all data (damage, speed, hitbox, hit
- * effect, spawn offset), so here they are one class driven by BUSTER_SHOTS.
+ * Any weapon's projectile — port of WeaponShot.gd / Lemon.gd / Medium Buster.gd /
+ * Charged Buster.gd (an inheritance chain in the original) plus DarkArrow.gd.
+ * The differences between them are all data (damage, speed, hitbox, hit effect,
+ * spawn offset), so here they are one class driven by {@link WEAPON_SHOTS}.
  *
  * The part worth preserving from the original is the *two-phase death*. A shot that
  * connects does not vanish: `hit()` disables the sprite and the damage box but keeps
@@ -26,12 +27,17 @@ import {
  */
 export type ShotPhase = "live" | "spent";
 
-const SHOT_ANIMATIONS = BUSTER_SHOTS.map((stats) =>
-  uniformClip(SHOT_FRAME_COUNT, 1000 / stats.frameMs, true),
-);
+/** One spin-loop clip per shot, per weapon — {@link WEAPON_SHOTS} indexed the same way. */
+const SHOT_ANIMATIONS = Object.fromEntries(
+  (Object.entries(WEAPON_SHOTS) as [WeaponId, readonly ShotStats[]][]).map(([weapon, shots]) => [
+    weapon,
+    shots.map((stats) => uniformClip(stats.frameCount ?? SHOT_FRAME_COUNT, 1000 / stats.frameMs, true)),
+  ]),
+) as Record<WeaponId, TimedClip[]>;
 const HIT_ANIMATION = uniformClip(HIT_FX_FRAME_COUNT, HIT_FX_FPS, false);
 
 export class Projectile {
+  readonly weapon: WeaponId;
   readonly stats: ShotStats;
   private readonly shotAnimation = new AnimationCursor();
   private readonly hitAnimation = new AnimationCursor();
@@ -56,11 +62,17 @@ export class Projectile {
     charge: number,
     /** Defaults to a fresh seeded generator so a shot can be built standalone. */
     rng: Rng = new Rng(),
+    /** Which weapon fired this shot — see {@link WEAPON_SHOTS}. Defaults to the buster. */
+    weapon: WeaponId = "buster",
   ) {
-    // Weapon.gd:clamp_to_max_charge — the buster only carries three projectiles.
-    const level = Math.max(0, Math.min(charge, BUSTER_SHOTS.length - 1));
-    this.stats = BUSTER_SHOTS[level];
-    this.shotAnimation.play(SHOT_ANIMATIONS[level]);
+    // Weapon.gd:clamp_to_max_charge — a weapon's `shots` array clamps the charge
+    // level onto whatever projectiles it actually has (the buster carries three;
+    // Dark Arrow, ported without its charged tier, carries only one).
+    const shots = WEAPON_SHOTS[weapon];
+    const level = Math.max(0, Math.min(charge, shots.length - 1));
+    this.weapon = weapon;
+    this.stats = shots[level];
+    this.shotAnimation.play(SHOT_ANIMATIONS[weapon][level]);
     this.hitAnimation.play(HIT_ANIMATION);
 
     this.x += this.stats.spawnX * dir;
@@ -90,9 +102,9 @@ export class Projectile {
   get damage(): number {
     return this.stats.damage;
   }
-  /** Charge level this shot was fired at, as an index into BUSTER_SHOTS. */
+  /** Charge level this shot was fired at, as an index into its weapon's shot table. */
   get charge(): number {
-    return BUSTER_SHOTS.indexOf(this.stats);
+    return WEAPON_SHOTS[this.weapon].indexOf(this.stats);
   }
   get vx(): number {
     return this.stats.speed * this.dir;

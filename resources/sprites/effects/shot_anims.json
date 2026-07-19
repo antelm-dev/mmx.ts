@@ -3,6 +3,7 @@
     "lemon": "lemon.png",
     "medium": "medium_shot.png",
     "charged": "heavy_shot.png",
+    "dark_arrow": "dark_arrow.png",
     "lemon_hit": "lemon_hit.png",
     "charge_hit": "charge_hit.png",
     "charge_1": "charge_1.png",
@@ -241,6 +242,21 @@
             128,
             64,
             64
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    "dark_arrow": {
+      "loop": true,
+      "speed": 5,
+      "frames": [
+        {
+          "region": [
+            0,
+            0,
+            32,
+            16
           ],
           "duration": 1
         }

@@ -1,12 +1,12 @@
 import { Input } from "../core/Input.js";
-import { DT } from "../core/constants.js";
+import { DT, WEAPON_ORDER } from "../core/constants.js";
 import { applyInput } from "../core/Replay.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
 import { LEVEL, loadLevel } from "./level.js";
 import type { LevelData } from "./LevelData.js";
-import type { LifeCapsule } from "./Pickup.js";
+import type { LifeCapsule, WeaponCapsule } from "./Pickup.js";
 import { Player } from "./Player.js";
 import { Stage } from "./Stage.js";
 import type { World } from "./World.js";
@@ -44,6 +44,8 @@ export interface SceneOptions {
    * the browser uses it to attach clip data, same as {@link onEnemySpawned}.
    */
   onPickupSpawned?: (pickup: LifeCapsule, index: number) => void;
+  /** Called for each Weapon Energy capsule as it spawns — same as {@link onPickupSpawned}. */
+  onWeaponCapsuleSpawned?: (capsule: WeaponCapsule, index: number) => void;
 }
 
 export class Scene {
@@ -73,6 +75,7 @@ export class Scene {
       conveyors: level.conveyors,
       platforms: level.platforms,
       pickups: level.pickups,
+      weaponCapsules: level.weaponCapsules,
     });
 
     for (const [i, spawn] of level.enemies.entries()) {
@@ -94,6 +97,9 @@ export class Scene {
 
     for (const [i, pickup] of this.stage.pickups.entries()) {
       options.onPickupSpawned?.(pickup, i);
+    }
+    for (const [i, capsule] of this.stage.weaponCapsules.entries()) {
+      options.onWeaponCapsuleSpawned?.(capsule, i);
     }
 
     // Camera has already snapped to the spawn point above; only now does the
@@ -161,7 +167,12 @@ export class Scene {
       this.player.current_health,
       this.player.stateString(),
       this.player.projectiles.length,
+      this.player.activeWeapon,
     ];
+    for (const weapon of WEAPON_ORDER) {
+      const ammo = this.player.getWeaponAmmo(weapon);
+      if (Number.isFinite(ammo)) parts.push("ammo", weapon, ammo);
+    }
     for (const enemy of this.stage.enemies) {
       parts.push(enemy.kind, q(enemy.pos.x), q(enemy.pos.y), enemy.current_health);
     }
@@ -170,6 +181,9 @@ export class Scene {
     }
     for (const pickup of this.stage.pickups) {
       parts.push("pickup", pickup.id, pickup.collecting ? 1 : 0);
+    }
+    for (const capsule of this.stage.weaponCapsules) {
+      parts.push("weaponCapsule", capsule.id, capsule.collecting ? 1 : 0);
     }
     return fnv1a(parts.join("|"));
   }

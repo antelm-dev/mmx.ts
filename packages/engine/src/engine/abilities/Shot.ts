@@ -3,9 +3,11 @@ import type { Character } from "../Character.js";
 import { SHOT_ARM_POINT_DURATION } from "../../core/constants.js";
 
 /**
- * Port of Shot.gd (buster only) — fires an uncharged "lemon" on each fire tap and
- * keeps the arm-point pose for a short window. Runs on the independent action
- * layer, concurrent with any movement state.
+ * Port of Shot.gd — fires the active weapon's regular shot on each fire tap
+ * (the buster's uncharged "lemon", or a sub-weapon's shot once one is selected;
+ * see Character.fireActiveWeapon) and keeps the arm-point pose for a short
+ * window. Runs on the independent action layer, concurrent with any movement
+ * state.
  *
  * Shooting deliberately plays *no* clip of its own. The original swaps the whole
  * SpriteFrames resource on the sprite (normal_sprites = x.res ->
@@ -27,9 +29,10 @@ export class Shot extends Ability {
     this.actions = ["fire"];
   }
 
-  /** Weapon.gd:can_shoot — infinite ammo, but capped on shots already in flight. */
+  /** Weapon.gd:can_shoot, dispatched onto whichever weapon is active — infinite
+   *  ammo and capped on shots in flight for the buster; ammo-gated for a sub-weapon. */
   override _StartCondition(): boolean {
-    return !this.character.is_executing("Damage") && this.character.can_shoot(0);
+    return !this.character.is_executing("Damage") && this.character.canFireActiveWeapon(0);
   }
 
   /** Shot.gd:play_animation_on_initialize — raise the buster, don't change clip. */
@@ -71,14 +74,15 @@ export class Shot extends Ability {
 
     if (this.character.get_action_just_pressed("fire") && !this.is_initial_frame()) {
       // Re-checked per tap, not just on start: with three lemons already in
-      // flight the press still re-raises the arm but no shot comes out.
+      // flight (or a sub-weapon's ammo spent) the press still re-raises the arm
+      // but no shot comes out.
       if (this._StartCondition()) this.fire();
     }
   }
 
   private fire(): void {
     this.arm_up();
-    this.character.spawnBuster(0);
+    this.character.fireActiveWeapon(0);
   }
 
   /** The pose half of a shot: buster out, arm-point window restarted. */

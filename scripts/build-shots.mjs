@@ -1,8 +1,9 @@
 /**
  * Builds resources/sprites/effects/shot_anims.json (+ copies the sheets) for buster shots,
- * their hit effects, the charge-up aura, and the enemy death burst.
+ * Dark Arrow (the one ported sub-weapon so far), their hit effects, the charge-up
+ * aura, and the enemy death burst.
  *
- * Three different sources, because the Godot project stores them three ways:
+ * Four different sources, because the Godot project stores them four ways:
  *
  *  - The projectiles (lemon / medium_shot / heavy_shot) are Aseprite sheets with a
  *    sibling .json describing every frame's region and duration, exactly like x.json.
@@ -15,6 +16,12 @@
  *    `animation_speed`. Their frame grid is derived from the PNG's own
  *    dimensions, read out of the IHDR chunk so the script stays dependency-free.
  *
+ *  - Dark Arrow has no Aseprite sidecar and isn't a grid either: DarkArrow.tscn
+ *    cuts two fixed AtlasTexture regions out of one 32x32 sheet by hand (a
+ *    "default" and a "hit" pose swapped on collision). Only the first is ported
+ *    — see DARK_ARROW_SHOT in core/constants.ts — so it is read as one static
+ *    region rather than a real clip.
+ *
  * Usage:  node scripts/build-shots.mjs [path-to-godot-project]
  */
 import { readFileSync, writeFileSync, copyFileSync } from "node:fs";
@@ -26,6 +33,7 @@ const repo = resolve(here, "..");
 const godot = resolve(repo, process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const projectiles = join(godot, "src/Actors/Weapons/Projectiles");
 const textures = join(godot, "src/Effects/Textures");
+const darkArrow = join(godot, "src/Actors/Player/BossWeapons/DarkArrow");
 const assets = join(repo, "resources/sprites/effects");
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
@@ -72,6 +80,16 @@ function clipFromGrid(pngPath, hframes, vframes, fps) {
   return { loop: false, speed: fps, frames };
 }
 
+/**
+ * A single fixed AtlasTexture region, played as a one-frame "clip" — DarkArrow.tscn's
+ * `animatedSprite` swaps between two such regions of dark_arrow.png ("default" and a
+ * "hit" pose neither ported here, see DARK_ARROW_SHOT in core/constants.ts) rather
+ * than spinning through a sheet like the buster's shots.
+ */
+function clipFromRegion(region, fps) {
+  return { loop: true, speed: fps, frames: [{ region, duration: 1 }] };
+}
+
 // The 16 frames of the charge aura are spread across the emitter's 0.3s particle
 // lifetime (Player.tscn ChargingParticle), so the sheet's effective rate is fixed
 // by that lifetime rather than by an authored fps.
@@ -82,6 +100,9 @@ const animations = {
   lemon: clipFromAseprite(join(projectiles, "lemon.json")),
   medium: clipFromAseprite(join(projectiles, "medium_shot.json")),
   charged: clipFromAseprite(join(projectiles, "heavy_shot.json")),
+  // Dark Arrow (Dark Mantis's sub-weapon): a static sprite, not a spin loop —
+  // DarkArrow.tscn's AtlasTexture region 13, the "default" (in-flight) pose.
+  dark_arrow: clipFromRegion([0, 0, 32, 16], 5),
   // Hit effects. 2x2 @ 32fps one-shot — Basic Hit.tscn / Big Hit.tscn.
   lemon_hit: clipFromGrid(join(textures, "lemon_hit.png"), 2, 2, 32),
   charge_hit: clipFromGrid(join(textures, "charge_hit.png"), 2, 2, 32),
@@ -115,6 +136,7 @@ const sheets = {
   lemon: "lemon.png",
   medium: "medium_shot.png",
   charged: "heavy_shot.png",
+  dark_arrow: "dark_arrow.png",
   lemon_hit: "lemon_hit.png",
   charge_hit: "charge_hit.png",
   charge_1: "charge_1.png",
@@ -133,6 +155,7 @@ for (const [src, dir] of [
   ["lemon.png", projectiles],
   ["medium_shot.png", projectiles],
   ["heavy_shot.png", projectiles],
+  ["dark_arrow.png", darkArrow],
   ["lemon_hit.png", textures],
   ["charge_hit.png", textures],
   ["charge_1.png", textures],
@@ -151,4 +174,4 @@ for (const [name, clip] of Object.entries(animations)) {
       `${w}x${h}  ${clip.speed.toFixed(1)}fps${clip.loop ? " loop" : ""}`,
   );
 }
-console.log("\nshot_anims.json + 10 sheets written to resources/sprites/effects");
+console.log(`\nshot_anims.json + ${Object.keys(sheets).length} sheets written to resources/sprites/effects`);

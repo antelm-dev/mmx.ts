@@ -96,6 +96,9 @@ export class InputBinding {
       if (menu.isCapturing && code !== "Escape") continue;
       if (menu.visible) menu.handleKey(code);
       else if (home.visible) home.handleKey(code);
+      // Neither modal is up: this is gameplay, and Escape (Start on the pad) must
+      // still open the pause menu, exactly as it does from the keyboard.
+      else menu.handleKey(code);
     }
   }
 

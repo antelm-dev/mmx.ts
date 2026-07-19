@@ -7,6 +7,7 @@ import shotAnimDataJson from "../../../../resources/sprites/effects/shot_anims.j
 import lemonUrl from "../../../../resources/sprites/effects/lemon.png";
 import mediumShotUrl from "../../../../resources/sprites/effects/medium_shot.png";
 import heavyShotUrl from "../../../../resources/sprites/effects/heavy_shot.png";
+import darkArrowUrl from "../../../../resources/sprites/effects/dark_arrow.png";
 import lemonHitUrl from "../../../../resources/sprites/effects/lemon_hit.png";
 import chargeHitUrl from "../../../../resources/sprites/effects/charge_hit.png";
 import charge1Url from "../../../../resources/sprites/effects/charge_1.png";
@@ -16,12 +17,16 @@ import explosionUrl from "../../../../resources/sprites/effects/explosion.png";
 import remainsUrl from "../../../../resources/sprites/effects/remains.png";
 import xBarUrl from "../../../../resources/sprites/hud/x_bar.png";
 import hpFillUrl from "../../../../resources/sprites/hud/hp_fill.png";
+import weaponBarUrl from "../../../../resources/sprites/hud/weapon_bar.png";
+import weaponIconDarkArrowUrl from "../../../../resources/sprites/hud/weapon_icon_dark_arrow.png";
 import enemyAnimDataJson from "../../../../resources/sprites/enemies/enemy_anims.json?raw";
 import metoolUrl from "../../../../resources/sprites/enemies/metool.png";
 import batUrl from "../../../../resources/sprites/enemies/sbat.png";
 import pickupAnimDataJson from "../../../../resources/sprites/pickups/pickup_anims.json?raw";
 import healUrl from "../../../../resources/sprites/pickups/heal.png";
 import shealUrl from "../../../../resources/sprites/pickups/sheal.png";
+import ammoUrl from "../../../../resources/sprites/pickups/ammo.png";
+import sammoUrl from "../../../../resources/sprites/pickups/sammo.png";
 
 /**
  * Every image the renderer draws from, and the clip tables that index into them.
@@ -37,6 +42,7 @@ export const SHEET_URLS: Record<string, string> = {
   "lemon.png": lemonUrl,
   "medium_shot.png": mediumShotUrl,
   "heavy_shot.png": heavyShotUrl,
+  "dark_arrow.png": darkArrowUrl,
   "lemon_hit.png": lemonHitUrl,
   "charge_hit.png": chargeHitUrl,
   "charge_1.png": charge1Url,
@@ -47,12 +53,18 @@ export const SHEET_URLS: Record<string, string> = {
   // HUD furniture, from the original's src/HUD.
   "x_bar.png": xBarUrl,
   "hp_fill.png": hpFillUrl,
+  "weapon_bar.png": weaponBarUrl,
+  // Weapon-select icon crops, from the original's src/Options — one weapon
+  // ported so far.
+  "weapon_icon_dark_arrow.png": weaponIconDarkArrowUrl,
   // Enemies, imported by scripts/build-enemies.mjs.
   "metool.png": metoolUrl,
   "sbat.png": batUrl,
-  // Life Energy capsules, imported by scripts/build-pickups.mjs.
+  // Life Energy and Weapon Energy capsules, imported by scripts/build-pickups.mjs.
   "heal.png": healUrl,
   "sheal.png": shealUrl,
+  "ammo.png": ammoUrl,
+  "sammo.png": sammoUrl,
 };
 
 /**

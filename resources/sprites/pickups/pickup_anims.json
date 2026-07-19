@@ -1,7 +1,9 @@
 {
   "sheets": {
     "small": "sheal.png",
-    "large": "heal.png"
+    "large": "heal.png",
+    "sammo": "sammo.png",
+    "ammo": "ammo.png"
   },
   "actors": {
     "small": {
@@ -12,7 +14,12 @@
           "speed": 1,
           "frames": [
             {
-              "region": [0, 0, 16, 16],
+              "region": [
+                0,
+                0,
+                16,
+                16
+              ],
               "duration": 1
             }
           ]
@@ -22,15 +29,30 @@
           "speed": 24,
           "frames": [
             {
-              "region": [16, 0, 16, 16],
+              "region": [
+                16,
+                0,
+                16,
+                16
+              ],
               "duration": 1
             },
             {
-              "region": [0, 16, 16, 16],
+              "region": [
+                0,
+                16,
+                16,
+                16
+              ],
               "duration": 1
             },
             {
-              "region": [16, 16, 16, 16],
+              "region": [
+                16,
+                16,
+                16,
+                16
+              ],
               "duration": 1
             }
           ]
@@ -45,15 +67,30 @@
           "speed": 24,
           "frames": [
             {
-              "region": [16, 0, 16, 16],
+              "region": [
+                16,
+                0,
+                16,
+                16
+              ],
               "duration": 1
             },
             {
-              "region": [0, 16, 16, 16],
+              "region": [
+                0,
+                16,
+                16,
+                16
+              ],
               "duration": 1
             },
             {
-              "region": [16, 16, 16, 16],
+              "region": [
+                16,
+                16,
+                16,
+                16
+              ],
               "duration": 1
             }
           ]
@@ -63,7 +100,118 @@
           "speed": 1,
           "frames": [
             {
-              "region": [0, 0, 16, 16],
+              "region": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "duration": 1
+            }
+          ]
+        }
+      }
+    },
+    "sammo": {
+      "sheet": "sammo.png",
+      "animations": {
+        "falling": {
+          "loop": false,
+          "speed": 1,
+          "frames": [
+            {
+              "region": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "duration": 1
+            }
+          ]
+        },
+        "idle": {
+          "loop": true,
+          "speed": 24,
+          "frames": [
+            {
+              "region": [
+                16,
+                0,
+                16,
+                16
+              ],
+              "duration": 1
+            },
+            {
+              "region": [
+                0,
+                16,
+                16,
+                16
+              ],
+              "duration": 1
+            },
+            {
+              "region": [
+                16,
+                16,
+                16,
+                16
+              ],
+              "duration": 1
+            }
+          ]
+        }
+      }
+    },
+    "ammo": {
+      "sheet": "ammo.png",
+      "animations": {
+        "falling": {
+          "loop": false,
+          "speed": 1,
+          "frames": [
+            {
+              "region": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "duration": 1
+            }
+          ]
+        },
+        "idle": {
+          "loop": true,
+          "speed": 24,
+          "frames": [
+            {
+              "region": [
+                16,
+                0,
+                16,
+                16
+              ],
+              "duration": 1
+            },
+            {
+              "region": [
+                0,
+                16,
+                16,
+                16
+              ],
+              "duration": 1
+            },
+            {
+              "region": [
+                16,
+                16,
+                16,
+                16
+              ],
               "duration": 1
             }
           ]

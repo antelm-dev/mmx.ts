@@ -8,6 +8,10 @@ import {
   MAX_SHOTS_ALIVE,
   SHOT_POSITION,
   SHOT_POSITION_ADJUST,
+  SUB_WEAPON_CONFIG,
+  SUB_WEAPON_MAX_AMMO,
+  WEAPON_ORDER,
+  type WeaponId,
 } from "../core/constants.js";
 
 /**
@@ -25,6 +29,16 @@ export class Character extends AbilityUser {
   block_charging = false;
 
   projectiles: Projectile[] = [];
+
+  /** WeaponChanger.gd's selection — the buster (slot 0) until the player cycles. */
+  activeWeapon: WeaponId = WEAPON_ORDER[0];
+  /**
+   * BossWeapon.gd's `current_ammo` per sub-weapon slot. The buster has no entry:
+   * Weapon.gd:has_ammo() is unconditionally true, i.e. infinite.
+   */
+  private readonly subWeaponAmmo = new Map<WeaponId, number>(
+    Object.keys(SUB_WEAPON_CONFIG).map((id) => [id as WeaponId, SUB_WEAPON_MAX_AMMO]),
+  );
 
   /** Death hides the sprite once the sequence starts (mirrors Enemy.sprite_visible). */
   sprite_visible = true;
@@ -73,7 +87,11 @@ export class Character extends AbilityUser {
    */
   can_shoot(charge: number): boolean {
     const cap = charge > 0 ? MAX_CHARGED_SHOTS_ALIVE : MAX_SHOTS_ALIVE;
-    const live = this.projectiles.filter((p) => p.isLive && p.charge > 0 === charge > 0).length;
+    // Filtered by weapon as well as charge sign: a Dark Arrow shot still in
+    // flight after switching back to the buster must not eat into its cap.
+    const live = this.projectiles.filter(
+      (p) => p.isLive && p.weapon === "buster" && p.charge > 0 === charge > 0,
+    ).length;
     return live < cap;
   }
 
@@ -84,6 +102,99 @@ export class Character extends AbilityUser {
     const dir = this.get_facing_direction();
     this.projectiles.push(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
     this.events.emit("shot_fired", charge);
+  }
+
+  /**
+   * BossWeapon.gd:can_shoot / has_ammo, dispatched onto whichever weapon is
+   * active — what {@link Shot}'s `_StartCondition` actually gates fire on. The
+   * buster keeps its own unlimited-ammo/shots-alive check via {@link can_shoot};
+   * every other slot is gated on its {@link SUB_WEAPON_CONFIG} entry instead.
+   */
+  canFireActiveWeapon(charge: number): boolean {
+    if (this.activeWeapon === "buster") return this.can_shoot(charge);
+    const config = SUB_WEAPON_CONFIG[this.activeWeapon];
+    if (!config) return false;
+    const ammo = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
+    if (ammo < config.ammoCost) return false;
+    const live = this.projectiles.filter(
+      (p) => p.isLive && p.weapon === this.activeWeapon,
+    ).length;
+    return live < config.maxShotsAlive;
+  }
+
+  /**
+   * BossWeapon.fire, dispatched the same way as {@link canFireActiveWeapon}.
+   * `charge` is only meaningful for the buster — every ported sub-weapon slot
+   * fires its single regular shot regardless (see {@link WEAPON_SHOTS}), since
+   * no sub-weapon's charged tier is ported yet.
+   */
+  fireActiveWeapon(charge: number): void {
+    if (this.activeWeapon === "buster") {
+      this.spawnBuster(charge);
+      return;
+    }
+    if (!this.canFireActiveWeapon(charge)) return;
+    const config = SUB_WEAPON_CONFIG[this.activeWeapon];
+    if (!config) return;
+    const muzzle = this.get_shot_position();
+    const dir = this.get_facing_direction();
+    this.projectiles.push(new Projectile(muzzle.x, muzzle.y, dir, 0, this.rng, this.activeWeapon));
+    const ammo = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
+    this.subWeaponAmmo.set(this.activeWeapon, Math.max(0, ammo - config.ammoCost));
+    this.events.emit("shot_fired", 0);
+  }
+
+  /**
+   * Current ammo in a weapon's tank — Infinity for the buster, which tracks
+   * none (see {@link canFireActiveWeapon}). Read by {@link WeaponCapsule} to
+   * know when a tank is already full, and by the HUD's weapon bar.
+   */
+  getWeaponAmmo(weapon: WeaponId): number {
+    if (weapon === "buster") return Infinity;
+    return this.subWeaponAmmo.get(weapon) ?? 0;
+  }
+
+  /**
+   * AmmoPickup.gd:do_ammo — raise the *active* weapon's ammo, clamped to
+   * {@link SUB_WEAPON_MAX_AMMO}, mirroring Actor.heal's clamp-and-report shape.
+   * A no-op on the buster, which has nothing to refill.
+   */
+  refillWeaponAmmo(value: number): void {
+    if (this.activeWeapon === "buster") return;
+    const before = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
+    const after = Math.min(SUB_WEAPON_MAX_AMMO, before + value);
+    if (after > before) {
+      this.subWeaponAmmo.set(this.activeWeapon, after);
+      this.events.emit("weapon_ammo_refilled", after - before);
+    }
+  }
+
+  /**
+   * WeaponChanger.gd — cycle the active weapon on weapon_left/weapon_right, or
+   * jump straight back to the buster (slot 0) when the player taps one
+   * direction while still holding the other, a panic button rather than one
+   * more step around the list.
+   */
+  private updateWeaponSwitch(): void {
+    const leftPressed = this.get_action_just_pressed("weapon_left");
+    const rightPressed = this.get_action_just_pressed("weapon_right");
+    if (!leftPressed && !rightPressed) return;
+
+    const leftHeld = this.get_action_pressed("weapon_left");
+    const rightHeld = this.get_action_pressed("weapon_right");
+    if ((leftHeld && rightPressed) || (rightHeld && leftPressed)) {
+      this.setActiveWeapon(WEAPON_ORDER[0]);
+      return;
+    }
+    const current = WEAPON_ORDER.indexOf(this.activeWeapon);
+    const delta = rightPressed ? 1 : -1;
+    this.setActiveWeapon(WEAPON_ORDER[(current + delta + WEAPON_ORDER.length) % WEAPON_ORDER.length]);
+  }
+
+  private setActiveWeapon(weapon: WeaponId): void {
+    if (weapon === this.activeWeapon) return;
+    this.activeWeapon = weapon;
+    this.events.emit("weapon_changed", weapon);
   }
 
   private updateProjectiles(dt: number): void {
@@ -156,6 +267,7 @@ export class Character extends AbilityUser {
       this.last_time_dashed = this.clockMs;
       this.events.emit("input_dash");
     }
+    this.updateWeaponSwitch();
 
     this.stepAbilities(dt);
     this.physicsStep(dt);

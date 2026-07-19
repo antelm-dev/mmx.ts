@@ -1,7 +1,7 @@
 import type { Container } from "pixi.js";
 import { BODY_HALF_H, DASH_FX_OFFSET_X, DASH_FX_OFFSET_Y } from "@mmx/engine/core/constants.js";
 import type { Enemy } from "@mmx/engine/engine/Enemy.js";
-import type { LifeCapsule } from "@mmx/engine/engine/Pickup.js";
+import type { LifeCapsule, WeaponCapsule } from "@mmx/engine/engine/Pickup.js";
 import type { Player } from "@mmx/engine/engine/Player.js";
 import type { Scene } from "@mmx/engine/engine/Scene.js";
 import type { Stage } from "@mmx/engine/engine/Stage.js";
@@ -49,6 +49,8 @@ export interface ScenePresenterOptions {
    * fires the death sound has already finished playing out.
    */
   onPlayerDeath: () => void;
+  /** WeaponChanger.gd's selection changed — see {@link attachPlayer}. */
+  onWeaponChanged: (weapon: string) => void;
 }
 
 export class ScenePresenter {
@@ -145,9 +147,16 @@ export class ScenePresenter {
     // PickUp.do_heal(): one "Life Gain" blip per HP tick a capsule applies.
     player.events.on("healed", () => this.sounds.play("heal", { db: -10 }));
     player.events.on("shot_fired", (charge: number) => {
-      if (charge <= 0) this.sounds.play("lemon", { rate: [0.95, 1] });
+      if (player.activeWeapon === "dark_arrow") this.sounds.play("darkArrow", { rate: [0.95, 1] });
+      else if (charge <= 0) this.sounds.play("lemon", { rate: [0.95, 1] });
       else if (charge === 1) this.sounds.play("mediumShot", { rate: [0.95, 1] });
       else this.sounds.play("chargedShot", { rate: [0.95, 1] });
+    });
+    // WeaponChanger.gd — no in-game HUD icon bar yet, so the switch is surfaced
+    // through the same debug-notify channel as other transient player feedback
+    // (see main.ts's gamepad-connected message).
+    player.events.on("weapon_changed", (weapon: string) => {
+      this.options.onWeaponChanged(weapon);
     });
     player.events.on("charge_started", () => {
       this.sounds.play("charge", { db: -13.5, loop: true, loopSeconds: CHARGE_LOOP });
@@ -200,6 +209,11 @@ export class ScenePresenter {
   /** {@link DebugSession}'s `onPickupSpawned` callback. */
   attachPickup(pickup: LifeCapsule): void {
     pickup.loadAnimations(pickupAnims.actors[pickup.kind] as unknown as AnimData);
+  }
+
+  /** {@link DebugSession}'s `onWeaponCapsuleSpawned` callback. */
+  attachWeaponCapsule(capsule: WeaponCapsule): void {
+    capsule.loadAnimations(pickupAnims.actors[capsule.sheet] as unknown as AnimData);
   }
 
   /** Which move, if any, is currently laying down a trail — and how it should look. */

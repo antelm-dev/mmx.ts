@@ -34,9 +34,12 @@ const REPEAT_INTERVAL = 0.12;
  * Standard-mapping button index to gameplay action.
  *
  * Face buttons in standard-mapping order are [cross/A, circle/B, square/X,
- * triangle/Y], so square is fire and cross is jump exactly as on the original,
- * and every shoulder is a dash because that is the other half of the muscle
- * memory. Buttons 12-15 are the d-pad.
+ * triangle/Y], so square is fire and cross is jump exactly as on the original.
+ * Shoulders split in two: L1/R1 (4/5) stay dash, the other half of the muscle
+ * memory; L2/R2 (6/7) are weapon_left/weapon_right (WeaponChanger.gd's own
+ * left/right) instead of also dashing. Buttons 12-15 are the d-pad, left as
+ * plain movement — same as the stick — since the d-pad is the only movement
+ * input on some pads (not every controller reliably reports stick axes).
  */
 const BUTTON_ACTIONS: Readonly<Record<number, Action>> = {
   0: "jump",
@@ -45,8 +48,8 @@ const BUTTON_ACTIONS: Readonly<Record<number, Action>> = {
   3: "fire",
   4: "dash",
   5: "dash",
-  6: "dash",
-  7: "dash",
+  6: "weapon_left",
+  7: "weapon_right",
   12: "move_up",
   13: "move_down",
   14: "move_left",

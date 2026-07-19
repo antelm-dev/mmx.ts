@@ -21,6 +21,7 @@ import {
   validateAnimationAssets,
 } from "./assets.js";
 import { Hud } from "./Hud.js";
+import { PaletteSwapFilter } from "./PaletteSwapFilter.js";
 import { place, spriteSnapshot } from "./sprite.js";
 import { SpritePool } from "./SpritePool.js";
 import { buildTerrain, COLOR_BG, type TerrainView } from "./terrain.js";
@@ -77,6 +78,7 @@ export class Renderer {
   private readonly player = new Sprite();
   private readonly aura = new Sprite();
   private readonly hud = new Hud();
+  private readonly paletteSwap = new PaletteSwapFilter();
   private terrain?: TerrainView;
 
   /**
@@ -98,6 +100,7 @@ export class Renderer {
   private constructor(private readonly app: Application) {
     this.player.anchor.set(0.5);
     this.aura.anchor.set(0.5);
+    this.player.filters = [this.paletteSwap];
 
     // Ghosts before the player so the live sprite always reads on top of its own
     // trail; the aura after it, as the emitter is a child of animatedSprite with
@@ -332,11 +335,16 @@ export class Renderer {
   }
 
   /**
-   * Life Energy capsules — LifeCapsule carries its box as x/y/w/h (an
-   * EnvironmentRect, like Hazard/Conveyor) rather than a centred body, so the
-   * sprite centre is derived here instead of read straight off the position.
-   * A capsule that has not yet loaded clip data (headless sim, tests) simply
-   * has no region to draw, same as an enemy or the player without one.
+   * Life Energy and Weapon Energy capsules — both carry their box as x/y/w/h
+   * (an EnvironmentRect, like Hazard/Conveyor) rather than a centred body, so
+   * the sprite centre is derived here instead of read straight off the
+   * position. A capsule that has not yet loaded clip data (headless sim,
+   * tests) simply has no region to draw, same as an enemy or the player
+   * without one. Drawn through the same pool: on screen they are the same
+   * kind of object, just filled from a different actor table — LifeCapsule is
+   * keyed by its own `kind` ("small"/"large"), WeaponCapsule by `sheet`
+   * ("ammo"/"sammo") since its `kind` collides with LifeCapsule's (see
+   * WeaponCapsule.sheet).
    */
   private syncCapsules(stage: Stage): void {
     this.pickups.begin();
@@ -348,6 +356,15 @@ export class Renderer {
 
       const sprite = this.pickups.next();
       place(sprite, texture, pickup.x + pickup.w / 2, pickup.y + pickup.h / 2, 1);
+    }
+    for (const capsule of stage.weaponCapsules) {
+      const region = capsule.currentRegion();
+      if (!region) continue;
+      const texture = regionTexture(pickupAnims.actors[capsule.sheet].sheet, region);
+      if (!texture) continue;
+
+      const sprite = this.pickups.next();
+      place(sprite, texture, capsule.x + capsule.w / 2, capsule.y + capsule.h / 2, 1);
     }
     this.pickups.end();
   }
@@ -386,6 +403,8 @@ export class Renderer {
     // Character.apply_invulnerability_shader sets Alpha to 0.5 after the hurt
     // animation ends; Damage._Setup keeps full alpha during the actual tumble.
     this.player.alpha = player.is_invulnerable() && !player.is_executing("Damage") ? 0.5 : 1;
+    // Player.gd:change_palette — recolored on every weapon switch, both atlases alike.
+    this.paletteSwap.sync(player.activeWeapon);
   }
 
   /** The charge-up aura, drawn over X exactly as the emitter sits over his sprite. */

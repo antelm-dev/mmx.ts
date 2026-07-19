@@ -36,10 +36,12 @@ export const DEFAULT_BINDINGS: KeyBindings = {
   jump: ["Space", "KeyK"],
   dash: ["ShiftLeft", "KeyL"],
   fire: ["KeyJ", "KeyF"],
+  weapon_left: ["KeyQ", "BracketLeft"],
+  weapon_right: ["KeyE", "BracketRight"],
 };
 
 export interface DesktopSettings {
-  version: 2;
+  version: 3;
   masterVolume: number;
   /** Device pixels per world pixel; also the locked window size multiplier. */
   scale: number;
@@ -49,7 +51,7 @@ export interface DesktopSettings {
 }
 
 export const DEFAULT_SETTINGS: DesktopSettings = {
-  version: 2,
+  version: 3,
   masterVolume: 1,
   scale: DEFAULT_WINDOW_SCALE,
   fullscreen: false,
@@ -94,7 +96,7 @@ function validSettings(value: unknown): value is DesktopSettings {
       settings.scale >= 1 &&
       settings.scale <= MAX_WINDOW_SCALE);
   return (
-    settings.version === 2 &&
+    settings.version === 3 &&
     typeof settings.masterVolume === "number" &&
     Number.isFinite(settings.masterVolume) &&
     settings.masterVolume >= 0 &&
@@ -115,17 +117,41 @@ function withScale(settings: DesktopSettings): DesktopSettings {
 }
 
 /**
- * Bring a stored file forward to the current version.
+ * Bring a stored file forward to the current version, one step at a time.
  *
- * v1 predates rebinding, so it is upgraded by giving it the default map rather
- * than being discarded — a player who had turned the volume down should not get
- * it back at full the first time they launch a build with a settings menu.
+ * v1 predates rebinding entirely, so it is upgraded by giving it the default map
+ * rather than being discarded — a player who had turned the volume down should
+ * not get it back at full the first time they launch a build with a settings menu.
+ *
+ * v2 predates weapon switching: it has every action *except* weapon_left/right,
+ * so unlike the v1 step this one keeps every binding the player already made
+ * (see {@link mergeBindings}) and only fills in the two new actions.
  */
 function migrate(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
-  const settings = value as Record<string, unknown>;
-  if (settings.version !== 1) return value;
-  return { ...settings, version: 2, bindings: cloneBindings(DEFAULT_BINDINGS) };
+  let settings = value as Record<string, unknown>;
+  if (settings.version === 1) {
+    settings = { ...settings, version: 2, bindings: cloneBindings(DEFAULT_BINDINGS) };
+  }
+  if (settings.version === 2) {
+    settings = { ...settings, version: 3, bindings: mergeBindings(settings.bindings) };
+  }
+  return settings;
+}
+
+/** Keep every action the stored map already binds; default the rest (new actions,
+ *  or a slot malformed enough that it cannot be trusted as a `[string, string]`). */
+function mergeBindings(value: unknown): KeyBindings {
+  const existing = (value && typeof value === "object" ? value : {}) as Partial<
+    Record<Action, unknown>
+  >;
+  return Object.fromEntries(
+    BINDABLE_ACTIONS.map((action) => {
+      const slots = existing[action];
+      const valid = Array.isArray(slots) && slots.length === 2 && slots.every((s) => typeof s === "string");
+      return [action, valid ? [...(slots as [string, string])] : [...DEFAULT_BINDINGS[action]]];
+    }),
+  ) as KeyBindings;
 }
 
 function download(contents: string, suggestedName: string): void {

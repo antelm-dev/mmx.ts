@@ -3,7 +3,8 @@
  * just_released with per-frame edge detection.
  *
  * Actions map to the Godot input map (project.godot):
- *   move_left, move_right, move_up, move_down, jump, dash, fire.
+ *   move_left, move_right, move_up, move_down, jump, dash, fire,
+ *   weapon_left, weapon_right (WeaponChanger.gd's weapon_select_left/right).
  */
 export type Action =
   | "move_left"
@@ -12,7 +13,9 @@ export type Action =
   | "move_down"
   | "jump"
   | "dash"
-  | "fire";
+  | "fire"
+  | "weapon_left"
+  | "weapon_right";
 
 export class Input {
   private cur = new Set<Action>();

@@ -14,6 +14,7 @@ export type SoundName =
   | "lemon"
   | "mediumShot"
   | "chargedShot"
+  | "darkArrow"
   | "enemyHit"
   | "shieldHit"
   | "guardBreak"
@@ -33,6 +34,7 @@ const URLS: Record<SoundName, string> = {
   lemon: new URL("../../../resources/sounds/weapons/lemon.wav", import.meta.url).href,
   mediumShot: new URL("../../../resources/sounds/weapons/medium-shot.wav", import.meta.url).href,
   chargedShot: new URL("../../../resources/sounds/weapons/charged-shot.wav", import.meta.url).href,
+  darkArrow: new URL("../../../resources/sounds/weapons/dark-arrow.ogg", import.meta.url).href,
   enemyHit: new URL("../../../resources/sounds/enemies/enemy-hit.wav", import.meta.url).href,
   shieldHit: new URL("../../../resources/sounds/enemies/shield-hit.ogg", import.meta.url).href,
   guardBreak: new URL("../../../resources/sounds/enemies/guard-break.wav", import.meta.url).href,

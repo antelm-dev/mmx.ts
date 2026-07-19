@@ -11,7 +11,7 @@
   "iid": "34de44db-8197-4306-90a1-21267899f47c",
   "jsonVersion": "1.5.3",
   "appBuildId": 473703,
-  "nextUid": 130,
+  "nextUid": 152,
   "identifierStyle": "Capitalize",
   "toc": [],
   "worldLayout": "Free",
@@ -528,6 +528,84 @@
             "doc": "Which capsule to spawn: 'small' (2 HP) or 'large' (8 HP).",
             "__type": "String",
             "uid": 141,
+            "type": "F_String",
+            "isArray": false,
+            "canBeNull": false,
+            "arrayMinLength": null,
+            "arrayMaxLength": null,
+            "editorDisplayMode": "NameAndValue",
+            "editorDisplayScale": 1,
+            "editorDisplayPos": "Above",
+            "editorLinkStyle": "StraightArrow",
+            "editorDisplayColor": null,
+            "editorAlwaysShow": false,
+            "editorShowInWorld": true,
+            "editorCutLongValues": true,
+            "editorTextSuffix": null,
+            "editorTextPrefix": null,
+            "useForSmartColor": false,
+            "exportToToc": false,
+            "searchable": false,
+            "min": null,
+            "max": null,
+            "regex": null,
+            "acceptFileTypes": null,
+            "defaultOverride": {
+              "id": "V_String",
+              "params": [
+                "large"
+              ]
+            },
+            "textLanguageMode": null,
+            "symmetricalRef": false,
+            "autoChainRef": true,
+            "allowOutOfLevelRef": true,
+            "allowedRefs": "OnlySame",
+            "allowedRefsEntityUid": null,
+            "allowedRefTags": [],
+            "tilesetUid": null
+          }
+        ]
+      },
+      {
+        "identifier": "WeaponCapsule",
+        "uid": 150,
+        "tags": [],
+        "exportToToc": false,
+        "allowOutOfBounds": false,
+        "doc": "A Weapon Energy pickup. 'small' refills 2 ammo, 'large' refills 8 ammo, into whichever sub-weapon is currently equipped.",
+        "width": 16,
+        "height": 16,
+        "resizableX": false,
+        "resizableY": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null,
+        "keepAspectRatio": false,
+        "tileOpacity": 1,
+        "fillOpacity": 1,
+        "lineOpacity": 1,
+        "hollow": false,
+        "color": "#6BC7FF",
+        "renderMode": "Rectangle",
+        "showName": true,
+        "tilesetId": null,
+        "tileRenderMode": "FitInside",
+        "tileRect": null,
+        "uiTileRect": null,
+        "nineSliceBorders": [],
+        "maxCount": 0,
+        "limitScope": "PerLevel",
+        "limitBehavior": "MoveLastOne",
+        "pivotX": 0,
+        "pivotY": 0,
+        "fieldDefs": [
+          {
+            "identifier": "Kind",
+            "doc": "Which capsule to spawn: 'small' (2 ammo) or 'large' (8 ammo).",
+            "__type": "String",
+            "uid": 151,
             "type": "F_String",
             "isArray": false,
             "canBeNull": false,
@@ -1444,6 +1522,74 @@
                 }
               ],
               "__worldX": 650,
+              "__worldY": 342
+            },
+            {
+              "__identifier": "WeaponCapsule",
+              "__grid": [
+                18,
+                21
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [],
+              "__tile": null,
+              "__smartColor": "#6BC7FF",
+              "iid": "weaponcapsule-0000-0000-0000-000000000001",
+              "width": 16,
+              "height": 16,
+              "defUid": 150,
+              "px": [
+                300,
+                342
+              ],
+              "fieldInstances": [
+                {
+                  "__identifier": "Kind",
+                  "__type": "String",
+                  "__value": "small",
+                  "__tile": null,
+                  "defUid": 151,
+                  "realEditorValues": []
+                }
+              ],
+              "__worldX": 300,
+              "__worldY": 342
+            },
+            {
+              "__identifier": "WeaponCapsule",
+              "__grid": [
+                71,
+                21
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [],
+              "__tile": null,
+              "__smartColor": "#6BC7FF",
+              "iid": "weaponcapsule-0000-0000-0000-000000000002",
+              "width": 16,
+              "height": 16,
+              "defUid": 150,
+              "px": [
+                1150,
+                342
+              ],
+              "fieldInstances": [
+                {
+                  "__identifier": "Kind",
+                  "__type": "String",
+                  "__value": "large",
+                  "__tile": null,
+                  "defUid": 151,
+                  "realEditorValues": []
+                }
+              ],
+              "__worldX": 1150,
               "__worldY": 342
             }
           ]
