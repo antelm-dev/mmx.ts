@@ -342,6 +342,15 @@ export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
  *  enough for "11 - MMX - X Die.wav" (~3.83s) to finish playing out. */
 export const PLAYER_DEATH_RESTART_DELAY = 3.8;
 
+// --- Intro.gd (as configured on Player.tscn's Intro node; see engine/abilities/Intro.ts) ---
+/** Intro.gd:6 — how far above the spawn point the descent starts. */
+export const PLAYER_INTRO_DROP_HEIGHT = 160.0;
+/** Intro.gd:5 beam_speed — descent rate, in pixels/second. */
+export const PLAYER_INTRO_BEAM_SPEED = 420.0;
+/** Intro.gd:41 — the window within `beam_equip` (seconds since it started) that
+ *  fires the equip clang and the `x_appear` cue. */
+export const PLAYER_INTRO_THUNDER_WINDOW: readonly [number, number] = [0.55, 1.0];
+
 // ---------------------------------------------------------------------------
 // Life Energy capsules
 // ---------------------------------------------------------------------------

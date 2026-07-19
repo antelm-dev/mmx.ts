@@ -1,4 +1,4 @@
-# mmx-core-ts
+# mmx.ts
 
 A faithful **TypeScript / Node** port of the _core player gameplay_ from the
 [Mega Man X8 16-bit](https://github.com/AlyssonDaPaz/Mega-Man-X8-16-bit) Godot project — the movement state

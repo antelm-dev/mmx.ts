@@ -19,7 +19,9 @@ export type SoundName =
   | "guardBreak"
   | "enemyDeath"
   | "playerDeath"
-  | "heal";
+  | "heal"
+  | "introAppear"
+  | "introThunder";
 
 const URLS: Record<SoundName, string> = {
   jump: new URL("../../../resources/sounds/player/jump.wav", import.meta.url).href,
@@ -37,6 +39,8 @@ const URLS: Record<SoundName, string> = {
   enemyDeath: new URL("../../../resources/sounds/enemies/enemy-death.wav", import.meta.url).href,
   playerDeath: new URL("../../../resources/sounds/player/player-death.wav", import.meta.url).href,
   heal: new URL("../../../resources/sounds/pickups/heal.wav", import.meta.url).href,
+  introAppear: new URL("../../../resources/sounds/player/intro-appear.wav", import.meta.url).href,
+  introThunder: new URL("../../../resources/sounds/player/intro-thunder.wav", import.meta.url).href,
 };
 
 export interface PlayOptions {

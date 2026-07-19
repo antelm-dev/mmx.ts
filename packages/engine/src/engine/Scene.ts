@@ -95,6 +95,11 @@ export class Scene {
     for (const [i, pickup] of this.stage.pickups.entries()) {
       options.onPickupSpawned?.(pickup, i);
     }
+
+    // Camera has already snapped to the spawn point above; only now does the
+    // player's own position move (see Intro.ts), so the room's framing is fixed
+    // while X descends into it instead of following him up off the top of it.
+    this.player.beginIntro();
   }
 
   static create(options: SceneOptions = {}): Scene {
@@ -118,7 +123,10 @@ export class Scene {
     applyInput(this.input, mask);
     const recoveryWasActive = this.stage.recovering;
     this.stage.tick(DT);
-    if (!recoveryWasActive && !this.stage.recovering) {
+    // Intro moves the player's own y off the floor and back down again (see
+    // Intro.ts); the camera has to hold the room's framing rather than track that
+    // scripted descent as if it were normal falling.
+    if (!recoveryWasActive && !this.stage.recovering && !this.player.is_executing("Intro")) {
       this.camera.followTarget(
         {
           x: this.player.pos.x,

@@ -1,5 +1,5 @@
 {
-  "name": "mmx-core-ts",
+  "name": "mmx.ts",
   "version": "1.0.0",
   "private": true,
   "description": "Deterministic Mega Man X gameplay engine with web and desktop clients.",

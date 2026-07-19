@@ -131,12 +131,16 @@ export class ScenePresenter {
         this.sounds.play("damage", { rate: [1, 1.1] });
       } else if (name === "Death") {
         this.sounds.play("playerDeath");
+      } else if (name === "Intro") {
+        this.sounds.play("introAppear", { db: -14 });
       }
     });
     player.events.on("ability_end", (name: string) => {
       if (name === "WallSlide") this.sounds.stop("wallslide");
     });
     player.events.on("death", () => this.options.onPlayerDeath());
+    // Intro.gd's thunder cue: the armor-equip clang partway through beam_equip.
+    player.events.on("x_appear", () => this.sounds.play("introThunder", { db: -9, rate: 1.19 }));
     player.events.on("land", () => this.sounds.play("land", { db: -5.333, rate: [1, 1.1] }));
     // PickUp.do_heal(): one "Life Gain" blip per HP tick a capsule applies.
     player.events.on("healed", () => this.sounds.play("heal", { db: -10 }));

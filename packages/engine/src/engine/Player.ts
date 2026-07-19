@@ -15,6 +15,7 @@ import { Shot } from "./abilities/Shot.js";
 import { Charge } from "./abilities/Charge.js";
 import { Damage } from "./abilities/Damage.js";
 import { Death } from "./abilities/Death.js";
+import { Intro } from "./abilities/Intro.js";
 import type { Actor } from "./Actor.js";
 import { AirDash } from "./abilities/AirDash.js";
 
@@ -44,6 +45,7 @@ export class Player extends Character {
     this.add(new DashWallJump(this));
 
     // high-priority event states (Damage.gd / PlayerDeath.gd, Player.tscn)
+    this.add(new Intro(this));
     this.add(new Damage(this));
     this.add(new Death(this));
 
@@ -68,6 +70,17 @@ export class Player extends Character {
   kill(): void {
     if (!this.has_health()) return;
     this.emit_zero_health();
+  }
+
+  /**
+   * Start the beam-down entrance. Called once, by {@link Scene}'s constructor,
+   * after the camera has already snapped to the spawn point — Intro is event-
+   * started (see Intro.ts) rather than polled, so a bare `new Player()` (every
+   * engine test, the headless sim) never runs it unless this is called.
+   */
+  beginIntro(): void {
+    const intro = this.get_ability("Intro");
+    if (intro instanceof Intro && !intro.hasStarted) intro.ExecuteOnce();
   }
 
   /** Space-separated names of the currently executing abilities (debug). */
