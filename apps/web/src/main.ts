@@ -197,6 +197,12 @@ const menu = new SettingsMenu({
     releaseAllKeys();
     persistSettings();
   },
+  resetBindings: () => {
+    settings = { ...settings, bindings: cloneBindings(DEFAULT_BINDINGS) };
+    releaseAllKeys();
+    persistSettings();
+    debug.notify("key bindings restored to defaults");
+  },
   onMainMenu: () => {
     settingsFromHome = false;
     menu.close();
@@ -533,6 +539,9 @@ async function main(): Promise<void> {
   renderer = created;
   renderer.worldOverlay.addChild(overlay.view);
   renderer.uiLayer.addChild(home.view, menu.view);
+  // The title screen is what a fresh launch should show; explicit rather than
+  // relying on whatever Pixi's Container.visible defaults to.
+  home.open();
 
   window.addEventListener("resize", () => fitRenderer());
   // Dragging the window to a monitor with a different scaling factor changes dpr
@@ -608,6 +617,9 @@ async function main(): Promise<void> {
     // A no-op unless the window moved to a display that changed the integer zoom.
     menu.setPixelScale(created.pixelScale);
     home.setPixelScale(created.pixelScale);
+    // A no-op once a screen's open-transition fade has finished.
+    menu.update(now);
+    home.update(now);
 
     performance.mark("mmx:render:start");
     created.render(scene.stage, scene.camera, trail, smoke);
