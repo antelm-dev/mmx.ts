@@ -219,9 +219,8 @@ export class ScenePresenter {
     this.debris.tick(dt);
   }
 
-  updateOverlay(scene: Scene, visible: boolean): void {
-    this.overlay.setVisible(visible);
-    this.overlay.update(scene, scene.camera);
+  updateOverlay(scene: Scene, shapesVisible: boolean, spriteVisible: boolean): void {
+    this.overlay.update(scene, scene.camera, shapesVisible, spriteVisible);
   }
 
   render(scene: Scene): void {

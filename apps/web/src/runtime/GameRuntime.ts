@@ -1,5 +1,6 @@
 import { DT } from "@mmx/engine/core/constants.js";
 import type { DebugPanel } from "../debug/DebugPanel.js";
+import type { AnimationInspector } from "../debug/AnimationInspector.js";
 import type { DebugSession } from "../debug/DebugSession.js";
 import type { InputBinding } from "../input/InputBinding.js";
 import type { ScenePresenter } from "../presentation/ScenePresenter.js";
@@ -34,6 +35,7 @@ export interface GameRuntimeOptions {
   input: InputBinding;
   presenter: ScenePresenter;
   panel: DebugPanel;
+  animationInspector: AnimationInspector;
   menu: SettingsMenuController;
   home: HomeScreen;
 }
@@ -53,7 +55,7 @@ export class GameRuntime {
       }
       performance.mark("mmx:frame-work:start");
 
-      const { debug, input, presenter, panel, menu, home } = this.options;
+      const { debug, input, presenter, panel, animationInspector, menu, home } = this.options;
 
       // Before the accumulator, so the steps below run against this frame's pad
       // state rather than the previous one's. The repeat clock is clamped for the
@@ -94,7 +96,7 @@ export class GameRuntime {
       ).duration;
 
       const scene = debug.scene;
-      presenter.updateOverlay(scene, debug.overlayVisible);
+      presenter.updateOverlay(scene, debug.overlayVisible, debug.animationInspectorVisible);
       // A no-op unless the window moved to a display that changed the integer zoom.
       menu.setPixelScale(presenter.pixelScale);
       home.setPixelScale(presenter.pixelScale);
@@ -123,6 +125,7 @@ export class GameRuntime {
         accumulator: acc,
       });
       panel.update(now);
+      animationInspector.update();
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);

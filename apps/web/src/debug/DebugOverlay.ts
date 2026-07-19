@@ -4,6 +4,7 @@ import type { Camera } from "@mmx/engine/engine/Camera.js";
 import type { Projectile } from "@mmx/engine/engine/Projectile.js";
 import type { Scene } from "@mmx/engine/engine/Scene.js";
 import { Tile } from "@mmx/engine/engine/World.js";
+import { spriteSnapshot } from "@mmx/renderer-pixi";
 
 /**
  * The geometry overlay: collision boxes, tile classification, ramp normals,
@@ -33,6 +34,7 @@ const COLORS = {
   solid: 0x3f5a6b,
   slope: 0x6b8fa8,
   normal: 0x9ef0ff,
+  sprite: 0xff4fd8,
   zone: 0xffd166,
   zoneActive: 0x66ffcc,
   grid: 0x1d2b36,
@@ -60,11 +62,6 @@ export class DebugOverlay {
     this.view.visible = false;
   }
 
-  setVisible(visible: boolean): void {
-    this.view.visible = visible;
-    if (!visible) this.g.clear();
-  }
-
   /**
    * Rebuild the overlay for this frame.
    *
@@ -73,18 +70,25 @@ export class DebugOverlay {
    * game shows the trail exactly as it stood, which is what you want when you
    * paused specifically to look at it.
    */
-  update(scene: Scene, camera: Camera): void {
+  update(scene: Scene, camera: Camera, shapesVisible: boolean, spriteVisible: boolean): void {
     this.sampleTrails(scene);
-    if (!this.view.visible) return;
+    this.view.visible = shapesVisible || spriteVisible;
+    if (!this.view.visible) {
+      this.g.clear();
+      return;
+    }
 
     const g = this.g;
     g.clear();
 
-    this.drawTiles(g, scene, camera);
-    this.drawCameraZones(g, camera);
-    this.drawEnemies(g, scene);
-    this.drawProjectiles(g, scene);
-    this.drawPlayer(g, scene);
+    if (shapesVisible) {
+      this.drawTiles(g, scene, camera);
+      this.drawCameraZones(g, camera);
+      this.drawEnemies(g, scene);
+      this.drawProjectiles(g, scene);
+      this.drawPlayer(g, scene);
+    }
+    if (spriteVisible) this.drawPlayerSprite(g, scene);
   }
 
   // ---------------------------------------------------------------------------
@@ -238,6 +242,22 @@ export class DebugOverlay {
     g.moveTo(player.pos.x, player.pos.y)
       .lineTo(player.pos.x + player.velocity.x * 0.06, player.pos.y + player.velocity.y * 0.06)
       .stroke({ width: 1, color: COLORS.normal, alpha: 0.8 });
+  }
+
+  /** Atlas-frame bounds and the fixed sprite-node origin used by Pixi/Godot. */
+  private drawPlayerSprite(g: Graphics, scene: Scene): void {
+    const snap = spriteSnapshot(scene.player);
+    if (!snap) return;
+    const [, , w, h] = snap.region;
+    g.rect(snap.x - w / 2, snap.y - h / 2, w, h).stroke({
+      width: 1,
+      color: COLORS.sprite,
+    });
+    g.moveTo(snap.x - 4, snap.y)
+      .lineTo(snap.x + 4, snap.y)
+      .moveTo(snap.x, snap.y - 4)
+      .lineTo(snap.x, snap.y + 4)
+      .stroke({ width: 1, color: COLORS.sprite });
   }
 
   /** Append this frame's position for each live shot, and drop dead shots' trails. */

@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <title></title>
     <style>
       /* The UI face. See apps/web/src/ui/font.ts for the metrics that go with it â€”
@@ -90,6 +91,70 @@
       }
       #debug-panel summary {
         cursor: pointer;
+      }
+      /* Interactive sprite/animation debugger (F3). */
+      #animation-inspector {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 11;
+        box-sizing: border-box;
+        width: 286px;
+        max-height: calc(100vh - 16px);
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #a93b91;
+        background: rgb(12 7 18 / 94%);
+        color: #f5dcf1;
+        font: 11px/1.35 ui-monospace, "Cascadia Mono", monospace;
+        user-select: text;
+      }
+      #animation-inspector strong,
+      #animation-inspector small,
+      #animation-inspector label {
+        display: block;
+      }
+      #animation-inspector label {
+        margin-top: 8px;
+        color: #c89abd;
+      }
+      #animation-inspector select,
+      #animation-inspector input[type="range"] {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 3px;
+      }
+      #animation-inspector output {
+        float: right;
+        color: #fff;
+      }
+      #animation-inspector .animation-controls {
+        display: flex;
+        gap: 4px;
+        margin: 8px 0;
+      }
+      #animation-inspector button {
+        border: 1px solid #704263;
+        background: #251522;
+        color: #f5dcf1;
+        padding: 3px 7px;
+        cursor: pointer;
+        font: inherit;
+      }
+      #animation-inspector button:hover {
+        background: #4a2340;
+      }
+      #animation-inspector pre {
+        margin: 8px 0;
+        padding: 6px;
+        background: #0b0710;
+        font: inherit;
+        white-space: pre-wrap;
+      }
+      #animation-inspector ol {
+        margin: 4px 0 0;
+        padding-left: 2.5em;
+        color: #c89abd;
       }
     </style>
   </head>

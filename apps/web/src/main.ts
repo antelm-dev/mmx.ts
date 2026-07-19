@@ -2,6 +2,7 @@ import { LEVEL_CATALOG } from "@mmx/engine/engine/level.js";
 import { DesktopBridge } from "./DesktopBridge.js";
 import { SoundEffects } from "./SoundEffects.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
+import { AnimationInspector } from "./debug/AnimationInspector.js";
 import { DebugSession } from "./debug/DebugSession.js";
 import { InputBinding } from "./input/InputBinding.js";
 import { ScenePresenter } from "./presentation/ScenePresenter.js";
@@ -141,6 +142,7 @@ async function main(): Promise<void> {
 
   const canvas = document.getElementById("game") as HTMLCanvasElement;
   const panel = new DebugPanel(debug);
+  const animationInspector = new AnimationInspector(debug);
 
   // The UI face loads alongside the atlas and the audio, and is awaited with them:
   // the menu's labels are built at module scope and Pixi rasterises a Text the
@@ -153,7 +155,7 @@ async function main(): Promise<void> {
 
   lifecycle.watch();
 
-  new GameRuntime({ debug, input, presenter, panel, menu, home }).start();
+  new GameRuntime({ debug, input, presenter, panel, animationInspector, menu, home }).start();
 }
 
 // Not top-level await: the build targets es2020, which predates it.

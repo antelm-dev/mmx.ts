@@ -29,11 +29,14 @@ Controls (browser and desktop): **← →** / **A D** move · **Space** jump (ho
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
 hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
 
-### Browser and GPU profiling
+### Browser debugging and GPU profiling
 
-- Press **F2**, or open the game with `?profile`, for a rolling 240-frame graph and
+- Press **F1**, or open the game with `?profile`, for a rolling 240-frame graph and
   median / p95 / worst timings. `frame` is the animation-frame interval; `sim`,
   `render`, and `work` isolate CPU time spent in each part of the loop.
+- Press **F2** for collision geometry and **F3** for the interactive animation
+  inspector. The inspector can pause/step, select clips, scrub frames, swap the
+  normal/cannon atlas, show frame timing and regions, and outline sprite bounds.
 - Chrome/Edge Performance recordings include `mmx:simulation`, `mmx:render`, and
   `mmx:frame-work` User Timing measures. Use the Memory panel for heap snapshots
   and allocation sampling during longer runs.
