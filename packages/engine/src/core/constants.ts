@@ -366,6 +366,9 @@ export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleS
 /** PickUp.gd do_heal(): `timer > last_time_increased + 0.06` — 1 HP per tick. */
 export const LIFE_CAPSULE_HEAL_TICK_INTERVAL = 0.06;
 
+/** PickUp.gd process_gravity(gravity := 800) — its own default, independent of GRAVITY above. */
+export const LIFE_CAPSULE_GRAVITY = 800;
+
 // World / rendering
 export const TILE_SIZE = 16;
 

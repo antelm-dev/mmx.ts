@@ -110,6 +110,28 @@ test("the stage freezes while a Life Energy capsule restores health, then resume
   assert.notEqual(stage.platforms[0].x, platformX, "platform did not resume");
 });
 
+test("a Life Energy capsule falls under gravity and settles on the floor", () => {
+  const world = World.fromRows([
+    "....................",
+    "....................",
+    "....................",
+    "####################",
+  ]);
+  const player = new Player(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
+  const stage = new Stage(world, player, {
+    pickups: [{ id: "drop", kind: "small", x: 32, y: 0, w: 16, h: 16 }],
+  });
+
+  for (let i = 0; i < 30; i++) stage.tick(DT);
+
+  const capsule = stage.pickups[0];
+  assert.equal(capsule.y + capsule.h, 3 * 16, "capsule did not settle on the floor surface");
+
+  const settledY = capsule.y;
+  stage.tick(DT);
+  assert.equal(capsule.y, settledY, "capsule kept moving after landing");
+});
+
 test("a capsule outside the player's reach is left untouched", () => {
   const world = room();
   const player = new Player(world, 16, 16, new Input());

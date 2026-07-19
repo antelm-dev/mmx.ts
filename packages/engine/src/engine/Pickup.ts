@@ -1,7 +1,12 @@
 import type { Actor } from "./Actor.js";
 import { AnimationPlayer, type AnimData, type Region } from "./Animation.js";
 import type { EnvironmentRect } from "./Environment.js";
-import { LIFE_CAPSULE_HEAL_TICK_INTERVAL, LIFE_CAPSULE_STATS } from "../core/constants.js";
+import type { World } from "./World.js";
+import {
+  LIFE_CAPSULE_GRAVITY,
+  LIFE_CAPSULE_HEAL_TICK_INTERVAL,
+  LIFE_CAPSULE_STATS,
+} from "../core/constants.js";
 
 export type LifeCapsuleKind = "small" | "large";
 
@@ -27,10 +32,13 @@ export class LifeCapsule implements EnvironmentRect {
   readonly id: string;
   readonly kind: LifeCapsuleKind;
   readonly x: number;
-  readonly y: number;
+  y: number;
   readonly w: number;
   readonly h: number;
   readonly heal: number;
+
+  /** PickUp.gd velocity.y — falls until process_gravity's move_and_slide lands it. */
+  private velocityY = 0;
 
   private consuming = false;
   private remaining = 0;
@@ -75,8 +83,9 @@ export class LifeCapsule implements EnvironmentRect {
   }
 
   /** PickUp.process_effect / do_heal, run once per tick after being touched. */
-  tick(dt: number, player: Actor): void {
+  tick(dt: number, player: Actor, world: World): void {
     this.anim.advance(dt);
+    this.applyGravity(dt, world);
     if (!this.consuming) return;
 
     this.timer += dt;
@@ -94,5 +103,21 @@ export class LifeCapsule implements EnvironmentRect {
       this.consuming = false;
       this.consumed = true;
     }
+  }
+
+  /**
+   * PickUp.process_gravity + process_movement — a plain vertical fall (the
+   * spawner in the source only ever launches a capsule straight up, never
+   * sideways, so there is no horizontal component to port). Resolved against
+   * the tile world exactly like Actor's sweepY, so a capsule authored a few
+   * pixels off the floor settles onto it instead of hanging in the air.
+   */
+  private applyGravity(dt: number, world: World): void {
+    this.velocityY += LIFE_CAPSULE_GRAVITY * dt;
+    const hw = this.w / 2;
+    const hh = this.h / 2;
+    const { pos, hit } = world.sweepY(this.x + hw, this.y + hh, hw, hh, this.velocityY * dt);
+    this.y = pos - hh;
+    if (hit) this.velocityY = 0;
   }
 }

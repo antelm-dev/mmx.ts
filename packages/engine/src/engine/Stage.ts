@@ -67,7 +67,7 @@ export class Stage {
     // else in the room retains its current simulation state.
     const recovery = this.pickups.find((pickup) => pickup.collecting);
     if (recovery) {
-      recovery.tick(dt, this.player);
+      recovery.tick(dt, this.player, this.world);
       this.reapConsumedPickups();
       return;
     }
@@ -116,10 +116,10 @@ export class Stage {
       if (pickup.consumed) continue;
       if (!pickup.collecting && bodyOverlapsRect(this.player, pickup)) {
         pickup.beginConsuming();
-        pickup.tick(dt, this.player);
+        pickup.tick(dt, this.player, this.world);
         return;
       }
-      pickup.tick(dt, this.player);
+      pickup.tick(dt, this.player, this.world);
     }
   }
 
