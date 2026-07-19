@@ -1,19 +1,17 @@
 {
-  "name": "@mmx/engine",
+  "name": "@mmx/ldtk-tools",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./core/*.js": "./src/core/*.ts",
-    "./engine/*.js": "./src/engine/*.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "export": "tsx src/export.ts",
+    "import": "tsx src/import.ts"
   },
   "devDependencies": {
-    "@mmx/ldtk-tools": "workspace:*",
     "@types/node": "^24.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"

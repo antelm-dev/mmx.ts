@@ -165,7 +165,7 @@ tuning constant are ported line-for-line so the _feel_ matches.
   a slope tile carries a linear surface between its two edge heights, and
   shallower ramps are a run of tiles whose surfaces chain. Level designers draw
   them as resizable `Slope` boxes in LDtk — width is the run, height the rise —
-  which `tools/slope-bake.mjs` expands into those tiles at import.
+  which `@mmx/ldtk-tools` expands into those tiles at import.
 - **Interactive terrain** is authored as LDtk entities. `Conveyor` strips add
   signed ground velocity, `MovingPlatform` boxes patrol horizontally as one-way
   floors and carry their riders, and `Hazard` boxes bypass ordinary damage
@@ -201,7 +201,7 @@ Shooting plays **no clip of its own**. `Shot.gd` swaps the whole SpriteFrames
 resource (`x.res` -> `x_leftarm.res`, "pointing_cannon") while keeping the current
 clip name _and_ frame index, so every state has an arm-out twin and X keeps walking,
 jumping or wall-sliding with the buster raised. The port models this as an animation
-_layer_: [`tools/build-anims.mjs`](tools/build-anims.mjs) writes both atlases' regions
+_layer_: [`scripts/build-anims.mjs`](scripts/build-anims.mjs) writes both atlases' regions
 into `x_anims.json`, and the renderer picks the sheet the layer asks for.
 
 Clip data is optional. The headless sim and tests run without loading it — clips then
@@ -241,7 +241,7 @@ ability answers which event.
 
 ### Enemy sprites
 
-[`tools/build-enemies.mjs`](tools/build-enemies.mjs) (`pnpm enemies:import`)
+[`scripts/build-enemies.mjs`](scripts/build-enemies.mjs) (`pnpm enemies:import`)
 builds `packages/renderer-pixi/src/assets/enemy_anims.json` from the Godot project's **Aseprite**
 sidecars, not its `.res` SpriteFrames — the enemies still have their source
 `.json` checked in, and it carries per-frame atlas rects, per-frame durations in
@@ -275,12 +275,13 @@ packages/
     src/engine/       world, actors, abilities, enemies, scene and level data
     tests/            node:test gameplay and determinism tests
   renderer-pixi/      PixiJS game renderer, visual effects and sprite assets
+  ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
-tools/                level and animation asset importers
+scripts/              animation/sprite asset importers and demo-stage authoring
 ```
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends

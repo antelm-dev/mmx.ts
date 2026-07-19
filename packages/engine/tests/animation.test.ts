@@ -165,7 +165,7 @@ test("shooting swaps the arm-pointing layer instead of changing the clip", () =>
 test("the arm-pointing atlas has a region for every frame of every clip", () => {
   for (const [name, clip] of Object.entries(animData.animations)) {
     for (const [i, frame] of clip.frames.entries()) {
-      assert.ok(frame.armRegion, `${name}[${i}] has no armRegion — rerun tools/build-anims.mjs`);
+      assert.ok(frame.armRegion, `${name}[${i}] has no armRegion — rerun scripts/build-anims.mjs`);
     }
   }
 });

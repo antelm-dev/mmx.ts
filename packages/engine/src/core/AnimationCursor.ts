@@ -101,7 +101,7 @@ export function uniformClip(frameCount: number, speed: number, loop: boolean): T
 /** Fail early on malformed generated animation data instead of hanging playback. */
 export function assertTimedClip(clip: TimedClip, label = "animation clip"): void {
   if (typeof clip.loop !== "boolean") {
-    throw new Error(`${label}: loop must be a boolean`);
+    throw new TypeError(`${label}: loop must be a boolean`);
   }
   if (!Number.isFinite(clip.speed) || clip.speed <= 0) {
     throw new Error(`${label}: speed must be greater than zero`);
