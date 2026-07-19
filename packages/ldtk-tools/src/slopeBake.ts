@@ -5,18 +5,49 @@
  * its height the rise, and a Dir field says which way it climbs. That is the
  * whole of what a designer sets — angle, height and width are the box — and
  * this turns it into what the engine actually collides against: one slope tile
- * per column carrying a {@link SlopeProfile}, over solid fill down to the box's
- * base.
+ * per column carrying a slope profile, over solid fill down to the box's base.
  *
- * Shared with tests/level.test.ts, which bakes the same rectangles onto the
- * authored ASCII grid to check the import reproduces them. Kept as plain JS
- * with no imports so `node tools/import-ldtk.mjs` needs no build step.
+ * Shared with packages/engine/tests/level.test.ts, which bakes the same
+ * rectangles onto the authored ASCII grid to check the import reproduces them.
  */
 
 export const TILE = 16;
 
+/** A ramp rectangle as read off an LDtk Slope entity, in world pixels. */
+export interface SlopeRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  dir: string;
+}
+
+/** The engine-facing shape of an entity, as tools/import-ldtk.mjs produces it. */
+export interface LevelEntityLike {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fields: Record<string, unknown>;
+}
+
+/** `[left, right]` fill heights for a slope tile's surface, in pixels. */
+export type SlopeProfile = [number, number];
+
+/** Sparse map from row-major tile index to its baked slope profile. */
+export type SlopeMap = Record<number, SlopeProfile>;
+
+/** One tile a Slope rectangle claims: its grid position, kind, and profile (null for plain solid fill). */
+export interface BakedTile {
+  tx: number;
+  ty: number;
+  tile: string;
+  profile: SlopeProfile | null;
+}
+
 /** LDtk Dir field values, and the Tile enum member each bakes down to. */
-const DIRECTIONS = {
+const DIRECTIONS: Record<string, string> = {
   UpRight: "SlopeUpRight",
   UpLeft: "SlopeUpLeft",
 };
@@ -29,9 +60,9 @@ const DIRECTIONS = {
  * boundary. A 2-in-3 ramp would cross mid-tile and bake to a subtly wrong
  * surface, so it is rejected here rather than shipped as a ramp that catches.
  */
-function validate(rect, where) {
+function validate(rect: SlopeRect, where: string): { run: number; rise: number } {
   const { x, y, w, h, dir } = rect;
-  const fail = (msg) => {
+  const fail = (msg: string): never => {
     throw new Error(`${where}: Slope at ${x},${y} (${w}x${h}) ${msg}`);
   };
 
@@ -43,7 +74,7 @@ function validate(rect, where) {
     ["y", y],
     ["width", w],
     ["height", h],
-  ]) {
+  ] as const) {
     if (v % TILE !== 0) fail(`has ${name} ${v}, which is not a multiple of ${TILE}`);
   }
 
@@ -76,13 +107,13 @@ function validate(rect, where) {
  *
  * `where` names the source in error messages.
  */
-export function bakeSlope(rect, where = "slope") {
+export function bakeSlope(rect: SlopeRect, where = "slope"): BakedTile[] {
   const { run, rise } = validate(rect, where);
   const kind = DIRECTIONS[rect.dir];
   const col0 = rect.x / TILE;
   const bottomRow = rect.y / TILE + rise - 1;
   const k = run / rise; // columns spanned per tile of rise
-  const out = [];
+  const out: BakedTile[] = [];
 
   for (let i = 0; i < run; i++) {
     // An up-left ramp is an up-right one read from the far end, with each
@@ -109,7 +140,7 @@ export function bakeSlope(rect, where = "slope") {
 }
 
 /** Does this profile already say what a bare slope tile of its kind means? */
-function isDefault45([l, r]) {
+function isDefault45([l, r]: SlopeProfile): boolean {
   return (l === 0 && r === TILE) || (l === TILE && r === 0);
 }
 
@@ -117,10 +148,10 @@ function isDefault45([l, r]) {
  * Read the Slope rectangles out of a level's entity list (the shape
  * tools/import-ldtk.mjs produces: id, x, y, w, h, fields).
  */
-export function slopeRects(entities) {
+export function slopeRects(entities: LevelEntityLike[]): SlopeRect[] {
   return entities
     .filter((e) => e.id === "Slope")
-    .map((e) => ({ x: e.x, y: e.y, w: e.w, h: e.h, dir: e.fields.Dir }));
+    .map((e) => ({ x: e.x, y: e.y, w: e.w, h: e.h, dir: String(e.fields.Dir) }));
 }
 
 /**
@@ -132,8 +163,13 @@ export function slopeRects(entities) {
  * geometry a designer sees in LDtk is the box, not a hand-painted staircase
  * they also have to keep in sync.
  */
-export function applySlopes(tiles, cols, rects, where = "slope") {
-  const slopes = {};
+export function applySlopes(
+  tiles: string[],
+  cols: number,
+  rects: SlopeRect[],
+  where = "slope",
+): SlopeMap {
+  const slopes: SlopeMap = {};
   for (const rect of rects) {
     for (const { tx, ty, tile, profile } of bakeSlope(rect, where)) {
       // Columns are bounds-checked against `cols`, not against the flat index:

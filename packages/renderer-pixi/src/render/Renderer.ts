@@ -143,6 +143,16 @@ export class Renderer {
     return renderer;
   }
 
+  /** Rebuild static terrain after the player selects a different level. */
+  setStage(stage: Stage): void {
+    if (this.terrain) {
+      this.scene.removeChild(this.terrain.view);
+      this.terrain.view.destroy({ children: true });
+    }
+    this.terrain = buildTerrain(stage);
+    this.scene.addChildAt(this.terrain.view, 0);
+  }
+
   /**
    * Size the canvas to the largest whole-number multiple of the view that fits the
    * window. Integer-only is the point: a 2.7x fit would be bigger, but every third

@@ -13,7 +13,7 @@
  * via the Aseprite sheet descriptions (x.json) and writes the matching region from
  * x_leftarm.json as `armRegion`.
  *
- * Usage:  node tools/build-anims.mjs [path-to-godot-project]
+ * Usage:  node scripts/build-anims.mjs [path-to-godot-project]
  * Also copies x_leftarm.png next to x.png in the renderer package assets.
  */
 import { readFileSync, writeFileSync, copyFileSync } from "node:fs";

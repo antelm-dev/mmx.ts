@@ -22,7 +22,7 @@ import batUrl from "../assets/sbat.png";
  * Every image the renderer draws from, and the clip tables that index into them.
  *
  * The sheets are keyed by their *file name* rather than by an import binding
- * because that is the key shot_anims.json already uses (tools/build-shots.mjs
+ * because that is the key shot_anims.json already uses (scripts/build-shots.mjs
  * records which sheet each clip cuts from), so the whole set resolves through one
  * table instead of a variable per image.
  */
@@ -40,7 +40,7 @@ export const SHEET_URLS: Record<string, string> = {
   // HUD furniture, from the original's src/HUD.
   "x_bar.png": xBarUrl,
   "hp_fill.png": hpFillUrl,
-  // Enemies, imported by tools/build-enemies.mjs.
+  // Enemies, imported by scripts/build-enemies.mjs.
   "metool.png": metoolUrl,
   "sbat.png": batUrl,
 };
@@ -68,7 +68,7 @@ interface ShotAnimData {
 }
 
 /**
- * The enemy clip tables, one AnimData per enemy kind (see tools/build-enemies.mjs).
+ * The enemy clip tables, one AnimData per enemy kind (see scripts/build-enemies.mjs).
  *
  * Each kind cuts from a single sheet, so unlike the shot table — where one clip's
  * frames may come from any sheet — the sheet is recorded per actor rather than

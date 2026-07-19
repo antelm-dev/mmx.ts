@@ -14,7 +14,7 @@
  *    derived from the PNG's own dimensions, read out of the IHDR chunk so the script
  *    stays dependency-free.
  *
- * Usage:  node tools/build-shots.mjs [path-to-godot-project]
+ * Usage:  node scripts/build-shots.mjs [path-to-godot-project]
  */
 import { readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

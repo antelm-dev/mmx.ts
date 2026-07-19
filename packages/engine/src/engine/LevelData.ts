@@ -21,7 +21,7 @@ export interface LevelEntity {
 
 /**
  * The engine-facing shape of a level: what survives the LDtk import in
- * tools/import-ldtk.mjs. Modules matching this are generated into ./levels/.
+ * @mmx/ldtk-tools. Modules matching this are generated into ./levels/.
  */
 export interface LevelData {
   identifier: string;
@@ -32,7 +32,7 @@ export interface LevelData {
   tiles: Tile[];
   /**
    * Ramp shapes for the slope tiles that are not 45 degrees, baked out of the
-   * level's Slope entities by tools/import-ldtk.mjs. Absent when every ramp in
+   * level's Slope entities by @mmx/ldtk-tools. Absent when every ramp in
    * the level is a plain diagonal.
    */
   slopes?: SlopeMap;

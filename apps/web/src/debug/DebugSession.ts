@@ -1,6 +1,7 @@
 import { decodeReplay, encodeReplay } from "@mmx/engine/core/Replay.js";
 import { Recorder } from "@mmx/engine/engine/Recorder.js";
 import type { Scene, SceneOptions } from "@mmx/engine/engine/Scene.js";
+import type { LevelData } from "@mmx/engine/engine/LevelData.js";
 import { FrameStats } from "./FrameStats.js";
 
 /**
@@ -183,6 +184,13 @@ export class DebugSession {
   restartLevel(): void {
     this.replaceScene(this.recorder.restartLevel());
     this.say("you died — restarting");
+  }
+
+  loadLevel(level: LevelData): void {
+    this.paused = false;
+    this.pendingSteps = 0;
+    this.replaceScene(this.recorder.loadLevel(level));
+    this.say(`loaded ${level.identifier}`);
   }
 
   private nudgeSpeed(delta: number): void {

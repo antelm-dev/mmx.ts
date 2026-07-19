@@ -2,7 +2,17 @@ import { Container, Graphics, Text } from "pixi.js";
 import type { Action } from "@mmx/engine/core/Input.js";
 import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
 import { BINDABLE_ACTIONS, DEFAULT_WINDOW_SCALE, type DesktopSettings } from "../DesktopBridge.js";
-import { uiTextStyle } from "./font.js";
+import { TextLayer } from "./TextLayer.js";
+import {
+  COLOR_BG,
+  COLOR_BORDER,
+  COLOR_CAPTURING,
+  COLOR_DIM,
+  COLOR_PANEL,
+  COLOR_SCRIM,
+  COLOR_SELECTED,
+  COLOR_TEXT,
+} from "./theme.js";
 
 /**
  * The pause menu: key bindings, window scale and master volume, on Escape.
@@ -24,12 +34,13 @@ import { uiTextStyle } from "./font.js";
 // things that have to fit are the hint line at 36 characters (252px inside the
 // padding) and "press..." in a key slot (56px).
 const PANEL_W = 296;
-const PANEL_H = 188;
+// +ROW_H (11) over the 11-row baseline to make room for the "Restore Defaults" row.
+const PANEL_H = 199;
 const PANEL_X = Math.round((VIEW_WIDTH - PANEL_W) / 2);
 const PANEL_Y = Math.round((VIEW_HEIGHT - PANEL_H) / 2);
 
 const PAD = 12;
-const ROW_H = 12;
+const ROW_H = 11;
 const TITLE_Y = PANEL_Y + PAD;
 const RULE_Y = PANEL_Y + 24;
 const HEADER_Y = PANEL_Y + 28;
@@ -39,14 +50,6 @@ const LABEL_X = PANEL_X + PAD;
 const SLOT_X = [PANEL_X + 132, PANEL_X + 208] as const;
 const SLOT_W = 68;
 
-const COLOR_SCRIM = 0x05070f;
-const COLOR_PANEL = 0x0b1622;
-const COLOR_BORDER = 0x395564;
-const COLOR_TEXT = 0xd7edf7;
-const COLOR_DIM = 0x7f9daa;
-const COLOR_SELECTED = 0xffd166;
-const COLOR_CAPTURING = 0xff6b6b;
-
 const VOLUME_STEP = 0.1;
 const METER_CELLS = 10;
 
@@ -54,13 +57,17 @@ type Row =
   | { kind: "binding"; action: Action }
   | { kind: "scale" }
   | { kind: "fullscreen" }
-  | { kind: "volume" };
+  | { kind: "volume" }
+  | { kind: "resetBindings" }
+  | { kind: "mainMenu" };
 
 const ROWS: readonly Row[] = [
   ...BINDABLE_ACTIONS.map((action): Row => ({ kind: "binding", action })),
   { kind: "scale" },
   { kind: "fullscreen" },
   { kind: "volume" },
+  { kind: "resetBindings" },
+  { kind: "mainMenu" },
 ];
 
 const ACTION_LABELS: Record<Action, string> = {
@@ -126,6 +133,9 @@ export interface SettingsMenuOptions {
   /** Upper bound for the scale row; refreshed whenever the menu opens. */
   getMaxScale: () => number;
   setBinding: (action: Action, slot: number, code: string) => void;
+  /** Reset every action's bindings back to {@link DEFAULT_BINDINGS}. */
+  resetBindings: () => void;
+  onMainMenu: () => void;
   onVisibilityChange?: (visible: boolean) => void;
 }
 
@@ -135,7 +145,7 @@ export class SettingsMenu {
   private readonly backdrop = new Graphics();
   private readonly highlight = new Graphics();
   private readonly meter = new Graphics();
-  private readonly texts: Text[] = [];
+  private readonly labels = new TextLayer(this.view);
   private readonly rowLabels: Text[] = [];
   private readonly slotLabels: Text[][] = [];
   private readonly scaleValue: Text;
@@ -146,7 +156,7 @@ export class SettingsMenu {
   private row = 0;
   private column = 0;
   private capturing: { action: Action; slot: number } | null = null;
-  private resolution = 1;
+  private opaque = false;
 
   constructor(private readonly options: SettingsMenuOptions) {
     this.view.visible = false;
@@ -155,42 +165,42 @@ export class SettingsMenu {
     this.paintFrame();
     this.view.addChild(this.backdrop, this.highlight, this.meter);
 
-    this.addText("SETTINGS", LABEL_X, TITLE_Y, COLOR_TEXT);
-    this.addText("KEY 1", SLOT_X[0], HEADER_Y, COLOR_DIM);
-    this.addText("KEY 2", SLOT_X[1], HEADER_Y, COLOR_DIM);
+    this.labels.add("SETTINGS", LABEL_X, TITLE_Y, COLOR_TEXT);
+    this.labels.add("KEY 1", SLOT_X[0], HEADER_Y, COLOR_DIM);
+    this.labels.add("KEY 2", SLOT_X[1], HEADER_Y, COLOR_DIM);
 
     ROWS.forEach((row, index) => {
       const y = ROWS_Y + index * ROW_H;
-      this.rowLabels.push(this.addText(rowLabel(row), LABEL_X, y, COLOR_TEXT));
+      this.rowLabels.push(this.labels.add(rowLabel(row), LABEL_X, y, COLOR_TEXT));
       this.slotLabels.push(
         row.kind === "binding"
           ? [
-              this.addText("", SLOT_X[0] + 3, y, COLOR_TEXT),
-              this.addText("", SLOT_X[1] + 3, y, COLOR_TEXT),
+              this.labels.add("", SLOT_X[0] + 3, y, COLOR_TEXT),
+              this.labels.add("", SLOT_X[1] + 3, y, COLOR_TEXT),
             ]
           : [],
       );
     });
 
-    this.scaleValue = this.addText(
+    this.scaleValue = this.labels.add(
       "",
       SLOT_X[0] + 3,
       ROWS_Y + rowIndex("scale") * ROW_H,
       COLOR_TEXT,
     );
-    this.fullscreenValue = this.addText(
+    this.fullscreenValue = this.labels.add(
       "",
       SLOT_X[0] + 3,
       ROWS_Y + rowIndex("fullscreen") * ROW_H,
       COLOR_TEXT,
     );
-    this.volumeValue = this.addText(
+    this.volumeValue = this.labels.add(
       "",
       SLOT_X[1] + 3,
       ROWS_Y + rowIndex("volume") * ROW_H,
       COLOR_TEXT,
     );
-    this.hint = this.addText("", LABEL_X, HINT_Y, COLOR_DIM);
+    this.hint = this.labels.add("", LABEL_X, HINT_Y, COLOR_DIM);
   }
 
   get visible(): boolean {
@@ -218,15 +228,23 @@ export class SettingsMenu {
    * it only touches the Text objects when the zoom actually changed.
    */
   setPixelScale(scale: number): void {
-    if (scale === this.resolution || scale <= 0) return;
-    this.resolution = scale;
-    for (const text of this.texts) text.resolution = scale;
+    this.labels.setPixelScale(scale);
   }
 
-  open(): void {
+  /**
+   * @param opaque Hide whatever is behind the menu entirely instead of dimly
+   * showing it through the scrim. Set from the title screen, where "behind"
+   * is only ever the idle scene the game boots into, not a run in progress —
+   * showing it through the scrim reads as a rendering glitch, not a pause.
+   */
+  open(opaque = false): void {
     if (this.view.visible) return;
     this.view.visible = true;
     this.capturing = null;
+    if (opaque !== this.opaque) {
+      this.opaque = opaque;
+      this.paintFrame();
+    }
     this.refresh();
     this.options.onVisibilityChange?.(true);
   }
@@ -315,8 +333,17 @@ export class SettingsMenu {
 
   private activate(): void {
     const row = ROWS[this.row];
+    if (row.kind === "mainMenu") {
+      this.options.onMainMenu();
+      return;
+    }
     if (row.kind === "fullscreen") {
       this.toggleFullscreen();
+      this.refresh();
+      return;
+    }
+    if (row.kind === "resetBindings") {
+      this.options.resetBindings();
       this.refresh();
       return;
     }
@@ -353,20 +380,11 @@ export class SettingsMenu {
     this.refresh();
   }
 
-  private addText(content: string, x: number, y: number, color: number): Text {
-    const text = new Text({ text: content, style: uiTextStyle(color) });
-    text.x = x;
-    text.y = y;
-    text.resolution = this.resolution;
-    this.texts.push(text);
-    this.view.addChild(text);
-    return text;
-  }
-
   private paintFrame(): void {
+    this.backdrop.clear();
+    if (this.opaque) this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill(COLOR_BG);
+    else this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill({ color: COLOR_SCRIM, alpha: 0.78 });
     this.backdrop
-      .rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT)
-      .fill({ color: COLOR_SCRIM, alpha: 0.78 })
       .rect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H)
       .fill({ color: COLOR_PANEL, alpha: 0.96 })
       .rect(PANEL_X + 0.5, PANEL_Y + 0.5, PANEL_W - 1, PANEL_H - 1)
@@ -444,6 +462,10 @@ function rowLabel(row: Row): string {
       return "Fullscreen";
     case "binding":
       return ACTION_LABELS[row.action];
+    case "resetBindings":
+      return "Restore Defaults";
+    case "mainMenu":
+      return "Main Menu";
   }
 }
 
@@ -455,7 +477,11 @@ function rowHint(row: Row): string {
       return "Left/Right scale - Esc close";
     case "fullscreen":
       return "Enter toggle - Esc close";
+    case "resetBindings":
+      return "Enter restore default key bindings";
     case "binding":
       return "Enter rebind - Del clear - Esc close";
+    case "mainMenu":
+      return "Enter return to home";
   }
 }

@@ -37,7 +37,7 @@ export enum Tile {
  *
  * Shallow ramps are therefore built from a run of tiles whose profiles chain:
  * a 1-in-2 ramp is `{l:0,r:8}` then `{l:8,r:16}`, and so on. Authoring that by
- * hand is what the Slope entity and its bake in tools/slope-bake.mjs exist to
+ * hand is what the Slope entity and its bake in @mmx/ldtk-tools exist to
  * avoid.
  */
 export interface SlopeProfile {
@@ -87,8 +87,8 @@ export class World {
 
   /**
    * Takes an already-decoded row-major grid. Parsing lives outside so that a
-   * level format (see the LDtk import under tools/) can produce tiles directly
-   * instead of round-tripping through the ASCII characters below.
+   * level format (see the LDtk import in @mmx/ldtk-tools) can produce tiles
+   * directly instead of round-tripping through the ASCII characters below.
    *
    * `slopes` is sparse and keyed the same way as `tiles`: the overwhelming
    * majority of a level has no slope in it at all, and the 45-degree ones need

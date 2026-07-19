@@ -1,5 +1,6 @@
 import { REPLAY_VERSION, type Replay } from "../core/Replay.js";
 import { Scene, type SceneOptions } from "./Scene.js";
+import type { LevelData } from "./LevelData.js";
 
 /**
  * Records every tick of a run, and replays one.
@@ -35,6 +36,16 @@ export class Recorder {
 
   constructor(private readonly options: SceneOptions = {}) {
     this.scene = Scene.create(options);
+  }
+
+  /** Start a fresh recording on another authored level. */
+  loadLevel(level: LevelData): Scene {
+    this.options.level = level;
+    this.scene = Scene.create(this.options);
+    this.frames = [];
+    this.checkpointFrame = 0;
+    this.tainted = false;
+    return this.scene;
   }
 
   get frame(): number {

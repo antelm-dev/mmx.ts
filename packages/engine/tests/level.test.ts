@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { Tile, World } from "../src/engine/World.js";
 import { LEVEL } from "../src/engine/level.js";
 import { level as STAGE1 } from "../src/engine/levels/stage1.js";
-import { applySlopes, slopeRects, TILE } from "../../../tools/slope-bake.mjs";
+import { applySlopes, slopeRects, TILE } from "@mmx/ldtk-tools";
 import { Camera } from "../src/engine/Camera.js";
 import { Player } from "../src/engine/Player.js";
 import { Input } from "../src/core/Input.js";
@@ -14,12 +14,12 @@ import { readFileSync } from "node:fs";
 /**
  * The authored text grid the LDtk project was built from. Read from the same file
  * the exporter uses rather than copied here, so there is one authority: this pins
- * the import pipeline (levels/stage1.ascii -> LDtk -> tools/import-ldtk.mjs ->
+ * the import pipeline (levels/stage1.ascii -> LDtk -> @mmx/ldtk-tools import ->
  * src/engine/levels/stage1.ts) to geometry known to exercise every movement state.
  * If a deliberate edit is made in LDtk, update the .ascii alongside it.
  *
- * Parsed here rather than imported from tools/export-ldtk.mjs: that module writes
- * the .ldtk file and calls process.exit at import time.
+ * Parsed here rather than imported from @mmx/ldtk-tools's export CLI: that module
+ * writes the .ldtk file and calls process.exit at import time.
  */
 const SOURCE = new URL("../../../levels/stage1.ascii", import.meta.url);
 

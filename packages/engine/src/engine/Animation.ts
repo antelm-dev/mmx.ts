@@ -27,7 +27,7 @@ export type Region = readonly [x: number, y: number, w: number, h: number];
 export interface FrameData {
   /** Region in the normal atlas (x.png). */
   region: Region;
-  /** Same pose in the arm-pointing atlas (x_leftarm.png); see tools/build-anims.mjs. */
+  /** Same pose in the arm-pointing atlas (x_leftarm.png); see scripts/build-anims.mjs. */
   armRegion?: Region;
   /** Godot per-frame duration multiplier (usually 1.0). */
   duration: number;

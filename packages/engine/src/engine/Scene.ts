@@ -4,16 +4,8 @@ import { applyInput } from "../core/Replay.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
-import {
-  CAMERA_ZONES,
-  CONVEYORS,
-  ENEMY_SPAWNS,
-  HAZARDS,
-  LEVEL,
-  MOVING_PLATFORM_SPAWNS,
-  SPAWN,
-  makeWorld,
-} from "./level.js";
+import { LEVEL, loadLevel } from "./level.js";
+import type { LevelData } from "./LevelData.js";
 import { Player } from "./Player.js";
 import { Stage } from "./Stage.js";
 import type { World } from "./World.js";
@@ -38,6 +30,8 @@ export const DEFAULT_SEED = 0x9e3779b9;
 
 export interface SceneOptions {
   seed?: number;
+  /** Authored level to instantiate. Defaults to the mechanics demo. */
+  level?: LevelData;
   /**
    * Called for each enemy as it spawns, before the first tick. The browser uses
    * it to attach clip data and audio; the headless sim passes nothing and the
@@ -53,25 +47,28 @@ export class Scene {
   readonly camera: Camera;
   readonly input: Input;
   readonly seed: number;
+  readonly level: LevelData;
 
   /** Fixed steps executed since the scene was built — the simulation frame number. */
   frame = 0;
 
   private constructor(seed: number, options: SceneOptions) {
     this.seed = seed;
+    const level = loadLevel(options.level ?? LEVEL);
+    this.level = level.data;
     this.input = new Input();
-    this.world = makeWorld();
-    this.player = new Player(this.world, SPAWN.x, SPAWN.y, this.input, seed);
+    this.world = level.world;
+    this.player = new Player(this.world, level.spawn.x, level.spawn.y, this.input, seed);
     this.camera = new Camera(this.world.widthPx, this.world.heightPx);
-    this.camera.setZones(CAMERA_ZONES);
+    this.camera.setZones(level.cameraZones);
     this.camera.snapTo(this.player.pos.x, this.player.pos.y);
     this.stage = new Stage(this.world, this.player, {
-      hazards: HAZARDS,
-      conveyors: CONVEYORS,
-      platforms: MOVING_PLATFORM_SPAWNS,
+      hazards: level.hazards,
+      conveyors: level.conveyors,
+      platforms: level.platforms,
     });
 
-    for (const [i, spawn] of ENEMY_SPAWNS.entries()) {
+    for (const [i, spawn] of level.enemies.entries()) {
       // Each enemy needs its own stream — they draw from it at different rates,
       // so one shared generator would make a Metool's patrol depend on how often
       // a bat happened to reroll its hover. Derived from the scene seed so the
@@ -95,7 +92,7 @@ export class Scene {
 
   /** The level this scene was built from — recorded so replays cannot cross levels. */
   get levelId(): string {
-    return LEVEL.identifier;
+    return this.level.identifier;
   }
 
   /**
