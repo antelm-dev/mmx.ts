@@ -383,7 +383,8 @@ export class SettingsMenu {
   private paintFrame(): void {
     this.backdrop.clear();
     if (this.opaque) this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill(COLOR_BG);
-    else this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill({ color: COLOR_SCRIM, alpha: 0.78 });
+    else
+      this.backdrop.rect(0, 0, VIEW_WIDTH, VIEW_HEIGHT).fill({ color: COLOR_SCRIM, alpha: 0.78 });
     this.backdrop
       .rect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H)
       .fill({ color: COLOR_PANEL, alpha: 0.96 })

@@ -157,9 +157,7 @@ export class HomeScreen {
     const cx = 99 + this.cursorBob;
     // A right-pointing chevron reads as "select this" the way the square dot it
     // replaced didn't, and costs the same one draw call.
-    this.highlight
-      .poly([cx, y + 6, cx, y + 14, cx + 6, y + 10])
-      .fill(COLOR_SELECTED);
+    this.highlight.poly([cx, y + 6, cx, y + 14, cx + 6, y + 10]).fill(COLOR_SELECTED);
   }
 
   private paint(): void {
