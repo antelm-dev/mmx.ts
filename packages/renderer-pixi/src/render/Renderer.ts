@@ -11,7 +11,13 @@ import type { Player } from "@mmx/engine/engine/Player.js";
 import type { Stage } from "@mmx/engine/engine/Stage.js";
 import { DashSmoke } from "../DashSmoke.js";
 import { Trail } from "../Trail.js";
-import { enemyAnims, PLAYER_SHEETS, SHEET_URLS, validateAnimationAssets } from "./assets.js";
+import {
+  enemyAnims,
+  pickupAnims,
+  PLAYER_SHEETS,
+  SHEET_URLS,
+  validateAnimationAssets,
+} from "./assets.js";
 import { Hud } from "./Hud.js";
 import { place, spriteSnapshot } from "./sprite.js";
 import { SpritePool } from "./SpritePool.js";
@@ -37,7 +43,7 @@ import { loadSheets, regionTexture, shotTexture, textureCounts } from "./texture
  *   stage
  *    +- viewport   (integer zoom)
  *    |   +- world  (camera scroll)
- *    |       +- terrain, ghosts, player, charge aura, projectiles, dash smoke
+ *    |       +- terrain, enemies, capsules, ghosts, player, charge aura, projectiles, dash smoke
  *    +- hud        (integer zoom, no scroll — screen furniture)
  */
 
@@ -60,6 +66,7 @@ export class Renderer {
   private readonly hudLayer = new Container();
   private readonly ghosts = new SpritePool();
   private readonly enemies = new SpritePool();
+  private readonly pickups = new SpritePool();
   private readonly shots = new SpritePool();
   private readonly smoke = new SpritePool();
   private readonly player = new Sprite();
@@ -96,6 +103,7 @@ export class Renderer {
     // on the frames he has not yet cleared it.
     this.scene.addChild(
       this.enemies.view,
+      this.pickups.view,
       this.ghosts.view,
       this.player,
       this.aura,
@@ -232,6 +240,7 @@ export class Renderer {
 
     this.terrain?.sync(stage);
     this.syncEnemies(stage);
+    this.syncCapsules(stage);
     this.syncGhosts(trail);
     this.syncPlayer(player);
     this.syncAura(player);
@@ -253,6 +262,7 @@ export class Renderer {
     const pools = {
       ghosts: this.ghosts,
       enemies: this.enemies,
+      pickups: this.pickups,
       shots: this.shots,
       smoke: this.smoke,
     };
@@ -299,6 +309,27 @@ export class Renderer {
       sprite.alpha = enemy.flash > 0 ? 0.5 : 1;
     }
     this.enemies.end();
+  }
+
+  /**
+   * Life Energy capsules — LifeCapsule carries its box as x/y/w/h (an
+   * EnvironmentRect, like Hazard/Conveyor) rather than a centred body, so the
+   * sprite centre is derived here instead of read straight off the position.
+   * A capsule that has not yet loaded clip data (headless sim, tests) simply
+   * has no region to draw, same as an enemy or the player without one.
+   */
+  private syncCapsules(stage: Stage): void {
+    this.pickups.begin();
+    for (const pickup of stage.pickups) {
+      const region = pickup.currentRegion();
+      if (!region) continue;
+      const texture = regionTexture(pickupAnims.actors[pickup.kind].sheet, region);
+      if (!texture) continue;
+
+      const sprite = this.pickups.next();
+      place(sprite, texture, pickup.x + pickup.w / 2, pickup.y + pickup.h / 2, 1);
+    }
+    this.pickups.end();
   }
 
   /** Afterimages: frozen poses that fade with age (see {@link Trail}). */

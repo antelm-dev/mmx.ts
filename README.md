@@ -242,7 +242,7 @@ ability answers which event.
 ### Enemy sprites
 
 [`scripts/build-enemies.mjs`](scripts/build-enemies.mjs) (`pnpm enemies:import`)
-builds `packages/renderer-pixi/src/assets/enemy_anims.json` from the Godot project's **Aseprite**
+builds `resources/sprites/enemies/enemy_anims.json` from the Godot project's **Aseprite**
 sidecars, not its `.res` SpriteFrames — the enemies still have their source
 `.json` checked in, and it carries per-frame atlas rects, per-frame durations in
 milliseconds, and `meta.frameTags` naming the clips. The one thing it cannot carry
@@ -274,13 +274,14 @@ packages/
     src/core/         Vec2, Input, EventBus, replay format, constants
     src/engine/       world, actors, abilities, enemies, scene and level data
     tests/            node:test gameplay and determinism tests
-  renderer-pixi/      PixiJS game renderer, visual effects and sprite assets
+  renderer-pixi/      PixiJS game renderer and visual effects
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
+resources/            Shared sprites, sounds, fonts and animation metadata
 scripts/              animation/sprite asset importers and demo-stage authoring
 ```
 

@@ -171,6 +171,19 @@ export class Actor {
     }
   }
 
+  /**
+   * Mirrors damage() — raises health, clamped to the maximum, and signals the
+   * amount actually applied (0 when already at full, e.g. a Life Energy
+   * capsule ticking against a topped-out player).
+   */
+  heal(value: number): void {
+    if (value <= 0) return;
+    const before = this.current_health;
+    this.current_health = Math.min(this.max_health, this.current_health + value);
+    const applied = this.current_health - before;
+    if (applied > 0) this.events.emit("healed", applied);
+  }
+
   // hitbox resize during dash (Player.reduce_hitbox / increase_hitbox).
   // Shrink from the top only: keep the feet (bottom edge) planted so the floor
   // sensor stays valid while dashing.

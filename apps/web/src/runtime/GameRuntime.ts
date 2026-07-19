@@ -98,8 +98,6 @@ export class GameRuntime {
       // A no-op unless the window moved to a display that changed the integer zoom.
       menu.setPixelScale(presenter.pixelScale);
       home.setPixelScale(presenter.pixelScale);
-      // Drives the home screen's idle cursor bob.
-      home.update(now);
 
       performance.mark("mmx:render:start");
       presenter.render(scene);

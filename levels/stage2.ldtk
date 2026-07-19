@@ -676,6 +676,82 @@
 					"tilesetUid": null
 				}
 			]
+		},
+		{
+			"identifier": "LifeCapsule",
+			"uid": 140,
+			"tags": [],
+			"exportToToc": false,
+			"allowOutOfBounds": false,
+			"doc": "A Life Energy pickup. 'small' heals 2 HP, 'large' heals 8 HP.",
+			"width": 16,
+			"height": 16,
+			"resizableX": false,
+			"resizableY": false,
+			"minWidth": null,
+			"maxWidth": null,
+			"minHeight": null,
+			"maxHeight": null,
+			"keepAspectRatio": false,
+			"tileOpacity": 1,
+			"fillOpacity": 1,
+			"lineOpacity": 1,
+			"hollow": false,
+			"color": "#FF6B81",
+			"renderMode": "Rectangle",
+			"showName": true,
+			"tilesetId": null,
+			"tileRenderMode": "FitInside",
+			"tileRect": null,
+			"uiTileRect": null,
+			"nineSliceBorders": [],
+			"maxCount": 0,
+			"limitScope": "PerLevel",
+			"limitBehavior": "MoveLastOne",
+			"pivotX": 0,
+			"pivotY": 0,
+			"fieldDefs": [
+				{
+					"identifier": "Kind",
+					"doc": "Which capsule to spawn: 'small' (2 HP) or 'large' (8 HP).",
+					"__type": "String",
+					"uid": 141,
+					"type": "F_String",
+					"isArray": false,
+					"canBeNull": false,
+					"arrayMinLength": null,
+					"arrayMaxLength": null,
+					"editorDisplayMode": "NameAndValue",
+					"editorDisplayScale": 1,
+					"editorDisplayPos": "Above",
+					"editorLinkStyle": "StraightArrow",
+					"editorDisplayColor": null,
+					"editorAlwaysShow": false,
+					"editorShowInWorld": true,
+					"editorCutLongValues": true,
+					"editorTextSuffix": null,
+					"editorTextPrefix": null,
+					"useForSmartColor": false,
+					"exportToToc": false,
+					"searchable": false,
+					"min": null,
+					"max": null,
+					"regex": null,
+					"acceptFileTypes": null,
+					"defaultOverride": {
+						"id": "V_String",
+						"params": ["large"]
+					},
+					"textLanguageMode": null,
+					"symmetricalRef": false,
+					"autoChainRef": true,
+					"allowOutOfLevelRef": true,
+					"allowedRefs": "OnlySame",
+					"allowedRefsEntityUid": null,
+					"allowedRefTags": [],
+					"tilesetUid": null
+				}
+			]
 		}
 	], "tilesets": [], "enums": [], "externalEnums": [], "levelFields": [] },
 	"levels": [
@@ -1225,6 +1301,42 @@
 							}] }],
 							"__worldX": 1280,
 							"__worldY": 624
+						},
+						{
+							"__identifier": "LifeCapsule",
+							"__grid": [6,33],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#FF6B81",
+							"iid": "20000000-0000-4000-8000-000000000028",
+							"width": 16,
+							"height": 16,
+							"defUid": 140,
+							"px": [96,528],
+							"fieldInstances": [
+								{ "__identifier": "Kind", "__type": "String", "__value": "small", "__tile": null, "defUid": 141, "realEditorValues": [] }
+							],
+							"__worldX": 96,
+							"__worldY": 528
+						},
+						{
+							"__identifier": "LifeCapsule",
+							"__grid": [47,26],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#FF6B81",
+							"iid": "20000000-0000-4000-8000-000000000029",
+							"width": 16,
+							"height": 16,
+							"defUid": 140,
+							"px": [752,416],
+							"fieldInstances": [
+								{ "__identifier": "Kind", "__type": "String", "__value": "large", "__tile": null, "defUid": 141, "realEditorValues": [] }
+							],
+							"__worldX": 752,
+							"__worldY": 416
 						}
 					]
 				},

@@ -1,5 +1,5 @@
 /**
- * Builds packages/renderer-pixi/src/assets/shot_anims.json (+ copies the sheets) for buster shots,
+ * Builds resources/sprites/effects/shot_anims.json (+ copies the sheets) for buster shots,
  * their hit effects, and the charge-up aura.
  *
  * Three different sources, because the Godot project stores them three ways:
@@ -25,7 +25,7 @@ const repo = resolve(here, "..");
 const godot = resolve(repo, process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const projectiles = join(godot, "src/Actors/Weapons/Projectiles");
 const textures = join(godot, "src/Effects/Textures");
-const assets = join(repo, "packages/renderer-pixi/src/assets");
+const assets = join(repo, "resources/sprites/effects");
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
@@ -132,4 +132,4 @@ for (const [name, clip] of Object.entries(animations)) {
       `${w}x${h}  ${clip.speed.toFixed(1)}fps${clip.loop ? " loop" : ""}`,
   );
 }
-console.log("\nshot_anims.json + 8 sheets written to packages/renderer-pixi/src/assets");
+console.log("\nshot_anims.json + 8 sheets written to resources/sprites/effects");

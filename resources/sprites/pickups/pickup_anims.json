@@ -1,0 +1,74 @@
+{
+  "sheets": {
+    "small": "sheal.png",
+    "large": "heal.png"
+  },
+  "actors": {
+    "small": {
+      "sheet": "sheal.png",
+      "animations": {
+        "falling": {
+          "loop": false,
+          "speed": 1,
+          "frames": [
+            {
+              "region": [0, 0, 16, 16],
+              "duration": 1
+            }
+          ]
+        },
+        "idle": {
+          "loop": true,
+          "speed": 24,
+          "frames": [
+            {
+              "region": [16, 0, 16, 16],
+              "duration": 1
+            },
+            {
+              "region": [0, 16, 16, 16],
+              "duration": 1
+            },
+            {
+              "region": [16, 16, 16, 16],
+              "duration": 1
+            }
+          ]
+        }
+      }
+    },
+    "large": {
+      "sheet": "heal.png",
+      "animations": {
+        "idle": {
+          "loop": true,
+          "speed": 24,
+          "frames": [
+            {
+              "region": [16, 0, 16, 16],
+              "duration": 1
+            },
+            {
+              "region": [0, 16, 16, 16],
+              "duration": 1
+            },
+            {
+              "region": [16, 16, 16, 16],
+              "duration": 1
+            }
+          ]
+        },
+        "falling": {
+          "loop": false,
+          "speed": 1,
+          "frames": [
+            {
+              "region": [0, 0, 16, 16],
+              "duration": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

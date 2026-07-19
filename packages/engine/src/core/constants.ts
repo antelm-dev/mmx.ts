@@ -316,6 +316,30 @@ export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
  *  enough for "11 - MMX - X Die.wav" (~3.83s) to finish playing out. */
 export const PLAYER_DEATH_RESTART_DELAY = 3.8;
 
+// ---------------------------------------------------------------------------
+// Life Energy capsules
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-capsule data, read off Heal.tscn / SmallHeal.tscn.
+ *
+ * Both scenes are PickUp.gd with only the exported `heal` and the sprite
+ * differing — see engine/Pickup.ts for the shared tick-heal behaviour.
+ */
+export interface LifeCapsuleStats {
+  /** Key into pickup_anims.json's `actors` table. */
+  sheet: "heal" | "sheal";
+  heal: number;
+}
+
+export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleStats>> = {
+  small: { sheet: "sheal", heal: 2 }, // SmallHeal.tscn: heal = 2
+  large: { sheet: "heal", heal: 8 }, // Heal.tscn: heal = 8
+};
+
+/** PickUp.gd do_heal(): `timer > last_time_increased + 0.06` — 1 HP per tick. */
+export const LIFE_CAPSULE_HEAL_TICK_INTERVAL = 0.06;
+
 // World / rendering
 export const TILE_SIZE = 16;
 

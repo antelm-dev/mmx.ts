@@ -1,5 +1,6 @@
 import { Enemy } from "./Enemy.js";
 import { Player } from "./Player.js";
+import { LifeCapsule, type LifeCapsuleSpawn } from "./Pickup.js";
 import type { Projectile } from "./Projectile.js";
 import type { World } from "./World.js";
 import {
@@ -13,6 +14,7 @@ export interface StageEnvironment {
   hazards?: readonly Hazard[];
   conveyors?: readonly Conveyor[];
   platforms?: readonly MovingPlatformSpawn[];
+  pickups?: readonly LifeCapsuleSpawn[];
 }
 
 /**
@@ -34,6 +36,7 @@ export class Stage {
   readonly hazards: readonly Hazard[];
   readonly conveyors: readonly Conveyor[];
   readonly platforms: MovingPlatform[];
+  readonly pickups: LifeCapsule[];
 
   constructor(
     readonly world: World,
@@ -43,6 +46,7 @@ export class Stage {
     this.hazards = environment.hazards ?? [];
     this.conveyors = environment.conveyors ?? [];
     this.platforms = (environment.platforms ?? []).map((spawn) => new MovingPlatform(spawn));
+    this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn));
     this.player.setPlatforms(this.platforms);
   }
 
@@ -61,6 +65,8 @@ export class Stage {
       this.player.kill();
     }
 
+    this.resolvePickups(dt);
+
     for (const enemy of this.enemies) {
       // AI.gd's vision Area2D, re-evaluated before the enemy thinks. A dead
       // enemy stops tracking, so its corpse does not steer anything.
@@ -75,6 +81,25 @@ export class Stage {
     // EnemyDeath frees the node at the end of its sequence.
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       if (!this.enemies[i].alive) this.enemies.splice(i, 1);
+    }
+
+    // PickUp.queue_free once amount_to_heal is spent.
+    for (let i = this.pickups.length - 1; i >= 0; i--) {
+      if (this.pickups[i].consumed) this.pickups.splice(i, 1);
+    }
+  }
+
+  /**
+   * Life Energy capsules — PickUp's area2D overlap against the player, plus
+   * the ticking heal it starts once touched (see Pickup.ts for why the rest
+   * of the room does not freeze the way Godot's does).
+   */
+  private resolvePickups(dt: number): void {
+    if (!this.player.has_health()) return;
+    for (const pickup of this.pickups) {
+      if (pickup.consumed) continue;
+      if (!pickup.collecting && bodyOverlapsRect(this.player, pickup)) pickup.beginConsuming();
+      pickup.tick(dt, this.player);
     }
   }
 

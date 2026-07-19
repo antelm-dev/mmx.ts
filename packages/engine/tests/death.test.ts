@@ -17,7 +17,7 @@ import { World } from "../src/engine/World.js";
 import { makeMetool } from "../src/engine/enemies/index.js";
 
 const animData = JSON.parse(
-  readFileSync(new URL("../../renderer-pixi/src/assets/x_anims.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../../resources/sprites/player/x_anims.json", import.meta.url), "utf8"),
 ) as AnimData;
 
 function room(): World {

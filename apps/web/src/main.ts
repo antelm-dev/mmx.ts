@@ -45,6 +45,7 @@ const lifecycle = new AppLifecycle(desktop, model, presenter, (message) => debug
 
 debug = new DebugSession({
   onEnemySpawned: (enemy) => presenter.attachEnemy(enemy),
+  onPickupSpawned: (pickup) => presenter.attachPickup(pickup),
   onSceneReplaced: (scene) => presenter.attach(scene),
   extraDiagnostics: () => presenter.stats(),
   replayFiles: desktop.replays,

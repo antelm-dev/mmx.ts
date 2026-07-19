@@ -4,17 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
-    <link rel="preload" href="/mega-man-x.ttf" as="font" type="font/ttf" crossorigin />
     <style>
       /* The UI face. See apps/web/src/ui/font.ts for the metrics that go with it â€”
-         it is only pixel-exact at multiples of 8px. `block` rather than `swap`
-         because boot awaits the face before drawing (loadUiFont), so a swap
-         period would only ever show a flash of the wrong font. */
-      @font-face {
-        font-family: "Mega Man X";
-        src: url("/mega-man-x.ttf") format("truetype");
-        font-display: block;
-      }
+         loadUiFont registers and awaits it before Pixi draws any text. */
       :root {
         color-scheme: dark;
       }

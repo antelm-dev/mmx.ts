@@ -1,6 +1,7 @@
 import type { Container } from "pixi.js";
 import { BODY_HALF_H, DASH_FX_OFFSET_X, DASH_FX_OFFSET_Y } from "@mmx/engine/core/constants.js";
 import type { Enemy } from "@mmx/engine/engine/Enemy.js";
+import type { LifeCapsule } from "@mmx/engine/engine/Pickup.js";
 import type { Player } from "@mmx/engine/engine/Player.js";
 import type { Scene } from "@mmx/engine/engine/Scene.js";
 import type { Stage } from "@mmx/engine/engine/Stage.js";
@@ -13,6 +14,7 @@ import {
   WALLSLIDE_TRAIL,
   animData,
   enemyAnims,
+  pickupAnims,
   Renderer,
   spriteSnapshot,
 } from "@mmx/renderer-pixi";
@@ -130,6 +132,8 @@ export class ScenePresenter {
     });
     player.events.on("death", () => this.options.onPlayerDeath());
     player.events.on("land", () => this.sounds.play("land", { db: -5.333, rate: [1, 1.1] }));
+    // PickUp.do_heal(): one "Life Gain" blip per HP tick a capsule applies.
+    player.events.on("healed", () => this.sounds.play("heal", { db: -10 }));
     player.events.on("shot_fired", (charge: number) => {
       if (charge <= 0) this.sounds.play("lemon", { rate: [0.95, 1] });
       else if (charge === 1) this.sounds.play("mediumShot", { rate: [0.95, 1] });
@@ -174,6 +178,11 @@ export class ScenePresenter {
       this.sounds.play("guardBreak", { db: -8, rate: 0.78 });
     });
     enemy.events.on("zero_health", () => this.sounds.play("enemyDeath", { db: -4.267 }));
+  }
+
+  /** {@link DebugSession}'s `onPickupSpawned` callback. */
+  attachPickup(pickup: LifeCapsule): void {
+    pickup.loadAnimations(pickupAnims.actors[pickup.kind] as unknown as AnimData);
   }
 
   /** Which move, if any, is currently laying down a trail — and how it should look. */

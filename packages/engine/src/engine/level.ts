@@ -2,6 +2,7 @@ import { World } from "./World.js";
 import type { CameraZone } from "./Camera.js";
 import type { LevelData, LevelEntity } from "./LevelData.js";
 import type { EnemyKind } from "./Enemy.js";
+import type { LifeCapsuleKind, LifeCapsuleSpawn } from "./Pickup.js";
 import type { Conveyor, Hazard, MovingPlatformSpawn } from "./Environment.js";
 import { level as mechanicsDemo } from "./levels/stage2.js";
 import { level as stageOne } from "./levels/stage1.js";
@@ -29,8 +30,11 @@ export interface LevelRuntime {
   conveyors: Conveyor[];
   platforms: MovingPlatformSpawn[];
   enemies: EnemySpawn[];
+  pickups: LifeCapsuleSpawn[];
   cameraZones: CameraZone[];
 }
+
+const LIFE_CAPSULE_KINDS: readonly LifeCapsuleKind[] = ["small", "large"];
 
 /** Turn authored level data into the runtime objects owned by one scene. */
 export function loadLevel(data: LevelData): LevelRuntime {
@@ -57,6 +61,16 @@ export function loadLevel(data: LevelData): LevelRuntime {
     };
   });
 
+  const pickups: LifeCapsuleSpawn[] = matching("LifeCapsule").map((e) => {
+    const kind = e.fields.Kind;
+    if (typeof kind !== "string" || !LIFE_CAPSULE_KINDS.includes(kind as LifeCapsuleKind)) {
+      throw new Error(
+        `level ${data.identifier}: LifeCapsule at ${e.x},${e.y} has Kind '${String(kind)}'; expected one of ${LIFE_CAPSULE_KINDS.join(", ")}`,
+      );
+    }
+    return { id: e.iid, kind: kind as LifeCapsuleKind, x: e.x, y: e.y, w: e.w, h: e.h };
+  });
+
   return {
     data,
     world: new World(data.tiles.slice(), data.cols, data.rows, data.slopes),
@@ -80,6 +94,7 @@ export function loadLevel(data: LevelData): LevelRuntime {
       speed: Math.max(0, numberField(e, "Speed", 48)),
     })),
     enemies,
+    pickups,
     cameraZones: matching("CameraZone").map((e) => ({
       id: e.iid,
       x: e.x,

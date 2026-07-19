@@ -18,23 +18,25 @@ export type SoundName =
   | "shieldHit"
   | "guardBreak"
   | "enemyDeath"
-  | "playerDeath";
+  | "playerDeath"
+  | "heal";
 
 const URLS: Record<SoundName, string> = {
-  jump: new URL("./assets/sfx/jump.wav", import.meta.url).href,
-  land: new URL("./assets/sfx/land.wav", import.meta.url).href,
-  dash: new URL("./assets/sfx/dash.wav", import.meta.url).href,
-  wallslide: new URL("./assets/sfx/wallslide.wav", import.meta.url).href,
-  damage: new URL("./assets/sfx/damage.wav", import.meta.url).href,
-  charge: new URL("./assets/sfx/charge.wav", import.meta.url).href,
-  lemon: new URL("./assets/sfx/lemon.wav", import.meta.url).href,
-  mediumShot: new URL("./assets/sfx/medium-shot.wav", import.meta.url).href,
-  chargedShot: new URL("./assets/sfx/charged-shot.wav", import.meta.url).href,
-  enemyHit: new URL("./assets/sfx/enemy-hit.wav", import.meta.url).href,
-  shieldHit: new URL("./assets/sfx/shield-hit.ogg", import.meta.url).href,
-  guardBreak: new URL("./assets/sfx/guard-break.wav", import.meta.url).href,
-  enemyDeath: new URL("./assets/sfx/enemy-death.wav", import.meta.url).href,
-  playerDeath: new URL("./assets/sfx/player-death.wav", import.meta.url).href,
+  jump: new URL("../../../resources/sounds/player/jump.wav", import.meta.url).href,
+  land: new URL("../../../resources/sounds/player/land.wav", import.meta.url).href,
+  dash: new URL("../../../resources/sounds/player/dash.wav", import.meta.url).href,
+  wallslide: new URL("../../../resources/sounds/player/wallslide.wav", import.meta.url).href,
+  damage: new URL("../../../resources/sounds/player/damage.wav", import.meta.url).href,
+  charge: new URL("../../../resources/sounds/weapons/charge.wav", import.meta.url).href,
+  lemon: new URL("../../../resources/sounds/weapons/lemon.wav", import.meta.url).href,
+  mediumShot: new URL("../../../resources/sounds/weapons/medium-shot.wav", import.meta.url).href,
+  chargedShot: new URL("../../../resources/sounds/weapons/charged-shot.wav", import.meta.url).href,
+  enemyHit: new URL("../../../resources/sounds/enemies/enemy-hit.wav", import.meta.url).href,
+  shieldHit: new URL("../../../resources/sounds/enemies/shield-hit.ogg", import.meta.url).href,
+  guardBreak: new URL("../../../resources/sounds/enemies/guard-break.wav", import.meta.url).href,
+  enemyDeath: new URL("../../../resources/sounds/enemies/enemy-death.wav", import.meta.url).href,
+  playerDeath: new URL("../../../resources/sounds/player/player-death.wav", import.meta.url).href,
+  heal: new URL("../../../resources/sounds/pickups/heal.wav", import.meta.url).href,
 };
 
 export interface PlayOptions {
