@@ -262,10 +262,10 @@ subclasses exactly as the original does.
 ## Project layout
 
 The active `MechanicsDemo` level is authored in `levels/stage2.ldtk`. At 160x48
-tiles it combines the complete movement kit with three moving bridges, opposing
-conveyors, lethal spike pits, several ramp gradients, a wall-jump shaft, upper
-air-dash routes, camera tiers, and both enemy types. Run `pnpm level:demo` to
-rebuild the reproducible demo project and import every LDtk level. The original
+tiles it combines the complete movement kit with three moving bridges, conveyor
+runs, a lethal spike pit, several ramp gradients, wall-jump shafts, upper
+air-dash routes, camera zones, and both enemy types. Run `pnpm level:import` after
+editing an LDtk project to regenerate the engine level modules. The original
 `Stage1` remains as the compact movement regression level.
 
 ```

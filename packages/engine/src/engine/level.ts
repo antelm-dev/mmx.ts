@@ -10,7 +10,7 @@ import { level as stageOne } from "./levels/stage1.js";
  * The active mechanics demo, authored in levels/stage2.ldtk and generated into
  * levels/stage2.ts by `pnpm level:import`. Its 160x48 grid has three tiers:
  *
- *  - ground: opposing conveyors, spike strips, and three moving bridges;
+ *  - ground: conveyor runs, a spike pit, and three moving bridges;
  *  - upper: staggered air-dash ledges, enemies, ceilings, and a wall-jump shaft;
  *  - cavern: a safe descent and ramps ranging from 45 degrees to 1-in-4.
  *

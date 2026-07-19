@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   pull_request:
     branches: [master]
 
@@ -34,6 +34,9 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Generated levels
+        run: pnpm level:check
 
       - name: Typecheck / compile
         run: pnpm build
