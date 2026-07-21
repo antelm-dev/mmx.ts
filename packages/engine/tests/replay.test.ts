@@ -11,8 +11,8 @@ import {
   REPLAY_ACTIONS,
   REPLAY_VERSION,
 } from "../src/core/Replay.js";
-import { Recorder } from "../src/engine/Recorder.js";
-import { Scene } from "../src/engine/Scene.js";
+import { Recorder } from "../src/game/Recorder.js";
+import { Scene } from "../src/game/Scene.js";
 
 /**
  * The replay system's whole value is one claim: seed plus per-tick input is

@@ -18,7 +18,7 @@
     "replay": "pnpm --filter @mmx/sim replay",
     "level:export": "pnpm --filter @mmx/ldtk-tools run export",
     "level:import": "pnpm --filter @mmx/ldtk-tools run import",
-    "level:check": "pnpm level:import && git diff --exit-code -- packages/engine/src/engine/levels",
+    "level:check": "pnpm level:import && git diff --exit-code -- packages/engine/src/game/levels",
     "enemies:import": "node scripts/build-enemies.mjs",
     "pickups:import": "node scripts/build-pickups.mjs",
     "test": "pnpm --filter @mmx/engine test",

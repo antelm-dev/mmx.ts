@@ -9,12 +9,12 @@ import {
   PLAYER_DAMAGE_INVULNERABILITY,
   PLAYER_DEATH_RESTART_DELAY,
 } from "../src/core/constants.js";
-import { Actor } from "../src/engine/Actor.js";
-import type { AnimData } from "../src/engine/Animation.js";
-import { Player } from "../src/engine/Player.js";
-import { Stage } from "../src/engine/Stage.js";
-import { World } from "../src/engine/World.js";
-import { makeMetool } from "../src/engine/enemies/index.js";
+import { Actor } from "../src/game/Actor.js";
+import type { AnimData } from "../src/game/Animation.js";
+import { Player } from "../src/game/Player.js";
+import { Stage } from "../src/game/Stage.js";
+import { World } from "../src/game/World.js";
+import { makeMetool } from "../src/game/enemies/index.js";
 
 const animData = JSON.parse(
   readFileSync(new URL("../../../resources/sprites/player/x_anims.json", import.meta.url), "utf8"),

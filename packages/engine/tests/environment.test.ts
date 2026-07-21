@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 
 import { DT } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
-import { Player } from "../src/engine/Player.js";
-import { Stage } from "../src/engine/Stage.js";
-import { World } from "../src/engine/World.js";
-import { CONVEYORS, HAZARDS, LEVEL, MOVING_PLATFORM_SPAWNS } from "../src/engine/level.js";
+import { Player } from "../src/game/Player.js";
+import { Stage } from "../src/game/Stage.js";
+import { World } from "../src/game/World.js";
+import { CONVEYORS, HAZARDS, LEVEL, MOVING_PLATFORM_SPAWNS } from "../src/game/level.js";
 
 test("the mechanics demo is larger than the original and authors every environment type", () => {
   assert.ok(LEVEL.cols > 100);

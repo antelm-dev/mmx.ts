@@ -4,7 +4,7 @@ import type { Input, Action } from "./Input.js";
  * Deterministic input recordings.
  *
  * The engine is already a pure function of (seed, per-tick input): nothing in
- * src/engine reads a wall clock or `Math.random`, every roll goes through a
+ * src/game reads a wall clock or `Math.random`, every roll goes through a
  * seeded {@link Rng}, and the fixed step means a tick advances by exactly DT no
  * matter what the display is doing. That is the whole precondition for this file
  * — a recording does not have to store positions, velocities or state names,

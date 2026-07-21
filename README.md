@@ -129,24 +129,24 @@ gravity `900`, max fall `375`, walk `90`, jump `320`, dash `~200`, dash duration
 
 | Godot source                                                                   | This project                                                                                                                                                  |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Actor.gd` (physics, health, sensors)                                          | [`packages/engine/src/engine/Actor.ts`](packages/engine/src/engine/Actor.ts)                                                                                  |
-| `move_and_slide()` + `RayCast2D` columns                                       | [`packages/engine/src/engine/World.ts`](packages/engine/src/engine/World.ts) AABB tile collision + edge sensors                                               |
-| `AbilityUser.gd` (moveset + runtime)                                           | [`packages/engine/src/engine/AbilityUser.ts`](packages/engine/src/engine/AbilityUser.ts)                                                                      |
-| `Character.gd` (input, wall/land)                                              | [`packages/engine/src/engine/Character.ts`](packages/engine/src/engine/Character.ts)                                                                          |
-| `Player.gd` / `Player.tscn` node list                                          | [`packages/engine/src/engine/Player.ts`](packages/engine/src/engine/Player.ts)                                                                                |
-| `BaseAbility.gd` / `Ability.gd` / `Movement.gd`                                | [`packages/engine/src/engine/ability/`](packages/engine/src/engine/ability/)                                                                                  |
-| `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`packages/engine/src/engine/abilities/`](packages/engine/src/engine/abilities/)                                                                              |
-| `Shot.gd` (PrimaryShot) / `Charge.gd`                                          | [`packages/engine/src/engine/abilities/Shot.ts`](packages/engine/src/engine/abilities/Shot.ts), [`Charge.ts`](packages/engine/src/engine/abilities/Charge.ts) |
-| `Damage.gd` (hurt, knockback, invulnerability)                                 | [`packages/engine/src/engine/abilities/Damage.ts`](packages/engine/src/engine/abilities/Damage.ts)                                                            |
-| `PlayerDeath.gd` (trimmed — see the file for what was dropped)                 | [`packages/engine/src/engine/abilities/Death.ts`](packages/engine/src/engine/abilities/Death.ts)                                                              |
-| `Lemon.gd` / `WeaponShot.gd`                                                   | [`packages/engine/src/engine/Projectile.ts`](packages/engine/src/engine/Projectile.ts)                                                                        |
-| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch`    | [`packages/engine/src/engine/Enemy.ts`](packages/engine/src/engine/Enemy.ts)                                                                                  |
-| `AI.gd` (event -> ability lists)                                               | [`packages/engine/src/engine/EnemyAI.ts`](packages/engine/src/engine/EnemyAI.ts)                                                                              |
-| `EnemyAbility.gd` / `AttackAbility.gd`                                         | [`packages/engine/src/engine/enemy/EnemyAbility.ts`](packages/engine/src/engine/enemy/EnemyAbility.ts)                                                        |
-| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump`   | [`packages/engine/src/engine/enemy/`](packages/engine/src/engine/enemy/)                                                                                      |
-| `Metool.tscn` / `SmallBat.tscn` node lists                                     | [`packages/engine/src/engine/enemies/index.ts`](packages/engine/src/engine/enemies/index.ts)                                                                  |
-| Area2D layer/mask overlaps (shots, contact damage)                             | [`packages/engine/src/engine/Stage.ts`](packages/engine/src/engine/Stage.ts)                                                                                  |
-| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res`                        | [`packages/engine/src/engine/Animation.ts`](packages/engine/src/engine/Animation.ts)                                                                          |
+| `Actor.gd` (physics, health, sensors)                                          | [`packages/engine/src/game/Actor.ts`](packages/engine/src/game/Actor.ts)                                                                                  |
+| `move_and_slide()` + `RayCast2D` columns                                       | [`packages/engine/src/game/World.ts`](packages/engine/src/game/World.ts) AABB tile collision + edge sensors                                               |
+| `AbilityUser.gd` (moveset + runtime)                                           | [`packages/engine/src/game/AbilityUser.ts`](packages/engine/src/game/AbilityUser.ts)                                                                      |
+| `Character.gd` (input, wall/land)                                              | [`packages/engine/src/game/Character.ts`](packages/engine/src/game/Character.ts)                                                                          |
+| `Player.gd` / `Player.tscn` node list                                          | [`packages/engine/src/game/Player.ts`](packages/engine/src/game/Player.ts)                                                                                |
+| `BaseAbility.gd` / `Ability.gd` / `Movement.gd`                                | [`packages/engine/src/game/ability/`](packages/engine/src/game/ability/)                                                                                  |
+| `Idle/Walk/Fall/Jump/Dash/AirDash/Wallslide/Walljump/DashWallJump/DashJump.gd` | [`packages/engine/src/game/abilities/`](packages/engine/src/game/abilities/)                                                                              |
+| `Shot.gd` (PrimaryShot) / `Charge.gd`                                          | [`packages/engine/src/game/abilities/Shot.ts`](packages/engine/src/game/abilities/Shot.ts), [`Charge.ts`](packages/engine/src/game/abilities/Charge.ts) |
+| `Damage.gd` (hurt, knockback, invulnerability)                                 | [`packages/engine/src/game/abilities/Damage.ts`](packages/engine/src/game/abilities/Damage.ts)                                                            |
+| `PlayerDeath.gd` (trimmed — see the file for what was dropped)                 | [`packages/engine/src/game/abilities/Death.ts`](packages/engine/src/game/abilities/Death.ts)                                                              |
+| `Lemon.gd` / `WeaponShot.gd`                                                   | [`packages/engine/src/game/Projectile.ts`](packages/engine/src/game/Projectile.ts)                                                                        |
+| `Enemy.gd` + `EnemyShield` / `EnemyDamage` / `EnemyDeath` / `DamageOnTouch`    | [`packages/engine/src/game/Enemy.ts`](packages/engine/src/game/Enemy.ts)                                                                                  |
+| `AI.gd` (event -> ability lists)                                               | [`packages/engine/src/game/EnemyAI.ts`](packages/engine/src/game/EnemyAI.ts)                                                                              |
+| `EnemyAbility.gd` / `AttackAbility.gd`                                         | [`packages/engine/src/game/enemy/EnemyAbility.ts`](packages/engine/src/game/enemy/EnemyAbility.ts)                                                        |
+| `CrabPatrol` / `Hide` / `EnemyStun` / `BeePatrol` / `BatPursuit` / `BatJump`   | [`packages/engine/src/game/enemy/`](packages/engine/src/game/enemy/)                                                                                      |
+| `Metool.tscn` / `SmallBat.tscn` node lists                                     | [`packages/engine/src/game/enemies/index.ts`](packages/engine/src/game/enemies/index.ts)                                                                  |
+| Area2D layer/mask overlaps (shots, contact damage)                             | [`packages/engine/src/game/Stage.ts`](packages/engine/src/game/Stage.ts)                                                                                  |
+| `AnimatedSprite2D` playback + `x.res` / `x_leftarm.res`                        | [`packages/engine/src/game/Animation.ts`](packages/engine/src/game/Animation.ts)                                                                          |
 | Godot `Input` singleton                                                        | [`packages/engine/src/core/Input.ts`](packages/engine/src/core/Input.ts)                                                                                      |
 | Godot signals                                                                  | [`packages/engine/src/core/Events.ts`](packages/engine/src/core/Events.ts)                                                                                    |
 
@@ -183,7 +183,7 @@ The sprite is part of the engine, not the renderer, because the original's abili
 read it back: `Movement.change_animation_if_falling` tests `get_animation() != "fall"`,
 `Walk` advances `walk_start -> walk` on Godot's `animation_finished` signal, and
 `IdleWeak` settles `recover -> idle` (or `weak` at low health) the same way.
-[`Animation.ts`](packages/engine/src/engine/Animation.ts) reproduces `AnimatedSprite2D` playback —
+[`Animation.ts`](packages/engine/src/game/Animation.ts) reproduces `AnimatedSprite2D` playback —
 clip, frame index, loop/hold, `animation_finished` — and `AbilityUser` exposes the
 same `play_animation` / `get_animation` / `set_animation_layer` API as the Godot node.
 
@@ -219,7 +219,7 @@ Two are ported, chosen to exercise opposite halves of the enemy framework: the
 
 They do _not_ reuse the player's state machine. `AbilityUser` picks the player's
 locomotion by a priority race between abilities that all want to run; an enemy's
-state is chosen by [`EnemyAI`](packages/engine/src/engine/EnemyAI.ts) from the event lists its
+state is chosen by [`EnemyAI`](packages/engine/src/game/EnemyAI.ts) from the event lists its
 scene declares, and the abilities arbitrate between themselves using Godot's
 `conflicting_moves` rules — which, unlike `Player.tscn`'s, _are_ present in the
 enemy scenes, so they are ported as written rather than replaced:
@@ -275,7 +275,7 @@ editing an LDtk project to regenerate the engine level modules. The original
 packages/
   engine/             dependency-free simulation package
     src/core/         Vec2, Input, EventBus, replay format, constants
-    src/engine/       world, actors, abilities, enemies, scene and level data
+    src/game/       world, actors, abilities, enemies, scene and level data
     tests/            node:test gameplay and determinism tests
   renderer-pixi/      PixiJS game renderer and visual effects
   ldtk-tools/         LDtk project import/export used to author levels/

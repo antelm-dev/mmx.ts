@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import { DT, PICKUP_TICK_INTERVAL, SUB_WEAPON_MAX_AMMO, WEAPON_CAPSULE_STATS } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
-import { Player } from "../src/engine/Player.js";
-import { Stage } from "../src/engine/Stage.js";
-import { World } from "../src/engine/World.js";
+import { Player } from "../src/game/Player.js";
+import { Stage } from "../src/game/Stage.js";
+import { World } from "../src/game/World.js";
 
 function room(): World {
   return World.fromRows(["....", "....", "...."]);

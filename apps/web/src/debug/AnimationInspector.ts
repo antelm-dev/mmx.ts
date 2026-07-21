@@ -1,4 +1,4 @@
-import type { AnimData, AnimationLayer, Region } from "@mmx/engine/engine/Animation.js";
+import type { AnimData, AnimationLayer, Region } from "@mmx/engine/game/Animation.js";
 import { animData } from "@mmx/renderer-pixi";
 import type { DebugSession } from "./DebugSession.js";
 

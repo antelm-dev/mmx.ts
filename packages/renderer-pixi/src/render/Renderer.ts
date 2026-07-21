@@ -5,10 +5,10 @@ import {
   VIEW_WIDTH,
   VIEW_HEIGHT,
 } from "@mmx/engine/core/constants.js";
-import type { Charge } from "@mmx/engine/engine/abilities/Charge.js";
-import type { Camera } from "@mmx/engine/engine/Camera.js";
-import type { Player } from "@mmx/engine/engine/Player.js";
-import type { Stage } from "@mmx/engine/engine/Stage.js";
+import type { Charge } from "@mmx/engine/game/abilities/Charge.js";
+import type { Camera } from "@mmx/engine/game/Camera.js";
+import type { Player } from "@mmx/engine/game/Player.js";
+import type { Stage } from "@mmx/engine/game/Stage.js";
 import { DashSmoke } from "../DashSmoke.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";

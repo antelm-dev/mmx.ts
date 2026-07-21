@@ -13,10 +13,10 @@ import {
   MAX_SHOTS_ALIVE,
   SHOT_POSITION,
 } from "../src/core/constants.js";
-import type { Charge } from "../src/engine/abilities/Charge.js";
-import { Player } from "../src/engine/Player.js";
-import { Projectile } from "../src/engine/Projectile.js";
-import { World } from "../src/engine/World.js";
+import type { Charge } from "../src/game/abilities/Charge.js";
+import { Player } from "../src/game/Player.js";
+import { Projectile } from "../src/game/Projectile.js";
+import { World } from "../src/game/World.js";
 import { Rng } from "../src/core/Rng.js";
 
 /** A long open room, so shots have somewhere to fly without meeting a wall. */

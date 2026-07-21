@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import { Input, Action } from "../src/core/Input.js";
 import { DT, SUB_WEAPON_CONFIG, SUB_WEAPON_MAX_AMMO } from "../src/core/constants.js";
-import type { Charge } from "../src/engine/abilities/Charge.js";
-import { Player } from "../src/engine/Player.js";
-import { World } from "../src/engine/World.js";
+import type { Charge } from "../src/game/abilities/Charge.js";
+import { Player } from "../src/game/Player.js";
+import { World } from "../src/game/World.js";
 
 /** A long open room, so shots have somewhere to fly without meeting a wall. */
 function openRoom(): World {

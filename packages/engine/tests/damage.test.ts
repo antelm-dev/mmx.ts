@@ -10,10 +10,10 @@ import {
   PLAYER_KNOCKBACK_JUMP_VELOCITY,
   PLAYER_KNOCKBACK_SPEED,
 } from "../src/core/constants.js";
-import { Actor } from "../src/engine/Actor.js";
-import type { AnimData } from "../src/engine/Animation.js";
-import { Player } from "../src/engine/Player.js";
-import { World } from "../src/engine/World.js";
+import { Actor } from "../src/game/Actor.js";
+import type { AnimData } from "../src/game/Animation.js";
+import { Player } from "../src/game/Player.js";
+import { World } from "../src/game/World.js";
 
 const animData = JSON.parse(
   readFileSync(new URL("../../../resources/sprites/player/x_anims.json", import.meta.url), "utf8"),
