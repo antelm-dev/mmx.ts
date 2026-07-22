@@ -226,6 +226,15 @@ export class Renderer {
     return this.scale;
   }
 
+  /**
+   * Tear the renderer down: destroys the Pixi Application and its scene graph.
+   * Used by hosts that create and discard renderers at runtime — the editor's
+   * Play mode builds a fresh one per session and disposes it on stop.
+   */
+  destroy(): void {
+    this.app.destroy(true, { children: true });
+  }
+
   /** Bring the scene graph in line with the simulation, then draw it. */
   render(
     stage: Stage,

@@ -21,9 +21,17 @@ pnpm install
 pnpm sim          # deterministic headless simulation, prints a state trace
 pnpm test         # unit tests (node:test) for gameplay behaviour
 pnpm play         # Vite development server -> http://localhost:5173
+pnpm editor       # MMX Studio, the visual level editor -> http://localhost:5174
+pnpm editor:build # type-check + production build of the editor
 pnpm desktop:dev    # launch the desktop app with Vite hot reload
 pnpm desktop:build  # build the native executable and platform installers
 ```
+
+**MMX Studio** (`apps/editor`) is a visual level editor: open Stage 1/2, place and
+edit every authored entity, validate, and play-test with the real engine + Pixi
+renderer. It works on an editor-friendly `LevelDocument` (see
+[`packages/content-schema`](packages/content-schema)) and never touches the
+generated level modules. See [`apps/editor/README.md`](apps/editor/README.md).
 
 Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
