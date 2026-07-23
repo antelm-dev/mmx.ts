@@ -3,11 +3,13 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   OBJECT_DEFINITIONS,
+  effectiveValue,
   requireDefinition,
   type GameObjectDefinition,
   type LevelObjectInstance,
 } from "@mmx/content-schema";
 import { EditorService } from "./editor.service.js";
+import { SpritePreviewComponent } from "./sprite-preview.component.js";
 
 type SidebarTab = "palette" | "scene";
 
@@ -24,6 +26,7 @@ interface SceneItem {
 
 @Component({
   selector: "mmx-left-sidebar",
+  imports: [SpritePreviewComponent],
   template: `
     <div class="panel">
       <div class="tabs" role="tablist">
@@ -98,9 +101,12 @@ interface SceneItem {
               (click)="service.focusObject(row.inst.id)"
               [title]="row.inst.id"
             >
-              <span class="swatch" [style.background]="row.def.editor.color">{{
-                row.def.icon
-              }}</span>
+              <mmx-sprite-preview
+                [definitionId]="row.def.id"
+                [size]="28"
+                [flip]="sceneFlip(row)"
+                [fallbackColor]="row.def.editor.color"
+              />
               <span class="label">
                 <span class="name">{{ row.def.name }}</span>
                 <span class="meta">{{ row.inst.x }}, {{ row.inst.y }}</span>
@@ -339,5 +345,9 @@ export class LeftSidebarComponent {
 
   isSelected(id: string): boolean {
     return this.service.state().selectedIds.includes(id);
+  }
+
+  sceneFlip(row: SceneItem): boolean {
+    return row.def.category === "enemy" && effectiveValue(row.inst, "FacesRight") === true;
   }
 }

@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Application, Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
 import { Tile, World } from "@mmx/engine/game/World.js";
 import {
   effectiveValue,
@@ -8,6 +8,8 @@ import {
   setTransform,
   type LevelObjectInstance,
 } from "@mmx/content-schema";
+import { loadSheets, regionTexture, SHEET_URLS } from "@mmx/renderer-pixi";
+import { previewForDefinition } from "../assets/spritePreview.js";
 import type { EditorStore } from "../state/EditorStore.js";
 import { placeAt } from "../state/actions.js";
 
@@ -54,9 +56,9 @@ function boxOf(inst: LevelObjectInstance): Box {
  * interaction (pan/zoom, selection, drag-move, resize handles, placement).
  *
  * Deliberately separate from @mmx/renderer-pixi's game `Renderer` — this draws
- * *authoring* affordances (boxes, labels, handles, grid) rather than sprites, and
- * reads the {@link EditorStore} rather than an engine `Scene`. Play mode uses the
- * real renderer; this never does.
+ * authoring affordances (boxes, labels, handles, grid) plus static sprite
+ * previews for catalogued actors, and reads the {@link EditorStore} rather than
+ * an engine `Scene`. Play mode uses the real renderer; this never does.
  */
 export class EditorViewport {
   private readonly world = new Container();
@@ -119,6 +121,7 @@ export class EditorViewport {
       height: host.clientHeight || 600,
     });
     const viewport = new EditorViewport(app, canvas, store);
+    await loadSheets(SHEET_URLS);
     const resize = (): void => viewport.onResize(host);
     new ResizeObserver(resize).observe(host);
     resize();
@@ -263,12 +266,16 @@ export class EditorViewport {
       const def = requireDefinition(inst.definitionId);
       const color = hexToNum(def.editor.color);
       const box = this.objectDrawBox(inst);
+      const preview = previewForDefinition(inst.definitionId);
       const g = new Graphics();
       const isCamera = def.category === "camera";
-      g.rect(box.x, box.y, box.w, box.h).fill({ color, alpha: isCamera ? 0.05 : 0.16 });
+      const hasSprite = !!preview && !!regionTexture(preview.sheet, preview.region);
+      g.rect(box.x, box.y, box.w, box.h).fill({
+        color,
+        alpha: isCamera ? 0.05 : hasSprite ? 0.08 : 0.16,
+      });
       g.rect(box.x, box.y, box.w, box.h).stroke({ width: 1 / zoom, color, alpha: 0.9 });
 
-      // Facing arrow for enemies.
       if (def.category === "enemy") {
         const facesRight = effectiveValue(inst, "FacesRight") === true;
         const cy = box.y + box.h / 2;
@@ -281,7 +288,20 @@ export class EditorViewport {
       }
       layer.addChild(g);
 
-      // Label (kept at constant screen size).
+      if (preview) {
+        const texture = regionTexture(preview.sheet, preview.region);
+        if (texture) {
+          const sprite = new Sprite(texture);
+          sprite.anchor.set(0.5);
+          sprite.position.set(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2));
+          if (def.category === "enemy") {
+            const facesRight = effectiveValue(inst, "FacesRight") === true;
+            sprite.scale.x = facesRight ? -1 : 1;
+          }
+          layer.addChild(sprite);
+        }
+      }
+
       const label = new Text({
         text: `${def.icon ?? ""} ${def.name}`.trim(),
         style: this.labelStyle,

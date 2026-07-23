@@ -16,6 +16,7 @@ import {
   type ValidationIssue,
 } from "@mmx/content-schema";
 import { EditorService } from "./editor.service.js";
+import { SpritePreviewComponent } from "./sprite-preview.component.js";
 
 interface Single {
   inst: LevelObjectInstance;
@@ -33,16 +34,24 @@ interface Single {
     MatSelectModule,
     MatCheckboxModule,
     MatButtonModule,
+    SpritePreviewComponent,
   ],
   template: `
     <div class="panel">
       <div class="scroll">
         @if (single(); as s) {
           <div class="header">
-            <span class="swatch" [style.background]="s.def.editor.color"></span>
-            <span class="name">{{ s.def.icon }} {{ s.def.name }}</span>
+            <mmx-sprite-preview
+              [definitionId]="s.def.id"
+              [size]="56"
+              [flip]="previewFlip(s)"
+              [fallbackColor]="s.def.editor.color"
+            />
+            <div class="title">
+              <span class="name">{{ s.def.icon }} {{ s.def.name }}</span>
+              <span class="id">{{ s.inst.id }}</span>
+            </div>
           </div>
-          <div class="id">{{ s.inst.id }}</div>
 
           @for (issue of objectIssues(); track issue.code) {
             <div class="err block">{{ issue.message }}</div>
@@ -209,22 +218,25 @@ interface Single {
       .header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 16px 14px 3px;
+        gap: 12px;
+        padding: 16px 14px 12px;
         font-weight: 600;
+      }
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .name {
+        line-height: 1.2;
       }
       .id {
         font-family: var(--mmx-mono);
         font-size: 10px;
+        font-weight: 500;
         color: var(--mmx-text-3);
-        padding: 0 14px 10px;
         word-break: break-all;
-      }
-      .swatch {
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
       }
       .row2 {
         display: grid;
@@ -313,6 +325,10 @@ export class InspectorComponent {
   });
 
   readonly multi = computed(() => this.service.state().selectedIds.length);
+
+  previewFlip(s: Single): boolean {
+    return s.def.category === "enemy" && effectiveValue(s.inst, "FacesRight") === true;
+  }
 
   private readonly issues = computed<ValidationIssue[]>(() => {
     const one = this.single();
