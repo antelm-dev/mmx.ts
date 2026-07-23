@@ -1,8 +1,9 @@
 # MMX Studio
 
-A visual level editor for the deterministic MMX engine. It lets you inspect,
-place, edit, duplicate, and delete every authored level entity and play-test the
-result immediately with the **real** engine and Pixi renderer.
+An **Angular + Angular Material** visual level editor for the deterministic MMX
+engine. It lets you inspect, place, edit, duplicate, and delete every authored
+level entity and play-test the result immediately with the **real** engine and
+Pixi renderer.
 
 MMX Studio is a development tool, not part of the shipping game. It never mutates
 the generated level modules (`packages/engine/src/game/levels/*.ts`) — those stay
@@ -10,16 +11,51 @@ owned by [`@mmx/ldtk-tools`](../../packages/ldtk-tools). Instead it works on an
 editor-friendly JSON document (`LevelDocument`) and converts to/from the engine's
 `LevelData` through the adapters in [`@mmx/content-schema`](../../packages/content-schema).
 
+## Tech stack
+
+- **Angular 22** standalone, **zoneless** (signals drive change detection), with
+  **Angular Material** (Material 3, dark theme) for the chrome.
+- Runs under **Vite** via the [Analog](https://analogjs.org) `vite-plugin-angular`
+  (`@analogjs/vite-plugin-angular`) rather than the Angular CLI. This is
+  deliberate: the Pixi renderer imports sprite sheets with Vite-native `.png` and
+  `?raw` imports, so keeping Vite's asset pipeline is what makes reusing the real
+  engine renderer in Play mode work — the same reason apps/web is on Vite.
+- The Pixi editing viewport and the engine/Play logic are **framework-agnostic**
+  TypeScript (`src/viewport`, `src/state`, `src/play`, `src/io`); Angular is only
+  the UI shell. A single `EditorService` bridges the framework-agnostic
+  `EditorStore` to Angular signals.
+
 ## Running it
 
 ```bash
-pnpm editor          # dev server on http://localhost:5174
-pnpm editor:build    # type-check + production build to apps/editor/dist
+pnpm editor          # Vite dev server on http://localhost:5174
+pnpm editor:build    # production build to apps/editor/dist
 ```
 
 Stage 1 opens by default. Use the **Levels** list (top-left) to switch between
 the built-in Stage 1 and Stage 2 (Mechanics Demo), or **Import** a saved
 `.json` document from the toolbar.
+
+### Build configuration (three load-bearing settings)
+
+This app compiles Angular **and** consumes three workspace packages as raw
+TypeScript source — `@mmx/engine`, `@mmx/renderer-pixi` and `@mmx/content-schema`
+all export `src/*.ts` rather than built JS. Making both work needs all three of
+the following. Remove any one and the browser is served untransformed TypeScript
+and the app renders a **blank page**:
+
+1. **`tsconfig.app.json` must exist.** `@analogjs/vite-plugin-angular` looks for
+   it by that exact name. Without it the plugin compiles nothing in dev and the
+   browser gets raw `.ts` (`Uncaught SyntaxError: Unexpected token 'export'`).
+2. **`resolve.mainFields: ['module']`** in `vite.config.ts` — required by the plugin.
+3. **`esbuild` must be set, and the Angular plugin must skip the workspace
+   packages** via `transformFilter`. The plugin resolves `config.esbuild ?? false`,
+   i.e. it *disables* Vite's own TypeScript transform unless the config supplies
+   one. The `@mmx/*` packages are plain TypeScript (not Angular) and sit outside
+   the Angular compiler's rootDir, so if they are left to the Angular compiler it
+   emits them **empty** — which surfaces as
+   `does not provide an export named 'History'`. `transformFilter` returns `false`
+   for those paths, handing them to esbuild instead.
 
 ## Layout
 

@@ -1,10 +1,29 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "compileOnSave": false,
   "compilerOptions": {
-    "composite": true,
-    "noEmit": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+    "outDir": "./dist/out-tsc",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "useDefineForClassFields": false,
+    "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "vite.config.ts"]
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "include": ["src/**/*.ts"]
 }

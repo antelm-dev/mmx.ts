@@ -2,21 +2,35 @@
   "name": "@mmx/editor",
   "version": "1.0.0",
   "private": true,
-  "description": "MMX Studio — visual level editor for the deterministic MMX engine.",
   "type": "module",
+  "description": "MMX Studio — Angular + Material visual level editor for the deterministic MMX engine.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && vite build",
+    "start": "vite",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@angular/cdk": "^22.0.0",
+    "@angular/common": "^22.0.0",
+    "@angular/compiler": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@angular/forms": "^22.0.0",
+    "@angular/material": "^22.0.0",
+    "@angular/platform-browser": "^22.0.0",
     "@mmx/content-schema": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
-    "pixi.js": "^8.19.0"
+    "pixi.js": "^8.19.0",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.6.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "vite": "^5.4.0"
+    "@analogjs/vite-plugin-angular": "^2.6.3",
+    "@angular/build": "^22.0.0",
+    "@angular/compiler-cli": "^22.0.0",
+    "sass": "^1.80.0",
+    "typescript": "~6.0.0",
+    "vite": "^7.0.0"
   }
 }

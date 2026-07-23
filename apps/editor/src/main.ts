@@ -1,13 +1,16 @@
-import "./style.css";
-import { Shell } from "./ui/Shell.js";
+import "./styles.scss";
+import { provideZonelessChangeDetection } from "@angular/core";
+import { bootstrapApplication } from "@angular/platform-browser";
+import { AppComponent } from "./app/app.component.js";
 
 /**
- * MMX Studio bootstrap. Builds the editor shell into #app and opens Stage 1 by
- * default. Everything else is driven from the {@link Shell}.
+ * MMX Studio bootstrap. Standalone, zoneless Angular + Material. All editor state
+ * lives in {@link EditorService}; the components are thin, signal-driven views.
+ *
+ * No animations provider: Angular Material 22 uses CSS-based animations and works
+ * without the (now-deprecated) `provideAnimations*` DI, which keeps the bootstrap
+ * on the modern, warning-free path.
  */
-const root = document.getElementById("app");
-if (!root) throw new Error("MMX Studio: #app root element missing.");
-
-Shell.mount(root).catch((error) => {
-  root.textContent = `MMX Studio failed to start: ${error instanceof Error ? error.message : String(error)}`;
-});
+bootstrapApplication(AppComponent, {
+  providers: [provideZonelessChangeDetection()],
+}).catch((error) => console.error(error));

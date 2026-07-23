@@ -1,0 +1,73 @@
+@use "@angular/material" as mat;
+
+/* Dark, dense Material 3 theme — deliberately a development tool, not the game's
+   title screen: neutral typography, compact density, a blue accent. */
+html {
+  color-scheme: dark;
+  --mmx-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, "Consolas", monospace;
+
+  @include mat.theme(
+    (
+      color: (
+          theme-type: dark,
+          primary: mat.$azure-palette,
+          tertiary: mat.$blue-palette,
+        ),
+      typography: (
+          plain-family: (
+              "Inter",
+              "Segoe UI",
+              system-ui,
+              sans-serif,
+            ),
+          brand-family: (
+              "Inter",
+              "Segoe UI",
+              system-ui,
+              sans-serif,
+            ),
+        ),
+      density: -2,
+    )
+  );
+
+  /* Editor surface colours layered under Material's system tokens. */
+  --mat-sys-background: #0d1017;
+  --mat-sys-surface: #12161f;
+  background: var(--mat-sys-background);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  color: #e6ebf5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars, to match the dark surfaces. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2b3345 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b3345;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Tighten Material form fields for the dense inspector. */
+.mat-mdc-form-field-subscript-wrapper {
+  font-size: 10px;
+}

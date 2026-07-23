@@ -5,7 +5,6 @@
     { "path": "./packages/renderer-pixi" },
     { "path": "./packages/content-schema" },
     { "path": "./apps/web" },
-    { "path": "./apps/editor" },
     { "path": "./apps/sim" }
   ]
 }
