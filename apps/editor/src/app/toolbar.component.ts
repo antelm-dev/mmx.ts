@@ -13,7 +13,6 @@ import { EditorService } from "./editor.service.js";
     <mat-toolbar class="bar">
       <div class="left">
         <div class="brand" aria-label="MMX Studio">
-          <span class="brand-mark">M</span>
           <span>MMX <span class="accent">Studio</span></span>
         </div>
 
@@ -181,28 +180,11 @@ import { EditorService } from "./editor.service.js";
         margin-left: auto;
       }
       .brand {
-        display: flex;
-        align-items: center;
-        gap: 9px;
         margin-right: 10px;
         font-size: 15px;
         font-weight: 700;
         letter-spacing: 0.25px;
         flex: none;
-      }
-      .brand-mark {
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        color: white;
-        font-size: 13px;
-        font-weight: 800;
-        border-radius: 8px;
-        background: linear-gradient(145deg, #5b9cff, #2764df);
-        box-shadow:
-          0 5px 14px rgba(59, 130, 246, 0.28),
-          inset 0 1px rgba(255, 255, 255, 0.25);
       }
       .brand .accent {
         color: #5b9cff;
@@ -237,7 +219,6 @@ import { EditorService } from "./editor.service.js";
         text-align: center;
       }
       .level-title {
-        gap: 8px;
         max-width: 280px;
         color: var(--mmx-text);
         font-size: 13px;
@@ -245,6 +226,7 @@ import { EditorService } from "./editor.service.js";
         letter-spacing: 0.2px;
       }
       .level-kicker {
+        margin-right: 10px;
         color: var(--mmx-text-3);
         font-size: 9px;
         font-weight: 700;
@@ -299,7 +281,6 @@ import { EditorService } from "./editor.service.js";
         }
       }
       @media (max-width: 1050px) {
-        .brand > span:last-child,
         .level-kicker {
           display: none;
         }
