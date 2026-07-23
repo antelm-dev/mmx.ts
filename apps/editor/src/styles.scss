@@ -1,10 +1,21 @@
 @use "@angular/material" as mat;
+@import "dockview-angular/dist/styles/dockview.css";
 
 /* Dark, dense Material 3 theme — deliberately a development tool, not the game's
    title screen: neutral typography, compact density, a blue accent. */
 html {
   color-scheme: dark;
   --mmx-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, "Consolas", monospace;
+  --mmx-bg: #090d14;
+  --mmx-surface: #111722;
+  --mmx-surface-raised: #151c28;
+  --mmx-surface-hover: #192231;
+  --mmx-border: #242e3d;
+  --mmx-border-strong: #344156;
+  --mmx-text: #edf3fc;
+  --mmx-text-2: #aab7ca;
+  --mmx-text-3: #6f7e95;
+  --mmx-accent: #4b8eff;
 
   @include mat.theme(
     (
@@ -32,8 +43,8 @@ html {
   );
 
   /* Editor surface colours layered under Material's system tokens. */
-  --mat-sys-background: #0d1017;
-  --mat-sys-surface: #12161f;
+  --mat-sys-background: var(--mmx-bg);
+  --mat-sys-surface: var(--mmx-surface);
   background: var(--mat-sys-background);
 }
 
@@ -47,7 +58,7 @@ body {
 body {
   font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   font-size: 13px;
-  color: #e6ebf5;
+  color: var(--mmx-text);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -75,4 +86,48 @@ body {
 .levels-menu .mat-mdc-menu-item.selected {
   background: #1c2c4a;
   color: #cfe0ff;
+}
+
+/* Dockview uses the same restrained surfaces as the rest of MMX Studio. */
+.dockview-theme-dark {
+  --dv-background-color: var(--mmx-bg);
+  --dv-paneview-active-outline-color: var(--mmx-accent);
+  --dv-tabs-and-actions-container-background-color: #0f151f;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--mmx-surface);
+  --dv-activegroup-hiddenpanel-tab-background-color: #0f151f;
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--mmx-surface);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: #0f151f;
+  --dv-tab-divider-color: transparent;
+  --dv-activegroup-visiblepanel-tab-color: var(--mmx-text);
+  --dv-activegroup-hiddenpanel-tab-color: var(--mmx-text-3);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--mmx-text-2);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--mmx-text-3);
+  --dv-separator-border: var(--mmx-border);
+  --dv-drag-over-background-color: rgba(59, 130, 246, 0.18);
+  --dv-drag-over-border-color: #3b82f6;
+  --dv-icon-hover-background-color: #232a38;
+  --dv-floating-box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+}
+
+.dockview-theme-dark .dv-tab {
+  padding: 0 10px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.35px;
+}
+
+.dockview-theme-dark .dv-content-container {
+  background: var(--mmx-surface);
+}
+
+.dockview-theme-dark .dv-tabs-and-actions-container {
+  border-bottom: 1px solid var(--mmx-border);
+}
+
+.dockview-theme-dark .dv-sash {
+  transition: background-color 120ms;
+}
+
+.dockview-theme-dark .dv-sash:hover {
+  background: rgba(75, 142, 255, 0.45);
 }

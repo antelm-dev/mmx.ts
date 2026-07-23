@@ -2,8 +2,8 @@
   "name": "@mmx/editor",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "description": "MMX Studio — Angular + Material visual level editor for the deterministic MMX engine.",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "start": "vite",
@@ -21,6 +21,7 @@
     "@mmx/content-schema": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
+    "dockview-angular": "7.0.4",
     "pixi.js": "^8.19.0",
     "rxjs": "^7.8.0",
     "tslib": "^2.6.0"

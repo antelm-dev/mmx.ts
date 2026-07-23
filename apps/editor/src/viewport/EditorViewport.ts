@@ -22,6 +22,17 @@ type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 const HANDLE_HIT_PX = 7;
 
+export interface EmptyCellContextMenu {
+  clientX: number;
+  clientY: number;
+  worldX: number;
+  worldY: number;
+  col: number;
+  row: number;
+}
+
+export type EmptyCellContextMenuHandler = (payload: EmptyCellContextMenu) => void;
+
 interface Box {
   x: number;
   y: number;
@@ -75,6 +86,7 @@ export class EditorViewport {
   private resizeState: { id: string; handle: Handle; orig: Box } | null = null;
   private pendingToggle: string | null = null;
   private pointerWorld = { x: 0, y: 0 };
+  private onEmptyContextMenu: EmptyCellContextMenuHandler | null = null;
 
   private constructor(
     private readonly app: Application,
@@ -384,7 +396,7 @@ export class EditorViewport {
     c.addEventListener("pointermove", (e) => this.onPointerMove(e));
     window.addEventListener("pointerup", (e) => this.onPointerUp(e));
     c.addEventListener("wheel", (e) => this.onWheel(e), { passive: false });
-    c.addEventListener("contextmenu", (e) => e.preventDefault());
+    c.addEventListener("contextmenu", (e) => this.onContextMenu(e));
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space") this.spaceDown = true;
     });
@@ -395,6 +407,10 @@ export class EditorViewport {
 
   setSpace(down: boolean): void {
     this.spaceDown = down;
+  }
+
+  setEmptyContextMenuHandler(handler: EmptyCellContextMenuHandler | null): void {
+    this.onEmptyContextMenu = handler;
   }
 
   private onWheel(e: WheelEvent): void {
@@ -409,6 +425,29 @@ export class EditorViewport {
     const sy = e.clientY - rect.top;
     const vp = { x: before.x - sx / zoom, y: before.y - sy / zoom };
     this.store.setView(zoom, vp);
+  }
+
+  private onContextMenu(e: MouseEvent): void {
+    e.preventDefault();
+    if (this.store.get().mode === "play") return;
+    const payload = this.emptyContextAt(e.clientX, e.clientY);
+    if (payload) this.onEmptyContextMenu?.(payload);
+  }
+
+  /** Resolve a free-cell context payload at screen coords, or null if occupied / out of edit mode. */
+  emptyContextAt(clientX: number, clientY: number): EmptyCellContextMenu | null {
+    if (this.store.get().mode === "play") return null;
+    const world = this.screenToWorld(clientX, clientY);
+    if (this.topObjectAt(world.x, world.y)) return null;
+    const grid = this.store.get().document.gridSize;
+    return {
+      clientX,
+      clientY,
+      worldX: world.x,
+      worldY: world.y,
+      col: Math.floor(world.x / grid),
+      row: Math.floor(world.y / grid),
+    };
   }
 
   private onPointerDown(e: PointerEvent): void {

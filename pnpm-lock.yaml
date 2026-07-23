@@ -56,6 +56,9 @@ importers:
       '@mmx/renderer-pixi':
         specifier: workspace:*
         version: link:../../packages/renderer-pixi
+      dockview-angular:
+        specifier: 7.0.4
+        version: 7.0.4(@angular/common@22.0.8(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
       pixi.js:
         specifier: ^8.19.0
         version: 8.19.0
@@ -2090,6 +2093,19 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
+  dockview-angular@7.0.4:
+    resolution: {integrity: sha512-4R1GK50mE9qZgkikTWFJbMjRKqU/Kc5UWRymJ7AOJ/L2ByqUDpvbq39FVj2EOQQlcibR9Fx7g2hb7zxyXPoReA==}
+    peerDependencies:
+      '@angular/common': '>=21.0.6'
+      '@angular/core': '>=21.0.6'
+      rxjs: '>=7.0.0'
+
+  dockview-core@7.0.4:
+    resolution: {integrity: sha512-AiIzD6ov153L/VuhqVBg5KD5oSAgJGH7L1xvzV/X+ghIEOTFfEQYEBGNd/ys+ZjQfdGRogHSeQ0v9JF/L6JrPg==}
+
+  dockview@7.0.4:
+    resolution: {integrity: sha512-n6n9WpYZgp/WY8SgvP4hr9qh01ZXhSGIRmlhoJXxRU3f34bwxCbFyOhBArV4W8quolX8OQe1yPfAUwUUjdnZPA==}
+
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
 
@@ -3962,6 +3978,19 @@ snapshots:
 
   detect-libc@2.1.2:
     optional: true
+
+  dockview-angular@7.0.4(@angular/common@22.0.8(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2):
+    dependencies:
+      '@angular/common': 22.0.8(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2)
+      dockview: 7.0.4
+      rxjs: 7.8.2
+
+  dockview-core@7.0.4: {}
+
+  dockview@7.0.4:
+    dependencies:
+      dockview-core: 7.0.4
 
   dom-serializer@2.0.0:
     dependencies:

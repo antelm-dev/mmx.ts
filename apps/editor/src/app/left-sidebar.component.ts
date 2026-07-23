@@ -1,6 +1,4 @@
 import { Component, computed, inject, signal } from "@angular/core";
-import { MatFormFieldModule } from "@angular/material/form-field";
-import { MatInputModule } from "@angular/material/input";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -26,7 +24,6 @@ interface SceneItem {
 
 @Component({
   selector: "mmx-left-sidebar",
-  imports: [MatFormFieldModule, MatInputModule],
   template: `
     <div class="panel">
       <div class="tabs" role="tablist">
@@ -54,28 +51,37 @@ interface SceneItem {
       </div>
 
       @if (tab() === "palette") {
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
           <input
-            matInput
+            class="search-input"
             placeholder="Search objects…"
+            aria-label="Search objects"
             [value]="query()"
             (input)="onSearch($event)"
           />
-        </mat-form-field>
+          @if (query()) {
+            <button class="clear" type="button" aria-label="Clear search" (click)="query.set('')">
+              ×
+            </button>
+          }
+        </div>
 
         <div class="scroll">
           @for (group of grouped(); track group.category) {
             <div class="cat">{{ group.label }}</div>
             @for (def of group.defs; track def.id) {
-              <div
+              <button
+                type="button"
                 class="item"
                 [class.active]="isPaletteActive(def.id)"
                 (click)="service.selectPalette(def.id)"
                 [title]="'Place ' + def.name"
               >
-                <span class="swatch" [style.background]="def.editor.color"></span>
-                <span>{{ def.icon }} {{ def.name }}</span>
-              </div>
+                <span class="swatch" [style.background]="def.editor.color">{{ def.icon }}</span>
+                <span class="item-name">{{ def.name }}</span>
+                <span class="add">+</span>
+              </button>
             }
           }
           @if (grouped().length === 0) {
@@ -85,18 +91,21 @@ interface SceneItem {
       } @else {
         <div class="scroll">
           @for (row of sceneItems(); track row.inst.id) {
-            <div
+            <button
+              type="button"
               class="item"
               [class.active]="isSelected(row.inst.id)"
               (click)="service.focusObject(row.inst.id)"
               [title]="row.inst.id"
             >
-              <span class="swatch" [style.background]="row.def.editor.color"></span>
+              <span class="swatch" [style.background]="row.def.editor.color">{{
+                row.def.icon
+              }}</span>
               <span class="label">
-                <span class="name">{{ row.def.icon }} {{ row.def.name }}</span>
+                <span class="name">{{ row.def.name }}</span>
                 <span class="meta">{{ row.inst.x }}, {{ row.inst.y }}</span>
               </span>
-            </div>
+            </button>
           }
           @if (sceneItems().length === 0) {
             <div class="empty">No objects in the scene. Place one from the Object Palette.</div>
@@ -111,12 +120,11 @@ interface SceneItem {
         display: flex;
         flex-direction: column;
         height: 100%;
-        background: #12161f;
-        border-right: 1px solid #2a3140;
+        background: var(--mmx-surface);
       }
       .tabs {
         display: flex;
-        border-bottom: 1px solid #2a3140;
+        border-bottom: 1px solid var(--mmx-border);
         flex: none;
       }
       .tab {
@@ -125,13 +133,13 @@ interface SceneItem {
         align-items: center;
         justify-content: center;
         gap: 6px;
-        padding: 9px 8px;
+        padding: 11px 8px 9px;
         border: none;
         background: transparent;
-        color: #6b7488;
+        color: var(--mmx-text-3);
         font: inherit;
-        font-size: 10.5px;
-        font-weight: 600;
+        font-size: 10px;
+        font-weight: 700;
         letter-spacing: 0.6px;
         text-transform: uppercase;
         cursor: pointer;
@@ -139,12 +147,12 @@ interface SceneItem {
         margin-bottom: -1px;
       }
       .tab:hover {
-        color: #aab3c5;
-        background: #181d29;
+        color: var(--mmx-text-2);
+        background: var(--mmx-surface-hover);
       }
       .tab.active {
-        color: #cfe0ff;
-        border-bottom-color: #3b82f6;
+        color: #d8e7ff;
+        border-bottom-color: var(--mmx-accent);
       }
       .count {
         font-family: var(--mmx-mono);
@@ -161,10 +169,48 @@ interface SceneItem {
         color: #93c5fd;
         background: #1c2c4a;
       }
-      .search {
-        margin: 8px 10px 4px;
-        width: calc(100% - 20px);
+      .search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        margin: 12px 12px 7px;
+        padding: 0 10px;
+        border: 1px solid var(--mmx-border-strong);
+        border-radius: 8px;
+        background: var(--mmx-surface-raised);
+        transition:
+          border-color 120ms,
+          box-shadow 120ms;
+      }
+      .search-wrap:focus-within {
+        border-color: var(--mmx-accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+      }
+      .search-icon {
+        color: var(--mmx-text-3);
+        font-size: 17px;
+        transform: rotate(-20deg);
+      }
+      .search-input {
+        min-width: 0;
+        flex: 1;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--mmx-text);
+        font: inherit;
         font-size: 12px;
+      }
+      .search-input::placeholder {
+        color: var(--mmx-text-3);
+      }
+      .clear {
+        border: 0;
+        background: transparent;
+        color: var(--mmx-text-3);
+        cursor: pointer;
+        font-size: 17px;
       }
       .scroll {
         overflow-y: auto;
@@ -175,31 +221,60 @@ interface SceneItem {
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #6b7488;
-        padding: 8px 12px 3px;
+        color: var(--mmx-text-3);
+        padding: 13px 14px 5px;
+        font-weight: 700;
       }
       .item {
         display: flex;
         align-items: center;
-        gap: 9px;
-        padding: 6px 12px;
+        gap: 10px;
+        width: calc(100% - 14px);
+        min-height: 34px;
+        margin: 1px 7px;
+        padding: 5px 8px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        font: inherit;
+        text-align: left;
         cursor: pointer;
         font-size: 12.5px;
-        color: #aab3c5;
+        color: var(--mmx-text-2);
+        transition:
+          background 100ms,
+          color 100ms;
       }
       .item:hover {
-        background: #181d29;
+        background: var(--mmx-surface-hover);
+        color: var(--mmx-text);
       }
       .item.active {
-        background: #1c2c4a;
-        color: #cfe0ff;
+        background: rgba(59, 130, 246, 0.16);
+        color: #d8e7ff;
       }
       .swatch {
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
         flex: none;
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 11px;
+        box-shadow: inset 0 1px rgba(255, 255, 255, 0.22);
+      }
+      .item-name {
+        min-width: 0;
+        flex: 1;
+      }
+      .add {
+        color: var(--mmx-text-3);
+        opacity: 0;
+        font-size: 17px;
+      }
+      .item:hover .add {
+        opacity: 1;
       }
       .label {
         display: flex;

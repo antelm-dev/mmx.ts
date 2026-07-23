@@ -2,8 +2,11 @@ import { Injectable, computed, inject, signal } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { instanceSize, type LevelDocument, type ValidationResult } from "@mmx/content-schema";
 import { EditorStore, type EditorState } from "../state/EditorStore.js";
-import { deleteSelection, duplicateSelection, nudgeSelection } from "../state/actions.js";
-import { EditorViewport } from "../viewport/EditorViewport.js";
+import { deleteSelection, duplicateSelection, nudgeSelection, placeAt } from "../state/actions.js";
+import {
+  EditorViewport,
+  type EmptyCellContextMenu,
+} from "../viewport/EditorViewport.js";
 import { PlaySession } from "../play/PlaySession.js";
 import { BUILTIN_LEVELS } from "../levels/builtins.js";
 import {
@@ -50,6 +53,7 @@ export class EditorService {
 
   readonly mode = computed(() => this.state().mode);
   readonly zoomPercent = computed(() => Math.round(this.state().zoom * 100));
+  readonly emptyContextMenu = signal<EmptyCellContextMenu | null>(null);
   readonly levelTitle = computed(() => {
     const key = this.activeLevelKey();
     if (key) {
@@ -80,8 +84,25 @@ export class EditorService {
   async attachViewport(host: HTMLElement): Promise<void> {
     this.host = host;
     this.viewport = await EditorViewport.create(host, this.store);
+    this.viewport.setEmptyContextMenuHandler((payload) => this.emptyContextMenu.set(payload));
     this.viewport.fitToDocument();
     this.viewport.redraw();
+  }
+
+  closeEmptyContextMenu(): void {
+    this.emptyContextMenu.set(null);
+  }
+
+  openEmptyContextMenuAt(clientX: number, clientY: number): void {
+    const payload = this.viewport?.emptyContextAt(clientX, clientY) ?? null;
+    this.emptyContextMenu.set(payload);
+  }
+
+  placeAtContext(definitionId: string): void {
+    const ctx = this.emptyContextMenu();
+    if (!ctx) return;
+    placeAt(this.store, definitionId, ctx.worldX, ctx.worldY);
+    this.closeEmptyContextMenu();
   }
 
   // ---------- File ----------
@@ -187,6 +208,7 @@ export class EditorService {
 
   private async startPlay(): Promise<void> {
     if (!this.host) return;
+    this.closeEmptyContextMenu();
     const result = this.store.validate();
     if (!result.ok) {
       this.toast(
@@ -232,6 +254,12 @@ export class EditorService {
         e.preventDefault();
         this.togglePlay();
       }
+      return;
+    }
+
+    if (e.code === "Escape" && this.emptyContextMenu()) {
+      e.preventDefault();
+      this.closeEmptyContextMenu();
       return;
     }
 

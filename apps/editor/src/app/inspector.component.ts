@@ -36,7 +36,6 @@ interface Single {
   ],
   template: `
     <div class="panel">
-      <div class="section-title">Inspector</div>
       <div class="scroll">
         @if (single(); as s) {
           <div class="header">
@@ -161,13 +160,23 @@ interface Single {
             <button matButton class="danger" (click)="service.deleteSelection()">Delete</button>
           </div>
         } @else if (multi() > 1) {
-          <div class="empty">{{ multi() }} objects selected.</div>
+          <div class="empty-state">
+            <div class="empty-icon">◫</div>
+            <div class="empty-title">{{ multi() }} objects selected</div>
+            <div class="empty-copy">Duplicate or delete the current selection.</div>
+          </div>
           <div class="actions">
             <button matButton (click)="service.duplicateSelection()">Duplicate</button>
             <button matButton class="danger" (click)="service.deleteSelection()">Delete</button>
           </div>
         } @else {
-          <div class="empty">Select an object to edit its properties.</div>
+          <div class="empty-state">
+            <div class="empty-icon">◇</div>
+            <div class="empty-title">Nothing selected</div>
+            <div class="empty-copy">
+              Choose an object on the canvas or from the Scene tab to edit its properties.
+            </div>
+          </div>
         }
       </div>
     </div>
@@ -178,20 +187,19 @@ interface Single {
         display: flex;
         flex-direction: column;
         height: 100%;
-        background: #12161f;
-        border-left: 1px solid #2a3140;
+        background: var(--mmx-surface);
       }
       .section-title {
         text-transform: uppercase;
         letter-spacing: 0.6px;
         font-size: 10.5px;
         font-weight: 600;
-        color: #6b7488;
-        padding: 9px 12px 6px;
+        color: var(--mmx-text-3);
+        padding: 11px 14px 7px;
       }
       .section-title.sub {
-        border-top: 1px solid #232a38;
-        margin-top: 4px;
+        border-top: 1px solid var(--mmx-border);
+        margin-top: 8px;
       }
       .scroll {
         overflow-y: auto;
@@ -202,14 +210,14 @@ interface Single {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 12px 2px;
+        padding: 16px 14px 3px;
         font-weight: 600;
       }
       .id {
         font-family: var(--mmx-mono);
         font-size: 10px;
-        color: #6b7488;
-        padding: 0 12px 6px;
+        color: var(--mmx-text-3);
+        padding: 0 14px 10px;
         word-break: break-all;
       }
       .swatch {
@@ -222,10 +230,10 @@ interface Single {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        padding: 2px 12px;
+        padding: 3px 14px;
       }
       .field {
-        padding: 2px 12px;
+        padding: 3px 14px;
       }
       mat-form-field {
         width: 100%;
@@ -244,11 +252,35 @@ interface Single {
         font-size: 10px;
         margin: 2px 0 4px;
       }
-      .empty {
-        padding: 24px 14px;
-        color: #6b7488;
-        font-size: 12px;
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 64px 28px 24px;
         text-align: center;
+      }
+      .empty-icon {
+        display: grid;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        margin-bottom: 15px;
+        border: 1px solid var(--mmx-border-strong);
+        border-radius: 13px;
+        color: #7aaaff;
+        background: linear-gradient(145deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.04));
+        font-size: 22px;
+      }
+      .empty-title {
+        margin-bottom: 6px;
+        color: var(--mmx-text);
+        font-weight: 650;
+      }
+      .empty-copy {
+        max-width: 220px;
+        color: var(--mmx-text-3);
+        font-size: 11.5px;
+        line-height: 1.55;
       }
       .actions {
         display: flex;

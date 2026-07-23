@@ -1,4 +1,5 @@
 import { Component, inject } from "@angular/core";
+import { DockviewAngularComponent, type DockviewReadyEvent } from "dockview-angular";
 import { EditorService } from "./editor.service.js";
 import { ToolbarComponent } from "./toolbar.component.js";
 import { LeftSidebarComponent } from "./left-sidebar.component.js";
@@ -6,60 +7,46 @@ import { ViewportComponent } from "./viewport.component.js";
 import { InspectorComponent } from "./inspector.component.js";
 import { BottomPanelComponent } from "./bottom-panel.component.js";
 
-/** Root layout: the classic level-editor dock (toolbar / left / center / right / bottom). */
+/** Root layout: a fixed command toolbar above a user-configurable Dockview workspace. */
 @Component({
   selector: "mmx-root",
-  imports: [
-    ToolbarComponent,
-    LeftSidebarComponent,
-    ViewportComponent,
-    InspectorComponent,
-    BottomPanelComponent,
-  ],
+  imports: [ToolbarComponent, DockviewAngularComponent],
   host: { "(window:keydown)": "onKey($event)" },
   template: `
-    <div class="grid">
-      <mmx-toolbar class="a-toolbar" />
-      <mmx-left-sidebar class="a-left" />
-      <mmx-viewport class="a-center" />
-      <mmx-inspector class="a-right" />
-      <mmx-bottom-panel class="a-bottom" />
+    <div class="shell">
+      <mmx-toolbar />
+      <main class="workspace dockview-theme-dark">
+        <dv-dockview
+          [components]="dockComponents"
+          [tabHeight]="32"
+          [floatingGroupBounds]="'boundedWithinViewport'"
+          (ready)="onDockReady($event)"
+        />
+      </main>
     </div>
   `,
   styles: [
     `
-      .grid {
-        display: grid;
-        grid-template-areas:
-          "toolbar toolbar toolbar"
-          "left center right"
-          "bottom bottom bottom";
-        grid-template-rows: 52px 1fr 190px;
-        grid-template-columns: 250px 1fr 320px;
+      :host {
+        display: block;
         height: 100vh;
         width: 100vw;
       }
-      .a-toolbar {
-        grid-area: toolbar;
+      .shell {
+        display: grid;
+        grid-template-rows: 56px minmax(0, 1fr);
+        height: 100%;
+        width: 100%;
       }
-      .a-left {
-        grid-area: left;
+      .workspace {
         min-height: 0;
-        overflow: hidden;
-      }
-      .a-center {
-        grid-area: center;
         min-width: 0;
-        min-height: 0;
-      }
-      .a-right {
-        grid-area: right;
-        min-height: 0;
         overflow: hidden;
+        background: #0d1017;
       }
-      .a-bottom {
-        grid-area: bottom;
-        min-height: 0;
+      dv-dockview {
+        height: 100%;
+        width: 100%;
       }
     `,
   ],
@@ -67,7 +54,63 @@ import { BottomPanelComponent } from "./bottom-panel.component.js";
 export class AppComponent {
   private readonly service = inject(EditorService);
 
+  readonly dockComponents = {
+    palette: LeftSidebarComponent,
+    viewport: ViewportComponent,
+    inspector: InspectorComponent,
+    bottom: BottomPanelComponent,
+  };
+
   onKey(event: KeyboardEvent): void {
     this.service.handleKeydown(event);
+  }
+
+  onDockReady({ api }: DockviewReadyEvent): void {
+    const viewport = api.addPanel({
+      id: "viewport",
+      component: "viewport",
+      title: "Level",
+      renderer: "always",
+      minimumWidth: 320,
+      minimumHeight: 240,
+    });
+
+    const palette = api.addPanel({
+      id: "palette",
+      component: "palette",
+      title: "Objects",
+      initialWidth: 264,
+      minimumWidth: 220,
+      maximumWidth: 300,
+      position: { referencePanel: viewport, direction: "left" },
+    });
+
+    const inspector = api.addPanel({
+      id: "inspector",
+      component: "inspector",
+      title: "Inspector",
+      initialWidth: 292,
+      minimumWidth: 260,
+      maximumWidth: 360,
+      position: { referencePanel: viewport, direction: "right" },
+    });
+
+    const bottom = api.addPanel({
+      id: "bottom",
+      component: "bottom",
+      title: "Project details",
+      initialHeight: 176,
+      minimumHeight: 132,
+      maximumHeight: 220,
+      position: { referencePanel: viewport, direction: "below" },
+    });
+
+    requestAnimationFrame(() => {
+      bottom.api.setSize({ height: 176 });
+      inspector.api.setSize({ width: 292 });
+      palette.api.setSize({ width: 264 });
+    });
+
+    viewport.api.setActive();
   }
 }

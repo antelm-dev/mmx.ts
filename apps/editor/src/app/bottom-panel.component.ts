@@ -13,15 +13,15 @@ interface Kv {
   template: `
     <div class="dock">
       <div class="col">
-        <div class="section-title">Assets</div>
+        <div class="section-title"><span class="section-icon">▦</span> Assets</div>
         <div class="asset-ph">
-          Asset browser — coming soon. Sprites and audio are loaded by the engine's renderer during
-          Play.
+          <span class="asset-icon">▧</span>
+          <span>Asset browser coming soon</span>
         </div>
       </div>
 
       <div class="col">
-        <div class="section-title">{{ problemsTitle() }}</div>
+        <div class="section-title"><span class="section-icon">✓</span> {{ problemsTitle() }}</div>
         <div class="scroll">
           @for (issue of validation().issues; track $index) {
             <div
@@ -35,13 +35,13 @@ interface Kv {
             </div>
           }
           @if (validation().issues.length === 0) {
-            <div class="empty">No problems detected. Ready to play.</div>
+            <div class="empty good"><span>●</span> No problems detected. Ready to play.</div>
           }
         </div>
       </div>
 
       <div class="col">
-        <div class="section-title">Selection</div>
+        <div class="section-title"><span class="section-icon">◇</span> Selection</div>
         <div class="scroll">
           @for (row of selection(); track row.k) {
             <div class="kv">
@@ -62,15 +62,14 @@ interface Kv {
       .dock {
         display: flex;
         height: 100%;
-        background: #12161f;
-        border-top: 1px solid #2a3140;
+        background: var(--mmx-surface);
       }
       .col {
         flex: 1;
         display: flex;
         flex-direction: column;
         min-width: 0;
-        border-right: 1px solid #232a38;
+        border-right: 1px solid var(--mmx-border);
       }
       .col:last-child {
         border-right: none;
@@ -80,8 +79,14 @@ interface Kv {
         letter-spacing: 0.6px;
         font-size: 10.5px;
         font-weight: 600;
-        color: #6b7488;
-        padding: 9px 12px 6px;
+        color: var(--mmx-text-3);
+        padding: 10px 12px 7px;
+        border-bottom: 1px solid rgba(45, 55, 72, 0.5);
+      }
+      .section-icon {
+        margin-right: 5px;
+        color: #7792bc;
+        font-size: 11px;
       }
       .scroll {
         overflow-y: auto;
@@ -92,11 +97,17 @@ interface Kv {
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
+        gap: 7px;
         height: 100%;
-        color: #6b7488;
-        font-size: 12px;
+        color: var(--mmx-text-3);
+        font-size: 11.5px;
         text-align: center;
         padding: 12px;
+      }
+      .asset-icon {
+        color: #55647b;
+        font-size: 22px;
       }
       .problem {
         display: flex;
@@ -130,8 +141,16 @@ interface Kv {
       }
       .empty {
         padding: 14px 12px;
-        color: #6b7488;
+        color: var(--mmx-text-3);
         font-size: 12px;
+      }
+      .empty.good {
+        color: #7f91aa;
+      }
+      .empty.good span {
+        margin-right: 7px;
+        color: #34d399;
+        font-size: 8px;
       }
       .kv {
         padding: 4px 12px;
