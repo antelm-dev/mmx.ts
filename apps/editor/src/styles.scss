@@ -71,3 +71,8 @@ body {
 .mat-mdc-form-field-subscript-wrapper {
   font-size: 10px;
 }
+
+.levels-menu .mat-mdc-menu-item.selected {
+  background: #1c2c4a;
+  color: #cfe0ff;
+}

@@ -50,9 +50,18 @@ export class EditorService {
 
   readonly mode = computed(() => this.state().mode);
   readonly zoomPercent = computed(() => Math.round(this.state().zoom * 100));
+  readonly levelTitle = computed(() => {
+    const key = this.activeLevelKey();
+    if (key) {
+      const level = this.levels.find((l) => l.key === key);
+      if (level) return level.name;
+    }
+    return this.state().document.name || "Untitled";
+  });
 
   constructor() {
     this.store.subscribe((state, reason) => this.onStoreChange(state, reason));
+    this.syncPageTitle(this.levelTitle());
   }
 
   private onStoreChange(state: EditorState, reason: string): void {
@@ -106,8 +115,17 @@ export class EditorService {
   private openDocument(doc: LevelDocument, levelKey: string | null): void {
     this.store.open(doc);
     this.activeLevelKey.set(levelKey);
+    this.syncPageTitle(
+      levelKey
+        ? (this.levels.find((l) => l.key === levelKey)?.name ?? doc.name)
+        : doc.name || "Untitled",
+    );
     this.viewport?.fitToDocument();
     this.viewport?.redraw();
+  }
+
+  private syncPageTitle(title: string): void {
+    document.title = `${title} · MMX Studio`;
   }
 
   // ---------- History ----------

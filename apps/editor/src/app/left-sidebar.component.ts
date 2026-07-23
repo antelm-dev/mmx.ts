@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from "@angular/core";
-import { MatListModule } from "@angular/material/list";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import {
@@ -16,57 +15,39 @@ interface PaletteGroup {
   defs: GameObjectDefinition[];
 }
 
-/** Left panel: level list on top, searchable object palette below. */
 @Component({
   selector: "mmx-left-sidebar",
-  imports: [MatListModule, MatFormFieldModule, MatInputModule],
+  imports: [MatFormFieldModule, MatInputModule],
   template: `
     <div class="panel">
-      <div class="section">
-        <div class="section-title">Levels</div>
-        <mat-nav-list dense>
-          @for (level of service.levels; track level.key) {
-            <a
-              mat-list-item
-              [class.active]="service.activeLevel() === level.key"
-              (click)="service.openBuiltin(level.key)"
+      <div class="section-title">Object Palette</div>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+        <input
+          matInput
+          placeholder="Search objects…"
+          [value]="query()"
+          (input)="onSearch($event)"
+        />
+      </mat-form-field>
+
+      <div class="scroll">
+        @for (group of grouped(); track group.category) {
+          <div class="cat">{{ group.label }}</div>
+          @for (def of group.defs; track def.id) {
+            <div
+              class="item"
+              [class.active]="isActive(def.id)"
+              (click)="service.selectPalette(def.id)"
+              [title]="'Place ' + def.name"
             >
-              <span matListItemTitle>▸ {{ level.name }}</span>
-            </a>
+              <span class="swatch" [style.background]="def.editor.color"></span>
+              <span>{{ def.icon }} {{ def.name }}</span>
+            </div>
           }
-        </mat-nav-list>
-      </div>
-
-      <div class="section grow">
-        <div class="section-title">Object Palette</div>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
-          <input
-            matInput
-            placeholder="Search objects…"
-            [value]="query()"
-            (input)="onSearch($event)"
-          />
-        </mat-form-field>
-
-        <div class="scroll">
-          @for (group of grouped(); track group.category) {
-            <div class="cat">{{ group.label }}</div>
-            @for (def of group.defs; track def.id) {
-              <div
-                class="item"
-                [class.active]="isActive(def.id)"
-                (click)="service.selectPalette(def.id)"
-                [title]="'Place ' + def.name"
-              >
-                <span class="swatch" [style.background]="def.editor.color"></span>
-                <span>{{ def.icon }} {{ def.name }}</span>
-              </div>
-            }
-          }
-          @if (grouped().length === 0) {
-            <div class="empty">No objects match your search.</div>
-          }
-        </div>
+        }
+        @if (grouped().length === 0) {
+          <div class="empty">No objects match your search.</div>
+        }
       </div>
     </div>
   `,
@@ -78,15 +59,6 @@ interface PaletteGroup {
         height: 100%;
         background: #12161f;
         border-right: 1px solid #2a3140;
-      }
-      .section {
-        border-bottom: 1px solid #232a38;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-      .section.grow {
-        flex: 1;
       }
       .section-title {
         text-transform: uppercase;
@@ -105,10 +77,6 @@ interface PaletteGroup {
         overflow-y: auto;
         min-height: 0;
         flex: 1;
-      }
-      a.active {
-        background: #1c2c4a !important;
-        color: #cfe0ff;
       }
       .cat {
         font-size: 10px;
