@@ -81,7 +81,11 @@ interface SceneItem {
                 (click)="service.selectPalette(def.id)"
                 [title]="'Place ' + def.name"
               >
-                <span class="swatch" [style.background]="def.editor.color">{{ def.icon }}</span>
+                <mmx-sprite-preview
+                  [definitionId]="def.id"
+                  [size]="28"
+                  [fallbackColor]="def.editor.color"
+                />
                 <span class="item-name">{{ def.name }}</span>
                 <span class="add">+</span>
               </button>
