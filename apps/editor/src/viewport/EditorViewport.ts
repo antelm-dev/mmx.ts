@@ -633,6 +633,6 @@ export class EditorViewport {
   }
 
   destroy(): void {
-    this.app.destroy(true, { children: true });
+    this.app.destroy({ removeView: true }, { children: true });
   }
 }
