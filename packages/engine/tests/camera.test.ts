@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { Camera, type CameraZone } from "../src/engine/Camera.js";
+import { Camera, type CameraZone } from "../src/game/Camera.js";
 import { DT, VIEW_WIDTH, VIEW_HEIGHT } from "../src/core/constants.js";
 
 // A world comfortably larger than the view on both axes, so clamping is not what

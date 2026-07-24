@@ -5,8 +5,8 @@ import {
   WEAPON_PALETTE,
   type WeaponId,
 } from "@mmx/engine/core/constants.js";
-import type { Camera } from "@mmx/engine/engine/Camera.js";
-import type { Player } from "@mmx/engine/engine/Player.js";
+import type { Camera } from "@mmx/engine/game/Camera.js";
+import type { Player } from "@mmx/engine/game/Player.js";
 import { regionTexture } from "./textures.js";
 
 /**

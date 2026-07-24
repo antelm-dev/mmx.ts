@@ -1,7 +1,7 @@
 import { Container, Graphics } from "pixi.js";
 import { TILE_SIZE } from "@mmx/engine/core/constants.js";
-import { Tile, World } from "@mmx/engine/engine/World.js";
-import type { Stage } from "@mmx/engine/engine/Stage.js";
+import { Tile, World } from "@mmx/engine/game/World.js";
+import type { Stage } from "@mmx/engine/game/Stage.js";
 
 /**
  * The level's backdrop and collision geometry, built once.

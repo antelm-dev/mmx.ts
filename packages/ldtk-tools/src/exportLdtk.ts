@@ -18,7 +18,7 @@ import type { LdtkProject } from "./ldtkTypes.js";
 
 const GRID = 16;
 
-/** Must match the Tile enum in packages/engine/src/engine/World.ts. 'S' marks the spawn entity and leaves the tile itself empty. */
+/** Must match the Tile enum in packages/engine/src/game/World.ts. 'S' marks the spawn entity and leaves the tile itself empty. */
 const CHAR_TO_VALUE: Record<string, number> = { "#": 1, "/": 2, "\\": 3 };
 
 const COLLISION_UID = 1;

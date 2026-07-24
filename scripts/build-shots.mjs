@@ -96,7 +96,7 @@ function clipFromRegion(region, fps) {
 const CHARGE_FX_FPS = 16 / 0.3;
 
 const animations = {
-  // Buster projectiles. Names match ShotKind in packages/engine/src/engine/Projectile.ts.
+  // Buster projectiles. Names match ShotKind in packages/engine/src/game/Projectile.ts.
   lemon: clipFromAseprite(join(projectiles, "lemon.json")),
   medium: clipFromAseprite(join(projectiles, "medium_shot.json")),
   charged: clipFromAseprite(join(projectiles, "heavy_shot.json")),

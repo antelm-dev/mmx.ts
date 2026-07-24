@@ -9,11 +9,11 @@ import {
   PLAYER_HIT_INVULNERABILITY,
   STUN_DURATION,
 } from "../src/core/constants.js";
-import { Player } from "../src/engine/Player.js";
-import { Stage } from "../src/engine/Stage.js";
-import { World } from "../src/engine/World.js";
-import { makeBat, makeMetool } from "../src/engine/enemies/index.js";
-import type { Enemy } from "../src/engine/Enemy.js";
+import { Player } from "../src/game/Player.js";
+import { Stage } from "../src/game/Stage.js";
+import { World } from "../src/game/World.js";
+import { makeBat, makeMetool } from "../src/game/enemies/index.js";
+import type { Enemy } from "../src/game/Enemy.js";
 
 /**
  * These run without any clip data loaded, which is the same deal the movement

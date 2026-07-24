@@ -4,6 +4,6 @@
     "apps/desktop/src-tauri/**",
     "**/dist/**",
     "**/public/**",
-    "packages/engine/src/engine/levels/**"
+    "packages/engine/src/game/levels/**"
   ]
 }

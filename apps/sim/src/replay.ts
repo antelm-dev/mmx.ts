@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { decodeReplay, describeInput } from "@mmx/engine/core/Replay.js";
-import { Recorder } from "@mmx/engine/engine/Recorder.js";
-import { Scene } from "@mmx/engine/engine/Scene.js";
+import { Recorder } from "@mmx/engine/game/Recorder.js";
+import { Scene } from "@mmx/engine/game/Scene.js";
 
 /**
  * Replay a recording captured in the browser, headlessly.

@@ -6,7 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./core/*.js": "./src/core/*.ts",
-    "./engine/*.js": "./src/engine/*.ts"
+    "./game/*.js": "./src/game/*.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

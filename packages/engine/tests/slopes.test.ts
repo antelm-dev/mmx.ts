@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { Actor } from "../src/engine/Actor.js";
-import { World } from "../src/engine/World.js";
+import { Actor } from "../src/game/Actor.js";
+import { World } from "../src/game/World.js";
 import { DT, TILE_SIZE, WALK_SPEED } from "../src/core/constants.js";
 
 /**

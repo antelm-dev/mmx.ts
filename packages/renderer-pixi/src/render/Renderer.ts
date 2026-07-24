@@ -5,10 +5,10 @@ import {
   VIEW_WIDTH,
   VIEW_HEIGHT,
 } from "@mmx/engine/core/constants.js";
-import type { Charge } from "@mmx/engine/engine/abilities/Charge.js";
-import type { Camera } from "@mmx/engine/engine/Camera.js";
-import type { Player } from "@mmx/engine/engine/Player.js";
-import type { Stage } from "@mmx/engine/engine/Stage.js";
+import type { Charge } from "@mmx/engine/game/abilities/Charge.js";
+import type { Camera } from "@mmx/engine/game/Camera.js";
+import type { Player } from "@mmx/engine/game/Player.js";
+import type { Stage } from "@mmx/engine/game/Stage.js";
 import { DashSmoke } from "../DashSmoke.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";
@@ -224,6 +224,15 @@ export class Renderer {
   /** Device pixels per world pixel — what screen-space text has to rasterise at. */
   get pixelScale(): number {
     return this.scale;
+  }
+
+  /**
+   * Tear the renderer down: destroys the Pixi Application and its scene graph.
+   * Used by hosts that create and discard renderers at runtime — the editor's
+   * Play mode builds a fresh one per session and disposes it on stop.
+   */
+  destroy(): void {
+    this.app.destroy(true, { children: true });
   }
 
   /** Bring the scene graph in line with the simulation, then draw it. */

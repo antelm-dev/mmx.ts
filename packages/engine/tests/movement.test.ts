@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 
 import { Input, Action } from "../src/core/Input.js";
 import { DT, WALK_SPEED, JUMP_VELOCITY } from "../src/core/constants.js";
-import { Player } from "../src/engine/Player.js";
-import { World } from "../src/engine/World.js";
+import { Player } from "../src/game/Player.js";
+import { World } from "../src/game/World.js";
 
 // A flat 30x12 room with a solid floor on the bottom row and a wall on the right.
 function flatRoom(): World {

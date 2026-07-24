@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { Actor } from "../src/engine/Actor.js";
-import { Projectile } from "../src/engine/Projectile.js";
-import { World } from "../src/engine/World.js";
+import { Actor } from "../src/game/Actor.js";
+import { Projectile } from "../src/game/Projectile.js";
+import { World } from "../src/game/World.js";
 import { BODY_HALF_H, BODY_HALF_W, DT, TILE_SIZE } from "../src/core/constants.js";
 
 /** A room with solid borders and whatever interior rows are given. */

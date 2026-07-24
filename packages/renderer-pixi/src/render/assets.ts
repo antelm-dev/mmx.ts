@@ -1,4 +1,4 @@
-import { assertAnimData, assertRegion, type Region } from "@mmx/engine/engine/Animation.js";
+import { assertAnimData, assertRegion, type Region } from "@mmx/engine/game/Animation.js";
 import { assertTimedClip } from "@mmx/engine/core/AnimationCursor.js";
 import animDataJson from "../../../../resources/sprites/player/x_anims.json?raw";
 import atlasUrl from "../../../../resources/sprites/player/x.png";

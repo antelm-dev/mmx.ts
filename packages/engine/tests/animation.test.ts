@@ -4,9 +4,9 @@ import { readFileSync } from "node:fs";
 
 import { Input, Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
-import { Player } from "../src/engine/Player.js";
-import { World } from "../src/engine/World.js";
-import type { AnimData } from "../src/engine/Animation.js";
+import { Player } from "../src/game/Player.js";
+import { World } from "../src/game/World.js";
+import type { AnimData } from "../src/game/Animation.js";
 
 /**
  * The animation state the abilities drive (AbilityUser's animatedSprite): clip

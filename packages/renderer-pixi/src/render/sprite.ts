@@ -1,6 +1,6 @@
 import { Sprite, Texture } from "pixi.js";
 import { BODY_HALF_H } from "@mmx/engine/core/constants.js";
-import type { Player } from "@mmx/engine/engine/Player.js";
+import type { Player } from "@mmx/engine/game/Player.js";
 import type { GhostSource } from "../Trail.js";
 
 /**

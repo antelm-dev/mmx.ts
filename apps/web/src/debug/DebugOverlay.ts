@@ -1,9 +1,9 @@
 import { Container, Graphics } from "pixi.js";
 import { TILE_SIZE } from "@mmx/engine/core/constants.js";
-import type { Camera } from "@mmx/engine/engine/Camera.js";
-import type { Projectile } from "@mmx/engine/engine/Projectile.js";
-import type { Scene } from "@mmx/engine/engine/Scene.js";
-import { Tile } from "@mmx/engine/engine/World.js";
+import type { Camera } from "@mmx/engine/game/Camera.js";
+import type { Projectile } from "@mmx/engine/game/Projectile.js";
+import type { Scene } from "@mmx/engine/game/Scene.js";
+import { Tile } from "@mmx/engine/game/World.js";
 import { spriteSnapshot } from "@mmx/renderer-pixi";
 
 /**

@@ -1,4 +1,4 @@
-import { LEVEL_CATALOG } from "@mmx/engine/engine/level.js";
+import { LEVEL_CATALOG } from "@mmx/engine/game/level.js";
 import { DesktopBridge } from "./DesktopBridge.js";
 import { SoundEffects } from "./SoundEffects.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
