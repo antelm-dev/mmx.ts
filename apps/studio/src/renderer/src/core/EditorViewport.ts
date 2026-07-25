@@ -276,12 +276,26 @@ export class EditorViewport {
       const preview = previewForDefinition(inst.definitionId);
       const g = new Graphics();
       const isCamera = def.category === "camera";
+      const isSlope = def.category === "slope";
       const hasSprite = !!preview && !!regionTexture(preview.sheet, preview.region);
-      g.rect(box.x, box.y, box.w, box.h).fill({
-        color,
-        alpha: isCamera ? 0.05 : hasSprite ? 0.08 : 0.16,
-      });
-      g.rect(box.x, box.y, box.w, box.h).stroke({ width: 1 / zoom, color, alpha: 0.9 });
+
+      if (isSlope) {
+        // A slope reads as its ramp, not a box: fill the solid (lower) triangle
+        // and let its direction show the rise. UpRight rises left→right.
+        const upRight = effectiveValue(inst, "Dir") !== "UpLeft";
+        const apexX = upRight ? box.x + box.w : box.x;
+        const ramp = [box.x, box.y + box.h, box.x + box.w, box.y + box.h, apexX, box.y];
+        g.poly(ramp).fill({ color, alpha: 0.26 });
+        g.poly(ramp).stroke({ width: 1 / zoom, color, alpha: 0.95 });
+        // Faint bounds so the resize handles still have something to sit on.
+        g.rect(box.x, box.y, box.w, box.h).stroke({ width: 1 / zoom, color, alpha: 0.28 });
+      } else {
+        g.rect(box.x, box.y, box.w, box.h).fill({
+          color,
+          alpha: isCamera ? 0.05 : hasSprite ? 0.08 : 0.16,
+        });
+        g.rect(box.x, box.y, box.w, box.h).stroke({ width: 1 / zoom, color, alpha: 0.9 });
+      }
 
       if (def.category === "enemy") {
         const facesRight = effectiveValue(inst, "FacesRight") === true;

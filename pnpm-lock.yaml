@@ -191,6 +191,9 @@ importers:
       '@mmx/engine':
         specifier: workspace:*
         version: link:../engine
+      '@mmx/ldtk-tools':
+        specifier: workspace:*
+        version: link:../ldtk-tools
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
