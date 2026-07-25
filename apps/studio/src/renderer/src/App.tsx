@@ -6,23 +6,30 @@ import {
   type IDockviewPanelProps,
 } from "dockview-react";
 import { editor } from "./app/useEditor.js";
+import { setDockApi } from "./app/dock.js";
 import { TitleBar } from "./components/TitleBar.js";
 import { Toolbar } from "./components/Toolbar.js";
-import { LeftSidebar } from "./components/LeftSidebar.js";
+import { PalettePanel } from "./components/PalettePanel.js";
+import { ScenePanel } from "./components/ScenePanel.js";
 import { Viewport } from "./components/Viewport.js";
 import { Inspector } from "./components/Inspector.js";
 import { RoomPanel } from "./components/RoomPanel.js";
-import { BottomPanel } from "./components/BottomPanel.js";
+import { AssetsPanel } from "./components/AssetsPanel.js";
+import { ProblemsPanel } from "./components/ProblemsPanel.js";
+import { SelectionPanel } from "./components/SelectionPanel.js";
 import { JsonPanel } from "./components/JsonPanel.js";
 import { Toasts } from "./components/Toasts.js";
 
 /** Dockview panel registry. Panels read the shared controller; props are unused. */
 const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElement> = {
   viewport: () => <Viewport />,
-  palette: () => <LeftSidebar />,
+  palette: () => <PalettePanel />,
+  scene: (props) => <ScenePanel api={props.api} />,
   inspector: () => <Inspector />,
   room: () => <RoomPanel />,
-  bottom: () => <BottomPanel />,
+  assets: () => <AssetsPanel />,
+  problems: (props) => <ProblemsPanel api={props.api} />,
+  selection: () => <SelectionPanel />,
   json: () => <JsonPanel />,
 };
 
@@ -35,6 +42,8 @@ export function App() {
   }, []);
 
   const onReady = useCallback(({ api }: DockviewReadyEvent) => {
+    setDockApi(api);
+
     const viewport = api.addPanel({
       id: "viewport",
       component: "viewport",
@@ -47,11 +56,18 @@ export function App() {
     const palette = api.addPanel({
       id: "palette",
       component: "palette",
-      title: "Objects",
+      title: "Object Palette",
       initialWidth: 264,
       minimumWidth: 220,
       maximumWidth: 320,
       position: { referencePanel: viewport, direction: "left" },
+    });
+
+    api.addPanel({
+      id: "scene",
+      component: "scene",
+      title: "Scene",
+      position: { referencePanel: palette, direction: "within" },
     });
 
     const inspector = api.addPanel({
@@ -78,22 +94,37 @@ export function App() {
       position: { referencePanel: inspector, direction: "within" },
     });
 
-    const bottom = api.addPanel({
-      id: "bottom",
-      component: "bottom",
-      title: "Project details",
+    const assets = api.addPanel({
+      id: "assets",
+      component: "assets",
+      title: "Assets",
       initialHeight: 176,
       minimumHeight: 132,
       maximumHeight: 240,
       position: { referencePanel: viewport, direction: "below" },
     });
 
+    const problems = api.addPanel({
+      id: "problems",
+      component: "problems",
+      title: "Problems",
+      position: { referencePanel: assets, direction: "right" },
+    });
+
+    api.addPanel({
+      id: "selection",
+      component: "selection",
+      title: "Selection",
+      position: { referencePanel: problems, direction: "right" },
+    });
+
     requestAnimationFrame(() => {
-      bottom.api.setSize({ height: 176 });
+      assets.api.setSize({ height: 176 });
       inspector.api.setSize({ width: 300 });
       palette.api.setSize({ width: 264 });
     });
 
+    palette.api.setActive();
     viewport.api.setActive();
   }, []);
 

@@ -4,27 +4,28 @@ import type { EmptyCellContextMenu } from "../core/EditorViewport.js";
 /**
  * Purely-ephemeral view state — the kind the brief reserves for Zustand:
  * selection is owned by the {@link EditorStore}, but transient chrome (which
- * sidebar tab is open, the palette search text, the floating place-menu, and
- * toast notifications) lives here and never touches the saved document.
+ * the palette search text, the floating place-menu, and toast notifications)
+ * lives here and never touches the saved document.
  */
 export interface Toast {
   id: number;
   message: string;
 }
 
-export type SidebarTab = "palette" | "scene";
-
 interface UiState {
   toasts: Toast[];
   contextMenu: EmptyCellContextMenu | null;
-  sidebarTab: SidebarTab;
   paletteQuery: string;
+  /** Grouping toggle + per-category collapse state for the Scene tab. */
+  sceneGrouped: boolean;
+  collapsedSceneGroups: Record<string, boolean>;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
   setContextMenu: (menu: EmptyCellContextMenu | null) => void;
-  setSidebarTab: (tab: SidebarTab) => void;
   setPaletteQuery: (query: string) => void;
+  setSceneGrouped: (grouped: boolean) => void;
+  toggleSceneGroup: (category: string) => void;
 }
 
 let toastSeq = 0;
@@ -32,8 +33,9 @@ let toastSeq = 0;
 export const useUiStore = create<UiState>((set) => ({
   toasts: [],
   contextMenu: null,
-  sidebarTab: "palette",
   paletteQuery: "",
+  sceneGrouped: true,
+  collapsedSceneGroups: {},
 
   addToast: (message) => {
     const id = ++toastSeq;
@@ -44,6 +46,13 @@ export const useUiStore = create<UiState>((set) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   setContextMenu: (contextMenu) => set({ contextMenu }),
-  setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   setPaletteQuery: (paletteQuery) => set({ paletteQuery }),
+  setSceneGrouped: (sceneGrouped) => set({ sceneGrouped }),
+  toggleSceneGroup: (category) =>
+    set((s) => ({
+      collapsedSceneGroups: {
+        ...s.collapsedSceneGroups,
+        [category]: !s.collapsedSceneGroups[category],
+      },
+    })),
 }));

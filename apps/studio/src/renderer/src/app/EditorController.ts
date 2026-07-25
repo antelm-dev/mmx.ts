@@ -236,6 +236,12 @@ export class EditorController {
     this.viewport?.centerOn(inst.x + width / 2, inst.y + height / 2);
   }
 
+  /** Add/remove an object from the current selection without recentering. */
+  toggleObjectSelection(id: string): void {
+    if (!this.store.get().document.objects.some((o) => o.id === id)) return;
+    this.store.toggleInSelection(id);
+  }
+
   // ---------- Play ----------
 
   togglePlay(): void {

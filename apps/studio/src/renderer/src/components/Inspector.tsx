@@ -27,7 +27,7 @@ import {
   sectionTitleSub,
 } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
-import { useUiStore } from "../store/uiStore.js";
+import { focusPanel } from "../app/dock.js";
 
 const errText = "text-danger-fg text-[10.5px] mt-[3px] mb-1";
 const emptyTitle = "mb-1.5 text-fg font-[650]";
@@ -47,7 +47,6 @@ interface Single {
 /** Right dock: schema-generated inspector with inline validation. */
 export function Inspector() {
   const snap = useEditorSnapshot();
-  const setSidebarTab = useUiStore((s) => s.setSidebarTab);
   const state = snap.state;
 
   const single = useMemo<Single | null>(() => {
@@ -291,7 +290,7 @@ export function Inspector() {
             </div>
             <button
               className="inline-flex items-center gap-2 h-8 mt-4 px-3 rounded-lg border border-border-strong bg-raised text-[11.5px] font-semibold text-fg-2 hover:bg-hover hover:text-fg"
-              onClick={() => setSidebarTab("scene")}
+              onClick={() => focusPanel("scene")}
             >
               <ListTree size={14} /> Browse scene objects
             </button>
