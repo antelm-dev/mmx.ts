@@ -31,7 +31,9 @@ export type ShotPhase = "live" | "spent";
 const SHOT_ANIMATIONS = Object.fromEntries(
   (Object.entries(WEAPON_SHOTS) as [WeaponId, readonly ShotStats[]][]).map(([weapon, shots]) => [
     weapon,
-    shots.map((stats) => uniformClip(stats.frameCount ?? SHOT_FRAME_COUNT, 1000 / stats.frameMs, true)),
+    shots.map((stats) =>
+      uniformClip(stats.frameCount ?? SHOT_FRAME_COUNT, 1000 / stats.frameMs, true),
+    ),
   ]),
 ) as Record<WeaponId, TimedClip[]>;
 const HIT_ANIMATION = uniformClip(HIT_FX_FRAME_COUNT, HIT_FX_FPS, false);

@@ -134,9 +134,7 @@ export class Character extends AbilityUser {
     if (!config) return false;
     const ammo = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
     if (ammo < config.ammoCost) return false;
-    const live = this.projectiles.filter(
-      (p) => p.isLive && p.weapon === this.activeWeapon,
-    ).length;
+    const live = this.projectiles.filter((p) => p.isLive && p.weapon === this.activeWeapon).length;
     return live < config.maxShotsAlive;
   }
 
@@ -206,7 +204,9 @@ export class Character extends AbilityUser {
     }
     const current = WEAPON_ORDER.indexOf(this.activeWeapon);
     const delta = rightPressed ? 1 : -1;
-    this.setActiveWeapon(WEAPON_ORDER[(current + delta + WEAPON_ORDER.length) % WEAPON_ORDER.length]);
+    this.setActiveWeapon(
+      WEAPON_ORDER[(current + delta + WEAPON_ORDER.length) % WEAPON_ORDER.length],
+    );
   }
 
   private setActiveWeapon(weapon: WeaponId): void {

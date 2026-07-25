@@ -256,7 +256,8 @@ export class SettingsMenuView {
     this.scaleValue.text = `${settings.scale ?? DEFAULT_WINDOW_SCALE}x`;
     this.fullscreenValue.text = settings.fullscreen ? "On" : "Off";
     this.paintVolume(settings.masterVolume);
-    this.hint.text = notice ?? (capturing ? "press a key to bind, Esc to cancel" : rowHint(current));
+    this.hint.text =
+      notice ?? (capturing ? "press a key to bind, Esc to cancel" : rowHint(current));
     this.hint.style.fill = notice ? COLOR_CAPTURING : COLOR_DIM;
   }
 

@@ -252,8 +252,7 @@ export function compileLevel(data: LevelData): CompileLevelResult {
 
     // Advisory: an entity that falls entirely outside the level never participates.
     if ([e.x, e.y, e.w, e.h].every(Number.isFinite)) {
-      const whollyOutside =
-        e.x + e.w <= 0 || e.x >= worldW || e.y + e.h <= 0 || e.y >= worldH;
+      const whollyOutside = e.x + e.w <= 0 || e.x >= worldW || e.y + e.h <= 0 || e.y >= worldH;
       if (whollyOutside) {
         warn({
           code: "bounds",

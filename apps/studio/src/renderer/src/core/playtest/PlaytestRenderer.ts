@@ -116,13 +116,22 @@ export class PlaytestRenderer {
 
   /** Draw the current state of `scene`. */
   render(scene: Scene): void {
-    this.renderer.render(scene.stage, scene.camera, this.trail, this.smoke, this.explosion, this.debris);
+    this.renderer.render(
+      scene.stage,
+      scene.camera,
+      this.trail,
+      this.smoke,
+      this.explosion,
+      this.debris,
+    );
   }
 
   private fit(): void {
     const scale = Math.max(
       1,
-      Math.floor(Math.min(this.host.clientWidth / VIEW_WIDTH, this.host.clientHeight / VIEW_HEIGHT)),
+      Math.floor(
+        Math.min(this.host.clientWidth / VIEW_WIDTH, this.host.clientHeight / VIEW_HEIGHT),
+      ),
     );
     this.renderer.fit(scale);
   }

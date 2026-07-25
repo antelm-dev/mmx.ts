@@ -5,7 +5,7 @@ packages:
 onlyBuiltDependencies:
   - electron-ipc-module
   - rollup-plugin-electron-run
-  - '@parcel/watcher'
+  - "@parcel/watcher"
   - esbuild
 
 patchedDependencies:

@@ -12,9 +12,15 @@ export * from "./geometryTypes.js";
 export * from "./configValidation.js";
 export { abilityRegistry, type AbilityFactory, type AbilityConfig } from "./abilityRegistry.js";
 export { enemyBehaviorRegistry, type EnemyBehaviorFactory } from "./enemyBehaviorRegistry.js";
-export { projectileBehaviorRegistry, type ProjectileBehaviorFactory } from "./projectileRegistry.js";
+export {
+  projectileBehaviorRegistry,
+  type ProjectileBehaviorFactory,
+} from "./projectileRegistry.js";
 export { pickupEffectRegistry, type PickupEffectFactory } from "./pickupRegistry.js";
-export { environmentBehaviorRegistry, type EnvironmentBehaviorFactory } from "./environmentRegistry.js";
+export {
+  environmentBehaviorRegistry,
+  type EnvironmentBehaviorFactory,
+} from "./environmentRegistry.js";
 export { prefabRuntimeRegistry, type PrefabRuntimeFactory } from "./prefabRuntimeRegistry.js";
 export { effectRegistry, type EffectFactory } from "./effectRegistry.js";
 

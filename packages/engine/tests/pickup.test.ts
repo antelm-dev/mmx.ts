@@ -56,8 +56,7 @@ test("a small Life Energy capsule heals 2 HP over several ticks, then despawns",
     "capsule applied its full heal in a single frame",
   );
 
-  const ticksNeeded =
-    Math.ceil(PICKUP_TICK_INTERVAL / DT) * LIFE_CAPSULE_STATS.small.heal + 5;
+  const ticksNeeded = Math.ceil(PICKUP_TICK_INTERVAL / DT) * LIFE_CAPSULE_STATS.small.heal + 5;
   for (let i = 0; i < ticksNeeded; i++) stage.tick(DT);
 
   assert.equal(player.current_health, player.max_health - 10 + LIFE_CAPSULE_STATS.small.heal);

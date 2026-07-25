@@ -47,15 +47,15 @@ export class SettingsModel {
   /** Load persisted settings and the display's scale ceiling. Call once at startup. */
   async load(): Promise<void> {
     this.settings = await this.options.desktop.loadSettings();
-    this.maxWindowScale = await this.options.desktop
-      .maxWindowScale()
-      .catch(() => MAX_WINDOW_SCALE);
+    this.maxWindowScale = await this.options.desktop.maxWindowScale().catch(() => MAX_WINDOW_SCALE);
     this.settings = { ...this.settings, scale: Math.min(this.settings.scale, this.maxWindowScale) };
   }
 
   /** Refresh the scale ceiling — the menu calls this whenever it opens. */
   async refreshMaxScale(): Promise<void> {
-    this.maxWindowScale = await this.options.desktop.maxWindowScale().catch(() => this.maxWindowScale);
+    this.maxWindowScale = await this.options.desktop
+      .maxWindowScale()
+      .catch(() => this.maxWindowScale);
   }
 
   /** Merge a partial update into the live settings and persist it. */

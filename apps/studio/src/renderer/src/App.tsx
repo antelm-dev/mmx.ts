@@ -1,10 +1,6 @@
 import { useCallback, useEffect, type ReactElement } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import {
-  DockviewReact,
-  type DockviewReadyEvent,
-  type IDockviewPanelProps,
-} from "dockview-react";
+import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import { editor } from "./app/useEditor.js";
 import { setDockApi } from "./app/dock.js";
 import { TitleBar } from "./components/TitleBar.js";

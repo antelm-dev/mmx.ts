@@ -96,7 +96,12 @@ export const abilities = {
     layer: "reaction",
     priority: 100,
     // PLAYER_DAMAGE_* / PLAYER_KNOCKBACK_*
-    config: { duration: 0.6, invulnerability: 1.75, knockbackSpeed: 45, knockbackJumpVelocity: 190 },
+    config: {
+      duration: 0.6,
+      invulnerability: 1.75,
+      knockbackSpeed: 45,
+      knockbackJumpVelocity: 190,
+    },
   },
   "player.death": {
     id: "player.death",

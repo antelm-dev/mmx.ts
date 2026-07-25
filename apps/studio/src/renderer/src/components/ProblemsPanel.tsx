@@ -15,14 +15,20 @@ const dot = "inline-block w-2 h-2 rounded-full flex-none";
 
 /** Extra per-column classes for the Problems table cells. */
 const cellCls = (id: string): string =>
-  id === "msg" ? "w-full" : id === "code" ? "text-muted font-mono text-[10px] whitespace-nowrap" : "";
+  id === "msg"
+    ? "w-full"
+    : id === "code"
+      ? "text-muted font-mono text-[10px] whitespace-nowrap"
+      : "";
 
 const column = createColumnHelper<ValidationIssue>();
 const problemColumns: ColumnDef<ValidationIssue, string>[] = [
   column.display({
     id: "dot",
     cell: (ctx) => (
-      <span className={cx(dot, ctx.row.original.severity === "error" ? "bg-danger" : "bg-warning")} />
+      <span
+        className={cx(dot, ctx.row.original.severity === "error" ? "bg-danger" : "bg-warning")}
+      />
     ),
   }) as ColumnDef<ValidationIssue, string>,
   column.accessor("message", { id: "msg", cell: (c) => c.getValue() }),
@@ -66,7 +72,10 @@ export function ProblemsPanel({ api }: { api?: DockviewPanelApi }): ReactElement
                   onClick={() => row.original.objectId && editor.focusObject(row.original.objectId)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className={cx("py-[5px] px-3 align-baseline", cellCls(cell.column.id))}>
+                    <td
+                      key={cell.id}
+                      className={cx("py-[5px] px-3 align-baseline", cellCls(cell.column.id))}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

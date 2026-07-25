@@ -20,9 +20,29 @@ export type DebugGeometryRole =
   | "spawn-clearance";
 
 export type DebugPrimitive =
-  | { kind: "rect"; role: DebugGeometryRole; x: number; y: number; width: number; height: number; label?: string }
-  | { kind: "line"; role: DebugGeometryRole; from: { x: number; y: number }; to: { x: number; y: number }; label?: string }
-  | { kind: "arrow"; role: DebugGeometryRole; from: { x: number; y: number }; to: { x: number; y: number }; label?: string }
+  | {
+      kind: "rect";
+      role: DebugGeometryRole;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      label?: string;
+    }
+  | {
+      kind: "line";
+      role: DebugGeometryRole;
+      from: { x: number; y: number };
+      to: { x: number; y: number };
+      label?: string;
+    }
+  | {
+      kind: "arrow";
+      role: DebugGeometryRole;
+      from: { x: number; y: number };
+      to: { x: number; y: number };
+      label?: string;
+    }
   | { kind: "point"; role: DebugGeometryRole; x: number; y: number; label?: string };
 
 /**

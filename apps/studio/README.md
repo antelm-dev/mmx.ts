@@ -14,21 +14,21 @@ adapters in [`@mmx/content-schema`](../../packages/content-schema).
 
 ## Tech stack
 
-| Concern | Choice |
-| --- | --- |
-| Shell | **Electron** — `main` + `preload` bundled by **Rollup** (dev live-reload via **electron-run**), `renderer` by **Vite** |
-| IPC | **electron-ipc-module** — typed `*.ipc.ts` modules + a generated preload bridge |
-| Packaging | **electron-builder** (`pack:dir` / `dist`) |
-| UI | **React 19 + TypeScript + Vite** |
-| Docking / tabs / floating panels | **Dockview** (`dockview-react`) |
-| Menus, tooltips, selects, checkboxes | **Radix UI** primitives + custom CSS variables |
-| Ephemeral UI state (tabs, search, toasts, context menu) | **Zustand** |
-| Editing viewport & Play mode | **Pixi.js** (WebGL/WebGPU) — the real `@mmx/renderer-pixi` |
-| Document JSON editing | **Monaco Editor** (self-hosted, no CDN) |
-| Large scene tree & palette | **TanStack Virtual** |
-| Problems panel | **TanStack Table** |
-| Icons | **Lucide** |
-| Tests | **Vitest** (unit) + **Playwright** (Electron e2e) |
+| Concern                                                 | Choice                                                                                                                 |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Shell                                                   | **Electron** — `main` + `preload` bundled by **Rollup** (dev live-reload via **electron-run**), `renderer` by **Vite** |
+| IPC                                                     | **electron-ipc-module** — typed `*.ipc.ts` modules + a generated preload bridge                                        |
+| Packaging                                               | **electron-builder** (`pack:dir` / `dist`)                                                                             |
+| UI                                                      | **React 19 + TypeScript + Vite**                                                                                       |
+| Docking / tabs / floating panels                        | **Dockview** (`dockview-react`)                                                                                        |
+| Menus, tooltips, selects, checkboxes                    | **Radix UI** primitives + custom CSS variables                                                                         |
+| Ephemeral UI state (tabs, search, toasts, context menu) | **Zustand**                                                                                                            |
+| Editing viewport & Play mode                            | **Pixi.js** (WebGL/WebGPU) — the real `@mmx/renderer-pixi`                                                             |
+| Document JSON editing                                   | **Monaco Editor** (self-hosted, no CDN)                                                                                |
+| Large scene tree & palette                              | **TanStack Virtual**                                                                                                   |
+| Problems panel                                          | **TanStack Table**                                                                                                     |
+| Icons                                                   | **Lucide**                                                                                                             |
+| Tests                                                   | **Vitest** (unit) + **Playwright** (Electron e2e)                                                                      |
 
 ## Architecture
 
@@ -72,13 +72,13 @@ pnpm dist            # electron-builder: platform installer(s) in dist/
 
 ## Layout
 
-| Region | Contents |
-| --- | --- |
+| Region          | Contents                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------- |
 | **Top toolbar** | Import / Save · Undo / Redo · Grid / Snap · Zoom −/＋/Fit · Level selector · Play / Stop |
-| **Left dock** | Virtualized object palette (searchable) + scene tree, in two tabs |
-| **Center** | Pixi viewport — terrain, entities, grid, selection outlines, resize handles |
-| **Right dock** | Schema-generated **Inspector** and a **Document JSON** tab (Monaco) |
-| **Bottom dock** | Asset placeholder · Problems table (validation) · current-selection details |
+| **Left dock**   | Virtualized object palette (searchable) + scene tree, in two tabs                        |
+| **Center**      | Pixi viewport — terrain, entities, grid, selection outlines, resize handles              |
+| **Right dock**  | Schema-generated **Inspector** and a **Document JSON** tab (Monaco)                      |
+| **Bottom dock** | Asset placeholder · Problems table (validation) · current-selection details              |
 
 Panels are Dockview panels: draggable, tabbable, floatable, and pop-outable.
 
@@ -86,22 +86,22 @@ Panels are Dockview panels: draggable, tabbable, floatable, and pop-outable.
 
 Identical to the original editor:
 
-| Action | Input |
-| --- | --- |
-| Select | Left-click an object (or a palette entry to start placing) |
-| Add to / remove from selection | Shift-click |
-| Move | Drag selected objects (one undo entry per drag) |
-| Resize | Drag a handle on a single selected resizable object |
-| Nudge | Arrow keys (Shift = one grid cell) |
-| Duplicate | `Ctrl/Cmd+D` |
-| Delete | `Delete` / `Backspace` |
-| Undo / Redo | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` |
-| Zoom | Mouse wheel (about the cursor), or toolbar −/＋ |
-| Pan | Middle-mouse drag, or hold `Space` and drag |
-| Fit to view | `F` |
-| Toggle grid / snapping | `G` / `Shift+G` |
-| Cancel placement / clear selection | `Escape` |
-| Play / Stop | `Ctrl/Cmd+Enter`, or the toolbar button (`Esc` also stops) |
+| Action                             | Input                                                      |
+| ---------------------------------- | ---------------------------------------------------------- |
+| Select                             | Left-click an object (or a palette entry to start placing) |
+| Add to / remove from selection     | Shift-click                                                |
+| Move                               | Drag selected objects (one undo entry per drag)            |
+| Resize                             | Drag a handle on a single selected resizable object        |
+| Nudge                              | Arrow keys (Shift = one grid cell)                         |
+| Duplicate                          | `Ctrl/Cmd+D`                                               |
+| Delete                             | `Delete` / `Backspace`                                     |
+| Undo / Redo                        | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y`          |
+| Zoom                               | Mouse wheel (about the cursor), or toolbar −/＋            |
+| Pan                                | Middle-mouse drag, or hold `Space` and drag                |
+| Fit to view                        | `F`                                                        |
+| Toggle grid / snapping             | `G` / `Shift+G`                                            |
+| Cancel placement / clear selection | `Escape`                                                   |
+| Play / Stop                        | `Ctrl/Cmd+Enter`, or the toolbar button (`Esc` also stops) |
 
 During **Play** mode: WASD/Arrows move, `Space`/`Z` jump, `X`/`Shift` dash,
 `C`/`J` fire, `Q`/`E` switch weapon.

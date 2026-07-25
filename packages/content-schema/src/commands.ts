@@ -187,7 +187,9 @@ export function setLevelSettings(doc: LevelDocument, next: LevelSettings): Edito
   const afterTiles = resized
     ? reshapeTiles(doc.tiles, doc.cols, doc.rows, next.cols, next.rows)
     : doc.tiles;
-  const afterSlopes = resized ? remapSlopes(doc.slopes, doc.cols, next.cols, next.rows) : doc.slopes;
+  const afterSlopes = resized
+    ? remapSlopes(doc.slopes, doc.cols, next.cols, next.rows)
+    : doc.slopes;
   const beforeTiles = doc.tiles;
   const beforeSlopes = doc.slopes;
 

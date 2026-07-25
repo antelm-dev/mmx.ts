@@ -32,7 +32,11 @@ test("the player's moveset is composed from the compiled loadout", () => {
   loadout.abilities.forEach((compiled, i) => {
     const inst = player.moveset[i];
     assert.equal(inst.priority, compiled.priority, `priority @${i} (${compiled.id})`);
-    assert.equal(inst.independent, compiled.layer === "action", `independent @${i} (${compiled.id})`);
+    assert.equal(
+      inst.independent,
+      compiled.layer === "action",
+      `independent @${i} (${compiled.id})`,
+    );
   });
 });
 

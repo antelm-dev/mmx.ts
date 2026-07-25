@@ -62,7 +62,15 @@ export class AnimationInspector {
     this.clip.addEventListener("change", () => this.setClip(this.clip.value));
     this.frame.addEventListener("input", () => this.setFrame(Number(this.frame.value)));
 
-    this.root.append(title, clipLabel, frameLabel, controls, this.details, historyTitle, this.history);
+    this.root.append(
+      title,
+      clipLabel,
+      frameLabel,
+      controls,
+      this.details,
+      historyTitle,
+      this.history,
+    );
     this.root.hidden = true;
     document.body.append(this.root);
   }

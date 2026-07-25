@@ -63,7 +63,10 @@ export function Viewport() {
       clientX: Math.max(8, Math.min(contextMenu.clientX, window.innerWidth - menuW - 8)),
       clientY: Math.max(
         8,
-        Math.min(contextMenu.clientY, window.innerHeight - Math.min(menuH, window.innerHeight - 16) - 8),
+        Math.min(
+          contextMenu.clientY,
+          window.innerHeight - Math.min(menuH, window.innerHeight - 16) - 8,
+        ),
       ),
     };
   }, [contextMenu]);
@@ -98,8 +101,8 @@ export function Viewport() {
             <div className="absolute z-[3] text-[10.5px] pointer-events-none left-1/2 -translate-x-1/2 bottom-3.5 text-[#94a4ba] bg-[rgba(12,17,26,0.9)] border border-[rgba(64,77,100,0.72)] rounded-[10px] px-3 py-2 shadow-[0_5px_18px_rgba(0,0,0,0.28)] backdrop-blur-[10px] whitespace-nowrap">
               {snap.state.activeTool === "tile" ? (
                 <>
-                  <Keycap>T</Keycap> paint tiles <HintDot /> <Keycap>Alt</Keycap> erase{" "}
-                  <HintDot /> <Keycap>V</Keycap> select
+                  <Keycap>T</Keycap> paint tiles <HintDot /> <Keycap>Alt</Keycap> erase <HintDot />{" "}
+                  <Keycap>V</Keycap> select
                 </>
               ) : (
                 <>
@@ -140,7 +143,9 @@ export function Viewport() {
             <div className="font-mono text-[10px] text-muted pt-1 px-3 pb-1.5">
               Cell {menuPos.col}, {menuPos.row}
             </div>
-            <div className="text-[10px] uppercase tracking-[0.5px] text-muted pt-1 px-3 pb-0.5">Terrain</div>
+            <div className="text-[10px] uppercase tracking-[0.5px] text-muted pt-1 px-3 pb-0.5">
+              Terrain
+            </div>
             {menuPos.tileSolid ? (
               <button className={ctxItemCls()} onClick={() => editor.setTileAtContext(false)}>
                 <span className="w-3 h-3 rounded-[3px] flex-none border border-[#ff5a5a]" />
@@ -153,13 +158,19 @@ export function Viewport() {
               </button>
             )}
             <div className="h-px bg-popover-border my-1" />
-            <div className="text-[10px] uppercase tracking-[0.5px] text-muted pt-1 px-3 pb-0.5">Place</div>
+            <div className="text-[10px] uppercase tracking-[0.5px] text-muted pt-1 px-3 pb-0.5">
+              Place
+            </div>
             <div className="overflow-y-auto min-h-0 max-h-[260px]">
               {placeGroups.map((group) => (
                 <div key={group.category}>
                   <div className={ctxCat}>{group.label}</div>
                   {group.defs.map((def) => (
-                    <button key={def.id} className={ctxItemCls()} onClick={() => editor.placeAtContext(def.id)}>
+                    <button
+                      key={def.id}
+                      className={ctxItemCls()}
+                      onClick={() => editor.placeAtContext(def.id)}
+                    >
                       <span
                         className="w-3 h-3 rounded-[3px] flex-none shadow-[0_0_0_1px_rgba(255,255,255,0.15)]"
                         style={{ background: def.editor.color }}

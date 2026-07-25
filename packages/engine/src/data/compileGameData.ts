@@ -71,14 +71,29 @@ export function compileGameData(
   // --- numeric + hitbox helpers ---------------------------------------------
   const num = (v: number, path: string, id: string, opts: { min?: number; gt?: number }): void => {
     if (typeof v !== "number" || !Number.isFinite(v)) {
-      error({ code: "value.number", definitionId: id, fieldPath: path, message: `${path} must be a finite number.` });
+      error({
+        code: "value.number",
+        definitionId: id,
+        fieldPath: path,
+        message: `${path} must be a finite number.`,
+      });
       return;
     }
     if (opts.gt !== undefined && !(v > opts.gt)) {
-      error({ code: "value.range", definitionId: id, fieldPath: path, message: `${path} must be > ${opts.gt}.` });
+      error({
+        code: "value.range",
+        definitionId: id,
+        fieldPath: path,
+        message: `${path} must be > ${opts.gt}.`,
+      });
     }
     if (opts.min !== undefined && v < opts.min) {
-      error({ code: "value.range", definitionId: id, fieldPath: path, message: `${path} must be ≥ ${opts.min}.` });
+      error({
+        code: "value.range",
+        definitionId: id,
+        fieldPath: path,
+        message: `${path} must be ≥ ${opts.min}.`,
+      });
     }
   };
   const hitbox = (box: Hitbox, path: string, id: string): void => {
@@ -102,9 +117,21 @@ export function compileGameData(
   // --- abilities -------------------------------------------------------------
   for (const a of Object.values(data.abilities)) {
     if (!registries.abilities.has(a.behavior)) {
-      error({ code: "behavior.unknown", definitionId: a.id, fieldPath: `abilities.${a.id}.behavior`, message: `Unknown ability behavior '${a.behavior}'.` });
+      error({
+        code: "behavior.unknown",
+        definitionId: a.id,
+        fieldPath: `abilities.${a.id}.behavior`,
+        message: `Unknown ability behavior '${a.behavior}'.`,
+      });
     } else {
-      validateBehaviorConfig(registries.abilities, a.behavior, a.config, `abilities.${a.id}.config`, a.id, error);
+      validateBehaviorConfig(
+        registries.abilities,
+        a.behavior,
+        a.config,
+        `abilities.${a.id}.config`,
+        a.id,
+        error,
+      );
     }
     if (a.priority !== undefined) num(a.priority, `abilities.${a.id}.priority`, a.id, {});
   }
@@ -112,35 +139,62 @@ export function compileGameData(
   // --- loadouts --------------------------------------------------------------
   for (const l of Object.values(data.loadouts)) {
     if (!data.actors[l.actor]) {
-      error({ code: "reference.missing", definitionId: l.id, fieldPath: `loadouts.${l.id}.actor`, message: `Loadout references unknown actor '${l.actor}'.` });
+      error({
+        code: "reference.missing",
+        definitionId: l.id,
+        fieldPath: `loadouts.${l.id}.actor`,
+        message: `Loadout references unknown actor '${l.actor}'.`,
+      });
     }
     for (const [i, slot] of l.slots.entries()) {
       if (!data.abilities[slot.ability]) {
-        error({ code: "reference.missing", definitionId: l.id, fieldPath: `loadouts.${l.id}.slots[${i}].ability`, message: `Loadout references unknown ability '${slot.ability}'.` });
+        error({
+          code: "reference.missing",
+          definitionId: l.id,
+          fieldPath: `loadouts.${l.id}.slots[${i}].ability`,
+          message: `Loadout references unknown ability '${slot.ability}'.`,
+        });
       }
-      if (slot.priority !== undefined) num(slot.priority, `loadouts.${l.id}.slots[${i}].priority`, l.id, {});
+      if (slot.priority !== undefined)
+        num(slot.priority, `loadouts.${l.id}.slots[${i}].priority`, l.id, {});
     }
     for (const [i, w] of l.weapons.entries()) {
       if (!data.weapons[w]) {
-        error({ code: "reference.missing", definitionId: l.id, fieldPath: `loadouts.${l.id}.weapons[${i}]`, message: `Loadout references unknown weapon '${w}'.` });
+        error({
+          code: "reference.missing",
+          definitionId: l.id,
+          fieldPath: `loadouts.${l.id}.weapons[${i}]`,
+          message: `Loadout references unknown weapon '${w}'.`,
+        });
       }
     }
     if (!l.weapons.includes(l.initialWeapon)) {
-      error({ code: "reference.invalid", definitionId: l.id, fieldPath: `loadouts.${l.id}.initialWeapon`, message: `initialWeapon '${l.initialWeapon}' is not in this loadout's weapons.` });
+      error({
+        code: "reference.invalid",
+        definitionId: l.id,
+        fieldPath: `loadouts.${l.id}.initialWeapon`,
+        message: `initialWeapon '${l.initialWeapon}' is not in this loadout's weapons.`,
+      });
     }
   }
 
   // --- projectiles -----------------------------------------------------------
   for (const p of Object.values(data.projectiles)) {
     if (!registries.projectiles.has(p.behavior)) {
-      error({ code: "behavior.unknown", definitionId: p.id, fieldPath: `projectiles.${p.id}.behavior`, message: `Unknown projectile behavior '${p.behavior}'.` });
+      error({
+        code: "behavior.unknown",
+        definitionId: p.id,
+        fieldPath: `projectiles.${p.id}.behavior`,
+        message: `Unknown projectile behavior '${p.behavior}'.`,
+      });
     }
     num(p.damage, `projectiles.${p.id}.damage`, p.id, { min: 0 });
     num(p.speed, `projectiles.${p.id}.speed`, p.id, { gt: 0 });
     num(p.lifetime, `projectiles.${p.id}.lifetime`, p.id, { min: 0 });
     num(p.verticalRange, `projectiles.${p.id}.verticalRange`, p.id, { min: 0 });
     hitbox(p.hitbox, `projectiles.${p.id}.hitbox`, p.id);
-    if (p.animation.frameCount !== undefined) num(p.animation.frameCount, `projectiles.${p.id}.animation.frameCount`, p.id, { gt: 0 });
+    if (p.animation.frameCount !== undefined)
+      num(p.animation.frameCount, `projectiles.${p.id}.animation.frameCount`, p.id, { gt: 0 });
   }
 
   // --- weapons ---------------------------------------------------------------
@@ -153,28 +207,53 @@ export function compileGameData(
     for (const [i, t] of w.chargeThresholds.entries()) {
       num(t, `weapons.${w.id}.chargeThresholds[${i}]`, w.id, { min: 0 });
       if (Number.isFinite(t) && !(t > prev)) {
-        error({ code: "charge.threshold", definitionId: w.id, fieldPath: `weapons.${w.id}.chargeThresholds[${i}]`, message: `Charge thresholds must strictly ascend.` });
+        error({
+          code: "charge.threshold",
+          definitionId: w.id,
+          fieldPath: `weapons.${w.id}.chargeThresholds[${i}]`,
+          message: `Charge thresholds must strictly ascend.`,
+        });
       }
       prev = t;
     }
     if (w.projectiles.length === 0) {
-      error({ code: "projectile.missing", definitionId: w.id, fieldPath: `weapons.${w.id}.projectiles`, message: `Weapon '${w.id}' has no projectiles.` });
+      error({
+        code: "projectile.missing",
+        definitionId: w.id,
+        fieldPath: `weapons.${w.id}.projectiles`,
+        message: `Weapon '${w.id}' has no projectiles.`,
+      });
     }
     for (const [i, ref] of w.projectiles.entries()) {
       if (!data.projectiles[ref]) {
-        error({ code: "projectile.missing", definitionId: w.id, fieldPath: `weapons.${w.id}.projectiles[${i}]`, message: `Weapon references unknown projectile '${ref}'.` });
+        error({
+          code: "projectile.missing",
+          definitionId: w.id,
+          fieldPath: `weapons.${w.id}.projectiles[${i}]`,
+          message: `Weapon references unknown projectile '${ref}'.`,
+        });
       }
     }
     if (w.firingBehavior !== undefined && !registries.projectiles.has(w.firingBehavior)) {
       // firing behaviours are registered alongside projectile behaviours here
-      warn({ code: "behavior.unknown", definitionId: w.id, fieldPath: `weapons.${w.id}.firingBehavior`, message: `Unknown firing behavior '${w.firingBehavior}'.` });
+      warn({
+        code: "behavior.unknown",
+        definitionId: w.id,
+        fieldPath: `weapons.${w.id}.firingBehavior`,
+        message: `Unknown firing behavior '${w.firingBehavior}'.`,
+      });
     }
   }
 
   // --- enemies ---------------------------------------------------------------
   for (const e of Object.values(data.enemies)) {
     if (!data.actors[e.actor]) {
-      error({ code: "reference.missing", definitionId: e.id, fieldPath: `enemies.${e.id}.actor`, message: `Enemy references unknown actor '${e.actor}'.` });
+      error({
+        code: "reference.missing",
+        definitionId: e.id,
+        fieldPath: `enemies.${e.id}.actor`,
+        message: `Enemy references unknown actor '${e.actor}'.`,
+      });
     }
     num(e.touchDamage, `enemies.${e.id}.touchDamage`, e.id, { min: 0 });
     hitbox(e.hurtbox, `enemies.${e.id}.hurtbox`, e.id);
@@ -182,7 +261,12 @@ export function compileGameData(
     // Each ability id must be a known enemy behaviour.
     for (const [i, ability] of e.abilities.entries()) {
       if (!registries.enemyBehaviors.has(ability)) {
-        error({ code: "behavior.unknown", definitionId: e.id, fieldPath: `enemies.${e.id}.abilities[${i}]`, message: `Unknown enemy behaviour '${ability}'.` });
+        error({
+          code: "behavior.unknown",
+          definitionId: e.id,
+          fieldPath: `enemies.${e.id}.abilities[${i}]`,
+          message: `Unknown enemy behaviour '${ability}'.`,
+        });
       }
     }
     // AI reactions must name abilities this enemy owns.
@@ -190,16 +274,31 @@ export function compileGameData(
     for (const [event, names] of Object.entries(e.reactions)) {
       for (const name of names ?? []) {
         if (!owned.has(name)) {
-          error({ code: "reaction.missing", definitionId: e.id, fieldPath: `enemies.${e.id}.reactions.${event}`, message: `Reaction on '${event}' names ability '${name}' the enemy does not own.` });
+          error({
+            code: "reaction.missing",
+            definitionId: e.id,
+            fieldPath: `enemies.${e.id}.reactions.${event}`,
+            message: `Reaction on '${event}' names ability '${name}' the enemy does not own.`,
+          });
         }
       }
     }
     for (const [i, hook] of (e.hooks ?? []).entries()) {
       if (hook.ability && !owned.has(hook.ability)) {
-        error({ code: "reaction.missing", definitionId: e.id, fieldPath: `enemies.${e.id}.hooks[${i}].ability`, message: `Hook references ability '${hook.ability}' the enemy does not own.` });
+        error({
+          code: "reaction.missing",
+          definitionId: e.id,
+          fieldPath: `enemies.${e.id}.hooks[${i}].ability`,
+          message: `Hook references ability '${hook.ability}' the enemy does not own.`,
+        });
       }
       if (!registries.effects.has(hook.effect)) {
-        error({ code: "behavior.unknown", definitionId: e.id, fieldPath: `enemies.${e.id}.hooks[${i}].effect`, message: `Unknown effect '${hook.effect}'.` });
+        error({
+          code: "behavior.unknown",
+          definitionId: e.id,
+          fieldPath: `enemies.${e.id}.hooks[${i}].effect`,
+          message: `Unknown effect '${hook.effect}'.`,
+        });
       }
     }
   }
@@ -207,7 +306,12 @@ export function compileGameData(
   // --- pickups ---------------------------------------------------------------
   for (const p of Object.values(data.pickups)) {
     if (!registries.pickups.has(p.behavior)) {
-      error({ code: "behavior.unknown", definitionId: p.id, fieldPath: `pickups.${p.id}.behavior`, message: `Unknown pickup behavior '${p.behavior}'.` });
+      error({
+        code: "behavior.unknown",
+        definitionId: p.id,
+        fieldPath: `pickups.${p.id}.behavior`,
+        message: `Unknown pickup behavior '${p.behavior}'.`,
+      });
     }
     num(p.amount, `pickups.${p.id}.amount`, p.id, { gt: 0 });
   }
@@ -215,11 +319,21 @@ export function compileGameData(
   // --- environments ----------------------------------------------------------
   for (const env of Object.values(data.environments)) {
     if (!registries.environments.has(env.behavior)) {
-      error({ code: "behavior.unknown", definitionId: env.id, fieldPath: `environments.${env.id}.behavior`, message: `Unknown environment behavior '${env.behavior}'.` });
+      error({
+        code: "behavior.unknown",
+        definitionId: env.id,
+        fieldPath: `environments.${env.id}.behavior`,
+        message: `Unknown environment behavior '${env.behavior}'.`,
+      });
     }
     for (const [k, v] of Object.entries(env.defaults)) {
       if (typeof v === "number" && !Number.isFinite(v)) {
-        error({ code: "value.number", definitionId: env.id, fieldPath: `environments.${env.id}.defaults.${k}`, message: `Default '${k}' must be finite.` });
+        error({
+          code: "value.number",
+          definitionId: env.id,
+          fieldPath: `environments.${env.id}.defaults.${k}`,
+          message: `Default '${k}' must be finite.`,
+        });
       }
     }
   }
@@ -227,17 +341,37 @@ export function compileGameData(
   // --- prefabs ---------------------------------------------------------------
   for (const pf of Object.values(data.prefabs)) {
     if (!registries.prefabRuntimes.has(pf.runtime)) {
-      error({ code: "prefab.runtime", definitionId: pf.id, fieldPath: `prefabs.${pf.id}.runtime`, message: `Prefab references unknown runtime '${pf.runtime}'.` });
+      error({
+        code: "prefab.runtime",
+        definitionId: pf.id,
+        fieldPath: `prefabs.${pf.id}.runtime`,
+        message: `Prefab references unknown runtime '${pf.runtime}'.`,
+      });
     }
     if (!resolvePrefabSource(data, pf)) {
-      error({ code: "reference.missing", definitionId: pf.id, fieldPath: `prefabs.${pf.id}.source`, message: `Prefab source could not be resolved.` });
+      error({
+        code: "reference.missing",
+        definitionId: pf.id,
+        fieldPath: `prefabs.${pf.id}.source`,
+        message: `Prefab source could not be resolved.`,
+      });
     }
     for (const [i, f] of pf.fields.entries()) {
       if (f.type === "enum" && (!f.enum || f.enum.length === 0)) {
-        error({ code: "field.enum", definitionId: pf.id, fieldPath: `prefabs.${pf.id}.fields[${i}].enum`, message: `Enum field '${f.name}' has no options.` });
+        error({
+          code: "field.enum",
+          definitionId: pf.id,
+          fieldPath: `prefabs.${pf.id}.fields[${i}].enum`,
+          message: `Enum field '${f.name}' has no options.`,
+        });
       }
       if (f.min !== undefined && f.max !== undefined && f.min > f.max) {
-        error({ code: "field.range", definitionId: pf.id, fieldPath: `prefabs.${pf.id}.fields[${i}]`, message: `Field '${f.name}' has min > max.` });
+        error({
+          code: "field.range",
+          definitionId: pf.id,
+          fieldPath: `prefabs.${pf.id}.fields[${i}]`,
+          message: `Field '${f.name}' has min > max.`,
+        });
       }
     }
   }

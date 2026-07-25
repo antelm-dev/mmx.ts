@@ -2,11 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import type { LevelDocument, LevelObjectInstance } from "../src/index.js";
-import {
-  createLevelDocument,
-  engineDiagnostics,
-  validateLevelDocument,
-} from "../src/index.js";
+import { createLevelDocument, engineDiagnostics, validateLevelDocument } from "../src/index.js";
 
 /** A fresh, valid level with the given extra objects appended. */
 function docWith(objects: LevelObjectInstance[]): LevelDocument {

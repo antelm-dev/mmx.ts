@@ -20,7 +20,10 @@ export function TitleBar() {
 
   useEffect(() => {
     let cancelled = false;
-    const sync = () => void controls()?.isMaximized().then((v) => !cancelled && setMaximized(v));
+    const sync = () =>
+      void controls()
+        ?.isMaximized()
+        .then((v) => !cancelled && setMaximized(v));
     sync();
     window.addEventListener("resize", sync);
     return () => {

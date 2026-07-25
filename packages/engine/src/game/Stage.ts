@@ -1,6 +1,11 @@
 import { Enemy } from "./Enemy.js";
 import { Player } from "./Player.js";
-import { LifeCapsule, WeaponCapsule, type LifeCapsuleSpawn, type WeaponCapsuleSpawn } from "./Pickup.js";
+import {
+  LifeCapsule,
+  WeaponCapsule,
+  type LifeCapsuleSpawn,
+  type WeaponCapsuleSpawn,
+} from "./Pickup.js";
 import type { Projectile } from "./Projectile.js";
 import type { World } from "./World.js";
 import {
@@ -49,7 +54,9 @@ export class Stage {
     this.conveyors = environment.conveyors ?? [];
     this.platforms = (environment.platforms ?? []).map((spawn) => new MovingPlatform(spawn));
     this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn));
-    this.weaponCapsules = (environment.weaponCapsules ?? []).map((spawn) => new WeaponCapsule(spawn));
+    this.weaponCapsules = (environment.weaponCapsules ?? []).map(
+      (spawn) => new WeaponCapsule(spawn),
+    );
     this.player.setPlatforms(this.platforms);
   }
 
@@ -60,7 +67,10 @@ export class Stage {
 
   /** Whether a Life Energy or Weapon Energy capsule currently owns the room's recovery pause. */
   get recovering(): boolean {
-    return this.pickups.some((pickup) => pickup.collecting) || this.weaponCapsules.some((c) => c.collecting);
+    return (
+      this.pickups.some((pickup) => pickup.collecting) ||
+      this.weaponCapsules.some((c) => c.collecting)
+    );
   }
 
   /** One fixed step of the whole room. */

@@ -20,10 +20,10 @@ It defines and validates:
 
 The one place the authoring model and the engine model meet:
 
-| Function | Direction |
-| --- | --- |
-| `levelDataToDocument(data)` | `LevelData` → `LevelDocument` (import) |
-| `documentToLevelData(doc)` | `LevelDocument` → `LevelData` (Play / export) |
+| Function                    | Direction                                     |
+| --------------------------- | --------------------------------------------- |
+| `levelDataToDocument(data)` | `LevelData` → `LevelDocument` (import)        |
+| `documentToLevelData(doc)`  | `LevelDocument` → `LevelData` (Play / export) |
 
 Both are **lossless** for catalog objects: import preserves each entity's stable
 `iid` and order, and export rebuilds it from the definition's base fields layered

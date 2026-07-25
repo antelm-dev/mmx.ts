@@ -14,12 +14,7 @@
           "speed": 1,
           "frames": [
             {
-              "region": [
-                0,
-                0,
-                16,
-                16
-              ],
+              "region": [0, 0, 16, 16],
               "duration": 1
             }
           ]
@@ -29,30 +24,15 @@
           "speed": 24,
           "frames": [
             {
-              "region": [
-                16,
-                0,
-                16,
-                16
-              ],
+              "region": [16, 0, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                0,
-                16,
-                16,
-                16
-              ],
+              "region": [0, 16, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                16,
-                16,
-                16,
-                16
-              ],
+              "region": [16, 16, 16, 16],
               "duration": 1
             }
           ]
@@ -67,30 +47,15 @@
           "speed": 24,
           "frames": [
             {
-              "region": [
-                16,
-                0,
-                16,
-                16
-              ],
+              "region": [16, 0, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                0,
-                16,
-                16,
-                16
-              ],
+              "region": [0, 16, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                16,
-                16,
-                16,
-                16
-              ],
+              "region": [16, 16, 16, 16],
               "duration": 1
             }
           ]
@@ -100,12 +65,7 @@
           "speed": 1,
           "frames": [
             {
-              "region": [
-                0,
-                0,
-                16,
-                16
-              ],
+              "region": [0, 0, 16, 16],
               "duration": 1
             }
           ]
@@ -120,12 +80,7 @@
           "speed": 1,
           "frames": [
             {
-              "region": [
-                0,
-                0,
-                16,
-                16
-              ],
+              "region": [0, 0, 16, 16],
               "duration": 1
             }
           ]
@@ -135,30 +90,15 @@
           "speed": 24,
           "frames": [
             {
-              "region": [
-                16,
-                0,
-                16,
-                16
-              ],
+              "region": [16, 0, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                0,
-                16,
-                16,
-                16
-              ],
+              "region": [0, 16, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                16,
-                16,
-                16,
-                16
-              ],
+              "region": [16, 16, 16, 16],
               "duration": 1
             }
           ]
@@ -173,12 +113,7 @@
           "speed": 1,
           "frames": [
             {
-              "region": [
-                0,
-                0,
-                16,
-                16
-              ],
+              "region": [0, 0, 16, 16],
               "duration": 1
             }
           ]
@@ -188,30 +123,15 @@
           "speed": 24,
           "frames": [
             {
-              "region": [
-                16,
-                0,
-                16,
-                16
-              ],
+              "region": [16, 0, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                0,
-                16,
-                16,
-                16
-              ],
+              "region": [0, 16, 16, 16],
               "duration": 1
             },
             {
-              "region": [
-                16,
-                16,
-                16,
-                16
-              ],
+              "region": [16, 16, 16, 16],
               "duration": 1
             }
           ]

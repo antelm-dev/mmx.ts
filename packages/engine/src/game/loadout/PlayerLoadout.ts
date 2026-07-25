@@ -77,7 +77,9 @@ export function buildPlayerLoadout(
 ): void {
   const ctx: RuntimeContext = { gameData };
   for (const ability of loadout.abilities) {
-    const instance = abilityRegistry.get(ability.behavior).create(player, ability.config, ctx) as BaseAbility;
+    const instance = abilityRegistry
+      .get(ability.behavior)
+      .create(player, ability.config, ctx) as BaseAbility;
     instance.priority = ability.priority;
     instance.independent = ability.layer === "action";
     player.add(instance);

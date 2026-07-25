@@ -1,12 +1,7 @@
 import type { LevelData, LevelEntity } from "@mmx/engine/game/LevelData.js";
 import { Tile } from "@mmx/engine/game/World.js";
 import { applySlopes, type SlopeRect } from "@mmx/ldtk-tools/slopeBake";
-import {
-  effectiveValue,
-  getDefinition,
-  instanceSize,
-  requireDefinition,
-} from "./definitions.js";
+import { effectiveValue, getDefinition, instanceSize, requireDefinition } from "./definitions.js";
 import type { GameObjectDefinition, LevelDocument, LevelObjectInstance } from "./types.js";
 import { SCHEMA_VERSION } from "./types.js";
 

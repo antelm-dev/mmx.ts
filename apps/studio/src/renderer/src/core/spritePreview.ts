@@ -25,7 +25,10 @@ function firstRegion(actor: ClipTable, preferred: readonly string[]): Region | n
   return null;
 }
 
-function fromActor(actor: ClipTable | undefined, preferred: readonly string[]): SpritePreview | null {
+function fromActor(
+  actor: ClipTable | undefined,
+  preferred: readonly string[],
+): SpritePreview | null {
   if (!actor) return null;
   const region = firstRegion(actor, preferred);
   const url = SHEET_URLS[actor.sheet];

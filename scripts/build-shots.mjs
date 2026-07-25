@@ -174,4 +174,6 @@ for (const [name, clip] of Object.entries(animations)) {
       `${w}x${h}  ${clip.speed.toFixed(1)}fps${clip.loop ? " loop" : ""}`,
   );
 }
-console.log(`\nshot_anims.json + ${Object.keys(sheets).length} sheets written to resources/sprites/effects`);
+console.log(
+  `\nshot_anims.json + ${Object.keys(sheets).length} sheets written to resources/sprites/effects`,
+);

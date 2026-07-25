@@ -111,12 +111,18 @@ export function Toolbar() {
 
         <div className={group}>
           <Tooltip label="Toggle grid (G)">
-            <button className={btnCls({ active: snap.state.gridVisible })} onClick={() => editor.toggleGrid()}>
+            <button
+              className={btnCls({ active: snap.state.gridVisible })}
+              onClick={() => editor.toggleGrid()}
+            >
               <Grid3x3 size={15} /> Grid
             </button>
           </Tooltip>
           <Tooltip label="Toggle snapping (Shift+G)">
-            <button className={btnCls({ active: snap.state.snapEnabled })} onClick={() => editor.toggleSnap()}>
+            <button
+              className={btnCls({ active: snap.state.snapEnabled })}
+              onClick={() => editor.toggleSnap()}
+            >
               <Magnet size={15} /> Snap
             </button>
           </Tooltip>
@@ -126,13 +132,23 @@ export function Toolbar() {
 
         <div className={cx(group, "max-[1500px]:hidden")}>
           <Tooltip label="Zoom out">
-            <button className={btnCls({ icon: true })} onClick={() => editor.zoomBy(1 / 1.2)} aria-label="Zoom out">
+            <button
+              className={btnCls({ icon: true })}
+              onClick={() => editor.zoomBy(1 / 1.2)}
+              aria-label="Zoom out"
+            >
               <ZoomOut size={16} />
             </button>
           </Tooltip>
-          <span className="min-w-[42px] text-fg-2 font-mono text-[11px] text-center">{zoomPercent}%</span>
+          <span className="min-w-[42px] text-fg-2 font-mono text-[11px] text-center">
+            {zoomPercent}%
+          </span>
           <Tooltip label="Zoom in">
-            <button className={btnCls({ icon: true })} onClick={() => editor.zoomBy(1.2)} aria-label="Zoom in">
+            <button
+              className={btnCls({ icon: true })}
+              onClick={() => editor.zoomBy(1.2)}
+              aria-label="Zoom in"
+            >
               <ZoomIn size={16} />
             </button>
           </Tooltip>
@@ -148,7 +164,10 @@ export function Toolbar() {
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button
-              className={cx(btnCls(), "gap-2 max-w-[280px] h-[34px] text-fg text-[13px] font-[650]")}
+              className={cx(
+                btnCls(),
+                "gap-2 max-w-[280px] h-[34px] text-fg text-[13px] font-[650]",
+              )}
               aria-label="Level menu"
             >
               <span className="text-accent text-[9px] font-extrabold tracking-[0.8px]">LEVEL</span>

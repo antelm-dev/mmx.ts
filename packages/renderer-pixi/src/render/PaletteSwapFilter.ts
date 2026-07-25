@@ -32,7 +32,11 @@ export class PaletteSwapFilter extends Filter {
   private lastWeapon: WeaponId | null = null;
 
   constructor() {
-    const [t1, t2, t3, t4, t5, t6] = WEAPON_PALETTE.buster.map(hexToVec3) as [number, number, number][];
+    const [t1, t2, t3, t4, t5, t6] = WEAPON_PALETTE.buster.map(hexToVec3) as [
+      number,
+      number,
+      number,
+    ][];
     const targetUniforms = new UniformGroup({
       uTarget1: { value: t1, type: "vec3<f32>" },
       uTarget2: { value: t2, type: "vec3<f32>" },

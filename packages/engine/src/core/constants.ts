@@ -430,8 +430,9 @@ export const PLAYER_INTRO_DROP_HEIGHT = _ac("player.intro", "dropHeight");
 export const PLAYER_INTRO_BEAM_SPEED = _ac("player.intro", "beamSpeed");
 /** Intro.gd:41 — the window within `beam_equip` (seconds since it started) that
  *  fires the equip clang and the `x_appear` cue. */
-export const PLAYER_INTRO_THUNDER_WINDOW = (_D.abilities.get("player.intro")!.config as { thunderWindow: readonly [number, number] })
-  .thunderWindow;
+export const PLAYER_INTRO_THUNDER_WINDOW = (
+  _D.abilities.get("player.intro")!.config as { thunderWindow: readonly [number, number] }
+).thunderWindow;
 
 // ---------------------------------------------------------------------------
 // Life Energy capsules
@@ -451,8 +452,14 @@ export interface LifeCapsuleStats {
 
 export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleStats>> = {
   // SmallHeal.tscn / Heal.tscn — see data/pickups.ts.
-  small: { sheet: _D.pickups.get("life.small")!.sheet as "sheal", heal: _D.pickups.get("life.small")!.amount },
-  large: { sheet: _D.pickups.get("life.large")!.sheet as "heal", heal: _D.pickups.get("life.large")!.amount },
+  small: {
+    sheet: _D.pickups.get("life.small")!.sheet as "sheal",
+    heal: _D.pickups.get("life.small")!.amount,
+  },
+  large: {
+    sheet: _D.pickups.get("life.large")!.sheet as "heal",
+    heal: _D.pickups.get("life.large")!.amount,
+  },
 };
 
 /**
@@ -476,8 +483,14 @@ export interface WeaponCapsuleStats {
 
 export const WEAPON_CAPSULE_STATS: Readonly<Record<"small" | "large", WeaponCapsuleStats>> = {
   // SmallAmmo.tscn / Ammo.tscn — see data/pickups.ts.
-  small: { sheet: _D.pickups.get("weapon.small")!.sheet as "sammo", ammo: _D.pickups.get("weapon.small")!.amount },
-  large: { sheet: _D.pickups.get("weapon.large")!.sheet as "ammo", ammo: _D.pickups.get("weapon.large")!.amount },
+  small: {
+    sheet: _D.pickups.get("weapon.small")!.sheet as "sammo",
+    ammo: _D.pickups.get("weapon.small")!.amount,
+  },
+  large: {
+    sheet: _D.pickups.get("weapon.large")!.sheet as "ammo",
+    ammo: _D.pickups.get("weapon.large")!.amount,
+  },
 };
 
 // World / rendering

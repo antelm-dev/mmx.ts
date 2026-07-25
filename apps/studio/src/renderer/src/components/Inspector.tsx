@@ -119,7 +119,9 @@ export function Inspector() {
                 <span className="leading-[1.2]">
                   {single.def.icon} {single.def.name}
                 </span>
-                <span className="font-mono text-[10px] font-medium text-fg-3 break-all">{single.inst.id}</span>
+                <span className="font-mono text-[10px] font-medium text-fg-3 break-all">
+                  {single.inst.id}
+                </span>
               </div>
             </div>
 
@@ -268,7 +270,9 @@ export function Inspector() {
         ) : state.selectedIds.length > 1 ? (
           <>
             <div className={emptyState}>
-              <div className={emptyIcon}><MousePointer2 size={20} /></div>
+              <div className={emptyIcon}>
+                <MousePointer2 size={20} />
+              </div>
               <div className={emptyTitle}>{state.selectedIds.length} objects selected</div>
               <div className={emptyCopy}>Duplicate or delete the current selection.</div>
             </div>
@@ -283,7 +287,9 @@ export function Inspector() {
           </>
         ) : (
           <div className={emptyState}>
-            <div className={emptyIcon}><MousePointer2 size={20} /></div>
+            <div className={emptyIcon}>
+              <MousePointer2 size={20} />
+            </div>
             <div className={emptyTitle}>Nothing selected</div>
             <div className={emptyCopy}>
               Choose an object on the canvas or from the Scene tab to edit its properties.

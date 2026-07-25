@@ -20,14 +20,70 @@ export interface PanelSpec {
 }
 
 export const PANELS: PanelSpec[] = [
-  { id: "palette", title: "Object Palette", component: "palette", ref: "viewport", dir: "left", fallbackDir: "left" },
-  { id: "scene", title: "Scene", component: "scene", ref: "palette", dir: "within", fallbackDir: "left" },
-  { id: "inspector", title: "Inspector", component: "inspector", ref: "viewport", dir: "right", fallbackDir: "right" },
-  { id: "room", title: "Room", component: "room", ref: "inspector", dir: "within", fallbackDir: "right" },
-  { id: "json", title: "Document JSON", component: "json", ref: "inspector", dir: "within", fallbackDir: "right" },
-  { id: "assets", title: "Assets", component: "assets", ref: "viewport", dir: "below", fallbackDir: "below" },
-  { id: "problems", title: "Problems", component: "problems", ref: "assets", dir: "right", fallbackDir: "below" },
-  { id: "selection", title: "Selection", component: "selection", ref: "problems", dir: "right", fallbackDir: "below" },
+  {
+    id: "palette",
+    title: "Object Palette",
+    component: "palette",
+    ref: "viewport",
+    dir: "left",
+    fallbackDir: "left",
+  },
+  {
+    id: "scene",
+    title: "Scene",
+    component: "scene",
+    ref: "palette",
+    dir: "within",
+    fallbackDir: "left",
+  },
+  {
+    id: "inspector",
+    title: "Inspector",
+    component: "inspector",
+    ref: "viewport",
+    dir: "right",
+    fallbackDir: "right",
+  },
+  {
+    id: "room",
+    title: "Room",
+    component: "room",
+    ref: "inspector",
+    dir: "within",
+    fallbackDir: "right",
+  },
+  {
+    id: "json",
+    title: "Document JSON",
+    component: "json",
+    ref: "inspector",
+    dir: "within",
+    fallbackDir: "right",
+  },
+  {
+    id: "assets",
+    title: "Assets",
+    component: "assets",
+    ref: "viewport",
+    dir: "below",
+    fallbackDir: "below",
+  },
+  {
+    id: "problems",
+    title: "Problems",
+    component: "problems",
+    ref: "assets",
+    dir: "right",
+    fallbackDir: "below",
+  },
+  {
+    id: "selection",
+    title: "Selection",
+    component: "selection",
+    ref: "problems",
+    dir: "right",
+    fallbackDir: "below",
+  },
 ];
 
 /**

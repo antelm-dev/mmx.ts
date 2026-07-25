@@ -28,8 +28,20 @@ function testLevel(): LevelData {
     tiles,
     entities: [
       entity({ id: "Spawn", iid: "spawn-1", x: 48, y: (ROWS - 2) * GRID }),
-      entity({ id: "Enemy", iid: "enemy-a", x: 96, y: (ROWS - 2) * GRID, fields: { Kind: "metool" } }),
-      entity({ id: "Enemy", iid: "enemy-b", x: 160, y: (ROWS - 2) * GRID, fields: { Kind: "metool" } }),
+      entity({
+        id: "Enemy",
+        iid: "enemy-a",
+        x: 96,
+        y: (ROWS - 2) * GRID,
+        fields: { Kind: "metool" },
+      }),
+      entity({
+        id: "Enemy",
+        iid: "enemy-b",
+        x: 160,
+        y: (ROWS - 2) * GRID,
+        fields: { Kind: "metool" },
+      }),
     ],
   };
 }

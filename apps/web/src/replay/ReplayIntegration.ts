@@ -18,6 +18,8 @@ export class ReplayIntegration {
   ) {}
 
   async start(): Promise<void> {
-    await this.desktop.onReplayDropped((file) => this.debug.loadReplayText(file.contents, file.path));
+    await this.desktop.onReplayDropped((file) =>
+      this.debug.loadReplayText(file.contents, file.path),
+    );
   }
 }

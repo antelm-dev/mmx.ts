@@ -3,12 +3,7 @@ import { Crosshair, Flag, Pause, Play, RefreshCw, RotateCcw, StepForward } from 
 import type { ActorSnapshot } from "@mmx/engine/tooling";
 import { editor, usePlaytestSnapshot } from "../app/useEditor.js";
 import { cx } from "../ui.js";
-import {
-  fmtAbilities,
-  fmtHealth,
-  fmtPosition,
-  fmtVec,
-} from "../core/playtest/format.js";
+import { fmtAbilities, fmtHealth, fmtPosition, fmtVec } from "../core/playtest/format.js";
 
 /**
  * The Playtest Debugger: a control strip plus a runtime inspector, shown over the
@@ -59,12 +54,7 @@ export function PlaytestDebugger(): ReactElement | null {
         <Readout label="digest" value={runtime?.digest ?? "········"} />
       </div>
 
-      {runtime && (
-        <RuntimeInspector
-          runtime={runtime}
-          selectedRuntimeId={snap.selectedRuntimeId}
-        />
-      )}
+      {runtime && <RuntimeInspector runtime={runtime} selectedRuntimeId={snap.selectedRuntimeId} />}
     </div>
   );
 }
@@ -77,8 +67,7 @@ function RuntimeInspector({
   selectedRuntimeId: string | null;
 }): ReactElement {
   const actors: ActorSnapshot[] = [runtime.player, ...runtime.actors];
-  const selected =
-    actors.find((a) => a.runtimeId === selectedRuntimeId) ?? runtime.player;
+  const selected = actors.find((a) => a.runtimeId === selectedRuntimeId) ?? runtime.player;
 
   return (
     <div className="pointer-events-auto w-[236px] p-2.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px] text-[11px] text-fg-2">
@@ -160,7 +149,15 @@ function Readout({ label, value }: { label: string; value: string }): ReactEleme
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }): ReactElement {
+function Field({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}): ReactElement {
   return (
     <div className="flex items-baseline justify-between gap-2 py-[1.5px]">
       <span className="text-[10px] uppercase tracking-[0.4px] text-fg-3 flex-none">{label}</span>

@@ -148,7 +148,8 @@ function mergeBindings(value: unknown): KeyBindings {
   return Object.fromEntries(
     BINDABLE_ACTIONS.map((action) => {
       const slots = existing[action];
-      const valid = Array.isArray(slots) && slots.length === 2 && slots.every((s) => typeof s === "string");
+      const valid =
+        Array.isArray(slots) && slots.length === 2 && slots.every((s) => typeof s === "string");
       return [action, valid ? [...(slots as [string, string])] : [...DEFAULT_BINDINGS[action]]];
     }),
   ) as KeyBindings;

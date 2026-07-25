@@ -89,10 +89,21 @@ const DIGEST_SEQUENCES: Record<string, { frames: number[]; digest: string }> = {
   idle: { frames: [...WARM, ...repeat(0, 60)], digest: "f07e9932" },
   walkRight: { frames: [...WARM, ...repeat(M.right, 90), ...repeat(0, 30)], digest: "b103e625" },
   jumpInPlace: { frames: [...WARM, ...repeat(M.jump, 30), ...repeat(0, 60)], digest: "03603672" },
-  dashLeft: { frames: [...WARM, ...repeat(M.dash | M.left, 20), ...repeat(0, 40)], digest: "7c505a81" },
+  dashLeft: {
+    frames: [...WARM, ...repeat(M.dash | M.left, 20), ...repeat(0, 40)],
+    digest: "7c505a81",
+  },
   fireTaps: { frames: [...WARM, ...taps, ...repeat(0, 40)], digest: "eb5a8c92" },
   weaponSwitch: {
-    frames: [...WARM, M.wright, ...repeat(0, 5), M.fire, ...repeat(0, 30), M.wleft, ...repeat(0, 20)],
+    frames: [
+      ...WARM,
+      M.wright,
+      ...repeat(0, 5),
+      M.fire,
+      ...repeat(0, 30),
+      M.wleft,
+      ...repeat(0, 20),
+    ],
     digest: "3a238213",
   },
 };

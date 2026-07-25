@@ -33,7 +33,14 @@ function entity(over: Partial<LevelEntity> & { id: string; iid: string }): Level
 const SPAWN = entity({ id: "Spawn", iid: "spawn-1", x: 32, y: (ROWS - 2) * GRID });
 
 function level(entities: LevelEntity[]): LevelData {
-  return { identifier: "test", gridSize: GRID, cols: COLS, rows: ROWS, tiles: floorTiles(), entities };
+  return {
+    identifier: "test",
+    gridSize: GRID,
+    cols: COLS,
+    rows: ROWS,
+    tiles: floorTiles(),
+    entities,
+  };
 }
 
 function find(diagnostics: EngineDiagnostic[], code: string): EngineDiagnostic | undefined {
@@ -175,7 +182,13 @@ test("loadLevel throws a LevelCompileError carrying every diagnostic on failure"
 test("authored entity ids survive compilation and Scene creation", () => {
   const data = level([
     SPAWN,
-    entity({ id: "Enemy", iid: "enemy-a", x: 64, y: (ROWS - 2) * GRID, fields: { Kind: "metool" } }),
+    entity({
+      id: "Enemy",
+      iid: "enemy-a",
+      x: 64,
+      y: (ROWS - 2) * GRID,
+      fields: { Kind: "metool" },
+    }),
     entity({ id: "LifeCapsule", iid: "life-a", x: 96, fields: { Kind: "small" } }),
     entity({ id: "MovingPlatform", iid: "plat-a", x: 128, w: 48, h: 8 }),
     entity({ id: "CameraZone", iid: "zone-a", x: 0, y: 0, w: 192, h: 128 }),
