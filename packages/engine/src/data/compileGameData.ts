@@ -13,7 +13,6 @@ import type {
   Hitbox,
   LoadoutDefinition,
   PrefabDefinition,
-  ProjectileDefinition,
   WeaponDefinition,
 } from "./types.js";
 import { hashGameData } from "./hash.js";
@@ -290,7 +289,7 @@ function compileAbility(a: AbilityDefinition): CompiledAbility {
     behavior: a.behavior,
     layer: a.layer,
     priority: a.priority ?? 0,
-    config: Object.freeze({ ...(a.config ?? {}) }),
+    config: Object.freeze({ ...a.config }),
   };
 }
 
@@ -302,7 +301,7 @@ function compileLoadout(l: LoadoutDefinition, data: GameData): CompiledLoadout {
       behavior: base.behavior,
       layer: base.layer,
       priority: slot.priority ?? base.priority ?? 0,
-      config: Object.freeze({ ...(base.config ?? {}), ...(slot.config ?? {}) }),
+      config: Object.freeze({ ...base.config, ...slot.config }),
     } satisfies CompiledAbility;
   });
   return {

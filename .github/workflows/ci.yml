@@ -15,11 +15,11 @@ jobs:
     name: Test & build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -35,11 +35,17 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Studio tests
+        run: pnpm studio:test
+
       - name: Generated levels
         run: pnpm level:check
 
       - name: Typecheck / compile
         run: pnpm build
+
+      - name: Studio build
+        run: pnpm studio:build
 
       - uses: actions/upload-artifact@v4
         with:
@@ -59,7 +65,7 @@ jobs:
           - platform: macos-latest
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -69,7 +75,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .node-version
           cache: pnpm

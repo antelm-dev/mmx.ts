@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { DT } from "../src/core/constants.js";
 import { REPLAY_ACTIONS } from "../src/core/Replay.js";
 import { Scene } from "../src/game/Scene.js";
 

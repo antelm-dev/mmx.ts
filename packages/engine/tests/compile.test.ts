@@ -36,10 +36,6 @@ function level(entities: LevelEntity[]): LevelData {
   return { identifier: "test", gridSize: GRID, cols: COLS, rows: ROWS, tiles: floorTiles(), entities };
 }
 
-function codes(diagnostics: EngineDiagnostic[]): string[] {
-  return diagnostics.map((d) => d.code);
-}
-
 function find(diagnostics: EngineDiagnostic[], code: string): EngineDiagnostic | undefined {
   return diagnostics.find((d) => d.code === code);
 }

@@ -9,7 +9,7 @@ import {
 } from "@mmx/content-schema";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
-import { cx, itemCls, panel, scroll } from "../ui.js";
+import { itemCls, panel, scroll } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
 
 const cat = "flex items-end text-[9.5px] uppercase tracking-[0.7px] text-fg-3 pt-[14px] px-3.5 pb-[5px] font-extrabold";
