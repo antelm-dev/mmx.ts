@@ -37,9 +37,7 @@ export class GameplaySounds {
     player.events.on("ability_end", (name: string) => {
       if (name === "WallSlide") this.effects.stop("wallslide");
     });
-    player.events.on("x_appear", () =>
-      this.effects.play("introThunder", { db: -9, rate: 1.19 }),
-    );
+    player.events.on("x_appear", () => this.effects.play("introThunder", { db: -9, rate: 1.19 }));
     player.events.on("land", () => this.effects.play("land", { db: -5.333, rate: [1, 1.1] }));
     player.events.on("healed", () => this.effects.play("heal", { db: -10 }));
     player.events.on("shot_fired", (charge: number) => {

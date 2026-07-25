@@ -42,6 +42,9 @@ importers:
 
   apps/studio:
     dependencies:
+      '@mmx/browser-audio':
+        specifier: workspace:*
+        version: link:../../packages/browser-audio
       '@mmx/content-schema':
         specifier: workspace:*
         version: link:../../packages/content-schema
@@ -166,6 +169,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@mmx/browser-audio':
+        specifier: workspace:*
+        version: link:../../packages/browser-audio
       '@mmx/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -185,6 +191,16 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.49.0)
+
+  packages/browser-audio:
+    dependencies:
+      '@mmx/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
 
   packages/content-schema:
     dependencies:
