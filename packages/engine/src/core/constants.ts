@@ -1,66 +1,88 @@
 /**
  * Gameplay constants ported 1:1 from the Godot project where a value existed.
  * Source references are noted per constant.
+ *
+ * NOTE (data-driven refactor): the tunable values below — gravity and fall speed,
+ * player movement, ability durations, charge thresholds, weapon/projectile stats,
+ * enemy statistics and hitboxes, pickup values — no longer own their numbers.
+ * They are COMPATIBILITY EXPORTS that read from the compiled default game data
+ * ({@link COMPILED_GAME_DATA}), which is now the single source of truth. Editing a
+ * value means editing the corresponding definition under src/data, not here.
+ *
+ * The genuine global invariants — the fixed step, tile size, and framebuffer
+ * dimensions, whose configurability would violate simulation assumptions — stay
+ * defined here as real constants.
  */
 
-// Fixed physics tick — Godot _physics_process default is 60 Hz.
+import { COMPILED_GAME_DATA } from "../data/index.js";
+
+// Fixed physics tick — Godot _physics_process default is 60 Hz. A true invariant:
+// changing it redefines what one recorded tick means. Stays in core.
 export const PHYSICS_FPS = 60;
 export const DT = 1 / PHYSICS_FPS;
 
-// --- Actor.gd ---
-export const GRAVITY = 900.0; // Actor.gd:12
-export const MAX_FALL_VELOCITY = 375.0; // Actor.gd:13
-export const FLOOR_SNAP_LENGTH = 8.0; // Actor.gd:16
+// --- compiled-data accessors (compat layer plumbing) ---
+const _D = COMPILED_GAME_DATA;
+/** Read a numeric field off a compiled ability's config. */
+function _ac(abilityId: string, key: string): number {
+  const cfg = _D.abilities.get(abilityId)?.config as Record<string, unknown> | undefined;
+  return cfg?.[key] as number;
+}
 
-// --- Movement.gd ---
-export const WALK_SPEED = 90.0; // Movement.gd:6 horizontal_velocity
-export const JUMP_VELOCITY = 320.0; // Movement.gd:7 jump_velocity
+// --- Actor.gd (→ data/physics.ts) ---
+export const GRAVITY = _D.physics.gravity; // Actor.gd:12
+export const MAX_FALL_VELOCITY = _D.physics.maxFallVelocity; // Actor.gd:13
+export const FLOOR_SNAP_LENGTH = _D.physics.floorSnapLength; // Actor.gd:16
+
+// --- Movement.gd (→ data/abilities.ts) ---
+export const WALK_SPEED = _ac("player.walk", "speed"); // Movement.gd:6 horizontal_velocity
+export const JUMP_VELOCITY = _ac("player.jump", "velocity"); // Movement.gd:7 jump_velocity
 
 // --- Fall.gd ---
-export const DASHFALL_SPEED = 210.0; // Fall.gd:34
+export const DASHFALL_SPEED = _ac("player.fall", "dashFallSpeed"); // Fall.gd:34
 
 // --- Jump.gd ---
-export const JUMP_MAX_TIME = 0.625; // Jump.gd:4 max_jump_time
-export const JUMP_LEEWAY = 0.1; // Jump.gd:5 leeway_time (input buffer only)
-export const JUMP_FULLSPEED_PROPORTION = 0.19; // Jump.gd:6 fullspeed_proportion
+export const JUMP_MAX_TIME = _ac("player.jump", "maxTime"); // Jump.gd:4 max_jump_time
+export const JUMP_LEEWAY = _ac("player.jump", "leeway"); // Jump.gd:5 leeway_time (input buffer only)
+export const JUMP_FULLSPEED_PROPORTION = _ac("player.jump", "fullspeedProportion"); // Jump.gd:6
 
 // --- Dash.gd ---
-export const DASH_SPEED = 200.0; // scene export (Movement default 90 is overridden per-scene)
-export const DASH_DURATION = 0.55; // Dash.gd:4
-export const DASH_LEEWAY = 0.1; // Dash.gd:6 leeway (input buffer)
+export const DASH_SPEED = _ac("player.dash", "speed"); // scene export (Movement default 90 overridden)
+export const DASH_DURATION = _ac("player.dash", "duration"); // Dash.gd:4
+export const DASH_LEEWAY = _ac("player.dash", "leeway"); // Dash.gd:6 leeway (input buffer)
 
 // --- AirDash.gd ---
-export const AIRDASH_SPEED = 200.0;
-export const AIRDASH_DURATION = 0.475; // AirDash.gd:4 comment
-export const AIRDASH_MAX = 1; // AirDash.gd max_airdashes (Icarus legs -> 2)
+export const AIRDASH_SPEED = _ac("player.air-dash", "speed");
+export const AIRDASH_DURATION = _ac("player.air-dash", "duration"); // AirDash.gd:4 comment
+export const AIRDASH_MAX = _ac("player.air-dash", "maxAirdashes"); // AirDash.gd max_airdashes (Icarus -> 2)
 
 // --- DashJump.gd ---
-export const DASHJUMP_SPEED = 200.0; // retains dash speed into the jump arc
+export const DASHJUMP_SPEED = _ac("player.dash-jump", "speed"); // retains dash speed into the jump arc
 
 // --- Wallslide.gd ---
-export const WALLSLIDE_SPEED = 90.0; // Wallslide.gd horizontal_speed / slide speed
-export const WALLSLIDE_START_DELAY = 0.16; // Wallslide.gd:4 start_delay
+export const WALLSLIDE_SPEED = _ac("player.wall-slide", "speed"); // Wallslide.gd slide speed
+export const WALLSLIDE_START_DELAY = _ac("player.wall-slide", "startDelay"); // Wallslide.gd:4 start_delay
 
 // --- Walljump.gd ---
-export const WALLJUMP_START_DELAY = 0.128; // Walljump.gd:4
-export const WALLJUMP_MOVEAWAY_DURATION = 0.08; // Walljump.gd:5
-export const WALLJUMP_MOVEAWAY_SPEED = 75.0; // Walljump.gd:8
+export const WALLJUMP_START_DELAY = _ac("player.wall-jump", "startDelay"); // Walljump.gd:4
+export const WALLJUMP_MOVEAWAY_DURATION = _ac("player.wall-jump", "moveawayDuration"); // Walljump.gd:5
+export const WALLJUMP_MOVEAWAY_SPEED = _ac("player.wall-jump", "moveawaySpeed"); // Walljump.gd:8
 
 // --- Charge.gd ---
-export const CHARGE_MIN_TIME = 0.5; // Charge.gd:16 minimum_charge_time
-export const CHARGE_LEVEL_3 = 1.75; // Charge.gd:18 level_3_charge
-export const CHARGE_LEVEL_4 = 2.75; // Charge.gd:19 level_4_charge
-export const CHARGE_MAX_TIME = 5.0; // Charge.gd maximum_charge_time
+export const CHARGE_MIN_TIME = _ac("player.charge", "minTime"); // Charge.gd:16 minimum_charge_time
+export const CHARGE_LEVEL_3 = _ac("player.charge", "level3"); // Charge.gd:18 level_3_charge
+export const CHARGE_LEVEL_4 = _ac("player.charge", "level4"); // Charge.gd:19 level_4_charge
+export const CHARGE_MAX_TIME = _ac("player.charge", "maxTime"); // Charge.gd maximum_charge_time
 
 // --- Shot.gd ---
-export const SHOT_ARM_POINT_DURATION = 0.3; // Shot.gd default_arm_point_duration
+export const SHOT_ARM_POINT_DURATION = _ac("player.shot", "armPointDuration"); // Shot.gd default_arm_point_duration
 
 // --- Weapon.gd (X Buster.tscn) ---
 // Only three projectiles exist in the buster's `shots` array — Lemon, Medium,
 // Charged — so charge level 3 (which Charge.gd only ever returns for an upgraded
 // arm cannon) clamps onto the same Charged Buster as level 2.
-export const MAX_SHOTS_ALIVE = 3; // Weapon.gd max_shots_alive
-export const MAX_CHARGED_SHOTS_ALIVE = 3; // Weapon.gd max_charged_shots_alive
+export const MAX_SHOTS_ALIVE = _D.weapons.get("buster")!.maxLiveShots; // Weapon.gd max_shots_alive
+export const MAX_CHARGED_SHOTS_ALIVE = _D.weapons.get("buster")!.maxLiveShots; // Weapon.gd max_charged_shots_alive
 
 // Character.gd:32 — the "Shot Position" node muzzle offset, in character-local
 // pixels. x is mirrored by facing direction; y is not.
@@ -162,54 +184,36 @@ export const enum ChargeTier {
   Super = 3, // charge_2.png, x_supercharged_particle.tres
 }
 
-export const BUSTER_SHOTS: readonly ShotStats[] = [
-  {
-    kind: "lemon",
-    damage: 1, // WeaponShot.gd:4 default
-    speed: 360, // WeaponShot.gd:7 default
-    halfW: 15,
-    halfH: 11, // Lemon.tscn:13
-    offsetX: 1, // Lemon.tscn:30
-    spawnX: 0,
-    spawnY: 0,
-    verticalRange: 1,
-    timeOutsideScreen: 0.2, // Lemon.tscn:20
-    hitFx: "lemon_hit", // Basic Hit.tscn
-    randomStartFrame: true,
-    frameMs: 42, // lemon.json
-  },
-  {
-    kind: "medium",
-    damage: 5, // Medium Buster.tscn:20
-    speed: 360,
-    halfW: 15,
-    halfH: 16, // Medium Buster.tscn:13
-    offsetX: 1,
-    spawnX: 0,
-    spawnY: 0,
-    verticalRange: 1,
-    timeOutsideScreen: 0.4,
-    hitFx: "lemon_hit", // Medium Buster.tscn:6 — Basic Hit, same as the lemon
-    randomStartFrame: true,
-    frameMs: 36, // medium_shot.json
-  },
-  {
-    kind: "charged",
-    damage: 10, // Charged Buster.tscn:31
-    speed: 420, // Charged Buster.tscn:34
-    halfW: 17,
-    halfH: 18, // Charged Buster.tscn:15
-    offsetX: 3, // Charged Buster.tscn:58
-    // ChargedBuster.position_setup pulls the big shot back into the cannon.
-    spawnX: -10,
-    spawnY: -1,
-    verticalRange: 0, // ChargedBuster.position_setup drops the jitter
-    timeOutsideScreen: 0.4,
-    hitFx: "charge_hit", // Big Hit.tscn
-    randomStartFrame: false,
-    frameMs: 36, // heavy_shot.json
-  },
-];
+/**
+ * Rebuild the legacy {@link ShotStats} shape from a compiled projectile
+ * definition — the compat bridge for callers still reading BUSTER_SHOTS /
+ * WEAPON_SHOTS. See src/data/projectiles.ts for the authoritative values.
+ */
+function _shotStats(projectileId: string): ShotStats {
+  const p = _D.projectiles.get(projectileId);
+  if (!p) throw new Error(`constants: unknown projectile '${projectileId}'`);
+  const stats: ShotStats = {
+    kind: p.animation.kind,
+    damage: p.damage,
+    speed: p.speed,
+    halfW: p.hitbox.hw,
+    halfH: p.hitbox.hh,
+    offsetX: p.hitbox.ox ?? 0,
+    spawnX: p.spawnOffset.x,
+    spawnY: p.spawnOffset.y,
+    verticalRange: p.verticalRange,
+    timeOutsideScreen: p.lifetime,
+    hitFx: p.hitFx,
+    randomStartFrame: p.animation.randomStartFrame,
+    frameMs: p.animation.frameMs,
+  };
+  if (p.animation.frameCount !== undefined) stats.frameCount = p.animation.frameCount;
+  return stats;
+}
+
+export const BUSTER_SHOTS: readonly ShotStats[] = _D.weapons
+  .get("buster")!
+  .projectiles.map(_shotStats);
 
 // ---------------------------------------------------------------------------
 // Weapon switching (WeaponChanger.gd / BossWeapon.gd)
@@ -233,22 +237,7 @@ export type WeaponId = (typeof WEAPON_ORDER)[number];
  * targets the weapon-switch plumbing (ammo, active-weapon dispatch, HUD
  * feedback), not every sub-weapon's bespoke flight behaviour.
  */
-export const DARK_ARROW_SHOT: ShotStats = {
-  kind: "dark_arrow",
-  damage: 3, // DarkArrow.tscn:52
-  speed: 420, // DarkArrow.gd:3
-  halfW: 15,
-  halfH: 7.5, // DarkArrow.tscn CircleShape2D radius 7.5
-  offsetX: -2, // DarkArrow.tscn collisionShape2D position
-  spawnX: 0,
-  spawnY: 0,
-  verticalRange: 0,
-  timeOutsideScreen: 0.2,
-  hitFx: "lemon_hit", // no bespoke burst ported; reuses the buster's Basic Hit
-  randomStartFrame: false,
-  frameMs: 1000,
-  frameCount: 1, // dark_arrow.png's "default" frame — a static sprite, not a spin loop
-};
+export const DARK_ARROW_SHOT: ShotStats = _shotStats("dark_arrow");
 
 /** Every weapon's shot table, indexed like {@link BUSTER_SHOTS} by charge level. */
 export const WEAPON_SHOTS: Readonly<Record<WeaponId, readonly ShotStats[]>> = {
@@ -256,18 +245,18 @@ export const WEAPON_SHOTS: Readonly<Record<WeaponId, readonly ShotStats[]>> = {
   dark_arrow: [DARK_ARROW_SHOT],
 };
 
-// --- BossWeapon.gd (as configured on Dark Arrow.tres) ---
+// --- BossWeapon.gd (as configured on Dark Arrow.tres → data/weapons.ts) ---
 /** BossWeapon.gd max_ammo — every sub-weapon shares this tank size. */
-export const SUB_WEAPON_MAX_AMMO = 28;
+export const SUB_WEAPON_MAX_AMMO = _D.weapons.get("dark_arrow")!.maxAmmo as number;
 /**
  * Dark Arrow.tres regular_ammo_cost is 0.333 (three shots per point, so many
  * sub-weapons can share one energy scale); simplified to a flat 1 here so a
  * full tank is an easy-to-reason-about 28 shots rather than 84.
  */
-export const DARK_ARROW_AMMO_COST = 1;
+export const DARK_ARROW_AMMO_COST = _D.weapons.get("dark_arrow")!.ammoCost;
 /** Shots-in-flight cap, mirroring the buster's MAX_SHOTS_ALIVE rather than
  *  porting BossWeapon.gd's cooldown-timer throttle. */
-export const DARK_ARROW_MAX_SHOTS_ALIVE = 3;
+export const DARK_ARROW_MAX_SHOTS_ALIVE = _D.weapons.get("dark_arrow")!.maxLiveShots;
 
 /**
  * Per-slot ammo config for every non-buster weapon (the buster has none — see
@@ -309,8 +298,8 @@ export const WEAPON_PALETTE: Readonly<Record<WeaponId, Palette6>> = {
   dark_arrow: [0x717171, 0x3d415c, 0x2f2e48, 0xb68ec7, 0x7c5d90, 0x3c3249],
 };
 
-// --- Actor.gd ---
-export const MAX_HEALTH = 32.0; // Actor.gd:6
+// --- Actor.gd (→ data/actors.ts) ---
+export const MAX_HEALTH = _D.actors.get("player.x")!.maxHealth; // Actor.gd:6
 
 // ---------------------------------------------------------------------------
 // Enemies
@@ -344,38 +333,29 @@ export interface EnemyStats {
   flying: boolean;
 }
 
+/** Rebuild the legacy {@link EnemyStats} shape from a compiled enemy definition. */
+function _enemyStats(id: "metool" | "bat"): EnemyStats {
+  const e = _D.enemies.get(id);
+  if (!e) throw new Error(`constants: unknown enemy '${id}'`);
+  return {
+    sheet: id,
+    max_health: e.maxHealth,
+    touch_damage: e.touchDamage,
+    hw: e.actor.body.hw,
+    hh: e.actor.body.hh,
+    hurt_hw: e.hurtbox.hw,
+    hurt_hh: e.hurtbox.hh,
+    vision_hw: e.perception.hw,
+    vision_hh: e.perception.hh,
+    vision_oy: e.perception.oy,
+    flying: e.movement === "flying",
+  };
+}
+
+// Metool.tscn / SmallBat.tscn — see data/enemies.ts + data/actors.ts.
 export const ENEMY_STATS: Readonly<Record<"metool" | "bat", EnemyStats>> = {
-  // Metool.tscn: max_health 2, DamageOnTouch.damage 3, body extents (12,10),
-  // area2D extents (9,10), AI/vision extents (158,18) at y -6.
-  metool: {
-    sheet: "metool",
-    max_health: 2,
-    touch_damage: 3,
-    hw: 12,
-    hh: 10,
-    hurt_hw: 9,
-    hurt_hh: 10,
-    vision_hw: 158,
-    vision_hh: 18,
-    vision_oy: -6,
-    flying: false,
-  },
-  // SmallBat.tscn: max_health 1, DamageOnTouch default damage 1, body extents
-  // (13.5,15.5), area2D a default-sized RectangleShape2D (10,10), AI/vision
-  // extents (102,86.5) at y 1.5.
-  bat: {
-    sheet: "bat",
-    max_health: 1,
-    touch_damage: 1,
-    hw: 13.5,
-    hh: 15.5,
-    hurt_hw: 10,
-    hurt_hh: 10,
-    vision_hw: 102,
-    vision_hh: 86.5,
-    vision_oy: 1.5,
-    flying: true,
-  },
+  metool: _enemyStats("metool"),
+  bat: _enemyStats("bat"),
 };
 
 /** EnemyDamage.max_flash_time — how long the white hit flash stays on. */
@@ -430,27 +410,28 @@ export const BAT_WEAVE_RATE = 4.0;
 export const BAT_JUMP_SPEED = 200.0; // BatJump.gd current_vertical_speed = -200
 export const BAT_JUMP_TIME = 0.7; // BatJump.gd jump_timne
 
-// --- Damage.gd (as configured on Player.tscn's Damage node) ---
-export const PLAYER_DAMAGE_DURATION = 0.6;
-export const PLAYER_DAMAGE_INVULNERABILITY = 1.75;
-export const PLAYER_KNOCKBACK_SPEED = 45.0;
-export const PLAYER_KNOCKBACK_JUMP_VELOCITY = 190.0;
+// --- Damage.gd (Player.tscn's Damage node → data/abilities.ts player.damage) ---
+export const PLAYER_DAMAGE_DURATION = _ac("player.damage", "duration");
+export const PLAYER_DAMAGE_INVULNERABILITY = _ac("player.damage", "invulnerability");
+export const PLAYER_KNOCKBACK_SPEED = _ac("player.damage", "knockbackSpeed");
+export const PLAYER_KNOCKBACK_JUMP_VELOCITY = _ac("player.damage", "knockbackJumpVelocity");
 /** @deprecated Use PLAYER_DAMAGE_INVULNERABILITY. */
 export const PLAYER_HIT_INVULNERABILITY = PLAYER_DAMAGE_INVULNERABILITY;
 
-// --- PlayerDeath.gd (trimmed — see engine/abilities/Death.ts) ---
+// --- PlayerDeath.gd (→ data/abilities.ts player.death) ---
 /** How long the death sequence holds before handing off to a room restart — long
  *  enough for "11 - MMX - X Die.wav" (~3.83s) to finish playing out. */
-export const PLAYER_DEATH_RESTART_DELAY = 3.8;
+export const PLAYER_DEATH_RESTART_DELAY = _ac("player.death", "restartDelay");
 
-// --- Intro.gd (as configured on Player.tscn's Intro node; see engine/abilities/Intro.ts) ---
+// --- Intro.gd (Player.tscn's Intro node → data/abilities.ts player.intro) ---
 /** Intro.gd:6 — how far above the spawn point the descent starts. */
-export const PLAYER_INTRO_DROP_HEIGHT = 160.0;
+export const PLAYER_INTRO_DROP_HEIGHT = _ac("player.intro", "dropHeight");
 /** Intro.gd:5 beam_speed — descent rate, in pixels/second. */
-export const PLAYER_INTRO_BEAM_SPEED = 420.0;
+export const PLAYER_INTRO_BEAM_SPEED = _ac("player.intro", "beamSpeed");
 /** Intro.gd:41 — the window within `beam_equip` (seconds since it started) that
  *  fires the equip clang and the `x_appear` cue. */
-export const PLAYER_INTRO_THUNDER_WINDOW: readonly [number, number] = [0.55, 1.0];
+export const PLAYER_INTRO_THUNDER_WINDOW = (_D.abilities.get("player.intro")!.config as { thunderWindow: readonly [number, number] })
+  .thunderWindow;
 
 // ---------------------------------------------------------------------------
 // Life Energy capsules
@@ -469,8 +450,9 @@ export interface LifeCapsuleStats {
 }
 
 export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleStats>> = {
-  small: { sheet: "sheal", heal: 2 }, // SmallHeal.tscn: heal = 2
-  large: { sheet: "heal", heal: 8 }, // Heal.tscn: heal = 8
+  // SmallHeal.tscn / Heal.tscn — see data/pickups.ts.
+  small: { sheet: _D.pickups.get("life.small")!.sheet as "sheal", heal: _D.pickups.get("life.small")!.amount },
+  large: { sheet: _D.pickups.get("life.large")!.sheet as "heal", heal: _D.pickups.get("life.large")!.amount },
 };
 
 /**
@@ -493,8 +475,9 @@ export interface WeaponCapsuleStats {
 }
 
 export const WEAPON_CAPSULE_STATS: Readonly<Record<"small" | "large", WeaponCapsuleStats>> = {
-  small: { sheet: "sammo", ammo: 2 }, // SmallAmmo.tscn: ammo = 2
-  large: { sheet: "ammo", ammo: 8 }, // Ammo.tscn: ammo = 8 (AmmoPickup.gd default)
+  // SmallAmmo.tscn / Ammo.tscn — see data/pickups.ts.
+  small: { sheet: _D.pickups.get("weapon.small")!.sheet as "sammo", ammo: _D.pickups.get("weapon.small")!.amount },
+  large: { sheet: _D.pickups.get("weapon.large")!.sheet as "ammo", ammo: _D.pickups.get("weapon.large")!.amount },
 };
 
 // World / rendering
@@ -509,6 +492,6 @@ export const TILE_SIZE = 16;
 export const VIEW_WIDTH = 398;
 export const VIEW_HEIGHT = 224;
 
-// Player AABB half-extents (approx of Player.tscn collision shape)
-export const BODY_HALF_W = 6;
-export const BODY_HALF_H = 14;
+// Player AABB half-extents (approx of Player.tscn collision shape → data/actors.ts)
+export const BODY_HALF_W = _D.actors.get("player.x")!.body.hw;
+export const BODY_HALF_H = _D.actors.get("player.x")!.body.hh;
