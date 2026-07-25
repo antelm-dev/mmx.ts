@@ -1,8 +1,8 @@
 /** Browser sound-effect player backed by Web Audio.
  *
  * The simulation only emits gameplay events. This adapter owns decoding, mixing,
- * overlapping voices and the looping charge channels, so headless runs remain
- * deterministic and do not acquire a browser dependency.
+ * overlapping voices and looping channels, so headless runs remain deterministic
+ * and do not acquire a browser dependency.
  */
 export type SoundName =
   | "jump"
@@ -52,14 +52,9 @@ export interface PlayOptions {
   rate?: number | [number, number];
   /** Loop until stop(name), used by the charge streams. */
   loop?: boolean;
-  /**
-   * Loop points in seconds. Deliberately not PCM frames: decodeAudioData
-   * resamples every sample to the context's rate, so the decoded buffer's
-   * sampleRate is the output device's and not the file's. Converting frames
-   * against it silently lands the loop somewhere in the middle of the sound.
-   */
+  /** Loop points in seconds. */
   loopSeconds?: [number, number];
-  /** Retain a non-looping source so an interruption can stop it. */
+  /** Retain a non-looping source so an interruption can stop it by name. */
   tracked?: boolean;
 }
 
@@ -68,6 +63,8 @@ export class SoundEffects {
   private readonly master = this.context.createGain();
   private readonly buffers = new Map<SoundName, AudioBuffer>();
   private readonly active = new Map<SoundName, AudioBufferSourceNode>();
+  private readonly voices = new Set<AudioBufferSourceNode>();
+  private loadPromise: Promise<void> | null = null;
 
   constructor() {
     this.master.connect(this.context.destination);
@@ -77,23 +74,24 @@ export class SoundEffects {
     this.master.gain.value = Math.max(0, Math.min(1, volume));
   }
 
-  /** Decode all samples up front so the first frame of an action is never late. */
-  async load(): Promise<void> {
-    await Promise.all(
+  /** Decode every sample once so later playtests reuse the same buffers. */
+  load(): Promise<void> {
+    this.loadPromise ??= Promise.all(
       (Object.entries(URLS) as [SoundName, string][]).map(async ([name, url]) => {
         try {
           const response = await fetch(url);
           if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
           this.buffers.set(name, await this.context.decodeAudioData(await response.arrayBuffer()));
         } catch (error) {
-          // A missing sample must not prevent the game from starting.
+          // A missing sample must not prevent the game or editor from starting.
           console.warn(`Could not load sound effect ${name}`, error);
         }
       }),
-    );
+    ).then(() => undefined);
+    return this.loadPromise;
   }
 
-  /** Must be called from an input handler to satisfy browser autoplay policies. */
+  /** Must be called synchronously from an input handler to satisfy autoplay policies. */
   unlock(): void {
     if (this.context.state === "suspended") void this.context.resume();
   }
@@ -114,12 +112,12 @@ export class SoundEffects {
     source.playbackRate.value = randomRate(options.rate ?? 1);
     gain.gain.value = Math.pow(10, (options.db ?? 0) / 20);
     source.connect(gain).connect(this.master);
-    if (options.loop || options.tracked) {
-      this.active.set(name, source);
-      source.addEventListener("ended", () => {
-        if (this.active.get(name) === source) this.active.delete(name);
-      });
-    }
+    this.voices.add(source);
+    if (options.loop || options.tracked) this.active.set(name, source);
+    source.addEventListener("ended", () => {
+      this.voices.delete(source);
+      if (this.active.get(name) === source) this.active.delete(name);
+    });
     source.start();
   }
 
@@ -127,7 +125,15 @@ export class SoundEffects {
     const source = this.active.get(name);
     if (!source) return;
     this.active.delete(name);
+    this.voices.delete(source);
     source.stop();
+  }
+
+  /** Stop every voice when a play session ends; decoded buffers remain reusable. */
+  stopAll(): void {
+    this.active.clear();
+    for (const source of this.voices) source.stop();
+    this.voices.clear();
   }
 }
 

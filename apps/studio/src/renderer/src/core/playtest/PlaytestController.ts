@@ -1,4 +1,5 @@
 import { ToolingSession, type SimulationSnapshot } from "@mmx/engine/tooling";
+import type { GameplaySounds } from "@mmx/browser-audio";
 import type { SceneOptions } from "@mmx/engine/game/Scene.js";
 import type { AnimData } from "@mmx/engine/game/Animation.js";
 import { documentToLevelData, type LevelDocument } from "@mmx/content-schema";
@@ -64,18 +65,21 @@ export class PlaytestController {
     private readonly renderer: PlaytestRenderer,
     private readonly input: PlaytestInput,
     private readonly clock: PlaytestClock,
+    private readonly sounds: GameplaySounds,
     private readonly callbacks: PlaytestCallbacks,
   ) {}
 
   static async start(
     host: HTMLElement,
     doc: LevelDocument,
+    sounds: GameplaySounds,
     callbacks: PlaytestCallbacks,
   ): Promise<PlaytestController> {
     const options: SceneOptions = {
       level: documentToLevelData(doc),
       onEnemySpawned: (enemy) => {
         enemy.loadAnimations(enemyAnims.actors[enemy.stats.sheet] as unknown as AnimData);
+        sounds.attachEnemy(enemy);
       },
       onPickupSpawned: (pickup) => {
         pickup.loadAnimations(pickupAnims.actors[pickup.kind] as unknown as AnimData);
@@ -86,6 +90,7 @@ export class PlaytestController {
     };
 
     const session = new ToolingSession(options);
+    sounds.attachScene(session.scene);
     const renderer = await PlaytestRenderer.create(host, session.scene);
     const input = new PlaytestInput();
 
@@ -95,7 +100,7 @@ export class PlaytestController {
       onRender: () => controller.draw(),
       onError: (error) => controller.fail(error),
     });
-    controller = new PlaytestController(session, renderer, input, clock, callbacks);
+    controller = new PlaytestController(session, renderer, input, clock, sounds, callbacks);
 
     input.attach();
     try {
@@ -183,6 +188,7 @@ export class PlaytestController {
     // The scene instance was replaced; rebind cosmetics/renderer to the new one
     // and draw the rewound frame before any further stepping.
     this.renderer.bindScene(this.session.scene);
+    this.sounds.attachScene(this.session.scene);
     this.renderer.render(this.session.scene);
     this.emitNow();
   }
@@ -192,6 +198,7 @@ export class PlaytestController {
     this.stopped = true;
     this.clock.stop();
     this.input.detach();
+    this.sounds.effects.stopAll();
     this.renderer.destroy();
   }
 

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mmx/browser-audio": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
     "@tauri-apps/api": "2.11.0",

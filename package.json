@@ -13,7 +13,7 @@
     "studio": "pnpm --filter @mmx/studio dev",
     "studio:build": "pnpm --filter @mmx/studio build",
     "studio:test": "pnpm --filter @mmx/studio test",
-    "build": "pnpm --filter @mmx/engine --filter @mmx/renderer-pixi --filter @mmx/content-schema --filter @mmx/ldtk-tools --filter @mmx/web --filter @mmx/sim -r build",
+    "build": "pnpm --filter @mmx/engine --filter @mmx/browser-audio --filter @mmx/renderer-pixi --filter @mmx/content-schema --filter @mmx/ldtk-tools --filter @mmx/web --filter @mmx/sim -r build",
     "build:web": "pnpm --filter @mmx/web build",
     "preview": "pnpm --filter @mmx/web preview",
     "start": "pnpm preview",

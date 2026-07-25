@@ -4,6 +4,7 @@ import {
   type LevelDocument,
   type ValidationResult,
 } from "@mmx/content-schema";
+import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
 import { EditorStore, type ChangeReason, type EditorState } from "../core/EditorStore.js";
 import {
   deleteSelection,
@@ -54,6 +55,7 @@ export class EditorController {
   private readonly fileAccess: FileAccess = createFileAccess();
   private viewport: EditorViewport | null = null;
   private play: PlaytestController | null = null;
+  private sounds: GameplaySounds | null = null;
   /** Bumped on every startPlay so an async renderer creation can detect it was superseded. */
   private playToken = 0;
   private host: HTMLElement | null = null;
@@ -275,6 +277,10 @@ export class EditorController {
 
   private async startPlay(): Promise<void> {
     if (!this.host) return;
+    const sounds = this.getSounds();
+    // This stays before the first await so a toolbar click or keyboard shortcut
+    // satisfies browser/Electron autoplay policy.
+    sounds.effects.unlock();
     this.closeEmptyContextMenu();
     const result = this.store.validate();
     if (!result.ok) {
@@ -291,7 +297,8 @@ export class EditorController {
     this.store.setMode("play");
     this.viewport?.setVisible(false);
     try {
-      const controller = await PlaytestController.start(this.host, state.document, {
+      await sounds.effects.load();
+      const controller = await PlaytestController.start(this.host, state.document, sounds, {
         onSnapshot: (snapshot) => {
           if (token !== this.playToken) return;
           this.setPlaytestSnapshot(snapshot);
@@ -328,6 +335,12 @@ export class EditorController {
     if (this.savedView) this.store.setView(this.savedView.zoom, this.savedView.viewportPosition);
     this.store.select(this.savedSelection);
     this.viewport?.redraw();
+  }
+
+  /** Lazily create Web Audio only when the user first enters Play mode. */
+  private getSounds(): GameplaySounds {
+    this.sounds ??= new GameplaySounds(new SoundEffects());
+    return this.sounds;
   }
 
   // ---------- Playtest debugger commands ----------
