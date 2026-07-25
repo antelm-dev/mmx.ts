@@ -11,6 +11,7 @@ import { Toolbar } from "./components/Toolbar.js";
 import { LeftSidebar } from "./components/LeftSidebar.js";
 import { Viewport } from "./components/Viewport.js";
 import { Inspector } from "./components/Inspector.js";
+import { RoomPanel } from "./components/RoomPanel.js";
 import { BottomPanel } from "./components/BottomPanel.js";
 import { JsonPanel } from "./components/JsonPanel.js";
 import { Toasts } from "./components/Toasts.js";
@@ -20,6 +21,7 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   viewport: () => <Viewport />,
   palette: () => <LeftSidebar />,
   inspector: () => <Inspector />,
+  room: () => <RoomPanel />,
   bottom: () => <BottomPanel />,
   json: () => <JsonPanel />,
 };
@@ -60,6 +62,13 @@ export function App() {
       minimumWidth: 260,
       maximumWidth: 380,
       position: { referencePanel: viewport, direction: "right" },
+    });
+
+    api.addPanel({
+      id: "room",
+      component: "room",
+      title: "Room",
+      position: { referencePanel: inspector, direction: "within" },
     });
 
     api.addPanel({

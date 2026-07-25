@@ -8,6 +8,7 @@ import {
   addObjects,
   deleteObjects,
   moveObjects,
+  setLevelSettings,
   setProperty,
   setTiles,
   setTransform,
@@ -132,6 +133,44 @@ test("setTiles drops cells already at their target value", () => {
   const reverted = cmd.undo(painted);
   assert.equal(reverted.tiles[5], 1, "undo must not clear a cell the command never touched");
   assert.equal(reverted.tiles[6], 0);
+});
+
+test("setLevelSettings edits name and grid without touching terrain", () => {
+  const h = new History(doc([a]));
+  const tiles = h.document.tiles;
+  h.execute(setLevelSettings(h.document, { name: "Room 2", gridSize: 32, cols: 8, rows: 8 }));
+  assert.equal(h.document.name, "Room 2");
+  assert.equal(h.document.gridSize, 32);
+  assert.equal(h.document.tiles, tiles, "no resize means the same tiles array");
+  h.undo();
+  assert.equal(h.document.name, "T");
+  assert.equal(h.document.gridSize, 16);
+});
+
+test("setLevelSettings reshapes terrain, keeping cells by (col, row)", () => {
+  const tiles = new Array(64).fill(0);
+  tiles[0] = 1; // (col 0, row 0) — kept
+  tiles[7] = 1; // (col 7, row 0) — cropped when cols shrinks to 4
+  tiles[8] = 1; // (col 0, row 1) — kept, re-keyed to index 4 on a 4-wide grid
+  const base: LevelDocument = { ...doc([]), tiles };
+  const h = new History(base);
+  h.execute(setLevelSettings(base, { name: "T", gridSize: 16, cols: 4, rows: 4 }));
+  assert.equal(h.document.tiles.length, 16);
+  assert.equal(h.document.tiles[0], 1);
+  assert.equal(h.document.tiles[4], 1, "(0,1) lands at row*newCols + col = 4");
+  assert.equal(h.document.tiles.filter((t) => t === 1).length, 2, "the (7,0) cell was cropped");
+  h.undo();
+  assert.equal(h.document.tiles, tiles, "undo restores the original terrain array");
+  assert.equal(h.document.cols, 8);
+});
+
+test("setLevelSettings re-keys slopes onto the resized grid", () => {
+  const base: LevelDocument = { ...doc([]), slopes: { 8: [0, 8], 7: [8, 0] } };
+  const h = new History(base);
+  h.execute(setLevelSettings(base, { name: "T", gridSize: 16, cols: 4, rows: 4 }));
+  assert.deepEqual(h.document.slopes, { 4: [0, 8] }, "(0,1) re-keys to 4; (7,0) is cropped away");
+  h.undo();
+  assert.deepEqual(h.document.slopes, { 8: [0, 8], 7: [8, 0] });
 });
 
 test("executing after an undo clears the redo stack", () => {
