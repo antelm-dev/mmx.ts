@@ -37,7 +37,7 @@ export function TitleBar() {
           alt=""
           className="w-[15px] h-[15px] flex-none"
         />
-        <span>
+        <span data-testid="app-brand">
           MMX <span className="text-fg-2">Studio</span>
         </span>
       </div>

@@ -26,8 +26,8 @@ export const PANELS: PanelSpec[] = [
   { id: "room", title: "Room", component: "room", ref: "inspector", dir: "within", fallbackDir: "right" },
   { id: "json", title: "Document JSON", component: "json", ref: "inspector", dir: "within", fallbackDir: "right" },
   { id: "assets", title: "Assets", component: "assets", ref: "viewport", dir: "below", fallbackDir: "below" },
-  { id: "problems", title: "Problems", component: "problems", ref: "assets", dir: "within", fallbackDir: "below" },
-  { id: "selection", title: "Selection", component: "selection", ref: "assets", dir: "within", fallbackDir: "below" },
+  { id: "problems", title: "Problems", component: "problems", ref: "assets", dir: "right", fallbackDir: "below" },
+  { id: "selection", title: "Selection", component: "selection", ref: "problems", dir: "right", fallbackDir: "below" },
 ];
 
 /**

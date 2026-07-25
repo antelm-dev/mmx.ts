@@ -1,0 +1,37 @@
+diff --git a/dist/bridge/ipc-bridge-generator.js b/dist/bridge/ipc-bridge-generator.js
+index ecd05123d8b00f59ac4243e5cadba9b49f2422cc..2f9197f5acaa399fca03ce3c49f511518e5a4d44 100644
+--- a/dist/bridge/ipc-bridge-generator.js
++++ b/dist/bridge/ipc-bridge-generator.js
+@@ -76,6 +76,11 @@ export function generateBridge(modules) {
+         lines.push(...generateEventHelpers());
+     }
+     const moduleEntries = modules.map(generateModuleEntry);
+-    lines.push(`export const bridge = {\n${moduleEntries.join(",\n")},\n} as const;`, "");
++    if (moduleEntries.length === 0) {
++        lines.push("export const bridge = {} as const;", "");
++    }
++    else {
++        lines.push(`export const bridge = {\n${moduleEntries.join(",\n")},\n} as const;`, "");
++    }
+     return lines.join("\n");
+ }
+diff --git a/dist/bridge/ipc-bridge.js b/dist/bridge/ipc-bridge.js
+index 30414dc1918df31f2adcb4e5bb1e3c4cd9017fe4..8947262e932b48a760170b6e0faa9bb95f981c3f 100644
+--- a/dist/bridge/ipc-bridge.js
++++ b/dist/bridge/ipc-bridge.js
+@@ -68,7 +68,15 @@ export function runIpcBridgeGeneration(options = {}) {
+     const resolved = resolveIpcBridgeOptions(options);
+     logger.info("Analyzing IPC modules...");
+     const program = createTsProgram(resolved.tsconfig);
++    const matchedFiles = globSync(resolveIpcPattern(resolved.ipcDir), {
++        nodir: true,
++        absolute: true,
++    });
+     const modules = extractModules(program, resolved.ipcDir);
++    if (modules.length === 0 && matchedFiles.length > 0) {
++        throw new Error(`IPC bridge analysis found ${matchedFiles.length} *.ipc.ts file(s) but extracted 0 modules. ` +
++            "Refusing to overwrite the bridge (tsconfig/program may be mid-reload).");
++    }
+     for (const ipcModule of modules) {
+         for (const warning of ipcModule.warnings) {
+             logger.warn(`[${ipcModule.name}] ${warning}`);

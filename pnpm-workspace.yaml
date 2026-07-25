@@ -1,9 +1,12 @@
 packages:
-  - "packages/*"
-  - "apps/*"
+  - packages/*
+  - apps/*
 
 onlyBuiltDependencies:
-  - "electron-ipc-module"
-  - "rollup-plugin-electron-run"
-  - "@parcel/watcher"
-  - "esbuild"
+  - electron-ipc-module
+  - rollup-plugin-electron-run
+  - '@parcel/watcher'
+  - esbuild
+
+patchedDependencies:
+  electron-ipc-module@0.1.0: patches/electron-ipc-module@0.1.0.patch

@@ -38,6 +38,9 @@ jobs:
       - name: Studio tests
         run: pnpm studio:test
 
+      - name: Studio typecheck
+        run: pnpm studio:typecheck
+
       - name: Generated levels
         run: pnpm level:check
 

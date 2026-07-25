@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  electron-ipc-module@0.1.0:
+    hash: 21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17
+    path: patches/electron-ipc-module@0.1.0.patch
+
 importers:
 
   .:
@@ -83,7 +88,7 @@ importers:
         version: 7.0.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       electron-ipc-module:
         specifier: github:antelm-dev/electron-ipc-module#main
-        version: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98(electron@43.2.0)
+        version: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0)
       lucide-react:
         specifier: ^1.26.0
         version: 1.26.0(react@19.2.8)
@@ -5511,7 +5516,7 @@ snapshots:
       - electron-builder-squirrel-windows
       - supports-color
 
-  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98(electron@43.2.0):
+  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0):
     dependencies:
       electron: 43.2.0
       glob: 11.1.0
