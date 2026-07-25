@@ -180,6 +180,12 @@ export function compileGameData(
     num(e.touchDamage, `enemies.${e.id}.touchDamage`, e.id, { min: 0 });
     hitbox(e.hurtbox, `enemies.${e.id}.hurtbox`, e.id);
     hitbox(e.perception, `enemies.${e.id}.perception`, e.id);
+    // Each ability id must be a known enemy behaviour.
+    for (const [i, ability] of e.abilities.entries()) {
+      if (!registries.enemyBehaviors.has(ability)) {
+        error({ code: "behavior.unknown", definitionId: e.id, fieldPath: `enemies.${e.id}.abilities[${i}]`, message: `Unknown enemy behaviour '${ability}'.` });
+      }
+    }
     // AI reactions must name abilities this enemy owns.
     const owned = new Set(e.abilities);
     for (const [event, names] of Object.entries(e.reactions)) {

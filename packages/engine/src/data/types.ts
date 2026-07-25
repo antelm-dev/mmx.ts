@@ -366,6 +366,8 @@ export type CompileGameDataResult =
  */
 export interface CompileRegistries {
   abilities: BehaviorValidatorSet;
+  /** Enemy ability ids (a distinct hierarchy from player abilities). */
+  enemyBehaviors: BehaviorValidatorSet;
   projectiles: BehaviorValidatorSet;
   pickups: BehaviorValidatorSet;
   environments: BehaviorValidatorSet;

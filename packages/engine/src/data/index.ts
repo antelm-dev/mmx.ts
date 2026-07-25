@@ -14,19 +14,20 @@ export { DEFAULT_COMPILE_REGISTRIES } from "./defaultRegistries.js";
 
 import { GAME_DATA } from "./gameData.js";
 import { compileGameData } from "./compileGameData.js";
-import { DEFAULT_COMPILE_REGISTRIES } from "./defaultRegistries.js";
+import { buildCompileRegistries } from "../behaviors/index.js";
 import type { CompiledGameData } from "./types.js";
 
 /**
- * The default game data, compiled once at module load. This is the single
- * compiled instance the runtime and the compat constants share — compilation is
- * never run per frame (Part 14).
+ * The default game data, compiled once at module load against the engine's real
+ * behaviour registries (Part 4). This is the single compiled instance the runtime
+ * and the compat constants share — compilation is never run per frame (Part 14).
  *
- * Compilation failure here is a build-time programming error (the shipped data is
- * malformed), so it throws rather than degrading.
+ * Compiling against the real registries means an unknown behaviour id or a
+ * malformed ability config here is a build-time error, not a silent mismatch.
+ * Compilation failure throws rather than degrading.
  */
 export const COMPILED_GAME_DATA: CompiledGameData = (() => {
-  const result = compileGameData(GAME_DATA, DEFAULT_COMPILE_REGISTRIES);
+  const result = compileGameData(GAME_DATA, buildCompileRegistries());
   if (!result.ok) {
     const errors = result.diagnostics
       .filter((d) => d.severity === "error")
