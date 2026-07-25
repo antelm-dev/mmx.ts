@@ -2,6 +2,11 @@ import { Ability } from "../ability/Ability.js";
 import type { Character } from "../Character.js";
 import { SHOT_ARM_POINT_DURATION } from "../../core/constants.js";
 
+/** Typed tuning for {@link Shot}, supplied by the loadout (Part 5). */
+export interface ShotConfig {
+  armPointDuration?: number;
+}
+
 /**
  * Port of Shot.gd — fires the active weapon's regular shot on each fire tap
  * (the buster's uncharged "lemon", or a sub-weapon's shot once one is selected;
@@ -19,14 +24,15 @@ import { SHOT_ARM_POINT_DURATION } from "../../core/constants.js";
 export class Shot extends Ability {
   readonly name = "Shot";
   override independent = true;
-  private readonly arm_point_duration = SHOT_ARM_POINT_DURATION;
+  private readonly arm_point_duration: number;
   private disabled_layer = true;
   /** Set by arm_point() so the run it starts poses without firing a lemon too. */
   private pose_only = false;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: ShotConfig = {}) {
     super(character);
     this.actions = ["fire"];
+    this.arm_point_duration = config.armPointDuration ?? SHOT_ARM_POINT_DURATION;
   }
 
   /** Weapon.gd:can_shoot, dispatched onto whichever weapon is active — infinite

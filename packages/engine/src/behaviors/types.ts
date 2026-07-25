@@ -69,6 +69,20 @@ export class Registry<F extends RegistryEntry> {
     return this;
   }
 
+  /**
+   * Replace an already-registered entry — the staged-wiring path. A later
+   * migration stage attaches a real `create` to an entry registered earlier with
+   * validation only (`{ ...registry.get(id), create }`). Replacing an unknown id
+   * is a programming error and throws.
+   */
+  replace(factory: F): this {
+    if (!this.entries.has(factory.id)) {
+      throw new Error(`Registry: cannot replace unknown behaviour id '${factory.id}'.`);
+    }
+    this.entries.set(factory.id, factory);
+    return this;
+  }
+
   has(id: string): boolean {
     return this.entries.has(id);
   }
