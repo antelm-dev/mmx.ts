@@ -11,7 +11,7 @@ import {
 import { loadSheets, regionTexture, SHEET_URLS } from "@mmx/renderer-pixi";
 import { previewForDefinition } from "./spritePreview.js";
 import type { EditorStore } from "./EditorStore.js";
-import { placeAt } from "./actions.js";
+import { paintTiles, placeAt } from "./actions.js";
 
 const COLOR_BG = 0x05070d;
 const COLOR_TILE_FILL = 0x0b1120;
@@ -19,6 +19,7 @@ const COLOR_TILE_EDGE = 0x33507a;
 const COLOR_GRID = 0x161d2b;
 const COLOR_SELECT = 0x4c8dff;
 const COLOR_HOVER = 0xffffff;
+const COLOR_ERASE = 0xff5a5a;
 
 type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -31,6 +32,8 @@ export interface EmptyCellContextMenu {
   worldY: number;
   col: number;
   row: number;
+  /** Whether the cell already holds a solid tile — picks Add- vs Remove-tile. */
+  tileSolid: boolean;
 }
 
 export type EmptyCellContextMenuHandler = (payload: EmptyCellContextMenu) => void;
@@ -86,6 +89,10 @@ export class EditorViewport {
     | { type: "resize"; id: string; box: Box }
     | null = null;
   private resizeState: { id: string; handle: Handle; orig: Box } | null = null;
+  // Live terrain-paint gesture: `erase` fixes solid-vs-empty for the whole
+  // stroke, `changed` maps row-major tile index → target value for a preview
+  // that commits as one command on pointer-up.
+  private tileStroke: { erase: boolean; changed: Map<number, number> } | null = null;
   private pendingToggle: string | null = null;
   private pointerWorld = { x: 0, y: 0 };
   private onEmptyContextMenu: EmptyCellContextMenuHandler | null = null;
@@ -317,6 +324,12 @@ export class EditorViewport {
     g.clear();
     const state = this.store.get();
     const zoom = state.zoom;
+
+    if (state.activeTool === "tile") {
+      this.drawTileToolOverlay(g, state.document.gridSize, zoom);
+      return;
+    }
+
     const byId = new Map(state.document.objects.map((o) => [o.id, o]));
 
     if (state.hoveredId && !state.selectedIds.includes(state.hoveredId)) {
@@ -349,6 +362,43 @@ export class EditorViewport {
           .stroke({ width: 1 / zoom, color: 0xffffff });
       }
     }
+  }
+
+  /** Paint-tool feedback: previewed stroke cells, or an idle cursor cell. */
+  private drawTileToolOverlay(g: Graphics, gridSize: number, zoom: number): void {
+    const stroke = this.tileStroke;
+    const doc = this.store.get().document;
+    const inBounds = (col: number, row: number): boolean =>
+      col >= 0 && row >= 0 && col < doc.cols && row < doc.rows;
+
+    if (stroke && stroke.changed.size > 0) {
+      for (const [index, value] of stroke.changed) {
+        const col = index % doc.cols;
+        const row = Math.floor(index / doc.cols);
+        const x = col * gridSize;
+        const y = row * gridSize;
+        if (value === Tile.Empty) {
+          g.rect(x, y, gridSize, gridSize).stroke({ width: 1.5 / zoom, color: COLOR_ERASE });
+          g.moveTo(x, y).lineTo(x + gridSize, y + gridSize);
+          g.moveTo(x + gridSize, y).lineTo(x, y + gridSize);
+          g.stroke({ width: 1 / zoom, color: COLOR_ERASE, alpha: 0.7 });
+        } else {
+          g.rect(x, y, gridSize, gridSize).fill({ color: COLOR_TILE_FILL, alpha: 0.7 });
+          g.rect(x, y, gridSize, gridSize).stroke({ width: 1.5 / zoom, color: COLOR_SELECT });
+        }
+      }
+      return;
+    }
+
+    // Idle: outline the cell the next click would affect.
+    const col = Math.floor(this.pointerWorld.x / gridSize);
+    const row = Math.floor(this.pointerWorld.y / gridSize);
+    if (!inBounds(col, row)) return;
+    g.rect(col * gridSize, row * gridSize, gridSize, gridSize).stroke({
+      width: 1.5 / zoom,
+      color: COLOR_SELECT,
+      alpha: 0.85,
+    });
   }
 
   private singleResizable(): LevelObjectInstance | null {
@@ -450,6 +500,8 @@ export class EditorViewport {
   private onContextMenu(e: MouseEvent): void {
     e.preventDefault();
     if (this.store.get().mode === "play") return;
+    // In the tile tool a right-drag erases; pointer-down owns it, so no menu.
+    if (this.store.get().activeTool === "tile") return;
     const payload = this.emptyContextAt(e.clientX, e.clientY);
     if (payload) this.onEmptyContextMenu?.(payload);
   }
@@ -459,14 +511,19 @@ export class EditorViewport {
     if (this.store.get().mode === "play") return null;
     const world = this.screenToWorld(clientX, clientY);
     if (this.topObjectAt(world.x, world.y)) return null;
-    const grid = this.store.get().document.gridSize;
+    const doc = this.store.get().document;
+    const grid = doc.gridSize;
+    const col = Math.floor(world.x / grid);
+    const row = Math.floor(world.y / grid);
+    const inBounds = col >= 0 && row >= 0 && col < doc.cols && row < doc.rows;
     return {
       clientX,
       clientY,
       worldX: world.x,
       worldY: world.y,
-      col: Math.floor(world.x / grid),
-      row: Math.floor(world.y / grid),
+      col,
+      row,
+      tileSolid: inBounds && doc.tiles[row * doc.cols + col] === Tile.Solid,
     };
   }
 
@@ -484,9 +541,19 @@ export class EditorViewport {
       this.panning = true;
       return;
     }
-    if (e.button !== 0) return;
 
     const state = this.store.get();
+
+    // Terrain paint: left paints solid, right (or Alt+left) erases. Start the
+    // stroke here so a right-drag begins erasing rather than opening the menu.
+    if (state.activeTool === "tile" && (e.button === 0 || e.button === 2)) {
+      this.tileStroke = { erase: e.button === 2 || e.altKey, changed: new Map() };
+      this.paintTileAt(world);
+      this.redraw();
+      return;
+    }
+
+    if (e.button !== 0) return;
 
     if (state.activeTool === "place" && state.placingDefinitionId) {
       placeAt(this.store, state.placingDefinitionId, world.x, world.y);
@@ -532,6 +599,12 @@ export class EditorViewport {
       return;
     }
 
+    if (this.tileStroke) {
+      this.paintTileAt(world);
+      this.redraw();
+      return;
+    }
+
     if (this.resizeState) {
       this.applyResize(world);
       this.redraw();
@@ -556,11 +629,28 @@ export class EditorViewport {
       return;
     }
 
-    // Idle hover.
+    // Idle hover. The tile tool wants the cell cursor, not object highlights.
     if (this.store.get().mode !== "play") {
-      const hit = this.topObjectAt(world.x, world.y);
-      this.store.setHover(hit?.id);
+      const tool = this.store.get().activeTool;
+      if (tool === "tile") {
+        this.store.setHover(undefined);
+        this.redraw();
+      } else {
+        const hit = this.topObjectAt(world.x, world.y);
+        this.store.setHover(hit?.id);
+      }
     }
+  }
+
+  /** Record the tile under a world point into the active stroke's preview map. */
+  private paintTileAt(world: { x: number; y: number }): void {
+    const stroke = this.tileStroke;
+    if (!stroke) return;
+    const doc = this.store.get().document;
+    const col = Math.floor(world.x / doc.gridSize);
+    const row = Math.floor(world.y / doc.gridSize);
+    if (col < 0 || row < 0 || col >= doc.cols || row >= doc.rows) return;
+    stroke.changed.set(row * doc.cols + col, stroke.erase ? Tile.Empty : Tile.Solid);
   }
 
   private applyResize(world: { x: number; y: number }): void {
@@ -583,6 +673,15 @@ export class EditorViewport {
   private onPointerUp(e: PointerEvent): void {
     if (this.panning) {
       this.panning = false;
+      return;
+    }
+
+    if (this.tileStroke) {
+      const { erase, changed } = this.tileStroke;
+      this.tileStroke = null;
+      const edits = [...changed].map(([index, value]) => ({ index, value }));
+      paintTiles(this.store, edits, erase); // emits a redraw via the store change
+      this.redraw();
       return;
     }
 
@@ -623,7 +722,7 @@ export class EditorViewport {
     let cursor = "default";
     if (state.mode === "play") cursor = "default";
     else if (this.panning || this.spaceDown || state.activeTool === "pan") cursor = "grab";
-    else if (state.activeTool === "place") cursor = "crosshair";
+    else if (state.activeTool === "place" || state.activeTool === "tile") cursor = "crosshair";
     this.canvas.style.cursor = cursor;
   }
 

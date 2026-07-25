@@ -6,7 +6,7 @@ import {
   type ValidationResult,
 } from "@mmx/content-schema";
 
-export type Tool = "select" | "pan" | "place" | "resize";
+export type Tool = "select" | "pan" | "place" | "resize" | "tile";
 export type Mode = "edit" | "play";
 
 /**

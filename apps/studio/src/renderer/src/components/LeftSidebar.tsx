@@ -21,7 +21,7 @@ const tabBase =
 const tabCls = (active: boolean): string =>
   cx(tabBase, active ? "text-accent-fg border-accent" : "text-fg-3 border-transparent hover:text-fg-2 hover:bg-hover");
 
-const cat = "text-[10px] uppercase tracking-[0.5px] text-fg-3 pt-[13px] px-3.5 pb-[5px] font-bold";
+const cat = "flex items-end text-[9.5px] uppercase tracking-[0.7px] text-fg-3 pt-[14px] px-3.5 pb-[5px] font-extrabold";
 const emptyNote = "px-3 py-3.5 text-muted text-xs";
 const itemName = "min-w-0 flex-1 whitespace-nowrap overflow-hidden text-ellipsis";
 
@@ -79,7 +79,7 @@ export function LeftSidebar() {
 
       {tab === "palette" ? (
         <>
-          <div className="flex items-center gap-2 h-9 mt-3 mx-3 mb-[7px] px-2.5 border border-border-strong rounded-lg bg-raised transition-[border-color,box-shadow] duration-[120ms] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]">
+          <div className="flex items-center gap-2 h-9 mt-3 mx-3 mb-2 px-2.5 border border-border-strong rounded-lg bg-raised shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] duration-[120ms] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]">
             <Search size={16} className="text-[#7792bc]" />
             <input
               className="min-w-0 flex-1 border-0 outline-0 bg-transparent text-fg text-xs placeholder:text-fg-3"
@@ -135,7 +135,7 @@ function PaletteList({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: (i) => (rows[i].kind === "header" ? 28 : 36),
+    estimateSize: (i) => (rows[i].kind === "header" ? 30 : 40),
     overscan: 12,
   });
 
@@ -179,9 +179,11 @@ function PaletteList({
                 title={`Place ${def.name}`}
                 onClick={() => editor.selectPalette(def.id)}
               >
-                <SpritePreview definitionId={def.id} size={28} fallbackColor={def.editor.color} />
+                <span className="grid place-items-center w-7 h-7 flex-none rounded-md bg-[#0b1018] ring-1 ring-border/80">
+                  <SpritePreview definitionId={def.id} size={24} fallbackColor={def.editor.color} />
+                </span>
                 <span className={itemName}>{def.name}</span>
-                <span className="text-fg-3 opacity-0 inline-flex group-hover:opacity-100">
+                <span className="grid place-items-center w-6 h-6 rounded-md text-fg-3 opacity-0 bg-[#26344a] group-hover:opacity-100 group-hover:text-accent-fg transition-opacity">
                   <Plus size={16} />
                 </span>
               </button>
@@ -204,7 +206,7 @@ function SceneList({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => 42,
     overscan: 12,
   });
 

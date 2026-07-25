@@ -9,6 +9,7 @@ import {
   deleteObjects,
   moveObjects,
   setProperty,
+  setTiles,
   setTransform,
 } from "../src/index.js";
 
@@ -99,6 +100,38 @@ test("addObjects appends and undo removes exactly those ids", () => {
     h.document.objects.map((o) => o.id),
     ["a"],
   );
+});
+
+test("setTiles paints a stroke and undo restores every prior value", () => {
+  const h = new History(doc([]));
+  const start = h.document.tiles;
+  h.execute(
+    setTiles(h.document, [
+      { index: 0, value: 1 },
+      { index: 9, value: 1 },
+    ]),
+  );
+  assert.equal(h.document.tiles[0], 1);
+  assert.equal(h.document.tiles[9], 1);
+  assert.notEqual(h.document.tiles, start, "returns a fresh tiles array so renderers redraw");
+  h.undo();
+  assert.equal(h.document.tiles[0], 0);
+  assert.equal(h.document.tiles[9], 0);
+});
+
+test("setTiles drops cells already at their target value", () => {
+  const tiles = new Array(64).fill(0);
+  tiles[5] = 1;
+  const base: LevelDocument = { ...doc([]), tiles };
+  // Cell 5 is already solid; only cell 6 is a real change.
+  const cmd = setTiles(base, [
+    { index: 5, value: 1 },
+    { index: 6, value: 1 },
+  ]);
+  const painted = cmd.execute(base);
+  const reverted = cmd.undo(painted);
+  assert.equal(reverted.tiles[5], 1, "undo must not clear a cell the command never touched");
+  assert.equal(reverted.tiles[6], 0);
 });
 
 test("executing after an undo clears the redo stack", () => {

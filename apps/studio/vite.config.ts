@@ -18,6 +18,9 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   root: resolve(__dirname, "src/renderer"),
   base: "./",
+  // Serve app-level static assets (favicon.png) that live outside the renderer
+  // root; Vite copies them verbatim into `out/renderer/` on build.
+  publicDir: resolve(__dirname, "public"),
   resolve: {
     alias: {
       "@": resolve(__dirname, "src/renderer/src"),

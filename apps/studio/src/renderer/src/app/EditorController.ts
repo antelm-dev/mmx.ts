@@ -1,14 +1,19 @@
-import { instanceSize, type LevelDocument, type ValidationResult } from "@mmx/content-schema";
+import {
+  createLevelDocument,
+  instanceSize,
+  type LevelDocument,
+  type ValidationResult,
+} from "@mmx/content-schema";
 import { EditorStore, type ChangeReason, type EditorState } from "../core/EditorStore.js";
 import {
   deleteSelection,
   duplicateSelection,
   nudgeSelection,
   placeAt,
+  setTileAt,
 } from "../core/actions.js";
 import { EditorViewport } from "../core/EditorViewport.js";
 import { PlaySession } from "../core/PlaySession.js";
-import { BUILTIN_LEVELS } from "../core/builtins.js";
 import {
   createFileAccess,
   parseDocument,
@@ -30,7 +35,6 @@ export interface EditorSnapshot {
   canRedo: boolean;
   dirty: boolean;
   validation: ValidationResult;
-  activeLevelKey: string | null;
   levelTitle: string;
 }
 
@@ -41,8 +45,7 @@ export interface EditorSnapshot {
  * views over {@link EditorSnapshot} and the Zustand UI store.
  */
 export class EditorController {
-  readonly store = new EditorStore(BUILTIN_LEVELS[0].document());
-  readonly levels = BUILTIN_LEVELS;
+  readonly store = new EditorStore(createLevelDocument());
 
   private readonly fileAccess: FileAccess = createFileAccess();
   private viewport: EditorViewport | null = null;
@@ -51,7 +54,6 @@ export class EditorController {
 
   private savedView: { zoom: number; viewportPosition: { x: number; y: number } } | null = null;
   private savedSelection: string[] = [];
-  private activeLevelKey: string | null = "stage1";
 
   private snapshot: EditorSnapshot;
   private readonly listeners = new Set<() => void>();
@@ -76,10 +78,6 @@ export class EditorController {
   }
 
   private computeTitle(): string {
-    if (this.activeLevelKey) {
-      const level = this.levels.find((l) => l.key === this.activeLevelKey);
-      if (level) return level.name;
-    }
     return this.store.get().document.name || "Untitled";
   }
 
@@ -92,7 +90,6 @@ export class EditorController {
       canRedo: keepDerived ? prev.canRedo : this.store.canRedo,
       dirty: keepDerived ? prev.dirty : this.store.isDirty,
       validation: keepDerived ? prev.validation : this.store.validate(),
-      activeLevelKey: this.activeLevelKey,
       levelTitle: this.computeTitle(),
     };
   }
@@ -138,7 +135,27 @@ export class EditorController {
     this.closeEmptyContextMenu();
   }
 
+  /** Add or remove the solid tile at the right-clicked cell. */
+  setTileAtContext(solid: boolean): void {
+    const ctx = useUiStore.getState().contextMenu;
+    if (!ctx) return;
+    setTileAt(this.store, ctx.col, ctx.row, solid);
+    this.closeEmptyContextMenu();
+  }
+
+  /** Toggle the terrain paint tool on/off (returns to Select when turning off). */
+  toggleTileTool(): void {
+    this.store.setTool(this.store.get().activeTool === "tile" ? "select" : "tile");
+  }
+
   // ---------- File ----------
+
+  /** Start a fresh, blank level with a floor and a single Spawn. */
+  newLevel(): void {
+    if (this.store.get().mode === "play") this.togglePlay();
+    this.openDocument(createLevelDocument());
+    this.toast("New level created.");
+  }
 
   save(): void {
     const doc = this.store.get().document;
@@ -151,22 +168,14 @@ export class EditorController {
     try {
       const opened = await this.fileAccess.open();
       if (!opened) return;
-      this.openDocument(parseDocument(opened.json), null);
+      this.openDocument(parseDocument(opened.json));
       this.toast(`Imported ${opened.name}.`);
     } catch (error) {
       this.toast(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  openBuiltin(key: string): void {
-    const level = this.levels.find((l) => l.key === key);
-    if (!level) return;
-    if (this.store.get().mode === "play") this.togglePlay();
-    this.openDocument(level.document(), key);
-  }
-
-  private openDocument(doc: LevelDocument, levelKey: string | null): void {
-    this.activeLevelKey = levelKey;
+  private openDocument(doc: LevelDocument): void {
     this.store.open(doc);
     this.syncPageTitle(this.computeTitle());
     this.viewport?.fitToDocument();
@@ -330,7 +339,8 @@ export class EditorController {
         this.deleteSelection();
         break;
       case "Escape":
-        if (state.activeTool === "place") this.store.setTool("select");
+        if (state.activeTool === "place" || state.activeTool === "tile")
+          this.store.setTool("select");
         else this.store.clearSelection();
         break;
       case "KeyG":
@@ -342,6 +352,9 @@ export class EditorController {
         break;
       case "KeyV":
         this.store.setTool("select");
+        break;
+      case "KeyT":
+        this.toggleTileTool();
         break;
       case "ArrowLeft":
         e.preventDefault();

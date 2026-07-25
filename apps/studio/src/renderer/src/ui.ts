@@ -15,7 +15,7 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 
 /** Shared button geometry; the color/hover variant is layered on by {@link btnCls}. */
 const btnBase =
-  "inline-flex items-center gap-1.5 h-8 px-2.5 border border-transparent rounded-lg text-[12.5px] " +
+  "inline-flex items-center gap-1.5 h-8 px-2.5 border border-transparent rounded-lg text-[12px] " +
   "font-semibold cursor-pointer transition-colors duration-100 disabled:opacity-40 disabled:cursor-default";
 const btnIdle = "text-fg-2 enabled:hover:bg-hover enabled:hover:text-fg";
 const btnActive = "bg-accent/15 text-accent-fg";
@@ -37,9 +37,11 @@ export function inputCls(bad = false): string {
 /** Sidebar list row (palette / scene); `active` marks selection. `group` reveals the add icon. */
 export function itemCls(active: boolean): string {
   return cx(
-    "group flex items-center gap-2.5 w-[calc(100%-14px)] min-h-[34px] mx-[7px] my-px px-2 py-[5px] " +
-      "rounded-[7px] text-left cursor-pointer text-[12.5px] transition-colors duration-100",
-    active ? btnActive : "text-fg-2 hover:bg-hover hover:text-fg",
+    "group relative flex items-center gap-2.5 w-[calc(100%-16px)] min-h-[38px] mx-2 my-px px-2 py-[5px] " +
+      "rounded-lg border text-left cursor-pointer text-[12.5px] transition-[color,background-color,border-color,transform] duration-100",
+    active
+      ? "bg-accent/15 text-accent-fg border-accent/40"
+      : "text-fg-2 border-transparent hover:bg-hover hover:text-fg hover:border-border hover:translate-x-px",
   );
 }
 

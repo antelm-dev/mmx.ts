@@ -4,8 +4,11 @@ import {
   moveObjects,
   newId,
   requireDefinition,
+  setTiles,
   type LevelObjectInstance,
+  type TileEdit,
 } from "@mmx/content-schema";
+import { Tile } from "@mmx/engine/game/World.js";
 import type { EditorStore } from "./EditorStore.js";
 
 /**
@@ -63,6 +66,32 @@ export function deleteSelection(store: EditorStore): void {
   if (selectedIds.length === 0) return;
   store.execute(deleteObjects(document, selectedIds));
   store.clearSelection();
+}
+
+/** Row-major tile index for a grid cell, or null when the cell is out of bounds. */
+export function cellIndex(store: EditorStore, col: number, row: number): number | null {
+  const { cols, rows } = store.get().document;
+  if (col < 0 || row < 0 || col >= cols || row >= rows) return null;
+  return row * cols + col;
+}
+
+/**
+ * Commit a terrain stroke as one undoable command. Cells already at their target
+ * value are dropped here (not just inside {@link setTiles}) so an all-no-op stroke
+ * never reaches the history — e.g. dragging the paint tool over existing solid.
+ */
+export function paintTiles(store: EditorStore, edits: readonly TileEdit[], erasing: boolean): void {
+  const tiles = store.get().document.tiles;
+  const changed = edits.filter((e) => (tiles[e.index] ?? Tile.Empty) !== e.value);
+  if (changed.length === 0) return;
+  store.execute(setTiles(store.get().document, changed, erasing ? "Erase tiles" : "Paint tiles"));
+}
+
+/** Set a single terrain cell to solid or empty (context-menu "Add/Remove tile"). */
+export function setTileAt(store: EditorStore, col: number, row: number, solid: boolean): void {
+  const index = cellIndex(store, col, row);
+  if (index === null) return;
+  paintTiles(store, [{ index, value: solid ? Tile.Solid : Tile.Empty }], !solid);
 }
 
 /** Nudge the selection by a pixel delta (arrow keys). */

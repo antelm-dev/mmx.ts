@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_LEVELS } from "./builtins.js";
+import { Tile } from "@mmx/engine/game/World.js";
+import { createLevelDocument } from "@mmx/content-schema";
 import { EditorStore } from "./EditorStore.js";
-import { deleteSelection, duplicateSelection, nudgeSelection, placeAt } from "./actions.js";
+import {
+  cellIndex,
+  deleteSelection,
+  duplicateSelection,
+  nudgeSelection,
+  paintTiles,
+  placeAt,
+  setTileAt,
+} from "./actions.js";
 
 function freshStore(): EditorStore {
-  return new EditorStore(BUILTIN_LEVELS[0].document());
+  return new EditorStore(createLevelDocument());
 }
 
 describe("editor actions", () => {
@@ -60,6 +69,42 @@ describe("editor actions", () => {
     const after = store.get().document.objects.find((o) => o.id === id)!;
     expect(after.x).toBe(before.x + 4);
     expect(after.y).toBe(before.y - 3);
+  });
+
+  it("places and removes a solid tile, each as one undoable step", () => {
+    const store = freshStore();
+    const cols = store.get().document.cols;
+    const index = cellIndex(store, 2, 3);
+    expect(index).toBe(3 * cols + 2);
+
+    setTileAt(store, 2, 3, true);
+    expect(store.get().document.tiles[index!]).toBe(Tile.Solid);
+    store.undo();
+    expect(store.get().document.tiles[index!]).toBe(Tile.Empty);
+    store.redo();
+    expect(store.get().document.tiles[index!]).toBe(Tile.Solid);
+
+    setTileAt(store, 2, 3, false);
+    expect(store.get().document.tiles[index!]).toBe(Tile.Empty);
+  });
+
+  it("ignores an all-redundant paint stroke so history stays clean", () => {
+    const store = freshStore();
+    const index = cellIndex(store, 1, 1)!;
+    setTileAt(store, 1, 1, true);
+    const canUndoBefore = store.canUndo;
+    // Painting the same cell solid again changes nothing.
+    paintTiles(store, [{ index, value: Tile.Solid }], false);
+    expect(store.canUndo).toBe(canUndoBefore);
+    store.undo();
+    expect(store.get().document.tiles[index]).toBe(Tile.Empty);
+    expect(store.canUndo).toBe(false);
+  });
+
+  it("clamps out-of-bounds cells to a null index", () => {
+    const store = freshStore();
+    expect(cellIndex(store, -1, 0)).toBeNull();
+    expect(cellIndex(store, 0, store.get().document.rows)).toBeNull();
   });
 
   it("snaps to the grid only when snapping is enabled", () => {

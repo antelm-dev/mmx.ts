@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as Select from "@radix-ui/react-select";
 import * as Checkbox from "@radix-ui/react-checkbox";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ListTree, MousePointer2 } from "lucide-react";
 import {
   effectiveValue,
   instanceSize,
@@ -27,13 +27,14 @@ import {
   sectionTitleSub,
 } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
+import { useUiStore } from "../store/uiStore.js";
 
 const errText = "text-danger-fg text-[10.5px] mt-[3px] mb-1";
 const emptyTitle = "mb-1.5 text-fg font-[650]";
 const emptyCopy = "max-w-[220px] text-fg-3 text-[11.5px] leading-[1.55]";
 const emptyIcon =
-  "grid place-items-center w-[46px] h-[46px] mb-[15px] border border-border-strong rounded-[13px] " +
-  "text-[#7aaaff] bg-[linear-gradient(145deg,rgba(59,130,246,0.15),rgba(59,130,246,0.04))] text-[22px]";
+  "grid place-items-center w-12 h-12 mb-4 border border-accent/35 rounded-[14px] " +
+  "text-[#7aaaff] bg-[linear-gradient(145deg,rgba(59,130,246,0.18),rgba(59,130,246,0.04))] shadow-[0_8px_24px_rgba(0,0,0,0.2)]";
 const emptyState = "flex flex-col items-center pt-16 px-7 pb-6 text-center";
 
 interface Single {
@@ -46,6 +47,7 @@ interface Single {
 /** Right dock: schema-generated inspector with inline validation. */
 export function Inspector() {
   const snap = useEditorSnapshot();
+  const setSidebarTab = useUiStore((s) => s.setSidebarTab);
   const state = snap.state;
 
   const single = useMemo<Single | null>(() => {
@@ -267,7 +269,7 @@ export function Inspector() {
         ) : state.selectedIds.length > 1 ? (
           <>
             <div className={emptyState}>
-              <div className={emptyIcon}>◫</div>
+              <div className={emptyIcon}><MousePointer2 size={20} /></div>
               <div className={emptyTitle}>{state.selectedIds.length} objects selected</div>
               <div className={emptyCopy}>Duplicate or delete the current selection.</div>
             </div>
@@ -282,11 +284,17 @@ export function Inspector() {
           </>
         ) : (
           <div className={emptyState}>
-            <div className={emptyIcon}>◇</div>
+            <div className={emptyIcon}><MousePointer2 size={20} /></div>
             <div className={emptyTitle}>Nothing selected</div>
             <div className={emptyCopy}>
               Choose an object on the canvas or from the Scene tab to edit its properties.
             </div>
+            <button
+              className="inline-flex items-center gap-2 h-8 mt-4 px-3 rounded-lg border border-border-strong bg-raised text-[11.5px] font-semibold text-fg-2 hover:bg-hover hover:text-fg"
+              onClick={() => setSidebarTab("scene")}
+            >
+              <ListTree size={14} /> Browse scene objects
+            </button>
           </div>
         )}
       </div>

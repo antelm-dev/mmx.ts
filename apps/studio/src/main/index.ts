@@ -3,6 +3,7 @@ import { app, BrowserWindow } from "electron";
 import { createIpcContainer } from "electron-ipc-module";
 import { env } from "./env.js";
 import { createFilesIpc } from "./ipc/files.ipc.js";
+import { createWindowIpc } from "./ipc/window.ipc.js";
 
 /**
  * Electron main process for MMX Studio.
@@ -18,9 +19,16 @@ function createWindow(): void {
     height: 900,
     minWidth: 960,
     minHeight: 640,
+    // Vite copies `public/favicon.png` next to the renderer bundle on build; in
+    // dev it still lives under the app's `public/` dir (two levels up from
+    // `out/main`). Sets the window and taskbar icon.
+    icon: join(__dirname, env.dev ? "../../public/favicon.png" : "../renderer/favicon.png"),
     backgroundColor: "#090d14",
     show: false,
     autoHideMenuBar: true,
+    // Frameless: the renderer draws its own title bar (see `TitleBar.tsx`) and
+    // drives min/maximize/close through the `window` IPC module.
+    frame: false,
     title: "MMX Studio",
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
@@ -46,6 +54,7 @@ app.whenReady().then(async () => {
   const ipc = createIpcContainer();
   await ipc.loadAll({
     files: createFilesIpc(),
+    window: createWindowIpc(),
   });
 
   createWindow();

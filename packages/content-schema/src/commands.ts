@@ -91,6 +91,42 @@ export function addObjects(
   };
 }
 
+/** One terrain edit: set the tile at a row-major `index` to `value` (a World.Tile). */
+export interface TileEdit {
+  index: number;
+  value: number;
+}
+
+/**
+ * Paint terrain tiles, capturing each cell's prior value so the whole stroke
+ * undoes as one entry. No-op cells (already the target value) are dropped, so an
+ * all-redundant stroke produces a command that changes nothing. Returns a fresh
+ * `tiles` array on execute/undo so terrain renderers keyed on identity redraw.
+ */
+export function setTiles(
+  doc: LevelDocument,
+  edits: readonly TileEdit[],
+  label = "Paint tiles",
+): EditorCommand {
+  const before: TileEdit[] = [];
+  const after: TileEdit[] = [];
+  for (const edit of edits) {
+    const prev = doc.tiles[edit.index] ?? 0;
+    if (prev === edit.value) continue;
+    before.push({ index: edit.index, value: prev });
+    after.push(edit);
+  }
+  const apply =
+    (list: readonly TileEdit[]) =>
+    (d: LevelDocument): LevelDocument => {
+      if (list.length === 0) return d;
+      const tiles = d.tiles.slice();
+      for (const { index, value } of list) tiles[index] = value;
+      return { ...d, tiles };
+    };
+  return { label, execute: apply(after), undo: apply(before) };
+}
+
 /**
  * Delete objects, capturing their original positions so undo restores order.
  * Takes the document at creation time so the removed instances are recoverable.

@@ -6,6 +6,7 @@ import {
   type IDockviewPanelProps,
 } from "dockview-react";
 import { editor } from "./app/useEditor.js";
+import { TitleBar } from "./components/TitleBar.js";
 import { Toolbar } from "./components/Toolbar.js";
 import { LeftSidebar } from "./components/LeftSidebar.js";
 import { Viewport } from "./components/Viewport.js";
@@ -89,11 +90,12 @@ export function App() {
 
   return (
     <RadixTooltip.Provider delayDuration={350} skipDelayDuration={200}>
-      <div className="grid grid-rows-[56px_minmax(0,1fr)] h-screen w-screen">
+      <div className="grid grid-rows-[32px_52px_minmax(0,1fr)] h-screen w-screen">
+        <TitleBar />
         <Toolbar />
         <main className="min-h-0 min-w-0 overflow-hidden bg-[#0d1017]">
           <DockviewReact
-            className="dockview-theme-dark"
+            className="dockview-theme-dark studio-workspace"
             components={dockComponents}
             onReady={onReady}
           />
