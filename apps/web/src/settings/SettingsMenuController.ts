@@ -2,7 +2,7 @@ import type { Container } from "pixi.js";
 import type { Action } from "@mmx/engine/core/Input.js";
 import { DEFAULT_WINDOW_SCALE } from "../DesktopBridge.js";
 import type { AppLifecycle } from "../runtime/AppLifecycle.js";
-import type { SoundEffects } from "../SoundEffects.js";
+import type { SoundEffects } from "@mmx/browser-audio";
 import { keyLabel, ROWS, SettingsMenuView } from "../ui/SettingsMenuView.js";
 import type { SettingsModel } from "./SettingsModel.js";
 

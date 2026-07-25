@@ -91,6 +91,10 @@ export class Scene {
         spawn.facing,
         enemySeed(seed, i),
       );
+      // Carry the authored entity iid through as the enemy's runtime identity, so
+      // an inspector can trace a live enemy back to the object that placed it.
+      enemy.runtimeId = spawn.id;
+      enemy.sourceEntityId = spawn.id;
       options.onEnemySpawned?.(enemy, i);
       this.stage.add(enemy);
     }

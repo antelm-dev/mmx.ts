@@ -2,6 +2,13 @@ import { Dash } from "./Dash.js";
 import type { Character } from "../Character.js";
 import { AIRDASH_DURATION, AIRDASH_MAX, AIRDASH_SPEED } from "../../core/constants.js";
 
+/** Typed tuning for {@link AirDash}, supplied by the loadout (Part 5). */
+export interface AirDashConfig {
+  speed?: number;
+  duration?: number;
+  maxAirdashes?: number;
+}
+
 /**
  * Port of AirDash.gd — a horizontal air dash with a limited count that refills on
  * land / wallslide / walljump. (The double-jump "AirJump" re-dash chain from the
@@ -11,17 +18,19 @@ export class AirDash extends Dash {
   readonly name = "AirDash";
   priority = 5;
 
-  max_airdashes = AIRDASH_MAX;
-  airdash_count = AIRDASH_MAX;
+  max_airdashes: number;
+  airdash_count: number;
   // AirDash/dash_particle is a *different* sheet (airdash.png at (-16, 4), 32fps),
   // which this port has not brought over — so no puff rather than the ground one.
   protected override smoke_fx: string | null = null;
   private initial_direction = 1;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: AirDashConfig = {}) {
     super(character);
-    this.horizontal_velocity = AIRDASH_SPEED;
-    this.dash_duration = AIRDASH_DURATION;
+    this.horizontal_velocity = config.speed ?? AIRDASH_SPEED;
+    this.dash_duration = config.duration ?? AIRDASH_DURATION;
+    this.max_airdashes = config.maxAirdashes ?? AIRDASH_MAX;
+    this.airdash_count = this.max_airdashes;
     character.events.on("land", () => this.resetCount());
     character.events.on("wallslide", () => this.resetCount());
     character.events.on("walljump", () => this.resetCount());

@@ -2,56 +2,39 @@ import { Character } from "./Character.js";
 import { World } from "./World.js";
 import { Input } from "../core/Input.js";
 
-import { Idle } from "./abilities/Idle.js";
-import { Walk } from "./abilities/Walk.js";
-import { Fall } from "./abilities/Fall.js";
-import { WallSlide } from "./abilities/WallSlide.js";
-import { Dash } from "./abilities/Dash.js";
-import { Jump } from "./abilities/Jump.js";
-import { DashJump } from "./abilities/DashJump.js";
-import { WallJump } from "./abilities/WallJump.js";
-import { DashWallJump } from "./abilities/DashWallJump.js";
-import { Shot } from "./abilities/Shot.js";
-import { Charge } from "./abilities/Charge.js";
 import { Damage } from "./abilities/Damage.js";
-import { Death } from "./abilities/Death.js";
 import { Intro } from "./abilities/Intro.js";
 import type { Actor } from "./Actor.js";
-import { AirDash } from "./abilities/AirDash.js";
+import { COMPILED_GAME_DATA } from "../data/index.js";
+import { buildPlayerLoadout } from "./loadout/PlayerLoadout.js";
+
+/** The loadout the default player is composed from — Player.tscn's ability list, as data. */
+export const DEFAULT_PLAYER_LOADOUT = "player.x";
 
 /**
- * The player "X" — port of Player.tscn's ability node list.
- *
- * Abilities are added in conflict-priority order (as the source Player.tscn lists
- * them). Locomotion priority tie-breaks resolve by this order; independent action
- * abilities (Shot, Charge) run concurrently with movement.
+ * The player "X" — composed from a compiled loadout ({@link CompiledLoadout})
+ * rather than a hand-built ability list. The loadout owns the ability set, their
+ * composition order (which tie-breaks locomotion priority), each ability's
+ * priority and layer (independent action vs. locomotion/reaction), and the
+ * arsenal. The default `player.x` loadout reproduces Player.tscn exactly.
  *
  * Extension points not ported here (documented in README): armor sets (Hermes/Icarus),
  * boss weapons, Ride Armor, subtanks, AirJump double-jump.
  */
 export class Player extends Character {
-  constructor(world: World, x: number, y: number, input: Input, seed?: number) {
+  constructor(
+    world: World,
+    x: number,
+    y: number,
+    input: Input,
+    seed?: number,
+    loadoutId: string = DEFAULT_PLAYER_LOADOUT,
+  ) {
     super(world, x, y, input, seed);
 
-    this.add(new Idle(this));
-    this.add(new Walk(this));
-    this.add(new Fall(this));
-    this.add(new WallSlide(this));
-    this.add(new Dash(this));
-    this.add(new AirDash(this));
-    this.add(new Jump(this));
-    this.add(new DashJump(this));
-    this.add(new WallJump(this));
-    this.add(new DashWallJump(this));
-
-    // high-priority event states (Damage.gd / PlayerDeath.gd, Player.tscn)
-    this.add(new Intro(this));
-    this.add(new Damage(this));
-    this.add(new Death(this));
-
-    // independent action layer
-    this.add(new Shot(this));
-    this.add(new Charge(this));
+    const loadout = COMPILED_GAME_DATA.loadouts.get(loadoutId);
+    if (!loadout) throw new Error(`Player: unknown loadout '${loadoutId}'.`);
+    buildPlayerLoadout(this, loadout, COMPILED_GAME_DATA);
   }
 
   /** Actor.damage routed through Damage.gd's state instead of reducing health inline. */

@@ -30,6 +30,14 @@ export class Character extends AbilityUser {
 
   projectiles: Projectile[] = [];
 
+  /**
+   * Monotonic counter behind each projectile's {@link Projectile.runtimeId}.
+   * Deterministic (it draws no randomness and never resets mid-run), so a shot
+   * fired at the same frame of a replay gets the same id — which is what lets a
+   * tool track one projectile across a rewind.
+   */
+  private projectileSeq = 0;
+
   /** WeaponChanger.gd's selection — the buster (slot 0) until the player cycles. */
   activeWeapon: WeaponId = WEAPON_ORDER[0];
   /**
@@ -95,12 +103,22 @@ export class Character extends AbilityUser {
     return live < cap;
   }
 
+  /**
+   * Register a freshly-built projectile: stamp its deterministic runtime id and
+   * add it to the live list. Kept separate from construction so the id is
+   * assigned without touching the {@link Projectile} constructor's RNG draws.
+   */
+  private trackProjectile(shot: Projectile): void {
+    shot.runtimeId = `projectile:${this.projectileSeq++}`;
+    this.projectiles.push(shot);
+  }
+
   /** Spawn a buster shot from the cannon (Shot/Charge -> Weapon.fire). */
   spawnBuster(charge: number): void {
     if (!this.can_shoot(charge)) return;
     const muzzle = this.get_shot_position();
     const dir = this.get_facing_direction();
-    this.projectiles.push(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
+    this.trackProjectile(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
     this.events.emit("shot_fired", charge);
   }
 
@@ -138,7 +156,7 @@ export class Character extends AbilityUser {
     if (!config) return;
     const muzzle = this.get_shot_position();
     const dir = this.get_facing_direction();
-    this.projectiles.push(new Projectile(muzzle.x, muzzle.y, dir, 0, this.rng, this.activeWeapon));
+    this.trackProjectile(new Projectile(muzzle.x, muzzle.y, dir, 0, this.rng, this.activeWeapon));
     const ammo = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
     this.subWeaponAmmo.set(this.activeWeapon, Math.max(0, ammo - config.ammoCost));
     this.events.emit("shot_fired", 0);

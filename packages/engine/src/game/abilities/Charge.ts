@@ -18,6 +18,14 @@ const CHARGE_ANIMATION = uniformClip(
   true,
 );
 
+/** Typed charge thresholds for {@link Charge}, supplied by the loadout (Part 5). */
+export interface ChargeConfig {
+  minTime?: number;
+  level3?: number;
+  level4?: number;
+  maxTime?: number;
+}
+
 /**
  * Port of Charge.gd (buster) — holding fire accumulates charge; releasing above
  * the minimum threshold fires a charged shot whose level depends on hold time.
@@ -28,6 +36,12 @@ export class Charge extends Ability {
   override independent = true;
   charged_time = 0;
 
+  /** Charge thresholds (seconds) — Charge.gd's minimum/level_3/level_4/maximum. */
+  private readonly min_time: number;
+  private readonly level_3: number;
+  private readonly level_4: number;
+  private readonly max_time: number;
+
   /** VFX latches — Charge.gd's `charging` / `mid_charge` / `max_charge`. */
   charging = false;
   mid_charge = false;
@@ -35,9 +49,13 @@ export class Charge extends Ability {
 
   private readonly vfxAnimation = new AnimationCursor();
 
-  constructor(character: Character) {
+  constructor(character: Character, config: ChargeConfig = {}) {
     super(character);
     this.actions = ["fire"];
+    this.min_time = config.minTime ?? CHARGE_MIN_TIME;
+    this.level_3 = config.level3 ?? CHARGE_LEVEL_3;
+    this.level_4 = config.level4 ?? CHARGE_LEVEL_4;
+    this.max_time = config.maxTime ?? CHARGE_MAX_TIME;
     this.vfxAnimation.play(CHARGE_ANIMATION);
   }
 
@@ -65,7 +83,7 @@ export class Charge extends Ability {
     if (this.character.get_action_pressed("fire")) {
       this.charge(dt);
     } else {
-      if (this.charged_time > CHARGE_MIN_TIME) {
+      if (this.charged_time > this.min_time) {
         this.character.spawnBuster(this.get_charge_level());
         // Charge owns the projectile but not the pose — Shot does. Without this
         // the charged shot leaves the cannon while X is still standing neutral,
@@ -84,10 +102,10 @@ export class Charge extends Ability {
    * engine knowing anything about drawing.
    */
   private charge(dt: number): void {
-    if (this.charged_time < CHARGE_MAX_TIME) this.charged_time += dt;
+    if (this.charged_time < this.max_time) this.charged_time += dt;
     if (this.charging) this.vfxAnimation.advance(dt);
 
-    if (this.charged_time > CHARGE_MIN_TIME && !this.charging) {
+    if (this.charged_time > this.min_time && !this.charging) {
       this.charging = true;
       this.vfxAnimation.seek(0);
       this.character.events.emit("charge_started");
@@ -98,7 +116,7 @@ export class Charge extends Ability {
     }
     // The level-4 threshold no longer selects a projectile, but it still marks
     // where the original switches to the super-charge tint and particle.
-    if (this.charged_time > CHARGE_LEVEL_4 && !this.max_charge) {
+    if (this.charged_time > this.level_4 && !this.max_charge) {
       this.max_charge = true;
       this.character.events.emit("charge_max");
     }
@@ -110,8 +128,8 @@ export class Charge extends Ability {
    * projectile anyway, so it would clamp straight back onto the charged shot.
    */
   get_charge_level(): number {
-    if (this.charged_time < CHARGE_MIN_TIME) return 0;
-    if (this.charged_time < CHARGE_LEVEL_3) return 1;
+    if (this.charged_time < this.min_time) return 0;
+    if (this.charged_time < this.level_3) return 1;
     return 2;
   }
 

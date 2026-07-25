@@ -232,7 +232,7 @@ export class Renderer {
    * Play mode builds a fresh one per session and disposes it on stop.
    */
   destroy(): void {
-    this.app.destroy(true, { children: true });
+    this.app.destroy({ removeView: true }, { children: true });
   }
 
   /** Bring the scene graph in line with the simulation, then draw it. */

@@ -1,6 +1,6 @@
 import { LEVEL_CATALOG } from "@mmx/engine/game/level.js";
+import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
 import { DesktopBridge } from "./DesktopBridge.js";
-import { SoundEffects } from "./SoundEffects.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
 import { AnimationInspector } from "./debug/AnimationInspector.js";
 import { DebugSession } from "./debug/DebugSession.js";
@@ -25,6 +25,7 @@ import { loadUiFont } from "./ui/font.js";
  */
 
 const sounds = new SoundEffects();
+const gameplaySounds = new GameplaySounds(sounds);
 const desktop = new DesktopBridge();
 
 // Forward-declared: each is referenced from a callback constructed before it
@@ -38,7 +39,7 @@ let input: InputBinding;
 const model = new SettingsModel({ desktop, onNotice: (message) => debug.notify(message) });
 
 const presenter = new ScenePresenter({
-  sounds,
+  sounds: gameplaySounds,
   onPlayerDeath: () => debug.restartLevel(),
   onWeaponChanged: (weapon) => debug.notify(`weapon: ${weapon}`),
 });

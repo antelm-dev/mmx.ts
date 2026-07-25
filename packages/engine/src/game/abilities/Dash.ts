@@ -2,6 +2,13 @@ import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
 import { DASH_DURATION, DASH_LEEWAY, DASH_SPEED } from "../../core/constants.js";
 
+/** Typed tuning for {@link Dash}, supplied by the loadout (Part 5). */
+export interface DashConfig {
+  speed?: number;
+  duration?: number;
+  leeway?: number;
+}
+
 /**
  * Port of Dash.gd — grounded dash with a shrunk hitbox and an input buffer.
  * Dashing off a ledge ends the dash and starts a fast "dashfall".
@@ -12,8 +19,8 @@ export class Dash extends Movement {
   override animation = "dash"; // Player.tscn (AirDash inherits it — there is a
   // separate `airdash` clip in the atlas, but X's AirDash node does not use it)
 
-  dash_duration = DASH_DURATION;
-  leeway = DASH_LEEWAY;
+  dash_duration: number;
+  leeway: number;
   protected left_ground_timer = 0;
   protected can_dash = true;
   /**
@@ -24,10 +31,12 @@ export class Dash extends Movement {
   protected smoke_fx: string | null = "dash";
   private emitted_smoke = false;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: DashConfig = {}) {
     super(character);
     this.actions = ["dash"];
-    this.horizontal_velocity = DASH_SPEED;
+    this.horizontal_velocity = config.speed ?? DASH_SPEED;
+    this.dash_duration = config.duration ?? DASH_DURATION;
+    this.leeway = config.leeway ?? DASH_LEEWAY;
   }
 
   override get_activation_leeway_time(): number {

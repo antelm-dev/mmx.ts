@@ -6,7 +6,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./core/*.js": "./src/core/*.ts",
-    "./game/*.js": "./src/game/*.ts"
+    "./game/*.js": "./src/game/*.ts",
+    "./content": "./src/content/index.ts",
+    "./content/*.js": "./src/content/*.ts",
+    "./data": "./src/data/index.ts",
+    "./data/*.js": "./src/data/*.ts",
+    "./behaviors": "./src/behaviors/index.ts",
+    "./behaviors/*.js": "./src/behaviors/*.ts",
+    "./tooling": "./src/tooling/index.ts",
+    "./tooling/*.js": "./src/tooling/*.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -91,6 +91,122 @@ export function addObjects(
   };
 }
 
+/** One terrain edit: set the tile at a row-major `index` to `value` (a World.Tile). */
+export interface TileEdit {
+  index: number;
+  value: number;
+}
+
+/**
+ * Paint terrain tiles, capturing each cell's prior value so the whole stroke
+ * undoes as one entry. No-op cells (already the target value) are dropped, so an
+ * all-redundant stroke produces a command that changes nothing. Returns a fresh
+ * `tiles` array on execute/undo so terrain renderers keyed on identity redraw.
+ */
+export function setTiles(
+  doc: LevelDocument,
+  edits: readonly TileEdit[],
+  label = "Paint tiles",
+): EditorCommand {
+  const before: TileEdit[] = [];
+  const after: TileEdit[] = [];
+  for (const edit of edits) {
+    const prev = doc.tiles[edit.index] ?? 0;
+    if (prev === edit.value) continue;
+    before.push({ index: edit.index, value: prev });
+    after.push(edit);
+  }
+  const apply =
+    (list: readonly TileEdit[]) =>
+    (d: LevelDocument): LevelDocument => {
+      if (list.length === 0) return d;
+      const tiles = d.tiles.slice();
+      for (const { index, value } of list) tiles[index] = value;
+      return { ...d, tiles };
+    };
+  return { label, execute: apply(after), undo: apply(before) };
+}
+
+/** Editable level ("room") settings: identity, grid pitch, and terrain extent. */
+export interface LevelSettings {
+  name: string;
+  gridSize: number;
+  cols: number;
+  rows: number;
+}
+
+/** Crop/pad row-major terrain to new dimensions, keeping cells by (col, row). */
+function reshapeTiles(
+  tiles: readonly number[],
+  oldCols: number,
+  oldRows: number,
+  newCols: number,
+  newRows: number,
+): number[] {
+  const out = new Array(newCols * newRows).fill(0);
+  const copyRows = Math.min(oldRows, newRows);
+  const copyCols = Math.min(oldCols, newCols);
+  for (let r = 0; r < copyRows; r++)
+    for (let c = 0; c < copyCols; c++) out[r * newCols + c] = tiles[r * oldCols + c] ?? 0;
+  return out;
+}
+
+/** Re-key slope profiles onto the resized grid, dropping any now out of bounds. */
+function remapSlopes(
+  slopes: LevelDocument["slopes"],
+  oldCols: number,
+  newCols: number,
+  newRows: number,
+): LevelDocument["slopes"] {
+  if (!slopes) return undefined;
+  const out: Record<number, [number, number]> = {};
+  for (const [key, value] of Object.entries(slopes)) {
+    const index = Number(key);
+    const col = index % oldCols;
+    const row = Math.floor(index / oldCols);
+    if (col < newCols && row < newRows) out[row * newCols + col] = value;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Edit the level's name, grid pitch and dimensions in one reversible step. When
+ * the tile extent changes the terrain is reshaped (cropped/padded with empty)
+ * and slopes are re-keyed, so a shrink discards off-grid cells rather than
+ * corrupting the row-major layout. Takes the document at creation time so both
+ * directions of the change are fully captured.
+ */
+export function setLevelSettings(doc: LevelDocument, next: LevelSettings): EditorCommand {
+  const before: LevelSettings = {
+    name: doc.name,
+    gridSize: doc.gridSize,
+    cols: doc.cols,
+    rows: doc.rows,
+  };
+  const resized = next.cols !== doc.cols || next.rows !== doc.rows;
+  const afterTiles = resized
+    ? reshapeTiles(doc.tiles, doc.cols, doc.rows, next.cols, next.rows)
+    : doc.tiles;
+  const afterSlopes = resized ? remapSlopes(doc.slopes, doc.cols, next.cols, next.rows) : doc.slopes;
+  const beforeTiles = doc.tiles;
+  const beforeSlopes = doc.slopes;
+
+  const apply =
+    (settings: LevelSettings, tiles: number[], slopes: LevelDocument["slopes"]) =>
+    (d: LevelDocument): LevelDocument => {
+      const out: LevelDocument = { ...d, ...settings, tiles };
+      if (slopes) out.slopes = slopes;
+      else delete out.slopes;
+      return out;
+    };
+
+  return {
+    label: "Level settings",
+    execute: apply(next, afterTiles, afterSlopes),
+    undo: apply(before, beforeTiles, beforeSlopes),
+  };
+}
+
 /**
  * Delete objects, capturing their original positions so undo restores order.
  * Takes the document at creation time so the removed instances are recoverable.

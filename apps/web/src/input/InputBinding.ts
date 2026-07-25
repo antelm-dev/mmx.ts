@@ -3,7 +3,7 @@ import { packInput } from "@mmx/engine/core/Replay.js";
 import { BINDABLE_ACTIONS, type KeyBindings } from "../DesktopBridge.js";
 import type { DebugSession } from "../debug/DebugSession.js";
 import { GamepadInput } from "../Gamepad.js";
-import type { SoundEffects } from "../SoundEffects.js";
+import type { SoundEffects } from "@mmx/browser-audio";
 
 /**
  * Keyboard and gamepad, folded down to the same {@link Action} set and routed

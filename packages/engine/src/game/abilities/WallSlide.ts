@@ -1,5 +1,12 @@
 import { Movement } from "../ability/Movement.js";
+import type { Character } from "../Character.js";
 import { WALLSLIDE_SPEED, WALLSLIDE_START_DELAY } from "../../core/constants.js";
+
+/** Typed tuning for {@link WallSlide}, supplied by the loadout (Part 5). */
+export interface WallSlideConfig {
+  speed?: number;
+  startDelay?: number;
+}
 
 /**
  * Port of Wallslide.gd — cling to a wall while pressing into it, then slide.
@@ -10,10 +17,16 @@ export class WallSlide extends Movement {
   priority = 3;
   override animation = "slide"; // Player.tscn (the clip is `slide`, not `wallslide`)
 
-  start_delay = WALLSLIDE_START_DELAY;
+  start_delay: number;
   block_timer = 0;
-  private slide_speed = WALLSLIDE_SPEED;
+  private readonly slide_speed: number;
   private wallgrab_direction = 0;
+
+  constructor(character: Character, config: WallSlideConfig = {}) {
+    super(character);
+    this.slide_speed = config.speed ?? WALLSLIDE_SPEED;
+    this.start_delay = config.startDelay ?? WALLSLIDE_START_DELAY;
+  }
 
   override should_execute_on_hold(): boolean {
     return true;

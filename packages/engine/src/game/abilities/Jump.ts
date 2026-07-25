@@ -2,6 +2,14 @@ import { Fall } from "./Fall.js";
 import type { Character } from "../Character.js";
 import { JUMP_FULLSPEED_PROPORTION, JUMP_LEEWAY, JUMP_MAX_TIME } from "../../core/constants.js";
 
+/** Typed tuning for {@link Jump}, supplied by the loadout (Part 5). */
+export interface JumpConfig {
+  velocity?: number;
+  maxTime?: number;
+  leeway?: number;
+  fullspeedProportion?: number;
+}
+
 /**
  * Port of Jump.gd — variable-height jump (extends Fall).
  * Ascends at full speed for a fraction of max_jump_time, then decays; releasing
@@ -18,18 +26,22 @@ export class Jump extends Fall {
     if (this.animation) this.play_animation(this.animation);
   }
 
-  max_jump_time = JUMP_MAX_TIME;
-  leeway_time = JUMP_LEEWAY;
-  fullspeed_proportion = JUMP_FULLSPEED_PROPORTION;
+  max_jump_time: number;
+  leeway_time: number;
+  fullspeed_proportion: number;
   minimum_upwards_time = 0.0;
 
   protected fullspeed_time = 0;
   protected slowdown_time = 0;
   protected stopped_input = false;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: JumpConfig = {}) {
     super(character);
     this.actions = ["jump"];
+    if (config.velocity !== undefined) this.jump_velocity = config.velocity;
+    this.max_jump_time = config.maxTime ?? JUMP_MAX_TIME;
+    this.leeway_time = config.leeway ?? JUMP_LEEWAY;
+    this.fullspeed_proportion = config.fullspeedProportion ?? JUMP_FULLSPEED_PROPORTION;
     character.events.on("headbump", () => this.on_headbump());
   }
 

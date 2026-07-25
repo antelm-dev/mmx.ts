@@ -1,4 +1,5 @@
 import type { Container } from "pixi.js";
+import type { GameplaySounds } from "@mmx/browser-audio";
 import { BODY_HALF_H, DASH_FX_OFFSET_X, DASH_FX_OFFSET_Y } from "@mmx/engine/core/constants.js";
 import type { Enemy } from "@mmx/engine/game/Enemy.js";
 import type { LifeCapsule, WeaponCapsule } from "@mmx/engine/game/Pickup.js";
@@ -21,15 +22,6 @@ import {
   spriteSnapshot,
 } from "@mmx/renderer-pixi";
 import { DebugOverlay } from "../debug/DebugOverlay.js";
-import type { SoundEffects } from "../SoundEffects.js";
-
-/**
- * MMX - Charge.wav.import declares a forward loop over PCM frames 51645..56497
- * of a 32 kHz file — the tail of the hum, which is what should sustain while the
- * shot holds. Kept in seconds because that is what the Web Audio source wants
- * and the decoded buffer no longer carries the file's rate.
- */
-const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
 
 /**
  * Everything about drawing a scene: the {@link Renderer} itself, the
@@ -43,7 +35,7 @@ const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
  * {@link attachEnemy} for every enemy a fresh scene spawns.
  */
 export interface ScenePresenterOptions {
-  sounds: SoundEffects;
+  sounds: GameplaySounds;
   /**
    * Death's restart_delay is timed to the death sample, so by the time it
    * fires the death sound has already finished playing out.
@@ -60,7 +52,7 @@ export class ScenePresenter {
   private readonly debris = new EnemyDebris();
   private readonly overlay = new DebugOverlay();
   private renderer: Renderer | null = null;
-  private readonly sounds: SoundEffects;
+  private readonly sounds: GameplaySounds;
 
   constructor(private readonly options: ScenePresenterOptions) {
     this.sounds = options.sounds;
@@ -96,15 +88,12 @@ export class ScenePresenter {
    */
   attach(scene: Scene): void {
     this.attachPlayer(scene.player);
+    this.sounds.attachScene(scene);
     this.trail.clear();
     this.smoke.clear();
     this.explosion.clear();
     this.debris.clear();
     this.overlay.reset();
-    // Sustained sounds outlive the frame that started them, so a restart or replay
-    // load must not leave a loop from the previous scene playing.
-    this.sounds.stop("wallslide");
-    this.sounds.stop("charge");
     this.renderer?.setStage(scene.stage);
   }
 
@@ -119,52 +108,13 @@ export class ScenePresenter {
     // Godot originals do, and the renderer only draws whatever frame that leaves showing.
     player.loadAnimations(animData as unknown as AnimData);
 
-    player.events.on("ability_started", (name: string) => {
-      if (["Jump", "DashJump", "WallJump", "DashWallJump"].includes(name)) {
-        this.sounds.play("jump", { rate: [1, 1.1] });
-      } else if (name === "Dash" || name === "AirDash") {
-        this.sounds.play("dash", { db: -0.676, rate: [1, 1.1] });
-      } else if (name === "WallSlide") {
-        // Keep the scrape alive for as long as the sustained ability is active.
-        // It remains routed through SoundEffects' master gain, so changing the
-        // volume while wall-sliding takes effect immediately.
-        this.sounds.play("wallslide", { loop: true, rate: [1, 1.1] });
-      } else if (name === "Damage") {
-        this.sounds.play("damage", { rate: [1, 1.1] });
-      } else if (name === "Death") {
-        this.sounds.play("playerDeath");
-      } else if (name === "Intro") {
-        this.sounds.play("introAppear", { db: -14 });
-      }
-    });
-    player.events.on("ability_end", (name: string) => {
-      if (name === "WallSlide") this.sounds.stop("wallslide");
-    });
     player.events.on("death", () => this.options.onPlayerDeath());
-    // Intro.gd's thunder cue: the armor-equip clang partway through beam_equip.
-    player.events.on("x_appear", () => this.sounds.play("introThunder", { db: -9, rate: 1.19 }));
-    player.events.on("land", () => this.sounds.play("land", { db: -5.333, rate: [1, 1.1] }));
-    // PickUp.do_heal(): one "Life Gain" blip per HP tick a capsule applies.
-    player.events.on("healed", () => this.sounds.play("heal", { db: -10 }));
-    player.events.on("shot_fired", (charge: number) => {
-      if (player.activeWeapon === "dark_arrow") this.sounds.play("darkArrow", { rate: [0.95, 1] });
-      else if (charge <= 0) this.sounds.play("lemon", { rate: [0.95, 1] });
-      else if (charge === 1) this.sounds.play("mediumShot", { rate: [0.95, 1] });
-      else this.sounds.play("chargedShot", { rate: [0.95, 1] });
-    });
     // WeaponChanger.gd — no in-game HUD icon bar yet, so the switch is surfaced
     // through the same debug-notify channel as other transient player feedback
     // (see main.ts's gamepad-connected message).
     player.events.on("weapon_changed", (weapon: string) => {
       this.options.onWeaponChanged(weapon);
     });
-    player.events.on("charge_started", () => {
-      this.sounds.play("charge", { db: -13.5, loop: true, loopSeconds: CHARGE_LOOP });
-    });
-    // Topping out is a visual-only cue: the hum just keeps looping. Layering a
-    // second sample over it only read as louder, not as a threshold being crossed.
-    player.events.on("charge_stopped", () => this.sounds.stop("charge"));
-
     // --- dash kick-up smoke ---
     // Unlike the trail this is not sampled: Dash.gd emits a single puff at the moment it
     // pushes off, so the ability announces it and the effect is spawned from the signal.
@@ -189,15 +139,8 @@ export class ScenePresenter {
     // Same split as the player's: clip data is engine state, because the abilities
     // read it (Hide waits for "open" to finish before it advances).
     enemy.loadAnimations(enemyAnims.actors[enemy.stats.sheet] as unknown as AnimData);
-    enemy.events.on("damage", () => this.sounds.play("enemyHit", { db: -6.832 }));
-    enemy.events.on("shield_hit", () => this.sounds.play("shieldHit", { db: -6.832 }));
-    enemy.events.on("guard_break", () => {
-      // EnemyShield plays its deflection sound before EnemyStun's break effect.
-      this.sounds.play("shieldHit", { db: -6.832 });
-      this.sounds.play("guardBreak", { db: -8, rate: 0.78 });
-    });
+    this.sounds.attachEnemy(enemy);
     enemy.events.on("zero_health", () => {
-      this.sounds.play("enemyDeath", { db: -4.267 });
       // EnemyDeath._Setup: the burst and the debris both start on the same tick
       // the death sequence takes over, pinned to where the enemy died rather
       // than following it — see EnemyExplosion/EnemyDebris.

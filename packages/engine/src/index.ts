@@ -7,6 +7,8 @@ export * from "./core/Rng.js";
 export * from "./core/Vec2.js";
 
 export * from "./game/Actor.js";
+export * from "./game/AbilityUser.js";
+export * from "./game/Identity.js";
 export * from "./game/Animation.js";
 export * from "./game/Camera.js";
 export * from "./game/Enemy.js";
@@ -19,3 +21,5 @@ export * from "./game/Scene.js";
 export * from "./game/Stage.js";
 export * from "./game/World.js";
 export * from "./game/level.js";
+
+export * from "./tooling/index.js";
