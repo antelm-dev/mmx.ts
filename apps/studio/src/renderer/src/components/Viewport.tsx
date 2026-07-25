@@ -9,6 +9,7 @@ import {
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { cx, ctxItemCls, menu } from "../ui.js";
+import { PlaytestDebugger } from "./PlaytestDebugger.js";
 
 const ctxCat = "text-[10px] uppercase tracking-[0.5px] text-muted pt-2 px-3 pb-0.5";
 
@@ -20,9 +21,9 @@ interface PlaceGroup {
 
 /**
  * Hosts the Pixi editing surface (and, in Play mode, the game renderer's canvas).
- * The heavy lifting stays in the framework-agnostic {@link EditorViewport} /
- * {@link PlaySession}; this component only supplies the host element and the
- * empty-cell placement menu.
+ * The heavy lifting stays in the framework-agnostic {@link EditorViewport} and
+ * the playtest controller; this component only supplies the host element, the
+ * empty-cell placement menu, and — in Play mode — the {@link PlaytestDebugger}.
  */
 export function Viewport() {
   const snap = useEditorSnapshot();
@@ -110,9 +111,12 @@ export function Viewport() {
           </>
         )}
         {mode === "play" && (
-          <div className="absolute z-[3] text-[11px] font-mono pointer-events-none top-3 left-1/2 -translate-x-1/2 bg-[rgba(76,141,255,0.15)] border border-[#4c8dff] text-menu-fg-hover rounded-[20px] px-3.5 py-[5px]">
-            ● Play mode — WASD / Arrows move · Space jump · X dash · C fire · Esc to stop
-          </div>
+          <>
+            <PlaytestDebugger />
+            <div className="absolute z-[3] text-[10.5px] font-mono pointer-events-none bottom-3 left-1/2 -translate-x-1/2 bg-[rgba(76,141,255,0.15)] border border-[#4c8dff] text-menu-fg-hover rounded-[20px] px-3.5 py-[5px]">
+              ● Play — WASD/Arrows move · Space jump · X dash · C fire · Esc to stop
+            </div>
+          </>
         )}
       </div>
 

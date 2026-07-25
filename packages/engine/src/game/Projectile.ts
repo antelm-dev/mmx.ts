@@ -52,6 +52,13 @@ export class Projectile {
   phase: ShotPhase = "live";
   alive = true;
 
+  /**
+   * Deterministic runtime identity, assigned by the {@link Character} that fires
+   * the shot from a monotonic counter — never a random UUID, so it stays stable
+   * across a replay. Empty for a shot built standalone in a test.
+   */
+  runtimeId = "";
+
   private countdown = 0;
 
   constructor(

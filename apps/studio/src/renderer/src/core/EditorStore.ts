@@ -1,6 +1,6 @@
 import {
   History,
-  validateDocument,
+  validateLevelDocument,
   type EditorCommand,
   type LevelDocument,
   type ValidationResult,
@@ -180,7 +180,7 @@ export class EditorStore {
   // --- Derived ---
 
   validate(): ValidationResult {
-    return validateDocument(this.state.document);
+    return validateLevelDocument(this.state.document);
   }
 
   /** Snap a world coordinate to the grid when snapping is on. */

@@ -30,6 +30,14 @@ export class Enemy extends AbilityUser {
   readonly ai: EnemyAI;
   readonly rng: Rng;
 
+  /**
+   * Stable runtime identity. For an enemy spawned from an authored entity both
+   * are the entity's iid, set by {@link Scene} at spawn; a bare `new Enemy` for
+   * a test leaves them at their defaults.
+   */
+  runtimeId = "";
+  sourceEntityId?: string;
+
   /** The player, while inside the vision box; null otherwise (AI.gd `target`). */
   target: Actor | null = null;
 

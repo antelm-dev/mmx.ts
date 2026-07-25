@@ -13,7 +13,11 @@ import {
   setTileAt,
 } from "../core/actions.js";
 import { EditorViewport } from "../core/EditorViewport.js";
-import { PlaySession } from "../core/PlaySession.js";
+import {
+  PlaytestController,
+  STOPPED_PLAYTEST,
+  type PlaytestSnapshot,
+} from "../core/playtest/PlaytestController.js";
 import {
   createFileAccess,
   parseDocument,
@@ -49,7 +53,9 @@ export class EditorController {
 
   private readonly fileAccess: FileAccess = createFileAccess();
   private viewport: EditorViewport | null = null;
-  private play: PlaySession | null = null;
+  private play: PlaytestController | null = null;
+  /** Bumped on every startPlay so an async renderer creation can detect it was superseded. */
+  private playToken = 0;
   private host: HTMLElement | null = null;
 
   private savedView: { zoom: number; viewportPosition: { x: number; y: number } } | null = null;
@@ -57,6 +63,10 @@ export class EditorController {
 
   private snapshot: EditorSnapshot;
   private readonly listeners = new Set<() => void>();
+
+  /** Playtest/debugger state, kept out of {@link EditorStore} and the authored document. */
+  private playtestSnapshot: PlaytestSnapshot = STOPPED_PLAYTEST;
+  private readonly playtestListeners = new Set<() => void>();
 
   constructor() {
     this.snapshot = this.build("open");
@@ -75,6 +85,20 @@ export class EditorController {
 
   private emit(): void {
     for (const fn of this.listeners) fn();
+  }
+
+  // ---------- Playtest React binding ----------
+
+  subscribePlaytest = (fn: () => void): (() => void) => {
+    this.playtestListeners.add(fn);
+    return () => this.playtestListeners.delete(fn);
+  };
+
+  getPlaytestSnapshot = (): PlaytestSnapshot => this.playtestSnapshot;
+
+  private setPlaytestSnapshot(snapshot: PlaytestSnapshot): void {
+    this.playtestSnapshot = snapshot;
+    for (const fn of this.playtestListeners) fn();
   }
 
   private computeTitle(): string {
@@ -263,13 +287,31 @@ export class EditorController {
     this.savedView = { zoom: state.zoom, viewportPosition: { ...state.viewportPosition } };
     this.savedSelection = [...state.selectedIds];
 
+    const token = ++this.playToken;
     this.store.setMode("play");
     this.viewport?.setVisible(false);
     try {
-      this.play = await PlaySession.start(this.host, state.document, (message) => {
-        this.toast(`Play error: ${message}`);
-        this.stopPlay();
+      const controller = await PlaytestController.start(this.host, state.document, {
+        onSnapshot: (snapshot) => {
+          if (token !== this.playToken) return;
+          this.setPlaytestSnapshot(snapshot);
+        },
+        onError: (message) => {
+          if (token !== this.playToken) return;
+          this.toast(`Play error: ${message}`);
+          this.stopPlay();
+        },
+        onExitToObject: (sourceEntityId) => {
+          if (token !== this.playToken) return;
+          this.stopPlay();
+          this.focusObject(sourceEntityId);
+        },
       });
+      if (token !== this.playToken || this.store.get().mode !== "play") {
+        controller.stop();
+        return;
+      }
+      this.play = controller;
     } catch (error) {
       this.toast(`Could not start Play: ${error instanceof Error ? error.message : String(error)}`);
       this.stopPlay();
@@ -277,13 +319,39 @@ export class EditorController {
   }
 
   private stopPlay(): void {
+    this.playToken++;
     this.play?.stop();
     this.play = null;
+    this.setPlaytestSnapshot(STOPPED_PLAYTEST);
     this.store.setMode("edit");
     this.viewport?.setVisible(true);
     if (this.savedView) this.store.setView(this.savedView.zoom, this.savedView.viewportPosition);
     this.store.select(this.savedSelection);
     this.viewport?.redraw();
+  }
+
+  // ---------- Playtest debugger commands ----------
+
+  playtestTogglePause(): void {
+    this.play?.togglePause();
+  }
+  playtestStep(): void {
+    this.play?.step();
+  }
+  playtestSetCheckpoint(): void {
+    this.play?.setCheckpoint();
+  }
+  playtestRestartCheckpoint(): void {
+    this.play?.restartCheckpoint();
+  }
+  playtestRestartLevel(): void {
+    this.play?.restartLevel();
+  }
+  playtestSelect(runtimeId: string | null): void {
+    this.play?.select(runtimeId);
+  }
+  playtestFocusSource(): void {
+    this.play?.focusSelectedSource();
   }
 
   // ---------- Keyboard ----------
@@ -296,6 +364,21 @@ export class EditorController {
       if (e.code === "Escape" || (mod && e.code === "Enter")) {
         e.preventDefault();
         this.togglePlay();
+        return;
+      }
+      // Debugger shortcuts. preventDefault keeps F8/F10 from triggering any
+      // browser/Electron devtools or menu default.
+      if (e.code === "F8") {
+        e.preventDefault();
+        if (mod) this.playtestSetCheckpoint();
+        else if (e.shiftKey) this.playtestRestartCheckpoint();
+        else this.playtestTogglePause();
+        return;
+      }
+      if (e.code === "F10") {
+        e.preventDefault();
+        this.playtestStep();
+        return;
       }
       return;
     }

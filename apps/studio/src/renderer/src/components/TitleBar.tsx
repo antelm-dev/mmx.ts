@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Minus, Square, Copy, X } from "lucide-react";
-import { cx } from "../ui.js";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Check, Minus, Square, Copy, X } from "lucide-react";
+import { cx, ctxItemCls, menu } from "../ui.js";
+import { PANELS, togglePanel, useOpenPanelIds } from "../app/dock.js";
 
 /** Shorthand for the frameless-window IPC surface exposed by the preload. */
 const controls = () => window.studio?.window;
@@ -29,7 +31,7 @@ export function TitleBar() {
 
   return (
     <div className="flex items-stretch h-8 pl-3 bg-[#0b0e15] border-b border-border select-none [-webkit-app-region:drag]">
-      <div className="flex items-center gap-2 flex-1 min-w-0 text-[11.5px] font-semibold tracking-[0.3px] text-fg-3">
+      <div className="flex items-center gap-2 min-w-0 text-[11.5px] font-semibold tracking-[0.3px] text-fg-3">
         <img
           src={`${import.meta.env.BASE_URL}favicon.png`}
           alt=""
@@ -39,6 +41,12 @@ export function TitleBar() {
           MMX <span className="text-fg-2">Studio</span>
         </span>
       </div>
+
+      <div className="flex items-stretch ml-2 [-webkit-app-region:no-drag]">
+        <ViewMenu />
+      </div>
+
+      <div className="flex-1" />
 
       <div className="flex items-stretch [-webkit-app-region:no-drag]">
         <ControlButton label="Minimize" onClick={() => void controls()?.minimize()}>
@@ -55,6 +63,48 @@ export function TitleBar() {
         </ControlButton>
       </div>
     </div>
+  );
+}
+
+/**
+ * Menubar "View" dropdown: a checkbox per workspace panel that opens it when
+ * closed and closes it when open. Checks stay in sync with the live dock, so
+ * closing a panel via its tab × also unticks it here. Selecting an item keeps
+ * the menu open (preventDefault) so several panels can be toggled in one go.
+ */
+function ViewMenu() {
+  const open = useOpenPanelIds();
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          className="inline-flex items-center h-full px-2.5 text-[11.5px] font-medium text-fg-3 hover:bg-hover hover:text-fg data-[state=open]:bg-hover data-[state=open]:text-fg transition-colors duration-100"
+          aria-label="View menu"
+        >
+          View
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content className={menu} sideOffset={2} align="start">
+          {PANELS.map((p) => (
+            <DropdownMenu.CheckboxItem
+              key={p.id}
+              className={ctxItemCls(false)}
+              checked={open.includes(p.id)}
+              onSelect={(e) => e.preventDefault()}
+              onCheckedChange={() => togglePanel(p.id)}
+            >
+              <span className="inline-flex w-3.5 justify-center flex-none">
+                <DropdownMenu.ItemIndicator>
+                  <Check size={13} />
+                </DropdownMenu.ItemIndicator>
+              </span>
+              {p.title}
+            </DropdownMenu.CheckboxItem>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
