@@ -12,18 +12,29 @@ import {
   type ValidationIssue,
 } from "@mmx/content-schema";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
+import { cx, scroll } from "../ui.js";
 
 interface Kv {
   k: string;
   v: string;
 }
 
+const sectionTitle =
+  "uppercase tracking-[0.6px] text-[10.5px] font-semibold text-fg-3 pt-2.5 px-3 pb-[7px] " +
+  "border-b border-[#2d3748]/50";
+const sectionIcon = "mr-[5px] text-[#7792bc] text-[11px]";
+const dot = "inline-block w-2 h-2 rounded-full flex-none";
+
+/** Extra per-column classes for the Problems table cells. */
+const cellCls = (id: string): string =>
+  id === "msg" ? "w-full" : id === "code" ? "text-muted font-mono text-[10px] whitespace-nowrap" : "";
+
 const column = createColumnHelper<ValidationIssue>();
 const problemColumns: ColumnDef<ValidationIssue, string>[] = [
   column.display({
     id: "dot",
     cell: (ctx) => (
-      <span className={`dot${ctx.row.original.severity === "error" ? " error" : ""}`} />
+      <span className={cx(dot, ctx.row.original.severity === "error" ? "bg-danger" : "bg-warning")} />
     ),
   }) as ColumnDef<ValidationIssue, string>,
   column.accessor("message", { id: "msg", cell: (c) => c.getValue() }),
@@ -75,35 +86,39 @@ export function BottomPanel() {
   }, [snap.state]);
 
   return (
-    <div className="dock">
-      <div className="col">
-        <div className="section-title">
-          <span className="section-icon">▦</span> Assets
+    <div className="flex h-full bg-surface">
+      <div className="flex-1 flex flex-col min-w-0 border-r border-border last:border-r-0">
+        <div className={sectionTitle}>
+          <span className={sectionIcon}>▦</span> Assets
         </div>
-        <div className="asset-ph">
-          <span className="asset-icon" style={{ fontSize: 22 }}>
+        <div className="flex items-center justify-center flex-col gap-[7px] h-full text-fg-3 text-[11.5px] text-center p-3">
+          <span className="text-[#55647b]" style={{ fontSize: 22 }}>
             ▧
           </span>
           <span>Asset browser coming soon</span>
         </div>
       </div>
 
-      <div className="col">
-        <div className="section-title">
-          <span className="section-icon">✓</span> {problemsTitle}
+      <div className="flex-1 flex flex-col min-w-0 border-r border-border last:border-r-0">
+        <div className={sectionTitle}>
+          <span className={sectionIcon}>✓</span> {problemsTitle}
         </div>
-        <div className="scroll">
+        <div className={scroll}>
           {validation.issues.length === 0 ? (
-            <div className="empty good">
-              <span className="dot" /> No problems detected. Ready to play.
+            <div className="px-3 py-3.5 text-xs text-[#7f91aa]">
+              <span className={cx(dot, "bg-success mr-[7px]")} /> No problems detected. Ready to play.
             </div>
           ) : (
-            <table className="problems-table">
+            <table className="w-full border-collapse text-xs">
               <tbody>
                 {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} onClick={() => row.original.objectId && editor.focusObject(row.original.objectId)}>
+                  <tr
+                    key={row.id}
+                    className="cursor-pointer hover:bg-popover-hover"
+                    onClick={() => row.original.objectId && editor.focusObject(row.original.objectId)}
+                  >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className={cell.column.id}>
+                      <td key={cell.id} className={cx("py-[5px] px-3 align-baseline", cellCls(cell.column.id))}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
@@ -115,15 +130,15 @@ export function BottomPanel() {
         </div>
       </div>
 
-      <div className="col">
-        <div className="section-title">
-          <span className="section-icon">◇</span> Selection
+      <div className="flex-1 flex flex-col min-w-0 border-r border-border last:border-r-0">
+        <div className={sectionTitle}>
+          <span className={sectionIcon}>◇</span> Selection
         </div>
-        <div className="scroll">
+        <div className={scroll}>
           {selection.map((row) => (
-            <div className="kv" key={row.k}>
-              <span className="k">{row.k}</span>
-              <span className="v">{row.v}</span>
+            <div className="py-1 px-3 text-xs flex justify-between gap-2.5" key={row.k}>
+              <span className="text-muted">{row.k}</span>
+              <span className="font-mono text-[#e6ebf5] text-right break-all">{row.v}</span>
             </div>
           ))}
         </div>

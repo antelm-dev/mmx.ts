@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { parseDocument, serializeDocument } from "../core/persistence.js";
+import { actionBtn, actions, cx, panel } from "../ui.js";
 import { setupMonaco } from "./monacoSetup.js";
 
 setupMonaco();
@@ -34,16 +35,16 @@ export function JsonPanel() {
   };
 
   return (
-    <div className="panel">
-      <div className="actions" style={{ borderBottom: "1px solid var(--mmx-border)" }}>
-        <button className="btn" disabled={!dirty} onClick={apply}>
+    <div className={panel}>
+      <div className={cx(actions, "border-b border-border")}>
+        <button className={actionBtn} disabled={!dirty} onClick={apply}>
           Apply changes
         </button>
-        <button className="btn" disabled={!dirty} onClick={() => setBuffer(serialized)}>
+        <button className={actionBtn} disabled={!dirty} onClick={() => setBuffer(serialized)}>
           Revert
         </button>
       </div>
-      <div className="json-panel" style={{ flex: 1, minHeight: 0 }}>
+      <div className="flex-1 min-h-0 bg-surface">
         <Editor
           height="100%"
           language="json"

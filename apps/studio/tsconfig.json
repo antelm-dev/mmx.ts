@@ -18,8 +18,9 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "electron.vite.config.ts",
+    "vite.config.ts",
     "vitest.config.ts",
     "playwright.config.ts"
-  ]
+  ],
+  "exclude": ["src/main", "src/preload/generated"]
 }

@@ -89,9 +89,9 @@ export function App() {
 
   return (
     <RadixTooltip.Provider delayDuration={350} skipDelayDuration={200}>
-      <div className="shell">
+      <div className="grid grid-rows-[56px_minmax(0,1fr)] h-screen w-screen">
         <Toolbar />
-        <main className="workspace">
+        <main className="min-h-0 min-w-0 overflow-hidden bg-[#0d1017]">
           <DockviewReact
             className="dockview-theme-dark"
             components={dockComponents}

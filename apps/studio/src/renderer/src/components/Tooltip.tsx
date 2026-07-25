@@ -7,7 +7,10 @@ export function Tooltip({ label, children }: { label: string; children: ReactNod
     <RadixTooltip.Root>
       <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
       <RadixTooltip.Portal>
-        <RadixTooltip.Content className="tooltip" sideOffset={6}>
+        <RadixTooltip.Content
+          className="z-[80] px-[9px] py-[5px] rounded-md bg-tooltip border border-border-strong text-fg text-[11px] shadow-[0_8px_20px_rgba(0,0,0,0.4)]"
+          sideOffset={6}
+        >
           {label}
         </RadixTooltip.Content>
       </RadixTooltip.Portal>

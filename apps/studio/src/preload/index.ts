@@ -1,15 +1,14 @@
-import { contextBridge, ipcRenderer } from "electron";
-import type { StudioFileApi } from "./api.js";
+import { contextBridge } from "electron";
+import { bridge } from "./generated/ipc-bridge.js";
 
 /**
  * The only surface the renderer gets on the Node side. Context isolation is on,
- * so the React app talks to the file system exclusively through these two IPC
- * calls — mirroring the editor's `FileAccess` interface, but backed by native
- * Electron dialogs instead of a browser download / hidden input.
+ * so the React app talks to the file system exclusively through the typed
+ * `bridge` generated from the `*.ipc.ts` modules by `electron-ipc-module`.
+ *
+ * Exposed as `window.studio`, so the renderer calls e.g.
+ * `window.studio.files.saveFile(name, json)`.
  */
-const api: StudioFileApi = {
-  saveFile: (suggestedName, json) => ipcRenderer.invoke("studio:save-file", suggestedName, json),
-  openFile: () => ipcRenderer.invoke("studio:open-file"),
-};
+export type StudioBridge = typeof bridge;
 
-contextBridge.exposeInMainWorld("studio", api);
+contextBridge.exposeInMainWorld("studio", bridge);

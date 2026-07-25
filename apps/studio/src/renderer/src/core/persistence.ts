@@ -24,11 +24,11 @@ const RECOVERY_KEY = "mmx-studio.recovery.v1";
 /** Native open/save via the Electron preload bridge. */
 export class ElectronFileAccess implements FileAccess {
   async save(name: string, json: string): Promise<void> {
-    await window.studio?.saveFile(name, json);
+    await window.studio?.files.saveFile(name, json);
   }
 
   async open(): Promise<OpenedFile | null> {
-    const result = await window.studio?.openFile();
+    const result = await window.studio?.files.openFile();
     return result ?? null;
   }
 }

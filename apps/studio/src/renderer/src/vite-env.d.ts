@@ -1,10 +1,14 @@
 /// <reference types="vite/client" />
 
-import type { StudioFileApi } from "../../preload/api.js";
+import type { StudioBridge } from "../../preload/index.js";
 
 declare global {
   interface Window {
-    /** Native file access exposed by the Electron preload bridge. */
-    studio?: StudioFileApi;
+    /**
+     * Typed IPC bridge exposed by the Electron preload — generated from the
+     * `*.ipc.ts` modules by `electron-ipc-module`. E.g.
+     * `window.studio.files.saveFile(...)`.
+     */
+    studio?: StudioBridge;
   }
 }

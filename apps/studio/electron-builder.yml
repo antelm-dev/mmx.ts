@@ -1,0 +1,31 @@
+appId: dev.antelm.mmx-studio
+productName: MMX Studio
+copyright: Copyright © MMX
+
+directories:
+  output: dist
+  buildResources: build
+
+# main, preload and renderer are all fully bundled into out/ by Rollup + Vite,
+# so nothing under node_modules is needed at runtime. Excluding it keeps the
+# workspace (`@mmx/*` / `workspace:*`) dependencies out of the package, which
+# electron-builder could not resolve as published npm packages anyway.
+files:
+  - "out/**/*"
+  - "package.json"
+  - "!node_modules/**"
+
+# Bundled app has no native modules to rebuild.
+npmRebuild: false
+
+win:
+  target: nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+
+mac:
+  target: dmg
+  category: public.app-category.developer-tools
+
+linux:
+  target: AppImage
+  category: Development

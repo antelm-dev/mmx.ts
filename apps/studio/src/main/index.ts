@@ -1,13 +1,16 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { join } from "node:path";
+import { app, BrowserWindow } from "electron";
+import { createIpcContainer } from "electron-ipc-module";
+import { env } from "./env.js";
+import { createFilesIpc } from "./ipc/files.ipc.js";
 
 /**
  * Electron main process for MMX Studio.
  *
- * Owns the single editor window and the two file IPC handlers the preload bridge
- * forwards to. In dev, `electron-vite` injects `ELECTRON_RENDERER_URL` (the Vite
- * dev server); in a packaged build we load the built `index.html` off disk.
+ * Owns the single editor window and loads the IPC modules the preload bridge
+ * forwards to. In dev (`__ELECTRON_DEV__`) it points the window at the Vite dev
+ * server, retrying until it is up; in a packaged build it loads the built
+ * `index.html` off disk.
  */
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -28,39 +31,23 @@ function createWindow(): void {
 
   window.once("ready-to-show", () => window.show());
 
-  const devUrl = process.env.ELECTRON_RENDERER_URL;
-  if (devUrl) {
-    void window.loadURL(devUrl);
+  if (env.dev) {
+    // The renderer dev server and this process start in parallel, so the first
+    // load can beat Vite to the port — retry until it answers.
+    const load = () => void window.loadURL(env.devServerUrl);
+    window.webContents.on("did-fail-load", () => setTimeout(load, 300));
+    load();
   } else {
     void window.loadFile(join(__dirname, "../renderer/index.html"));
   }
 }
 
-ipcMain.handle("studio:save-file", async (_event, suggestedName: string, json: string) => {
-  const name = suggestedName.endsWith(".json") ? suggestedName : `${suggestedName}.json`;
-  const result = await dialog.showSaveDialog({
-    title: "Save Level",
-    defaultPath: name,
-    filters: [{ name: "MMX Level", extensions: ["json"] }],
+app.whenReady().then(async () => {
+  const ipc = createIpcContainer();
+  await ipc.loadAll({
+    files: createFilesIpc(),
   });
-  if (result.canceled || !result.filePath) return null;
-  await writeFile(result.filePath, json, "utf8");
-  return basename(result.filePath);
-});
 
-ipcMain.handle("studio:open-file", async () => {
-  const result = await dialog.showOpenDialog({
-    title: "Open Level",
-    properties: ["openFile"],
-    filters: [{ name: "MMX Level", extensions: ["json"] }],
-  });
-  if (result.canceled || result.filePaths.length === 0) return null;
-  const filePath = result.filePaths[0];
-  const json = await readFile(filePath, "utf8");
-  return { name: basename(filePath), json };
-});
-
-app.whenReady().then(() => {
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

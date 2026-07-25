@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { previewForDefinition } from "../core/spritePreview.js";
+import { cx } from "../ui.js";
 
 interface Props {
   definitionId: string;
@@ -21,15 +22,24 @@ export function SpritePreview({ definitionId, size = 48, flip = false, fallbackC
     const scale = Math.min(size / rw, size / rh);
     return (
       <span
-        className={`sprite-frame${flip ? " flip" : ""}`}
+        className={cx(
+          "grid place-items-center flex-none overflow-hidden rounded-md bg-raised shadow-[0_0_0_1px_rgba(255,255,255,0.08)]",
+          flip && "-scale-x-100",
+        )}
         style={{ width: size, height: size }}
         title={definitionId}
       >
         <span
-          className="sprite-crop"
+          className="relative overflow-hidden flex-none [image-rendering:pixelated]"
           style={{ width: rw, height: rh, transform: `scale(${scale})` }}
         >
-          <img src={preview.url} style={{ left: -rx, top: -ry }} alt="" draggable={false} />
+          <img
+            className="absolute max-w-none [image-rendering:pixelated] pointer-events-none"
+            src={preview.url}
+            style={{ left: -rx, top: -ry }}
+            alt=""
+            draggable={false}
+          />
         </span>
       </span>
     );
@@ -38,7 +48,7 @@ export function SpritePreview({ definitionId, size = 48, flip = false, fallbackC
   if (fallbackColor) {
     return (
       <span
-        className="sprite-swatch"
+        className="block flex-none rounded-md shadow-[0_0_0_1px_rgba(255,255,255,0.15)]"
         style={{ width: size, height: size, background: fallbackColor }}
       />
     );

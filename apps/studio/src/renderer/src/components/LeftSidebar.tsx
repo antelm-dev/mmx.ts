@@ -12,7 +12,18 @@ import {
 } from "@mmx/content-schema";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
+import { cx, itemCls, panel, scroll } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
+
+const tabBase =
+  "flex-1 flex items-center justify-center gap-1.5 pt-[11px] px-2 pb-[9px] bg-transparent text-[10px] " +
+  "font-bold tracking-[0.6px] uppercase cursor-pointer border-b-2 -mb-px";
+const tabCls = (active: boolean): string =>
+  cx(tabBase, active ? "text-accent-fg border-accent" : "text-fg-3 border-transparent hover:text-fg-2 hover:bg-hover");
+
+const cat = "text-[10px] uppercase tracking-[0.5px] text-fg-3 pt-[13px] px-3.5 pb-[5px] font-bold";
+const emptyNote = "px-3 py-3.5 text-muted text-xs";
+const itemName = "min-w-0 flex-1 whitespace-nowrap overflow-hidden text-ellipsis";
 
 type PaletteRow =
   | { kind: "header"; key: string; label: string }
@@ -38,11 +49,11 @@ export function LeftSidebar() {
   );
 
   return (
-    <div className="panel">
-      <div className="tabs" role="tablist">
+    <div className={panel}>
+      <div className="flex border-b border-border flex-none" role="tablist">
         <button
           role="tab"
-          className={`tab${tab === "palette" ? " active" : ""}`}
+          className={tabCls(tab === "palette")}
           aria-selected={tab === "palette"}
           onClick={() => setTab("palette")}
         >
@@ -50,27 +61,39 @@ export function LeftSidebar() {
         </button>
         <button
           role="tab"
-          className={`tab${tab === "scene" ? " active" : ""}`}
+          className={tabCls(tab === "scene")}
           aria-selected={tab === "scene"}
           onClick={() => setTab("scene")}
         >
-          Scene <span className="count">{sceneRows.length}</span>
+          Scene{" "}
+          <span
+            className={cx(
+              "font-mono text-[10px] font-medium tracking-normal normal-case px-[5px] py-px rounded",
+              tab === "scene" ? "text-[#93c5fd] bg-selected" : "text-muted bg-[#1a2030]",
+            )}
+          >
+            {sceneRows.length}
+          </span>
         </button>
       </div>
 
       {tab === "palette" ? (
         <>
-          <div className="search-wrap">
-            <Search size={16} className="section-icon" style={{ margin: 0 }} />
+          <div className="flex items-center gap-2 h-9 mt-3 mx-3 mb-[7px] px-2.5 border border-border-strong rounded-lg bg-raised transition-[border-color,box-shadow] duration-[120ms] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]">
+            <Search size={16} className="text-[#7792bc]" />
             <input
-              className="search-input"
+              className="min-w-0 flex-1 border-0 outline-0 bg-transparent text-fg text-xs placeholder:text-fg-3"
               placeholder="Search objects…"
               aria-label="Search objects"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
             {query && (
-              <button className="clear" aria-label="Clear search" onClick={() => setQuery("")}>
+              <button
+                className="border-0 bg-transparent text-fg-3 cursor-pointer inline-flex"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+              >
                 <X size={15} />
               </button>
             )}
@@ -122,15 +145,15 @@ function PaletteList({
 
   if (rows.length === 0) {
     return (
-      <div className="scroll" ref={scrollRef}>
-        <div className="empty">No objects match your search.</div>
+      <div className={scroll} ref={scrollRef}>
+        <div className={emptyNote}>No objects match your search.</div>
       </div>
     );
   }
 
   return (
-    <div className="scroll" ref={scrollRef}>
-      <div className="virtual-list" style={{ height: virtualizer.getTotalSize() }}>
+    <div className={scroll} ref={scrollRef}>
+      <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((v) => {
           const row = rows[v.index];
           const style = {
@@ -143,7 +166,7 @@ function PaletteList({
           };
           if (row.kind === "header") {
             return (
-              <div key={v.key} className="cat" style={style}>
+              <div key={v.key} className={cat} style={style}>
                 {row.label}
               </div>
             );
@@ -152,13 +175,13 @@ function PaletteList({
           return (
             <div key={v.key} style={style}>
               <button
-                className={`item${isActive(def.id) ? " active" : ""}`}
+                className={itemCls(isActive(def.id))}
                 title={`Place ${def.name}`}
                 onClick={() => editor.selectPalette(def.id)}
               >
                 <SpritePreview definitionId={def.id} size={28} fallbackColor={def.editor.color} />
-                <span className="item-name">{def.name}</span>
-                <span className="add">
+                <span className={itemName}>{def.name}</span>
+                <span className="text-fg-3 opacity-0 inline-flex group-hover:opacity-100">
                   <Plus size={16} />
                 </span>
               </button>
@@ -191,17 +214,18 @@ function SceneList({
 
   if (rows.length === 0) {
     return (
-      <div className="scroll" ref={scrollRef}>
-        <div className="empty">No objects in the scene. Place one from the Object Palette.</div>
+      <div className={scroll} ref={scrollRef}>
+        <div className={emptyNote}>No objects in the scene. Place one from the Object Palette.</div>
       </div>
     );
   }
 
   return (
-    <div className="scroll" ref={scrollRef}>
-      <div className="virtual-list" style={{ height: virtualizer.getTotalSize() }}>
+    <div className={scroll} ref={scrollRef}>
+      <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((v) => {
           const row = rows[v.index];
+          const active = selected.has(row.inst.id);
           return (
             <div
               key={row.inst.id}
@@ -214,20 +238,16 @@ function SceneList({
                 height: v.size,
               }}
             >
-              <button
-                className={`item${selected.has(row.inst.id) ? " active" : ""}`}
-                title={row.inst.id}
-                onClick={() => editor.focusObject(row.inst.id)}
-              >
+              <button className={itemCls(active)} title={row.inst.id} onClick={() => editor.focusObject(row.inst.id)}>
                 <SpritePreview
                   definitionId={row.def.id}
                   size={28}
                   flip={sceneFlip(row)}
                   fallbackColor={row.def.editor.color}
                 />
-                <span className="label">
-                  <span className="name">{row.def.name}</span>
-                  <span className="meta">
+                <span className="flex flex-col gap-px min-w-0">
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">{row.def.name}</span>
+                  <span className={cx("font-mono text-[10px]", active ? "text-[#93c5fd]" : "text-muted")}>
                     {row.inst.x}, {row.inst.y}
                   </span>
                 </span>
