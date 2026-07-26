@@ -53,14 +53,14 @@ class PlaytestSession implements EditorPlaytestSession {
       seed: this.options.seed,
       level: documentToLevelData(this.document),
       onEnemySpawned: (enemy) => {
-        assets?.attachEnemyAnimations(enemy);
+        this.renderer?.attachEnemy(enemy);
         audio?.attachEnemy(enemy);
       },
       onPickupSpawned: (pickup) => {
-        assets?.attachLifeCapsuleAnimations(pickup);
+        this.renderer?.attachPickup(pickup);
       },
       onWeaponCapsuleSpawned: (capsule) => {
-        assets?.attachWeaponCapsuleAnimations(capsule);
+        this.renderer?.attachWeaponCapsule(capsule);
       },
     };
 

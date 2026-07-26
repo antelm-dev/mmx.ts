@@ -140,6 +140,6 @@ export class GameRuntime {
     const { debug, input, presenter } = this.options;
     debug.beforeStep();
     debug.recorder.step(input.packedActions());
-    presenter.sampleCosmetics(DT, debug.scene.player);
+    presenter.stepCosmetics(debug.scene, DT);
   }
 }
