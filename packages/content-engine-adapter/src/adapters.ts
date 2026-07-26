@@ -1,5 +1,5 @@
-import type { LevelData, LevelEntity } from "@mmx/engine/game/LevelData.js";
-import { Tile } from "@mmx/engine/game/World.js";
+import type { LevelData, LevelEntity } from "@mmx/engine";
+import { Tile } from "@mmx/engine";
 import { applySlopes, type SlopeRect } from "@mmx/slope-tools";
 import {
   TERRAIN_TILE_BY_NAME,

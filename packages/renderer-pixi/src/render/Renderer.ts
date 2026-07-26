@@ -5,11 +5,11 @@ import {
   ChargeTier,
   VIEW_WIDTH,
   VIEW_HEIGHT,
-} from "@mmx/engine/core/constants.js";
-import type { Charge } from "@mmx/engine/game/abilities/Charge.js";
-import type { Camera } from "@mmx/engine/game/Camera.js";
-import type { Player } from "@mmx/engine/game/Player.js";
-import type { Stage } from "@mmx/engine/game/Stage.js";
+  type Camera,
+  type ChargeVfx,
+  type Player,
+  type Stage,
+} from "@mmx/engine";
 import { DashSmoke } from "../DashSmoke.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";
@@ -441,7 +441,7 @@ export class Renderer {
 
   /** The charge-up aura, drawn over X exactly as the emitter sits over his sprite. */
   private syncAura(player: Player): void {
-    const charge = player.get_ability("Charge") as Charge | undefined;
+    const charge = player.get_ability("Charge") as ChargeVfx | undefined;
     const fx = charge && CHARGE_TIER_FX[charge.vfx_tier];
     const snap = fx && spriteSnapshot(player);
     const texture = fx && snap ? shotTexture(fx.clip, charge!.vfx_frame) : null;

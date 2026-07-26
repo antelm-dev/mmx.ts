@@ -1,4 +1,4 @@
-import { describeInput } from "@mmx/engine/core/Replay.js";
+import { describeInput } from "@mmx/engine";
 import type { DebugSession } from "./DebugSession.js";
 import { formatSummary, SAMPLE_COUNT, type FrameStats } from "./FrameStats.js";
 

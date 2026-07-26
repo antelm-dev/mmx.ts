@@ -1,7 +1,7 @@
-import { decodeReplay, encodeReplay } from "@mmx/engine/core/Replay.js";
-import { Recorder } from "@mmx/engine/game/Recorder.js";
-import type { Scene, SceneOptions } from "@mmx/engine/game/Scene.js";
-import type { LevelData } from "@mmx/engine/game/LevelData.js";
+import { decodeReplay, encodeReplay } from "@mmx/engine";
+import { Recorder } from "@mmx/engine";
+import type { Scene, SceneOptions } from "@mmx/engine";
+import type { LevelData } from "@mmx/engine";
 import { FrameStats } from "./FrameStats.js";
 
 /**

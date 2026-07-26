@@ -1,11 +1,11 @@
 import type { Container } from "pixi.js";
 import type { GameplaySounds } from "@mmx/browser-audio";
-import { BODY_HALF_H, DASH_FX_OFFSET_X, DASH_FX_OFFSET_Y } from "@mmx/engine/core/constants.js";
-import type { Enemy } from "@mmx/engine/game/Enemy.js";
-import type { LifeCapsule, WeaponCapsule } from "@mmx/engine/game/Pickup.js";
-import type { Player } from "@mmx/engine/game/Player.js";
-import type { Scene } from "@mmx/engine/game/Scene.js";
-import type { Stage } from "@mmx/engine/game/Stage.js";
+import { BODY_HALF_H, DASH_FX_OFFSET_X, DASH_FX_OFFSET_Y } from "@mmx/engine";
+import type { Enemy } from "@mmx/engine";
+import type { LifeCapsule, WeaponCapsule } from "@mmx/engine";
+import type { Player } from "@mmx/engine";
+import type { Scene } from "@mmx/engine";
+import type { Stage } from "@mmx/engine";
 import type { AnimData } from "@mmx/asset-schema";
 import {
   DashSmoke,

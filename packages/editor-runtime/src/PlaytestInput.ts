@@ -1,5 +1,5 @@
-import { Input } from "@mmx/engine/core/Input.js";
-import { packInput } from "@mmx/engine/core/Replay.js";
+import { Input } from "@mmx/engine";
+import { packInput } from "@mmx/engine";
 
 export type PlaytestAction =
   | "move_left"

@@ -2,8 +2,8 @@ import {
   ENEMY_EXPLOSION_FRAME_COUNT,
   ENEMY_EXPLOSION_PUFF_COUNT,
   ENEMY_EXPLOSION_RADIUS,
-} from "@mmx/engine/core/constants.js";
-import { AnimationCursor, uniformClip } from "@mmx/engine/core/AnimationCursor.js";
+} from "@mmx/engine";
+import { AnimationCursor, uniformClip } from "@mmx/engine";
 
 /**
  * The burst an enemy leaves behind when it dies — port of the "Explosion

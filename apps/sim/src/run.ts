@@ -1,9 +1,14 @@
-import { Input, Action } from "@mmx/engine/core/Input.js";
-import { DT } from "@mmx/engine/core/constants.js";
-import { Player } from "@mmx/engine/game/Player.js";
-import { Stage } from "@mmx/engine/game/Stage.js";
-import { spawnEnemy } from "@mmx/engine/game/enemies/index.js";
-import { makeWorld, SPAWN, ENEMY_SPAWNS } from "@mmx/engine/game/level.js";
+import {
+  Action,
+  DT,
+  Input,
+  Player,
+  Stage,
+  makeWorld,
+  spawnEnemy,
+  SPAWN,
+  ENEMY_SPAWNS,
+} from "@mmx/engine";
 
 /**
  * Deterministic headless simulation. Drives the ported player through a scripted

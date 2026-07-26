@@ -1,6 +1,6 @@
 import { documentToLevelData } from "@mmx/content-engine-adapter";
 import type { LevelDocument } from "@mmx/content-schema";
-import type { SceneOptions } from "@mmx/engine/game/Scene.js";
+import type { SceneOptions } from "@mmx/engine";
 import { ToolingSession } from "@mmx/engine/tooling";
 import type { AssetCatalog, StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";

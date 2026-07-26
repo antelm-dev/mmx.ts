@@ -1,5 +1,5 @@
-import { Input, type Action } from "@mmx/engine/core/Input.js";
-import { packInput } from "@mmx/engine/core/Replay.js";
+import { Input, type Action } from "@mmx/engine";
+import { packInput } from "@mmx/engine";
 import { BINDABLE_ACTIONS, type KeyBindings } from "../DesktopBridge.js";
 import type { DebugSession } from "../debug/DebugSession.js";
 import { GamepadInput } from "../Gamepad.js";

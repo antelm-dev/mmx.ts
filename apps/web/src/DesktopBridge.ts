@@ -3,9 +3,9 @@ import { PhysicalSize } from "@tauri-apps/api/dpi";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 
-import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
-import type { Action } from "@mmx/engine/core/Input.js";
-import { REPLAY_ACTIONS } from "@mmx/engine/core/Replay.js";
+import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
+import type { Action } from "@mmx/engine";
+import { REPLAY_ACTIONS } from "@mmx/engine";
 import type { ReplayFileAccess, ReplayText } from "./debug/DebugSession.js";
 
 const SETTINGS_KEY = "mmx.desktop-settings.v1";

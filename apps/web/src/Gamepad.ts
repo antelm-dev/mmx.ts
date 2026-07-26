@@ -1,4 +1,4 @@
-import { Input, type Action } from "@mmx/engine/core/Input.js";
+import { Input, type Action } from "@mmx/engine";
 
 /**
  * Gamepad support, on top of the same {@link Action} set the keyboard produces.
