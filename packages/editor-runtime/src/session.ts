@@ -1,12 +1,15 @@
-import type { FixedStepFrameStats, FixedStepLoop } from "@mmx/browser-runtime";
 import { documentToLevelData } from "@mmx/content-engine-adapter";
 import type { LevelDocument } from "@mmx/content-schema";
-import { DT, FrameStats, type SceneOptions } from "@mmx/engine";
-import { ToolingSession } from "@mmx/engine/tooling";
+import type { Scene } from "@mmx/engine";
+import {
+  createToolingRuntime,
+  type ToolingRuntime,
+} from "@mmx/runtime/tooling";
+import type { RuntimePresentation } from "@mmx/runtime";
 import type { AssetCatalog, StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";
 import { PlaytestInput } from "./PlaytestInput.js";
-import { STOPPED_PLAYTEST, type PlaytestSnapshot, type SimulationSnapshot } from "./snapshots.js";
+import { STOPPED_PLAYTEST, type PlaytestSnapshot } from "./snapshots.js";
 import type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
 
 const REACT_UPDATE_INTERVAL_MS = 70;
@@ -21,12 +24,9 @@ export function createPlaytest(
 }
 
 class PlaytestSession implements EditorPlaytestSession {
-  private tooling: ToolingSession | null = null;
+  private runtime: ToolingRuntime | null = null;
   private renderer: StudioPlaytestRenderer | null = null;
-  private clock: FixedStepLoop | null = null;
-  private frameStats = new FrameStats();
-  private readonly input = new PlaytestInput();
-  private runtime: SimulationSnapshot | null = null;
+  private browser = false;
   private selectedRuntimeId: string | null = "player";
   private lastEmit = 0;
   private started = false;
@@ -46,58 +46,38 @@ class PlaytestSession implements EditorPlaytestSession {
     this.started = true;
 
     const audio = this.options.audio;
-    // Dynamic import keeps Pixi out of headless playtest sessions.
     const visual = this.options.host ? await import("@mmx/renderer-pixi") : null;
     const assets: AssetCatalog | null = visual ? visual.createAssetCatalog() : null;
 
-    const sceneOptions: SceneOptions = {
-      seed: this.options.seed,
-      level: documentToLevelData(this.document),
-      onEnemySpawned: (enemy) => {
-        this.renderer?.attachEnemy(enemy);
-        audio?.attachEnemy(enemy);
+    const runtime = createToolingRuntime({
+      scene: {
+        seed: this.options.seed,
+        level: documentToLevelData(this.document),
       },
-      onPickupSpawned: (pickup) => {
-        this.renderer?.attachPickup(pickup);
-      },
-      onWeaponCapsuleSpawned: (capsule) => {
-        this.renderer?.attachWeaponCapsule(capsule);
-      },
-    };
-
-    const tooling = new ToolingSession(sceneOptions);
-    this.tooling = tooling;
-    audio?.attachScene(tooling.scene);
+      audio,
+      onError: (error) => this.fail(error),
+    });
+    this.runtime = runtime;
 
     try {
       if (this.options.host && visual && assets) {
-        // Dynamic import keeps requestAnimationFrame scheduling out of headless sessions.
-        const { FixedStepLoop } = await import("@mmx/browser-runtime");
-        this.renderer = await visual.createPlaytestRenderer(this.options.host, tooling.scene, {
-          assets,
-          decorations: this.document.decorations,
-        });
+        this.renderer = await visual.createPlaytestRenderer(
+          this.options.host,
+          runtime.session.scene,
+          {
+            assets,
+            decorations: this.document.decorations,
+          },
+        );
         if (this.disposed || this.stopped) {
           this.renderer.destroy();
           this.renderer = null;
           return;
         }
-        this.input.attach();
-        this.frameStats = new FrameStats();
-        this.clock = new FixedStepLoop({
-          stepSeconds: DT,
-          maxFrameSeconds: 0.25,
-          onFrameStart: (frame) => {
-            this.input.poll(Math.min(frame.rawElapsedSeconds, frame.maxFrameSeconds));
-          },
-          onStep: () => this.tick(),
-          onRender: () => this.draw(),
-          onFrameStats: (frame) => this.recordFrameStats(frame),
-          onError: (error) => this.fail(error),
-        });
-        this.clock.start();
+        runtime.setPresentation(this.createPresentation(this.renderer));
+        await runtime.startBrowser();
+        this.browser = true;
       }
-      this.runtime = mapSimulationSnapshot(tooling.inspect());
       this.emitNow();
     } catch (error) {
       this.stop();
@@ -108,14 +88,10 @@ class PlaytestSession implements EditorPlaytestSession {
   stop(): void {
     if (this.disposed || this.stopped) return;
     this.stopped = true;
-    this.clock?.stop();
-    this.clock = null;
-    this.input.detach();
-    this.options.audio?.stop();
-    this.renderer?.destroy();
-    this.renderer = null;
-    this.tooling = null;
+    this.browser = false;
+    this.runtime?.dispose();
     this.runtime = null;
+    this.renderer = null;
   }
 
   dispose(): void {
@@ -123,62 +99,57 @@ class PlaytestSession implements EditorPlaytestSession {
     this.disposed = true;
   }
 
-  step(input: PlaytestInput = this.input): void {
+  step(input?: PlaytestInput): void {
     this.assertLive();
-    const tooling = this.requireTooling();
-    if (this.clock && !this.clock.isPaused) return;
+    const runtime = this.requireRuntime();
+    if (this.browser && !runtime.isPaused) return;
 
-    this.runtime = mapSimulationSnapshot(tooling.step(input.toMask()));
-    if (this.renderer) {
-      this.renderer.sampleCosmetics(tooling.scene);
-      this.renderer.render(tooling.scene);
-    }
+    runtime.step(input ? input.toMask() : undefined);
     this.emitNow();
   }
 
   snapshot(): PlaytestSnapshot {
-    if (this.disposed || this.stopped || !this.tooling) return STOPPED_PLAYTEST;
+    if (this.disposed || this.stopped || !this.runtime) return STOPPED_PLAYTEST;
+    const inspect = this.runtime.inspect();
     return {
-      status: this.clock?.isPaused ? "paused" : "running",
-      frame: this.tooling.frame,
-      checkpointFrame: this.tooling.checkpointFrame,
-      runtime: this.runtime,
+      status: this.runtime.isPaused ? "paused" : "running",
+      frame: inspect.frame,
+      checkpointFrame: inspect.checkpointFrame,
+      runtime: mapSimulationSnapshot(inspect.simulation),
       selectedRuntimeId: this.selectedRuntimeId,
-      sceneRevision: this.tooling.sceneRevision,
-      frameStats: this.clock ? this.frameStats.toSnapshot() : STOPPED_PLAYTEST.frameStats,
+      sceneRevision: inspect.sceneRevision,
+      frameStats: this.browser
+        ? this.runtime.frameStats.toSnapshot()
+        : STOPPED_PLAYTEST.frameStats,
     };
   }
 
   togglePause(): void {
     this.assertLive();
-    const clock = this.clock;
-    if (!clock) return;
-    if (clock.isPaused) clock.resume();
-    else {
-      clock.pause();
-      this.input.clear();
-    }
+    this.requireRuntime().togglePause();
     this.emitNow();
   }
 
   get isPaused(): boolean {
-    return this.clock?.isPaused ?? false;
+    return this.runtime?.isPaused ?? false;
   }
 
   setCheckpoint(): void {
     this.assertLive();
-    this.requireTooling().setCheckpoint();
+    this.requireRuntime().setCheckpoint();
     this.emitNow();
   }
 
   restartCheckpoint(): void {
     this.assertLive();
-    this.rewind(() => this.requireTooling().restartCheckpoint());
+    this.requireRuntime().restartCheckpoint();
+    this.emitNow();
   }
 
   restartLevel(): void {
     this.assertLive();
-    this.rewind(() => this.requireTooling().restartLevel());
+    this.requireRuntime().restartLevel();
+    this.emitNow();
   }
 
   select(runtimeId: string | null): void {
@@ -193,31 +164,22 @@ class PlaytestSession implements EditorPlaytestSession {
     if (source) this.options.onExitToObject?.(source);
   }
 
-  private tick(): void {
-    const tooling = this.requireTooling();
-    this.runtime = mapSimulationSnapshot(tooling.step(this.input.toMask()));
-    this.renderer?.sampleCosmetics(tooling.scene);
-  }
-
-  private draw(): void {
-    const tooling = this.tooling;
-    if (!tooling || !this.renderer) return;
-    this.renderer.render(tooling.scene);
-    if (!this.clock?.isPaused) this.emitThrottled();
-  }
-
-  private recordFrameStats(frame: FixedStepFrameStats): void {
-    if (!frame.paused) {
-      this.frameStats.addDiscardedSeconds(frame.rawElapsedSeconds - frame.elapsedSeconds);
-    }
-    this.frameStats.record({
-      frameTime: frame.rawElapsedSeconds * 1000,
-      simulation: frame.simulationMs,
-      rendering: frame.renderingMs,
-      frameWork: frame.frameWorkMs,
-      simulationSteps: frame.simulationSteps,
-      accumulator: frame.accumulatorSeconds,
-    });
+  private createPresentation(renderer: StudioPlaytestRenderer): RuntimePresentation {
+    return {
+      bindScene: (scene: Scene) => renderer.bindScene(scene),
+      attachEnemy: (enemy) => renderer.attachEnemy(enemy),
+      attachPickup: (pickup) => renderer.attachPickup(pickup),
+      attachWeaponCapsule: (capsule) => renderer.attachWeaponCapsule(capsule),
+      sampleCosmetics: (scene) => renderer.sampleCosmetics(scene),
+      render: (scene) => {
+        renderer.render(scene);
+        if (!this.runtime?.isPaused) this.emitThrottled();
+      },
+      destroy: () => {
+        renderer.destroy();
+        this.renderer = null;
+      },
+    };
   }
 
   private fail(error: unknown): void {
@@ -225,22 +187,12 @@ class PlaytestSession implements EditorPlaytestSession {
     this.options.onError?.(message);
   }
 
-  private rewind(run: () => ReturnType<ToolingSession["inspect"]>): void {
-    const tooling = this.requireTooling();
-    this.runtime = mapSimulationSnapshot(run());
-    if (this.renderer) {
-      this.renderer.bindScene(tooling.scene);
-      this.renderer.render(tooling.scene);
-    }
-    this.options.audio?.attachScene(tooling.scene);
-    this.emitNow();
-  }
-
   private selectedSourceEntityId(): string | undefined {
     const id = this.selectedRuntimeId;
-    if (!id || !this.runtime) return undefined;
-    if (this.runtime.player.runtimeId === id) return this.runtime.player.sourceEntityId;
-    return this.runtime.actors.find((a) => a.runtimeId === id)?.sourceEntityId;
+    const snap = this.snapshot().runtime;
+    if (!id || !snap) return undefined;
+    if (snap.player.runtimeId === id) return snap.player.sourceEntityId;
+    return snap.actors.find((a) => a.runtimeId === id)?.sourceEntityId;
   }
 
   private emitNow(): void {
@@ -255,9 +207,9 @@ class PlaytestSession implements EditorPlaytestSession {
     this.options.onSnapshot?.(this.snapshot());
   }
 
-  private requireTooling(): ToolingSession {
-    if (!this.tooling) throw new Error("Playtest session is not started");
-    return this.tooling;
+  private requireRuntime(): ToolingRuntime {
+    if (!this.runtime) throw new Error("Playtest session is not started");
+    return this.runtime;
   }
 
   private assertLive(): void {

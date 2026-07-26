@@ -77,6 +77,9 @@ importers:
       '@mmx/renderer-pixi':
         specifier: workspace:*
         version: link:../../packages/renderer-pixi
+      '@mmx/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.56.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -198,18 +201,15 @@ importers:
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
-      '@mmx/browser-input':
-        specifier: workspace:*
-        version: link:../../packages/browser-input
-      '@mmx/browser-runtime':
-        specifier: workspace:*
-        version: link:../../packages/browser-runtime
       '@mmx/engine':
         specifier: workspace:*
         version: link:../../packages/engine
       '@mmx/renderer-pixi':
         specifier: workspace:*
         version: link:../../packages/renderer-pixi
+      '@mmx/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
       '@tauri-apps/api':
         specifier: 2.11.0
         version: 2.11.0
@@ -251,9 +251,9 @@ importers:
 
   packages/browser-input:
     dependencies:
-      '@mmx/engine':
+      '@mmx/runtime':
         specifier: workspace:*
-        version: link:../engine
+        version: link:../runtime
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -266,6 +266,10 @@ importers:
         version: 5.9.3
 
   packages/browser-runtime:
+    dependencies:
+      '@mmx/runtime':
+        specifier: workspace:*
+        version: link:../runtime
     devDependencies:
       tsx:
         specifier: ^4.7.0
@@ -326,12 +330,6 @@ importers:
 
   packages/editor-runtime:
     dependencies:
-      '@mmx/browser-input':
-        specifier: workspace:*
-        version: link:../browser-input
-      '@mmx/browser-runtime':
-        specifier: workspace:*
-        version: link:../browser-runtime
       '@mmx/content-engine-adapter':
         specifier: workspace:*
         version: link:../content-engine-adapter
@@ -344,6 +342,9 @@ importers:
       '@mmx/renderer-pixi':
         specifier: workspace:*
         version: link:../renderer-pixi
+      '@mmx/runtime':
+        specifier: workspace:*
+        version: link:../runtime
     devDependencies:
       '@types/node':
         specifier: ^24.0.0

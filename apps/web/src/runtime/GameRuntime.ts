@@ -2,7 +2,7 @@ import {
   FixedStepLoop,
   type FixedStepFrameStart,
   type FixedStepRenderFrame,
-} from "@mmx/browser-runtime";
+} from "@mmx/runtime/browser";
 import { DT } from "@mmx/engine";
 import type { DebugPanel } from "../debug/DebugPanel.js";
 import type { AnimationInspector } from "../debug/AnimationInspector.js";

@@ -9,5 +9,6 @@
     "lib": ["ES2020", "DOM"],
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../runtime" }]
 }

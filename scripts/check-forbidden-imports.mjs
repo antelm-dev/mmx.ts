@@ -42,7 +42,7 @@ if (invokedDirectly) {
   if (hits.length > 0) {
     console.error("Forbidden deep imports detected:\n" + hits.join("\n"));
     console.error(
-      "\nUse @mmx/engine, @mmx/renderer-pixi, @mmx/content-schema, or @mmx/editor-runtime public entry points.",
+      "\nUse @mmx/engine, @mmx/runtime, @mmx/renderer-pixi, @mmx/content-schema, or @mmx/editor-runtime public entry points.",
     );
     process.exit(1);
   }

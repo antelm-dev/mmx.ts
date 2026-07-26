@@ -2,8 +2,8 @@ export {
   FrameStats,
   SAMPLE_COUNT,
   ZERO_FRAME_STATS,
-  formatSummary,
   type FrameSample,
   type FrameStatsSnapshot,
-  type Summary,
-} from "@mmx/engine";
+} from "@mmx/runtime/browser";
+
+export { formatSummary, type Summary } from "@mmx/engine";

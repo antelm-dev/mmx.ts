@@ -14,13 +14,16 @@ version depuis la CI.
 | ----------------------------- | -------------- |
 | `@mmx/asset-schema`           | `@mmx/web`     |
 | `@mmx/browser-audio`          | `@mmx/desktop` |
-| `@mmx/content-contracts`      | `@mmx/sim`     |
-| `@mmx/content-engine-adapter` | `@mmx/studio`  |
+| `@mmx/browser-input`          | `@mmx/sim`     |
+| `@mmx/browser-runtime`        | `@mmx/studio`  |
+| `@mmx/content-contracts`      |                |
+| `@mmx/content-engine-adapter` |                |
 | `@mmx/content-schema`         |                |
 | `@mmx/editor-runtime`         |                |
 | `@mmx/engine`                 |                |
 | `@mmx/ldtk-tools`             |                |
 | `@mmx/renderer-pixi`          |                |
+| `@mmx/runtime`                |                |
 | `@mmx/slope-tools`            |                |
 
 Les packages restent `private: true`. Changesets les versionne quand même grâce

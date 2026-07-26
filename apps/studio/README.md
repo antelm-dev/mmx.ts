@@ -12,9 +12,9 @@ Like the original, it never mutates the generated level modules
 `LevelDocument` and converts to/from the engine's `LevelData` through
 [`@mmx/content-engine-adapter`](../../packages/content-engine-adapter), while the
 authoring model itself lives in [`@mmx/content-schema`](../../packages/content-schema).
-Studio must import those packages (and `@mmx/editor-runtime` / `@mmx/renderer-pixi`)
-at their public roots — never `@mmx/engine/game/*`, `@mmx/engine/core/*`, or
-`@mmx/renderer-pixi/render/*`.
+Studio must import those packages (and `@mmx/runtime` / `@mmx/editor-runtime` /
+`@mmx/renderer-pixi`) at their public roots — never `@mmx/engine/game/*`,
+`@mmx/engine/core/*`, or `@mmx/renderer-pixi/render/*`.
 
 ## Tech stack
 
@@ -27,7 +27,7 @@ at their public roots — never `@mmx/engine/game/*`, `@mmx/engine/core/*`, or
 | Docking / tabs / floating panels                        | **Dockview** (`dockview-react`)                                                                                        |
 | Menus, tooltips, selects, checkboxes                    | **Radix UI** primitives + custom CSS variables                                                                         |
 | Ephemeral UI state (tabs, search, toasts, context menu) | **Zustand**                                                                                                            |
-| Editing viewport & Play mode                            | **Pixi.js** via `@mmx/renderer-pixi` + playtest through `@mmx/editor-runtime`                                          |
+| Editing viewport & Play mode                            | **Pixi.js** via `@mmx/renderer-pixi` + playtest via `@mmx/editor-runtime` → `@mmx/runtime/tooling` |
 | Document JSON editing                                   | **Monaco Editor** (self-hosted, no CDN)                                                                                |
 | Large scene tree & palette                              | **TanStack Virtual**                                                                                                   |
 | Problems panel                                          | **TanStack Table**                                                                                                     |

@@ -19,6 +19,9 @@
     "prepack": "pnpm run build",
     "test": "node --import tsx --test tests/*.test.ts"
   },
+  "dependencies": {
+    "@mmx/runtime": "workspace:*"
+  },
   "devDependencies": {
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"

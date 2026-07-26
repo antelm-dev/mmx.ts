@@ -1,4 +1,4 @@
-import { BrowserInput } from "@mmx/browser-input";
+import { BrowserInput } from "@mmx/runtime/browser";
 import type { KeyBindings } from "../DesktopBridge.js";
 import type { DebugSession } from "../debug/DebugSession.js";
 import type { SoundEffects } from "@mmx/browser-audio";

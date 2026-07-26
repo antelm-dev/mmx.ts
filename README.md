@@ -295,7 +295,10 @@ packages/
     src/game/         world, actors, abilities, enemies, scene (internal)
     tests/            node:test gameplay and determinism tests
   renderer-pixi/      PixiJS game renderer (`@mmx/renderer-pixi` public entry)
-  editor-runtime/     Studio playtest façade (`@mmx/editor-runtime`)
+  runtime/            Shared simulation runtime (`@mmx/runtime`, `/browser`, `/player`, `/tooling`)
+  browser-runtime/    Deprecated re-export of `@mmx/runtime/browser` (FixedStepLoop)
+  browser-input/      Deprecated re-export of `@mmx/runtime/browser` (BrowserInput)
+  editor-runtime/     Studio LevelDocument playtest adapter over `@mmx/runtime/tooling`
   content-schema/     authoring document model
   content-engine-adapter/  LevelDocument ↔ LevelData bridge
   ldtk-tools/         LDtk project import/export used to author levels/
@@ -327,9 +330,10 @@ another package's internals.
 | --------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
 | `@mmx/engine`         | `.`                                               | Gameplay simulation surface (actors, scene, input, constants, …) |
 | `@mmx/engine`         | `./content`, `./data`, `./behaviors`, `./tooling` | Intentional sub-APIs                                             |
+| `@mmx/runtime`        | `./browser`, `./player`, `./tooling`              | Shared simulation session + browser scheduling                   |
 | `@mmx/renderer-pixi`  | `.`                                               | Game + editor-facing renderer API                                |
 | `@mmx/content-schema` | `.`                                               | Authoring document model                                         |
-| `@mmx/editor-runtime` | `.`                                               | Studio playtest façade                                           |
+| `@mmx/editor-runtime` | `.`                                               | Studio LevelDocument adapter over `@mmx/runtime/tooling`         |
 
 **Forbidden:**
 

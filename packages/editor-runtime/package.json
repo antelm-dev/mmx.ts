@@ -20,12 +20,11 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/browser-runtime": "workspace:*",
     "@mmx/content-engine-adapter": "workspace:*",
     "@mmx/content-schema": "workspace:*",
-    "@mmx/browser-input": "workspace:*",
     "@mmx/engine": "workspace:*",
-    "@mmx/renderer-pixi": "workspace:*"
+    "@mmx/renderer-pixi": "workspace:*",
+    "@mmx/runtime": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
