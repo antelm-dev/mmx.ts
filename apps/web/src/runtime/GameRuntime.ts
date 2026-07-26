@@ -1,3 +1,8 @@
+import {
+  FixedStepLoop,
+  type FixedStepFrameStart,
+  type FixedStepRenderFrame,
+} from "@mmx/browser-runtime";
 import { DT } from "@mmx/engine";
 import type { DebugPanel } from "../debug/DebugPanel.js";
 import type { AnimationInspector } from "../debug/AnimationInspector.js";
@@ -8,16 +13,9 @@ import type { HomeScreen } from "../ui/HomeScreen.js";
 import type { SettingsMenuController } from "../settings/SettingsMenuController.js";
 
 /**
- * The fixed-timestep `requestAnimationFrame` loop: the one piece of main.ts
- * that had no precedent elsewhere in the codebase to follow (unlike
- * {@link DebugSession}, {@link InputBinding} etc., which mirror the small,
- * options-injected coordinator shape already established there).
- *
- * Everything it does each frame is delegate to one of its collaborators —
- * it asks {@link InputBinding} for this frame's actions, tells
- * {@link DebugSession} to step, and tells {@link ScenePresenter} to draw —
- * so that checkpoint/pause/stage-transition/boss-state work can extend those
- * collaborators without this file growing.
+ * Coordinates the browser game loop: input, debug stepping, presentation, and
+ * HUD updates. Scheduling (RAF, fixed-step accumulator, clamp, pause) lives in
+ * {@link FixedStepLoop}; this class owns only web-specific frame work.
  */
 
 /**
@@ -43,94 +41,110 @@ export interface GameRuntimeOptions {
 }
 
 export class GameRuntime {
-  constructor(private readonly options: GameRuntimeOptions) {}
+  private readonly loop: FixedStepLoop;
+  private simulationSteps = 0;
+
+  constructor(private readonly options: GameRuntimeOptions) {
+    this.loop = new FixedStepLoop({
+      stepSeconds: DT,
+      maxFrameSeconds: MAX_FRAME_SECONDS,
+      onFrameStart: (frame) => this.onFrameStart(frame),
+      onStep: () => this.onFixedStep(),
+      onRender: (frame) => this.onFrameRender(frame),
+    });
+  }
 
   start(): void {
-    let acc = 0;
-    let last = performance.now();
-    const frame = (now: number): void => {
-      const frameTime = now - last;
-      for (const name of ["mmx:frame-work", "mmx:simulation", "mmx:render"]) {
-        performance.clearMeasures(name);
-        performance.clearMarks(`${name}:start`);
-        performance.clearMarks(`${name}:end`);
-      }
-      performance.mark("mmx:frame-work:start");
+    this.loop.start();
+  }
 
-      const { debug, input, presenter, panel, animationInspector, menu, home } = this.options;
+  stop(): void {
+    this.loop.stop();
+  }
 
-      // Before the accumulator, so the steps below run against this frame's pad
-      // state rather than the previous one's. The repeat clock is clamped for the
-      // same reason the accumulator is: a tab that was backgrounded for ten seconds
-      // must not come back and scroll the menu to the bottom.
-      const modalVisible = menu.visible || home.visible;
-      input.pollPad(Math.min(frameTime / 1000, MAX_FRAME_SECONDS), modalVisible);
-      input.applyPadMenuCodes();
+  private onFrameStart(frame: FixedStepFrameStart): { elapsedSeconds: number } {
+    for (const name of ["mmx:frame-work", "mmx:simulation", "mmx:render"]) {
+      performance.clearMeasures(name);
+      performance.clearMarks(`${name}:start`);
+      performance.clearMarks(`${name}:end`);
+    }
+    performance.mark("mmx:frame-work:start");
+    performance.mark("mmx:simulation:start");
 
-      // Scaled before clamping, so slow motion buys a longer wall-clock budget
-      // rather than being cut off at the same quarter second real time is.
-      // An open menu contributes no simulation time, for the same reason a pause
-      // does: the accumulator must not fill behind it and then discharge the whole
-      // backlog the moment it closes.
-      const elapsed = modalVisible ? 0 : debug.scaleElapsed((now - last) / 1000);
-      debug.stats.addDiscardedSeconds(elapsed - MAX_FRAME_SECONDS);
-      acc += Math.min(MAX_FRAME_SECONDS, elapsed);
-      last = now;
+    const { debug, input, menu, home } = this.options;
 
-      let simulationSteps = 0;
-      performance.mark("mmx:simulation:start");
-      while (acc >= DT) {
-        this.stepOnce();
-        acc -= DT;
-        simulationSteps++;
-      }
-      // Frame advance runs outside the budget: the point is exactly one tick, not
-      // DT worth of injected wall clock.
-      while (debug.shouldStep()) {
-        this.stepOnce();
-        simulationSteps++;
-      }
-      performance.mark("mmx:simulation:end");
-      const simulation = performance.measure(
-        "mmx:simulation",
-        "mmx:simulation:start",
-        "mmx:simulation:end",
-      ).duration;
+    // Before the accumulator, so the steps below run against this frame's pad
+    // state rather than the previous one's. The repeat clock is clamped for the
+    // same reason the accumulator is: a tab that was backgrounded for ten seconds
+    // must not come back and scroll the menu to the bottom.
+    const modalVisible = menu.visible || home.visible;
+    input.pollPad(Math.min(frame.rawElapsedSeconds, MAX_FRAME_SECONDS), modalVisible);
+    input.applyPadMenuCodes();
 
-      const scene = debug.scene;
-      presenter.updateOverlay(scene, debug.overlayVisible, debug.animationInspectorVisible);
-      // A no-op unless the window moved to a display that changed the integer zoom.
-      menu.setPixelScale(presenter.pixelScale);
-      home.setPixelScale(presenter.pixelScale);
+    // Scaled before clamping, so slow motion buys a longer wall-clock budget
+    // rather than being cut off at the same quarter second real time is.
+    // An open menu contributes no simulation time, for the same reason a pause
+    // does: the accumulator must not fill behind it and then discharge the whole
+    // backlog the moment it closes.
+    const elapsed = modalVisible ? 0 : debug.scaleElapsed(frame.rawElapsedSeconds);
+    debug.stats.addDiscardedSeconds(elapsed - MAX_FRAME_SECONDS);
 
-      performance.mark("mmx:render:start");
-      presenter.render(scene);
-      performance.mark("mmx:render:end");
-      const rendering = performance.measure(
-        "mmx:render",
-        "mmx:render:start",
-        "mmx:render:end",
-      ).duration;
-      performance.mark("mmx:frame-work:end");
-      const frameWork = performance.measure(
-        "mmx:frame-work",
-        "mmx:frame-work:start",
-        "mmx:frame-work:end",
-      ).duration;
+    this.simulationSteps = 0;
+    return { elapsedSeconds: elapsed };
+  }
 
-      debug.stats.record({
-        frameTime,
-        simulation,
-        rendering,
-        frameWork,
-        simulationSteps,
-        accumulator: acc,
-      });
-      panel.update(now);
-      animationInspector.update();
-      requestAnimationFrame(frame);
-    };
-    requestAnimationFrame(frame);
+  private onFixedStep(): void {
+    this.stepOnce();
+    this.simulationSteps++;
+  }
+
+  private onFrameRender(frame: FixedStepRenderFrame): void {
+    const { debug, presenter, panel, animationInspector, menu, home } = this.options;
+
+    // Frame advance runs outside the budget: the point is exactly one tick, not
+    // DT worth of injected wall clock.
+    while (debug.shouldStep()) {
+      this.stepOnce();
+      this.simulationSteps++;
+    }
+    performance.mark("mmx:simulation:end");
+    const simulation = performance.measure(
+      "mmx:simulation",
+      "mmx:simulation:start",
+      "mmx:simulation:end",
+    ).duration;
+
+    const scene = debug.scene;
+    presenter.updateOverlay(scene, debug.overlayVisible, debug.animationInspectorVisible);
+    // A no-op unless the window moved to a display that changed the integer zoom.
+    menu.setPixelScale(presenter.pixelScale);
+    home.setPixelScale(presenter.pixelScale);
+
+    performance.mark("mmx:render:start");
+    presenter.render(scene);
+    performance.mark("mmx:render:end");
+    const rendering = performance.measure(
+      "mmx:render",
+      "mmx:render:start",
+      "mmx:render:end",
+    ).duration;
+    performance.mark("mmx:frame-work:end");
+    const frameWork = performance.measure(
+      "mmx:frame-work",
+      "mmx:frame-work:start",
+      "mmx:frame-work:end",
+    ).duration;
+
+    debug.stats.record({
+      frameTime: frame.rawElapsedSeconds * 1000,
+      simulation,
+      rendering,
+      frameWork,
+      simulationSteps: this.simulationSteps,
+      accumulator: frame.accumulatorSeconds,
+    });
+    panel.update(performance.now());
+    animationInspector.update();
   }
 
   /**

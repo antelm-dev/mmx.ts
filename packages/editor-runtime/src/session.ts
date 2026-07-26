@@ -1,10 +1,10 @@
+import type { FixedStepFrameStats, FixedStepLoop } from "@mmx/browser-runtime";
 import { documentToLevelData } from "@mmx/content-engine-adapter";
 import type { LevelDocument } from "@mmx/content-schema";
-import type { SceneOptions } from "@mmx/engine";
+import { DT, FrameStats, type SceneOptions } from "@mmx/engine";
 import { ToolingSession } from "@mmx/engine/tooling";
 import type { AssetCatalog, StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";
-import type { PlaytestClock } from "./PlaytestClock.js";
 import { PlaytestInput } from "./PlaytestInput.js";
 import { STOPPED_PLAYTEST, type PlaytestSnapshot, type SimulationSnapshot } from "./snapshots.js";
 import type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
@@ -23,7 +23,8 @@ export function createPlaytest(
 class PlaytestSession implements EditorPlaytestSession {
   private tooling: ToolingSession | null = null;
   private renderer: StudioPlaytestRenderer | null = null;
-  private clock: PlaytestClock | null = null;
+  private clock: FixedStepLoop | null = null;
+  private frameStats = new FrameStats();
   private readonly input = new PlaytestInput();
   private runtime: SimulationSnapshot | null = null;
   private selectedRuntimeId: string | null = "player";
@@ -70,7 +71,8 @@ class PlaytestSession implements EditorPlaytestSession {
 
     try {
       if (this.options.host && visual && assets) {
-        const { PlaytestClock } = await import("./PlaytestClock.js");
+        // Dynamic import keeps requestAnimationFrame scheduling out of headless sessions.
+        const { FixedStepLoop } = await import("@mmx/browser-runtime");
         this.renderer = await visual.createPlaytestRenderer(this.options.host, tooling.scene, {
           assets,
           decorations: this.document.decorations,
@@ -81,9 +83,13 @@ class PlaytestSession implements EditorPlaytestSession {
           return;
         }
         this.input.attach();
-        this.clock = new PlaytestClock({
+        this.frameStats = new FrameStats();
+        this.clock = new FixedStepLoop({
+          stepSeconds: DT,
+          maxFrameSeconds: 0.25,
           onStep: () => this.tick(),
           onRender: () => this.draw(),
+          onFrameStats: (frame) => this.recordFrameStats(frame),
           onError: (error) => this.fail(error),
         });
         this.clock.start();
@@ -136,7 +142,7 @@ class PlaytestSession implements EditorPlaytestSession {
       runtime: this.runtime,
       selectedRuntimeId: this.selectedRuntimeId,
       sceneRevision: this.tooling.sceneRevision,
-      frameStats: this.clock?.frameStatsSnapshot() ?? STOPPED_PLAYTEST.frameStats,
+      frameStats: this.clock ? this.frameStats.toSnapshot() : STOPPED_PLAYTEST.frameStats,
     };
   }
 
@@ -195,6 +201,20 @@ class PlaytestSession implements EditorPlaytestSession {
     if (!tooling || !this.renderer) return;
     this.renderer.render(tooling.scene);
     if (!this.clock?.isPaused) this.emitThrottled();
+  }
+
+  private recordFrameStats(frame: FixedStepFrameStats): void {
+    if (!frame.paused) {
+      this.frameStats.addDiscardedSeconds(frame.rawElapsedSeconds - frame.elapsedSeconds);
+    }
+    this.frameStats.record({
+      frameTime: frame.rawElapsedSeconds * 1000,
+      simulation: frame.simulationMs,
+      rendering: frame.renderingMs,
+      frameWork: frame.frameWorkMs,
+      simulationSteps: frame.simulationSteps,
+      accumulator: frame.accumulatorSeconds,
+    });
   }
 
   private fail(error: unknown): void {
