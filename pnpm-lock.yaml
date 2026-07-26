@@ -198,6 +198,9 @@ importers:
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
+      '@mmx/browser-runtime':
+        specifier: workspace:*
+        version: link:../../packages/browser-runtime
       '@mmx/engine':
         specifier: workspace:*
         version: link:../../packages/engine
