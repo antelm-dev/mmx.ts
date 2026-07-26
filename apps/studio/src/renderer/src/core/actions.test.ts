@@ -103,6 +103,18 @@ describe("editor actions", () => {
     expect(selectedTileIndices(store.get().selection)).toEqual([]);
   });
 
+  it("moves selected tiles by cell and updates selection", () => {
+    const store = freshStore();
+    setTileAt(store, 2, 3, true);
+    const from = cellIndex(store, 2, 3)!;
+    store.selectTiles([from]);
+    nudgeSelection(store, store.get().document.gridSize, 0);
+    const to = cellIndex(store, 3, 3)!;
+    expect(store.get().document.tiles[from]).toBe(Tile.Empty);
+    expect(store.get().document.tiles[to]).toBe(Tile.Solid);
+    expect(selectedTileIndices(store.get().selection)).toEqual([to]);
+  });
+
   it("ignores an all-redundant paint stroke so history stays clean", () => {
     const store = freshStore();
     const index = cellIndex(store, 1, 1)!;

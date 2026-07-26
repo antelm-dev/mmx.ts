@@ -18,7 +18,7 @@ import {
   type EditorSelection,
   type EditorStore,
 } from "./EditorStore.js";
-import { paintTiles, placeAt } from "./actions.js";
+import { paintTiles, placeAt, moveSelectedTiles } from "./actions.js";
 
 const COLOR_BG = 0x05070d;
 const COLOR_TILE_FILL = 0x0b1120;
@@ -95,14 +95,23 @@ export class EditorViewport {
   private panning = false;
   private spaceDown = false;
   private lastPointer = { x: 0, y: 0 };
-  private dragStart: {
-    world: { x: number; y: number };
-    ids: string[];
-    orig: Map<string, Box>;
-  } | null = null;
+  private dragStart:
+    | {
+        kind: "objects";
+        world: { x: number; y: number };
+        ids: string[];
+        orig: Map<string, Box>;
+      }
+    | {
+        kind: "tiles";
+        world: { x: number; y: number };
+        indices: number[];
+      }
+    | null = null;
   private dragging = false;
   private live:
     | { type: "move"; dx: number; dy: number }
+    | { type: "moveTiles"; dCol: number; dRow: number }
     | { type: "resize"; id: string; box: Box }
     | null = null;
   private resizeState: { id: string; handle: Handle; orig: Box } | null = null;
@@ -407,9 +416,20 @@ export class EditorViewport {
     }
 
     if (state.selection.kind === "tiles") {
+      const dCol = this.live?.type === "moveTiles" ? this.live.dCol : 0;
+      const dRow = this.live?.type === "moveTiles" ? this.live.dRow : 0;
       for (const index of state.selection.indices) {
-        const col = index % state.document.cols;
-        const row = Math.floor(index / state.document.cols);
+        const col = (index % state.document.cols) + dCol;
+        const row = Math.floor(index / state.document.cols) + dRow;
+        if (dCol !== 0 || dRow !== 0) {
+          const ox = (index % state.document.cols) * grid;
+          const oy = Math.floor(index / state.document.cols) * grid;
+          g.rect(ox, oy, grid, grid).fill({ color: COLOR_BG, alpha: 0.45 });
+          g.rect(col * grid, row * grid, grid, grid).fill({
+            color: COLOR_TILE_FILL,
+            alpha: 0.75,
+          });
+        }
         g.rect(col * grid - 1 / zoom, row * grid - 1 / zoom, grid + 2 / zoom, grid + 2 / zoom).stroke(
           {
             width: 2 / zoom,
@@ -563,6 +583,30 @@ export class EditorViewport {
       }
     }
     return out;
+  }
+
+  private clampTileDelta(
+    indices: readonly number[],
+    dCol: number,
+    dRow: number,
+  ): { dCol: number; dRow: number } {
+    const { cols, rows } = this.store.get().document;
+    let minCol = Infinity;
+    let maxCol = -Infinity;
+    let minRow = Infinity;
+    let maxRow = -Infinity;
+    for (const index of indices) {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      minCol = Math.min(minCol, col);
+      maxCol = Math.max(maxCol, col);
+      minRow = Math.min(minRow, row);
+      maxRow = Math.max(maxRow, row);
+    }
+    return {
+      dCol: Math.max(-minCol, Math.min(cols - 1 - maxCol, dCol)),
+      dRow: Math.max(-minRow, Math.min(rows - 1 - maxRow, dRow)),
+    };
   }
 
   private applyMarqueeSelection(): void {
@@ -724,20 +768,29 @@ export class EditorViewport {
         const ids = selectedObjectIds(this.store.get().selection);
         const orig = new Map<string, Box>();
         for (const o of state.document.objects) if (ids.includes(o.id)) orig.set(o.id, boxOf(o));
-        this.dragStart = { world, ids, orig };
+        this.dragStart = { kind: "objects", world, ids, orig };
       }
     } else {
       this.store.setHover(undefined);
       const tileIndex = this.tileIndexAt(world.x, world.y);
       const terrain = tileIndex !== null && this.isTerrainCell(tileIndex);
-      this.pendingTileToggle = e.shiftKey && terrain ? tileIndex : null;
-      this.marquee = {
-        start: world,
-        current: world,
-        additive: e.shiftKey,
-        base: e.shiftKey ? cloneSelection(state.selection) : emptySelection(),
-      };
-      this.marqueeActive = false;
+      if (terrain && !e.shiftKey) {
+        const sel = state.selection;
+        const already = sel.kind === "tiles" && sel.indices.includes(tileIndex);
+        if (!already) this.store.selectTiles([tileIndex]);
+        const next = this.store.get().selection;
+        const indices = next.kind === "tiles" ? [...next.indices] : [tileIndex];
+        this.dragStart = { kind: "tiles", world, indices };
+      } else {
+        this.pendingTileToggle = e.shiftKey && terrain ? tileIndex : null;
+        this.marquee = {
+          start: world,
+          current: world,
+          additive: e.shiftKey,
+          base: e.shiftKey ? cloneSelection(state.selection) : emptySelection(),
+        };
+        this.marqueeActive = false;
+      }
     }
   }
 
@@ -784,15 +837,27 @@ export class EditorViewport {
       const rawDy = world.y - this.dragStart.world.y;
       if (!this.dragging && Math.hypot(rawDx, rawDy) * this.store.get().zoom < 3) return;
       this.dragging = true;
-      const primaryId = this.dragStart.ids[0];
-      const primary = this.dragStart.orig.get(primaryId);
-      let dx = rawDx;
-      let dy = rawDy;
-      if (primary) {
-        dx = this.store.snap(primary.x + rawDx) - primary.x;
-        dy = this.store.snap(primary.y + rawDy) - primary.y;
+      if (this.dragStart.kind === "tiles") {
+        const grid = this.store.get().document.gridSize;
+        const raw = {
+          dCol: Math.round(rawDx / grid),
+          dRow: Math.round(rawDy / grid),
+        };
+        this.live = {
+          type: "moveTiles",
+          ...this.clampTileDelta(this.dragStart.indices, raw.dCol, raw.dRow),
+        };
+      } else {
+        const primaryId = this.dragStart.ids[0];
+        const primary = this.dragStart.orig.get(primaryId);
+        let dx = rawDx;
+        let dy = rawDy;
+        if (primary) {
+          dx = this.store.snap(primary.x + rawDx) - primary.x;
+          dy = this.store.snap(primary.y + rawDy) - primary.y;
+        }
+        this.live = { type: "move", dx, dy };
       }
-      this.live = { type: "move", dx, dy };
       this.redraw();
       return;
     }
@@ -891,9 +956,19 @@ export class EditorViewport {
     }
     this.resizeState = null;
 
+    if (this.dragging && this.live?.type === "moveTiles") {
+      const { dCol, dRow } = this.live;
+      this.live = null;
+      this.dragging = false;
+      this.dragStart = null;
+      if (dCol !== 0 || dRow !== 0) moveSelectedTiles(this.store, dCol, dRow);
+      else this.redraw();
+      return;
+    }
+
     if (this.dragging && this.live?.type === "move") {
       const { dx, dy } = this.live;
-      const ids = this.dragStart?.ids ?? [];
+      const ids = this.dragStart?.kind === "objects" ? this.dragStart.ids : [];
       this.live = null;
       this.dragging = false;
       this.dragStart = null;

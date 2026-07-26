@@ -2,6 +2,7 @@ import {
   addObjects,
   deleteObjects,
   moveObjects,
+  moveTiles,
   newId,
   requireDefinition,
   setTiles,
@@ -9,10 +10,7 @@ import {
   type TileEdit,
 } from "@mmx/content-schema";
 import { Tile } from "@mmx/engine/game/World.js";
-import {
-  selectedObjectIds,
-  type EditorStore,
-} from "./EditorStore.js";
+import { selectedObjectIds, type EditorStore } from "./EditorStore.js";
 
 /**
  * Intent → undoable command. Everything the toolbar, palette, viewport and
@@ -105,9 +103,27 @@ export function setTileAt(store: EditorStore, col: number, row: number, solid: b
   paintTiles(store, [{ index, value: solid ? Tile.Solid : Tile.Empty }], !solid);
 }
 
-/** Nudge the object selection by a pixel delta (arrow keys). No-op for tile selection. */
+/** Move selected terrain cells by a grid offset; updates the selection to the destinations. */
+export function moveSelectedTiles(store: EditorStore, dCol: number, dRow: number): void {
+  const { document, selection } = store.get();
+  if (selection.kind !== "tiles" || selection.indices.length === 0) return;
+  const result = moveTiles(document, selection.indices, dCol, dRow);
+  if (!result) return;
+  store.execute(result.command);
+  store.selectTiles(result.nextIndices);
+}
+
+/** Nudge the selection (objects by pixels, tiles by cells). */
 export function nudgeSelection(store: EditorStore, dx: number, dy: number): void {
-  const selectedIds = selectedObjectIds(store.get().selection);
+  const { document, selection } = store.get();
+  if (selection.kind === "tiles") {
+    const g = document.gridSize;
+    const dCol = dx === 0 ? 0 : Math.trunc(dx / g) || Math.sign(dx);
+    const dRow = dy === 0 ? 0 : Math.trunc(dy / g) || Math.sign(dy);
+    moveSelectedTiles(store, dCol, dRow);
+    return;
+  }
+  const selectedIds = selectedObjectIds(selection);
   if (selectedIds.length === 0) return;
   store.execute(moveObjects(selectedIds, dx, dy));
 }

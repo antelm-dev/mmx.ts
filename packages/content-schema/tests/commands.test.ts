@@ -8,6 +8,7 @@ import {
   addObjects,
   deleteObjects,
   moveObjects,
+  moveTiles,
   setLevelSettings,
   setProperty,
   setTiles,
@@ -133,6 +134,32 @@ test("setTiles drops cells already at their target value", () => {
   const reverted = cmd.undo(painted);
   assert.equal(reverted.tiles[5], 1, "undo must not clear a cell the command never touched");
   assert.equal(reverted.tiles[6], 0);
+});
+
+test("moveTiles shifts cells and slopes, and aborts when any target is out of bounds", () => {
+  const tiles = new Array(64).fill(0);
+  tiles[10] = 1;
+  tiles[11] = 2;
+  const base: LevelDocument = {
+    ...doc([]),
+    tiles,
+    slopes: { 11: [0, 8] },
+  };
+  const moved = moveTiles(base, [10, 11], 1, 0);
+  assert.ok(moved);
+  const h = new History(base);
+  h.execute(moved!.command);
+  assert.equal(h.document.tiles[10], 0);
+  assert.equal(h.document.tiles[11], 1);
+  assert.equal(h.document.tiles[12], 2);
+  assert.deepEqual(h.document.slopes, { 12: [0, 8] });
+  assert.deepEqual(moved!.nextIndices, [11, 12]);
+  h.undo();
+  assert.equal(h.document.tiles[10], 1);
+  assert.equal(h.document.tiles[11], 2);
+  assert.deepEqual(h.document.slopes, { 11: [0, 8] });
+
+  assert.equal(moveTiles(base, [7], 1, 0), null, "col 7 + 1 is out of bounds on an 8-wide grid");
 });
 
 test("setLevelSettings edits name and grid without touching terrain", () => {

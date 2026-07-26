@@ -127,6 +127,79 @@ export function setTiles(
   return { label, execute: apply(after), undo: apply(before) };
 }
 
+export interface MoveTilesResult {
+  command: EditorCommand;
+  nextIndices: number[];
+}
+
+/**
+ * Move terrain cells by a grid offset. Sources are cleared then written to the
+ * destination so overlapping selections stay coherent; any out-of-bounds target
+ * aborts the whole move. Slope profiles keyed by cell index move with them.
+ */
+export function moveTiles(
+  doc: LevelDocument,
+  indices: readonly number[],
+  dCol: number,
+  dRow: number,
+): MoveTilesResult | null {
+  if (dCol === 0 && dRow === 0) return null;
+  const unique = [...new Set(indices)];
+  if (unique.length === 0) return null;
+
+  const { cols, rows, tiles } = doc;
+  type Payload = { from: number; to: number; value: number; slope?: [number, number] };
+  const payloads: Payload[] = [];
+  for (const from of unique) {
+    if (from < 0 || from >= tiles.length) return null;
+    const col = from % cols;
+    const row = Math.floor(from / cols);
+    const toCol = col + dCol;
+    const toRow = row + dRow;
+    if (toCol < 0 || toRow < 0 || toCol >= cols || toRow >= rows) return null;
+    payloads.push({
+      from,
+      to: toRow * cols + toCol,
+      value: tiles[from] ?? 0,
+      slope: doc.slopes?.[from],
+    });
+  }
+
+  const afterTiles = tiles.slice();
+  const afterSlopes: Record<number, [number, number]> = { ...(doc.slopes ?? {}) };
+  for (const p of payloads) {
+    afterTiles[p.from] = 0;
+    delete afterSlopes[p.from];
+  }
+  for (const p of payloads) {
+    afterTiles[p.to] = p.value;
+    if (p.slope) afterSlopes[p.to] = [...p.slope] as [number, number];
+    else delete afterSlopes[p.to];
+  }
+
+  const beforeTiles = tiles.slice();
+  const beforeSlopes = doc.slopes ? { ...doc.slopes } : undefined;
+  const slopesAfter =
+    Object.keys(afterSlopes).length > 0 ? afterSlopes : undefined;
+
+  return {
+    nextIndices: payloads.map((p) => p.to),
+    command: {
+      label: "Move tiles",
+      execute: (d) => ({
+        ...d,
+        tiles: afterTiles.slice(),
+        slopes: slopesAfter ? { ...slopesAfter } : undefined,
+      }),
+      undo: (d) => ({
+        ...d,
+        tiles: beforeTiles.slice(),
+        slopes: beforeSlopes ? { ...beforeSlopes } : undefined,
+      }),
+    },
+  };
+}
+
 /** Editable level ("room") settings: identity, grid pitch, and terrain extent. */
 export interface LevelSettings {
   name: string;
