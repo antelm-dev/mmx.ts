@@ -10,10 +10,6 @@ export type EditableTerrainSource = Pick<
   "cols" | "rows" | "gridSize" | "tiles" | "slopes"
 >;
 
-/**
- * Authoring view over a level's terrain grid. Reads cells and slope profiles
- * for the editor; does not implement runtime collision semantics.
- */
 export class EditableTerrain {
   readonly cols: number;
   readonly rows: number;
