@@ -4,6 +4,7 @@
     { "path": "./packages/asset-schema" },
     { "path": "./packages/content-contracts" },
     { "path": "./packages/engine" },
+    { "path": "./packages/browser-input" },
     { "path": "./packages/renderer-pixi" },
     { "path": "./packages/content-schema" },
     { "path": "./apps/web" },
