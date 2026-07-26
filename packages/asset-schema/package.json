@@ -1,5 +1,5 @@
 {
-  "name": "@mmx/editor-runtime",
+  "name": "@mmx/asset-schema",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -9,14 +9,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --import tsx --test tests/*.test.ts"
-  },
-  "dependencies": {
-    "@mmx/asset-schema": "workspace:*",
-    "@mmx/browser-audio": "workspace:*",
-    "@mmx/content-engine-adapter": "workspace:*",
-    "@mmx/content-schema": "workspace:*",
-    "@mmx/engine": "workspace:*",
-    "@mmx/renderer-pixi": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

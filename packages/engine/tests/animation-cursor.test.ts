@@ -7,7 +7,7 @@ import {
   uniformClip,
   type TimedClip,
 } from "../src/core/AnimationCursor.js";
-import { assertAnimData } from "../src/game/Animation.js";
+import { assertAnimData } from "@mmx/asset-schema";
 
 test("cursor respects per-frame durations and holds a completed one-shot", () => {
   const clip: TimedClip = {

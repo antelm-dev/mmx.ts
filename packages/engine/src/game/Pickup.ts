@@ -1,6 +1,7 @@
 import type { Actor } from "./Actor.js";
 import type { Character } from "./Character.js";
-import { AnimationPlayer, type AnimData, type Region } from "./Animation.js";
+import { AnimationPlayer } from "./Animation.js";
+import type { AnimData, Region } from "@mmx/asset-schema";
 import type { EnvironmentRect } from "./Environment.js";
 import type { World } from "./World.js";
 import {

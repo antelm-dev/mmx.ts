@@ -6,7 +6,7 @@ import type { LifeCapsule, WeaponCapsule } from "@mmx/engine/game/Pickup.js";
 import type { Player } from "@mmx/engine/game/Player.js";
 import type { Scene } from "@mmx/engine/game/Scene.js";
 import type { Stage } from "@mmx/engine/game/Stage.js";
-import type { AnimData } from "@mmx/engine/game/Animation.js";
+import type { AnimData } from "@mmx/asset-schema";
 import {
   DashSmoke,
   EnemyDebris,

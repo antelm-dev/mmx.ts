@@ -6,7 +6,7 @@ import { Input, Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
-import type { AnimData } from "../src/game/Animation.js";
+import type { AnimData } from "@mmx/asset-schema";
 
 /**
  * The animation state the abilities drive (AbilityUser's animatedSprite): clip

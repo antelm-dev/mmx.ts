@@ -1,5 +1,5 @@
 import { getDefinition } from "@mmx/content-schema";
-import type { AnimData, Region } from "@mmx/engine/game/Animation.js";
+import type { AnimData, Region } from "@mmx/asset-schema";
 import { animData, enemyAnims, pickupAnims, SHEET_URLS } from "@mmx/renderer-pixi";
 
 export interface SpritePreview {

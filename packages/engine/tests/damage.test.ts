@@ -11,7 +11,7 @@ import {
   PLAYER_KNOCKBACK_SPEED,
 } from "../src/core/constants.js";
 import { Actor } from "../src/game/Actor.js";
-import type { AnimData } from "../src/game/Animation.js";
+import type { AnimData } from "@mmx/asset-schema";
 import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
 

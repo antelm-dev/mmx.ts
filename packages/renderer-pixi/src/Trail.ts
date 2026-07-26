@@ -1,4 +1,5 @@
-import { Region, AnimationLayer } from "@mmx/engine/game/Animation.js";
+import type { Region } from "@mmx/asset-schema";
+import type { AnimationLayer } from "@mmx/engine/game/Animation.js";
 
 /**
  * Afterimage trail — the visual half of SpriteEffect.gd.
