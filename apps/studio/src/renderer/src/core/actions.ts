@@ -1,16 +1,21 @@
 import {
   TerrainTile,
+  addDecorations,
   addObjects,
+  deleteDecorations,
   deleteObjects,
+  moveDecorations,
   moveObjects,
   moveTiles,
   newId,
   requireDefinition,
   setTiles,
+  type DecorationInstance,
   type LevelObjectInstance,
   type TileEdit,
 } from "@mmx/content-schema";
-import { selectedObjectIds, type EditorStore } from "./EditorStore.js";
+import { getDecorationAsset } from "@mmx/renderer-pixi";
+import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
 
 /**
  * Intent → undoable command. Everything the toolbar, palette, viewport and
@@ -41,12 +46,47 @@ export function placeAt(
   store.selectObjects([inst.id]);
 }
 
-/** Duplicate the current object selection one grid cell down-right, and select the copies. */
+/** Place a decoration sprite at the cursor (anchor point). */
+export function placeDecorationAt(
+  store: EditorStore,
+  assetId: string,
+  worldX: number,
+  worldY: number,
+): void {
+  const asset = getDecorationAsset(assetId);
+  if (!asset) return;
+  const inst: DecorationInstance = {
+    id: newId(),
+    assetId,
+    x: store.snap(worldX),
+    y: store.snap(worldY),
+    layer: asset.defaultLayer,
+  };
+  if (asset.defaultParallax !== undefined) inst.parallax = asset.defaultParallax;
+  store.execute(addDecorations([inst], `Add ${asset.name}`));
+  store.selectDecorations([inst.id]);
+}
+
+/** Duplicate the current object or decoration selection one grid cell down-right. */
 export function duplicateSelection(store: EditorStore): void {
   const { document, selection } = store.get();
+  const grid = document.gridSize;
+
+  if (selection.kind === "decorations") {
+    const selectedIds = selectedDecorationIds(selection);
+    if (selectedIds.length === 0) return;
+    const selected = new Set(selectedIds);
+    const copies = document.decorations
+      .filter((d) => selected.has(d.id))
+      .map((d) => ({ ...d, id: newId(), x: d.x + grid, y: d.y + grid }));
+    if (copies.length === 0) return;
+    store.execute(addDecorations(copies, "Duplicate decoration"));
+    store.selectDecorations(copies.map((c) => c.id));
+    return;
+  }
+
   const selectedIds = selectedObjectIds(selection);
   if (selectedIds.length === 0) return;
-  const grid = document.gridSize;
   const selected = new Set(selectedIds);
   const copies = document.objects
     .filter((o) => selected.has(o.id))
@@ -62,13 +102,19 @@ export function duplicateSelection(store: EditorStore): void {
   store.selectObjects(copies.map((c) => c.id));
 }
 
-/** Delete the current selection (objects or terrain cells). */
+/** Delete the current selection (objects, decorations, or terrain cells). */
 export function deleteSelection(store: EditorStore): void {
   const { document, selection } = store.get();
   if (selection.kind === "tiles") {
     if (selection.indices.length === 0) return;
     const edits = selection.indices.map((index) => ({ index, value: TerrainTile.Empty }));
     paintTiles(store, edits, true);
+    store.clearSelection();
+    return;
+  }
+  if (selection.kind === "decorations") {
+    if (selection.ids.length === 0) return;
+    store.execute(deleteDecorations(document, selection.ids));
     store.clearSelection();
     return;
   }
@@ -113,7 +159,7 @@ export function moveSelectedTiles(store: EditorStore, dCol: number, dRow: number
   store.selectTiles(result.nextIndices);
 }
 
-/** Nudge the selection (objects by pixels, tiles by cells). */
+/** Nudge the selection (objects/decorations by pixels, tiles by cells). */
 export function nudgeSelection(store: EditorStore, dx: number, dy: number): void {
   const { document, selection } = store.get();
   if (selection.kind === "tiles") {
@@ -121,6 +167,12 @@ export function nudgeSelection(store: EditorStore, dx: number, dy: number): void
     const dCol = dx === 0 ? 0 : Math.trunc(dx / g) || Math.sign(dx);
     const dRow = dy === 0 ? 0 : Math.trunc(dy / g) || Math.sign(dy);
     moveSelectedTiles(store, dCol, dRow);
+    return;
+  }
+  if (selection.kind === "decorations") {
+    const ids = selectedDecorationIds(selection);
+    if (ids.length === 0) return;
+    store.execute(moveDecorations(ids, dx, dy));
     return;
   }
   const selectedIds = selectedObjectIds(selection);

@@ -1,6 +1,7 @@
 import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
 import type { Scene } from "@mmx/engine/game/Scene.js";
 import type { AnimData } from "@mmx/asset-schema";
+import type { DecorationInstance } from "@mmx/content-schema";
 import {
   DASH_TRAIL,
   DashSmoke,
@@ -30,7 +31,11 @@ export class PlaytestRenderer {
     this.resizeObserver = new ResizeObserver(() => this.fit());
   }
 
-  static async create(host: HTMLElement, scene: Scene): Promise<PlaytestRenderer> {
+  static async create(
+    host: HTMLElement,
+    scene: Scene,
+    decorations: readonly DecorationInstance[] = [],
+  ): Promise<PlaytestRenderer> {
     const canvas = document.createElement("canvas");
     canvas.id = "play-canvas";
     Object.assign(canvas.style, {
@@ -45,6 +50,7 @@ export class PlaytestRenderer {
     let renderer: Renderer;
     try {
       renderer = await Renderer.create(canvas, scene.stage);
+      renderer.setDecorations(decorations);
     } catch (error) {
       canvas.remove();
       throw error;
@@ -55,6 +61,10 @@ export class PlaytestRenderer {
     instance.fit();
     instance.resizeObserver.observe(host);
     return instance;
+  }
+
+  setDecorations(decorations: readonly DecorationInstance[]): void {
+    this.renderer.setDecorations(decorations);
   }
 
   bindScene(scene: Scene): void {

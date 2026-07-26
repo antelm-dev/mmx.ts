@@ -4,6 +4,7 @@ import {
   type LevelDocument,
   type ValidationResult,
 } from "@mmx/content-schema";
+import { decorationBounds } from "@mmx/renderer-pixi";
 import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
 import {
   emptySelection,
@@ -316,6 +317,24 @@ export class EditorController {
     }
   }
 
+  selectDecorationPalette(assetId: string): void {
+    const state = this.store.get();
+    if (state.activeTool === "placeDecoration" && state.placingAssetId === assetId) {
+      this.store.setTool("select");
+    } else {
+      this.store.setTool("placeDecoration", assetId);
+    }
+  }
+
+  focusDecoration(id: string): void {
+    const inst = this.store.get().document.decorations.find((d) => d.id === id);
+    if (!inst) return;
+    this.store.selectDecorations([id]);
+    const bounds = decorationBounds(inst);
+    if (bounds) this.viewport?.centerOn(bounds.x + bounds.w / 2, bounds.y + bounds.h / 2);
+    else this.viewport?.centerOn(inst.x, inst.y);
+  }
+
   focusObject(id: string): void {
     const inst = this.store.get().document.objects.find((o) => o.id === id);
     if (!inst) return;
@@ -328,6 +347,11 @@ export class EditorController {
   toggleObjectSelection(id: string): void {
     if (!this.store.get().document.objects.some((o) => o.id === id)) return;
     this.store.toggleObjectInSelection(id);
+  }
+
+  toggleDecorationSelection(id: string): void {
+    if (!this.store.get().document.decorations.some((d) => d.id === id)) return;
+    this.store.toggleDecorationInSelection(id);
   }
 
   // ---------- Play ----------
@@ -356,7 +380,9 @@ export class EditorController {
     this.savedSelection =
       state.selection.kind === "objects"
         ? { kind: "objects", ids: [...state.selection.ids] }
-        : { kind: "tiles", indices: [...state.selection.indices] };
+        : state.selection.kind === "decorations"
+          ? { kind: "decorations", ids: [...state.selection.ids] }
+          : { kind: "tiles", indices: [...state.selection.indices] };
 
     const token = ++this.playToken;
     this.store.setMode("play");
@@ -545,7 +571,11 @@ export class EditorController {
         this.deleteSelection();
         break;
       case "Escape":
-        if (state.activeTool === "place" || state.activeTool === "tile")
+        if (
+          state.activeTool === "place" ||
+          state.activeTool === "placeDecoration" ||
+          state.activeTool === "tile"
+        )
           this.store.setTool("select");
         else this.store.clearSelection();
         break;

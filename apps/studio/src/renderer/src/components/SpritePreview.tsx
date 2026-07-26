@@ -1,21 +1,31 @@
 import { useMemo } from "react";
-import { previewForDefinition } from "../core/spritePreview.js";
+import { previewForDecoration, previewForDefinition } from "../core/spritePreview.js";
 import { cx } from "../ui.js";
 
 interface Props {
-  definitionId: string;
+  definitionId?: string;
+  assetId?: string;
   size?: number;
   flip?: boolean;
   fallbackColor?: string | null;
 }
 
-/**
- * Renders the idle sprite crop for a definition, or a coloured swatch fallback
- * when it has no game sprite. A CSS `transform: scale` fits the crop into the
- * requested box while preserving nearest-neighbour pixels.
- */
-export function SpritePreview({ definitionId, size = 48, flip = false, fallbackColor }: Props) {
-  const preview = useMemo(() => previewForDefinition(definitionId), [definitionId]);
+export function SpritePreview({
+  definitionId,
+  assetId,
+  size = 48,
+  flip = false,
+  fallbackColor,
+}: Props) {
+  const preview = useMemo(
+    () =>
+      assetId
+        ? previewForDecoration(assetId)
+        : definitionId
+          ? previewForDefinition(definitionId)
+          : null,
+    [definitionId, assetId],
+  );
 
   if (preview) {
     const [rx, ry, rw, rh] = preview.region;
@@ -27,7 +37,7 @@ export function SpritePreview({ definitionId, size = 48, flip = false, fallbackC
           flip && "-scale-x-100",
         )}
         style={{ width: size, height: size }}
-        title={definitionId}
+        title={assetId ?? definitionId}
       >
         <span
           className="relative overflow-hidden flex-none [image-rendering:pixelated]"

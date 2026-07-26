@@ -1,6 +1,12 @@
 import { getDefinition } from "@mmx/content-schema";
 import type { AnimData, Region } from "@mmx/asset-schema";
-import { animData, enemyAnims, pickupAnims, SHEET_URLS } from "@mmx/renderer-pixi";
+import {
+  animData,
+  enemyAnims,
+  getDecorationAsset,
+  pickupAnims,
+  SHEET_URLS,
+} from "@mmx/renderer-pixi";
 
 export interface SpritePreview {
   url: string;
@@ -69,4 +75,12 @@ export function previewForDefinition(definitionId: string): SpritePreview | null
   }
 
   return null;
+}
+
+export function previewForDecoration(assetId: string): SpritePreview | null {
+  const asset = getDecorationAsset(assetId);
+  if (!asset) return null;
+  const url = SHEET_URLS[asset.sheet];
+  if (!url) return null;
+  return { url, sheet: asset.sheet, region: asset.region };
 }

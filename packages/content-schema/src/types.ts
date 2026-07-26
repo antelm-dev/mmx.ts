@@ -19,7 +19,45 @@
 import type { SlopeMap, TerrainTile } from "@mmx/content-contracts";
 
 /** Current on-disk schema version. Bumped only by a migration in ./migrate.ts. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+/** Authoring depth for presentation-only decoration sprites. */
+export type DecorationLayer =
+  | "far-background"
+  | "background"
+  | "world-back"
+  | "world-front"
+  | "foreground";
+
+export const DECORATION_LAYERS = [
+  "far-background",
+  "background",
+  "world-back",
+  "world-front",
+  "foreground",
+] as const satisfies readonly DecorationLayer[];
+
+/**
+ * One placed decoration sprite. Presentation-only — never compiled into engine
+ * entities, collision, or deterministic simulation state.
+ */
+export interface DecorationInstance {
+  id: string;
+  /** Stable catalog id from the renderer decoration registry (never a file path). */
+  assetId: string;
+  x: number;
+  y: number;
+  layer: DecorationLayer;
+  flipX?: boolean;
+  flipY?: boolean;
+  rotation?: number;
+  /** Overrides the layer's default parallax factor when set. */
+  parallax?: number;
+  /** Reserved for animated clips; static decorations omit this. */
+  animation?: string;
+  /** Pixi tint as a 24-bit RGB integer (0x000000–0xffffff). */
+  tint?: number;
+}
 
 /** How a definition is placed in the viewport. */
 export type Placement = "point" | "rectangle" | "path";
@@ -113,7 +151,8 @@ export interface LevelObjectInstance {
 /**
  * A whole authored level. `tiles`/`slopes` carry the baked terrain unchanged
  * from the LDtk import so Play mode can hand them straight to the engine, while
- * `objects` are the editor-authored entities.
+ * `objects` are the editor-authored entities and `decorations` are presentation-
+ * only sprites that never enter the engine.
  */
 export interface LevelDocument {
   schemaVersion: number;
@@ -127,6 +166,7 @@ export interface LevelDocument {
   /** Non-45-degree slope profiles, keyed by row-major tile index, as [left, right]. */
   slopes?: SlopeMap;
   objects: LevelObjectInstance[];
+  decorations: DecorationInstance[];
 }
 
 /** A project groups levels and pins the schema version they were authored at. */

@@ -1,4 +1,5 @@
 import { Application, Container, Sprite } from "pixi.js";
+import type { DecorationInstance } from "@mmx/content-schema";
 import {
   CHARGE_FX_OFFSET_Y,
   ChargeTier,
@@ -20,6 +21,7 @@ import {
   SHEET_URLS,
   validateAnimationAssets,
 } from "./assets.js";
+import { DecorationView } from "./DecorationView.js";
 import { Hud } from "./Hud.js";
 import { PaletteSwapFilter } from "./PaletteSwapFilter.js";
 import { place, spriteSnapshot } from "./sprite.js";
@@ -40,15 +42,15 @@ import { loadSheets, regionTexture, shotTexture, textureCounts } from "./texture
  * like, so a paused or single-stepped frame shows exactly what the simulation says
  * it should.
  *
- * Layering mirrors the draw order the immediate-mode renderer had, as containers
- * rather than call sequence:
+ * Layering:
  *
  *   stage
  *    +- viewport   (integer zoom)
+ *    |   +- far-background / background  (parallax decorations)
  *    |   +- world  (camera scroll)
- *    |       +- terrain, enemies, capsules, ghosts, player, charge aura, projectiles,
- *    |          death burst, death debris, dash smoke
- *    +- hud        (integer zoom, no scroll — screen furniture)
+ *    |       +- world-back decorations, terrain, actors/FX, world-front decorations
+ *    |   +- foreground                 (parallax decorations)
+ *    +- hud / ui   (integer zoom, no scroll)
  */
 
 /**
@@ -68,6 +70,7 @@ export class Renderer {
   private readonly viewport = new Container();
   private readonly scene = new Container();
   private readonly hudLayer = new Container();
+  private readonly decorations = new DecorationView();
   private readonly ghosts = new SpritePool();
   private readonly enemies = new SpritePool();
   private readonly pickups = new SpritePool();
@@ -111,7 +114,11 @@ export class Renderer {
     // Particles z_index 2, Remains z_index 10 — both outrank the enemy sprite
     // they replace). Dash smoke is above even those: dash_particle carries
     // z_index 45, so the dust reads over X on the frames he has not yet cleared it.
+    //
+    // World-back decorations sit under terrain; world-front sits above actors/FX
+    // but under the debug overlay.
     this.scene.addChild(
+      this.decorations.worldBack,
       this.enemies.view,
       this.pickups.view,
       this.ghosts.view,
@@ -121,9 +128,15 @@ export class Renderer {
       this.explosionPuffs.view,
       this.debris.view,
       this.smoke.view,
+      this.decorations.worldFront,
       this.worldOverlay,
     );
-    this.viewport.addChild(this.scene);
+    this.viewport.addChild(
+      this.decorations.farBackground,
+      this.decorations.background,
+      this.scene,
+      this.decorations.foreground,
+    );
     this.hudLayer.addChild(this.hud.view);
     this.app.stage.addChild(this.viewport, this.hudLayer, this.uiLayer);
   }
@@ -158,7 +171,8 @@ export class Renderer {
     // renderer/backend for targeted GPU inspection from DevTools.
     (window as any).__mmxRenderer = { app, canvas };
     renderer.terrain = buildTerrain(stage);
-    renderer.scene.addChildAt(renderer.terrain.view, 0);
+    // Index 1: after world-back decorations (index 0).
+    renderer.scene.addChildAt(renderer.terrain.view, 1);
     renderer.fit();
     return renderer;
   }
@@ -170,7 +184,12 @@ export class Renderer {
       this.terrain.view.destroy({ children: true });
     }
     this.terrain = buildTerrain(stage);
-    this.scene.addChildAt(this.terrain.view, 0);
+    this.scene.addChildAt(this.terrain.view, 1);
+  }
+
+  /** Rebuild static decorations for the current authored level (presentation-only). */
+  setDecorations(instances: readonly DecorationInstance[]): void {
+    this.decorations.setDecorations(instances);
   }
 
   /**
@@ -232,6 +251,7 @@ export class Renderer {
    * Play mode builds a fresh one per session and disposes it on stop.
    */
   destroy(): void {
+    this.decorations.destroy();
     this.app.destroy({ removeView: true }, { children: true });
   }
 
@@ -264,7 +284,10 @@ export class Renderer {
     //
     // Only whole-pixel offsets separate the body from its sprite anchor, so the body
     // position stands in for it here and both quantise in step.
-    this.scene.position.set(camera.renderOffsetX(player.pos.x), camera.renderOffsetY(player.pos.y));
+    const ox = camera.renderOffsetX(player.pos.x);
+    const oy = camera.renderOffsetY(player.pos.y);
+    this.scene.position.set(ox, oy);
+    this.decorations.syncCamera(ox, oy);
 
     this.terrain?.sync(stage);
     this.syncEnemies(stage);

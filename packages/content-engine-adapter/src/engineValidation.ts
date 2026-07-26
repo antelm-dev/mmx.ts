@@ -2,6 +2,7 @@ import { compileLevel, type EngineDiagnostic } from "@mmx/engine/content";
 import {
   validateDocument,
   type LevelDocument,
+  type ValidateDocumentOptions,
   type ValidationIssue,
   type ValidationResult,
 } from "@mmx/content-schema";
@@ -46,8 +47,11 @@ function dedupe(issues: ValidationIssue[]): ValidationIssue[] {
  * Full validation for Play mode: authoring checks combined with engine
  * compilation, deduplicated.
  */
-export function validateLevelDocument(doc: LevelDocument): ValidationResult {
-  const authoring = validateDocument(doc);
+export function validateLevelDocument(
+  doc: LevelDocument,
+  options?: ValidateDocumentOptions,
+): ValidationResult {
+  const authoring = validateDocument(doc, options);
   const issues = dedupe([...authoring.issues, ...engineDiagnostics(doc)]);
   const errorCount = issues.filter((i) => i.severity === "error").length;
   return {

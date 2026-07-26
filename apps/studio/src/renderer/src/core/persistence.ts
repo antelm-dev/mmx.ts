@@ -82,7 +82,7 @@ export function serializeDocument(doc: LevelDocument): string {
 export function parseDocument(json: string): LevelDocument {
   const raw = JSON.parse(json);
   const doc = migrateDocument(raw);
-  if (!Array.isArray(doc.objects) || !Array.isArray(doc.tiles)) {
+  if (!Array.isArray(doc.objects) || !Array.isArray(doc.tiles) || !Array.isArray(doc.decorations)) {
     throw new Error("Not a valid MMX Studio level document.");
   }
   return doc;

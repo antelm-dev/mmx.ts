@@ -3,24 +3,33 @@ import {
   TerrainTile,
   effectiveValue,
   instanceSize,
+  moveDecorations,
   moveObjects,
   requireDefinition,
   setTransform,
+  type DecorationInstance,
   type LevelObjectInstance,
   type SlopeMap,
 } from "@mmx/content-schema";
-import { loadSheets, regionTexture, SHEET_URLS } from "@mmx/renderer-pixi";
+import {
+  decorationBounds,
+  getDecorationAsset,
+  loadSheets,
+  regionTexture,
+  SHEET_URLS,
+} from "@mmx/renderer-pixi";
 import { EditableTerrain } from "./EditableTerrain.js";
 import { previewForDefinition } from "./spritePreview.js";
 import {
   cloneSelection,
   emptySelection,
+  selectedDecorationIds,
   selectedObjectIds,
   selectionsEqual,
   type EditorSelection,
   type EditorStore,
 } from "./EditorStore.js";
-import { paintTiles, placeAt, moveSelectedTiles } from "./actions.js";
+import { paintTiles, placeAt, placeDecorationAt, moveSelectedTiles } from "./actions.js";
 
 const COLOR_BG = 0x05070d;
 const COLOR_TILE_FILL = 0x0b1120;
@@ -86,7 +95,9 @@ export class EditorViewport {
   private readonly world = new Container();
   private readonly terrainLayer = new Graphics();
   private readonly gridLayer = new Graphics();
+  private readonly decorationBackLayer = new Container();
   private readonly objectLayer = new Container();
+  private readonly decorationFrontLayer = new Container();
   private readonly overlay = new Graphics();
   private terrainTilesRef: readonly TerrainTile[] | null = null;
   private terrainSlopesRef: SlopeMap | undefined | null = null;
@@ -108,6 +119,12 @@ export class EditorViewport {
         orig: Map<string, Box>;
       }
     | {
+        kind: "decorations";
+        world: { x: number; y: number };
+        ids: string[];
+        orig: Map<string, { x: number; y: number }>;
+      }
+    | {
         kind: "tiles";
         world: { x: number; y: number };
         indices: number[];
@@ -116,6 +133,7 @@ export class EditorViewport {
   private dragging = false;
   private live:
     | { type: "move"; dx: number; dy: number }
+    | { type: "moveDecorations"; dx: number; dy: number }
     | { type: "moveTiles"; dCol: number; dRow: number }
     | { type: "resize"; id: string; box: Box }
     | null = null;
@@ -125,6 +143,7 @@ export class EditorViewport {
   // that commits as one command on pointer-up.
   private tileStroke: { erase: boolean; changed: Map<number, TerrainTile> } | null = null;
   private pendingToggle: string | null = null;
+  private pendingDecorationToggle: string | null = null;
   private pendingTileToggle: number | null = null;
   private marquee: {
     start: { x: number; y: number };
@@ -146,7 +165,14 @@ export class EditorViewport {
       fontSize: 10,
       fill: 0xdfe7f5,
     });
-    this.world.addChild(this.terrainLayer, this.gridLayer, this.objectLayer, this.overlay);
+    this.world.addChild(
+      this.terrainLayer,
+      this.gridLayer,
+      this.decorationBackLayer,
+      this.objectLayer,
+      this.decorationFrontLayer,
+      this.overlay,
+    );
     this.app.stage.addChild(this.world);
     this.bindPointer();
   }
@@ -253,6 +279,7 @@ export class EditorViewport {
       this.rebuildTerrain();
     }
     this.drawGrid();
+    this.drawDecorations();
     this.drawObjects();
     this.drawOverlay();
     this.updateCursor();
@@ -302,6 +329,42 @@ export class EditorViewport {
     for (let y = 0; y <= doc.rows; y++) g.moveTo(0, y * TS).lineTo(worldW, y * TS);
     g.stroke({ width, color: COLOR_GRID });
     g.rect(0, 0, worldW, worldH).stroke({ width: width * 1.5, color: 0x2a3345 });
+  }
+
+  private decorationDrawPos(inst: DecorationInstance): { x: number; y: number } {
+    const selIds = selectedDecorationIds(this.store.get().selection);
+    if (this.live?.type === "moveDecorations" && selIds.includes(inst.id)) {
+      return { x: inst.x + this.live.dx, y: inst.y + this.live.dy };
+    }
+    return { x: inst.x, y: inst.y };
+  }
+
+  private drawDecorations(): void {
+    const backLayer = this.decorationBackLayer;
+    const frontLayer = this.decorationFrontLayer;
+    backLayer.removeChildren().forEach((c) => c.destroy());
+    frontLayer.removeChildren().forEach((c) => c.destroy());
+    const state = this.store.get();
+    const vis = state.decorationLayerVisible;
+    const BACK_LAYERS = new Set(["far-background", "background", "world-back"]);
+
+    for (const inst of state.document.decorations) {
+      if (!vis[inst.layer]) continue;
+      const asset = getDecorationAsset(inst.assetId);
+      if (!asset) continue;
+      const texture = regionTexture(asset.sheet, asset.region);
+      if (!texture) continue;
+      const pos = this.decorationDrawPos(inst);
+      const sprite = new Sprite(texture);
+      sprite.anchor.set(asset.anchor[0], asset.anchor[1]);
+      sprite.position.set(pos.x, pos.y);
+      if (inst.flipX) sprite.scale.x = -1;
+      if (inst.flipY) sprite.scale.y = -1;
+      if (inst.rotation) sprite.rotation = inst.rotation;
+      if (inst.tint !== undefined) sprite.tint = inst.tint;
+      const target = BACK_LAYERS.has(inst.layer) ? backLayer : frontLayer;
+      target.addChild(sprite);
+    }
   }
 
   private objectDrawBox(inst: LevelObjectInstance): Box {
@@ -398,12 +461,24 @@ export class EditorViewport {
 
     const byId = new Map(state.document.objects.map((o) => [o.id, o]));
     const selectedIds = selectedObjectIds(state.selection);
+    const selectedDecIds = selectedDecorationIds(state.selection);
 
     if (state.hover?.kind === "object" && !selectedIds.includes(state.hover.id)) {
       const inst = byId.get(state.hover.id);
       if (inst) {
         const b = this.objectDrawBox(inst);
         g.rect(b.x, b.y, b.w, b.h).stroke({ width: 1 / zoom, color: COLOR_HOVER, alpha: 0.5 });
+      }
+    }
+
+    if (state.hover?.kind === "decoration" && !selectedDecIds.includes(state.hover.id)) {
+      const hoverId = state.hover.id;
+      const dec = state.document.decorations.find((d) => d.id === hoverId);
+      if (dec) {
+        const b = decorationBounds(dec);
+        if (b) {
+          g.rect(b.x, b.y, b.w, b.h).stroke({ width: 1 / zoom, color: COLOR_HOVER, alpha: 0.5 });
+        }
       }
     }
 
@@ -426,6 +501,22 @@ export class EditorViewport {
       if (!inst) continue;
       const b = this.objectDrawBox(inst);
       g.rect(b.x - 1 / zoom, b.y - 1 / zoom, b.w + 2 / zoom, b.h + 2 / zoom).stroke({
+        width: 2 / zoom,
+        color: COLOR_SELECT,
+      });
+    }
+
+    for (const id of selectedDecIds) {
+      const dec = state.document.decorations.find((d) => d.id === id);
+      if (!dec) continue;
+      const pos = this.decorationDrawPos(dec);
+      const asset = getDecorationAsset(dec.assetId);
+      if (!asset) continue;
+      const [, , w, h] = asset.region;
+      const [ax, ay] = asset.anchor;
+      const bx = pos.x - ax * w;
+      const by = pos.y - ay * h;
+      g.rect(bx - 1 / zoom, by - 1 / zoom, w + 2 / zoom, h + 2 / zoom).stroke({
         width: 2 / zoom,
         color: COLOR_SELECT,
       });
@@ -565,6 +656,34 @@ export class EditorViewport {
     return null;
   }
 
+  private topDecorationAt(wx: number, wy: number): DecorationInstance | null {
+    const state = this.store.get();
+    const vis = state.decorationLayerVisible;
+    const locks = state.decorationLayerLocked;
+    const decos = state.document.decorations;
+    for (let i = decos.length - 1; i >= 0; i--) {
+      const d = decos[i];
+      if (!vis[d.layer] || locks[d.layer]) continue;
+      const b = decorationBounds(d);
+      if (!b) continue;
+      if (wx >= b.x && wx <= b.x + b.w && wy >= b.y && wy <= b.y + b.h) return d;
+    }
+    return null;
+  }
+
+  private decorationsIntersecting(box: Box): string[] {
+    const state = this.store.get();
+    const vis = state.decorationLayerVisible;
+    const locks = state.decorationLayerLocked;
+    return state.document.decorations
+      .filter((d) => {
+        if (!vis[d.layer] || locks[d.layer]) return false;
+        const b = decorationBounds(d);
+        return b !== null && boxesIntersect(b, box);
+      })
+      .map((d) => d.id);
+  }
+
   private tileIndexAt(wx: number, wy: number): number | null {
     const doc = this.store.get().document;
     const col = Math.floor(wx / doc.gridSize);
@@ -640,11 +759,19 @@ export class EditorViewport {
           ? { kind: "objects", ids: [...new Set([...m.base.ids, ...objectIds])] }
           : { kind: "objects", ids: objectIds };
     } else {
-      const indices = this.tilesIntersecting(box);
-      next =
-        m.additive && m.base.kind === "tiles"
-          ? { kind: "tiles", indices: [...new Set([...m.base.indices, ...indices])] }
-          : { kind: "tiles", indices };
+      const decoIds = this.decorationsIntersecting(box);
+      if (decoIds.length > 0) {
+        next =
+          m.additive && m.base.kind === "decorations"
+            ? { kind: "decorations", ids: [...new Set([...m.base.ids, ...decoIds])] }
+            : { kind: "decorations", ids: decoIds };
+      } else {
+        const indices = this.tilesIntersecting(box);
+        next =
+          m.additive && m.base.kind === "tiles"
+            ? { kind: "tiles", indices: [...new Set([...m.base.indices, ...indices])] }
+            : { kind: "tiles", indices };
+      }
     }
     if (selectionsEqual(this.store.get().selection, next)) return;
     this.store.setSelection(next);
@@ -767,6 +894,11 @@ export class EditorViewport {
       return;
     }
 
+    if (state.activeTool === "placeDecoration" && state.placingAssetId) {
+      placeDecorationAt(this.store, state.placingAssetId, world.x, world.y);
+      return;
+    }
+
     // Resize handle first.
     const handle = this.handleAt(e.clientX, e.clientY);
     if (handle) {
@@ -789,27 +921,44 @@ export class EditorViewport {
         for (const o of state.document.objects) if (ids.includes(o.id)) orig.set(o.id, boxOf(o));
         this.dragStart = { kind: "objects", world, ids, orig };
       }
-    } else {
-      this.store.setHover(undefined);
-      const tileIndex = this.tileIndexAt(world.x, world.y);
-      const terrain = tileIndex !== null && this.isTerrainCell(tileIndex);
-      if (terrain && !e.shiftKey) {
-        const sel = state.selection;
-        const already = sel.kind === "tiles" && sel.indices.includes(tileIndex);
-        if (!already) this.store.selectTiles([tileIndex]);
-        const next = this.store.get().selection;
-        const indices = next.kind === "tiles" ? [...next.indices] : [tileIndex];
-        this.dragStart = { kind: "tiles", world, indices };
+      return;
+    }
+
+    const hitDec = this.topDecorationAt(world.x, world.y);
+    if (hitDec) {
+      if (e.shiftKey) {
+        this.pendingDecorationToggle = hitDec.id;
       } else {
-        this.pendingTileToggle = e.shiftKey && terrain ? tileIndex : null;
-        this.marquee = {
-          start: world,
-          current: world,
-          additive: e.shiftKey,
-          base: e.shiftKey ? cloneSelection(state.selection) : emptySelection(),
-        };
-        this.marqueeActive = false;
+        const selDecIds = selectedDecorationIds(state.selection);
+        if (!selDecIds.includes(hitDec.id)) this.store.selectDecorations([hitDec.id]);
+        const ids = selectedDecorationIds(this.store.get().selection);
+        const orig = new Map<string, { x: number; y: number }>();
+        for (const d of state.document.decorations)
+          if (ids.includes(d.id)) orig.set(d.id, { x: d.x, y: d.y });
+        this.dragStart = { kind: "decorations", world, ids, orig };
       }
+      return;
+    }
+
+    this.store.setHover(undefined);
+    const tileIndex = this.tileIndexAt(world.x, world.y);
+    const terrain = tileIndex !== null && this.isTerrainCell(tileIndex);
+    if (terrain && !e.shiftKey) {
+      const sel = state.selection;
+      const already = sel.kind === "tiles" && sel.indices.includes(tileIndex);
+      if (!already) this.store.selectTiles([tileIndex]);
+      const next = this.store.get().selection;
+      const indices = next.kind === "tiles" ? [...next.indices] : [tileIndex];
+      this.dragStart = { kind: "tiles", world, indices };
+    } else {
+      this.pendingTileToggle = e.shiftKey && terrain ? tileIndex : null;
+      this.marquee = {
+        start: world,
+        current: world,
+        additive: e.shiftKey,
+        base: e.shiftKey ? cloneSelection(state.selection) : emptySelection(),
+      };
+      this.marqueeActive = false;
     }
   }
 
@@ -866,6 +1015,16 @@ export class EditorViewport {
           type: "moveTiles",
           ...this.clampTileDelta(this.dragStart.indices, raw.dCol, raw.dRow),
         };
+      } else if (this.dragStart.kind === "decorations") {
+        const primaryId = this.dragStart.ids[0];
+        const primary = this.dragStart.orig.get(primaryId);
+        let dx = rawDx;
+        let dy = rawDy;
+        if (primary) {
+          dx = this.store.snap(primary.x + rawDx) - primary.x;
+          dy = this.store.snap(primary.y + rawDy) - primary.y;
+        }
+        this.live = { type: "moveDecorations", dx, dy };
       } else {
         const primaryId = this.dragStart.ids[0];
         const primary = this.dragStart.orig.get(primaryId);
@@ -881,7 +1040,6 @@ export class EditorViewport {
       return;
     }
 
-    // Idle hover. The tile tool wants the cell cursor, not object highlights.
     if (this.store.get().mode !== "play") {
       const tool = this.store.get().activeTool;
       if (tool === "tile") {
@@ -892,11 +1050,16 @@ export class EditorViewport {
         if (hit) {
           this.store.setHover({ kind: "object", id: hit.id });
         } else {
-          const index = this.tileIndexAt(world.x, world.y);
-          if (index !== null && this.isTerrainCell(index)) {
-            this.store.setHover({ kind: "tile", index });
+          const hitDec = this.topDecorationAt(world.x, world.y);
+          if (hitDec) {
+            this.store.setHover({ kind: "decoration", id: hitDec.id });
           } else {
-            this.store.setHover(undefined);
+            const index = this.tileIndexAt(world.x, world.y);
+            if (index !== null && this.isTerrainCell(index)) {
+              this.store.setHover({ kind: "tile", index });
+            } else {
+              this.store.setHover(undefined);
+            }
           }
         }
       }
@@ -985,6 +1148,17 @@ export class EditorViewport {
       return;
     }
 
+    if (this.dragging && this.live?.type === "moveDecorations") {
+      const { dx, dy } = this.live;
+      const ids = this.dragStart?.kind === "decorations" ? this.dragStart.ids : [];
+      this.live = null;
+      this.dragging = false;
+      this.dragStart = null;
+      if (dx !== 0 || dy !== 0) this.store.execute(moveDecorations(ids, dx, dy));
+      else this.redraw();
+      return;
+    }
+
     if (this.dragging && this.live?.type === "move") {
       const { dx, dy } = this.live;
       const ids = this.dragStart?.kind === "objects" ? this.dragStart.ids : [];
@@ -999,7 +1173,11 @@ export class EditorViewport {
     if (this.pendingToggle && e.shiftKey) {
       this.store.toggleObjectInSelection(this.pendingToggle);
     }
+    if (this.pendingDecorationToggle && e.shiftKey) {
+      this.store.toggleDecorationInSelection(this.pendingDecorationToggle);
+    }
     this.pendingToggle = null;
+    this.pendingDecorationToggle = null;
     this.pendingTileToggle = null;
     this.dragStart = null;
     this.dragging = false;
@@ -1010,7 +1188,12 @@ export class EditorViewport {
     const state = this.store.get();
     let cursor = "default";
     if (this.panning || this.spaceDown || state.activeTool === "pan") cursor = "grab";
-    else if (this.marqueeActive || state.activeTool === "place" || state.activeTool === "tile") {
+    else if (
+      this.marqueeActive ||
+      state.activeTool === "place" ||
+      state.activeTool === "placeDecoration" ||
+      state.activeTool === "tile"
+    ) {
       cursor = "crosshair";
     }
     if (state.mode === "play") cursor = "default";

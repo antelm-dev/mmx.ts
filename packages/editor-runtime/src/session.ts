@@ -77,7 +77,11 @@ class PlaytestSession implements EditorPlaytestSession {
       if (this.options.host) {
         const { PlaytestRenderer } = await import("./PlaytestRenderer.js");
         const { PlaytestClock } = await import("./PlaytestClock.js");
-        this.renderer = await PlaytestRenderer.create(this.options.host, tooling.scene);
+        this.renderer = await PlaytestRenderer.create(
+          this.options.host,
+          tooling.scene,
+          this.document.decorations,
+        );
         if (this.disposed || this.stopped) {
           this.renderer.destroy();
           this.renderer = null;

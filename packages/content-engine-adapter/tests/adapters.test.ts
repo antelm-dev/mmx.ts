@@ -49,6 +49,7 @@ test("a slope object placed over empty terrain bakes into Play tiles", () => {
     rows: 8,
     tiles: new Array(64).fill(TerrainTile.Empty),
     objects: [{ id: "s1", definitionId: "slope", x: 0, y: 0, width: 32, height: 32 }],
+    decorations: [],
   };
   const data = documentToLevelData(doc);
   assert.equal(data.tiles[1], Tile.SlopeUpRight, "top-right cell is a slope tile");
@@ -64,4 +65,35 @@ test("resizable objects keep their authored dimensions", () => {
   assert.ok(platform);
   assert.equal(platform.width, 48);
   assert.equal(platform.height, 8);
+});
+
+test("decorations never become engine entities", () => {
+  const doc: LevelDocument = {
+    schemaVersion: SCHEMA_VERSION,
+    id: "deco-test",
+    name: "deco-test",
+    gridSize: 16,
+    cols: 8,
+    rows: 8,
+    tiles: new Array(64).fill(TerrainTile.Empty),
+    objects: [{ id: "spawn-1", definitionId: "spawn", x: 16, y: 16 }],
+    decorations: [
+      {
+        id: "d1",
+        assetId: "prop.crate",
+        x: 48,
+        y: 48,
+        layer: "foreground",
+      },
+    ],
+  };
+  const data = documentToLevelData(doc);
+  assert.equal(data.entities.length, 1);
+  assert.equal(data.entities[0].id, "Spawn");
+  assert.ok(!("decorations" in data));
+});
+
+test("levelDataToDocument starts with empty decorations", () => {
+  const doc = levelDataToDocument(stage1);
+  assert.deepEqual(doc.decorations, []);
 });

@@ -1,5 +1,5 @@
 import { TerrainTile } from "@mmx/content-contracts";
-import type { LevelDocument, LevelObjectInstance } from "./types.js";
+import type { DecorationInstance, LevelDocument, LevelObjectInstance } from "./types.js";
 
 /**
  * A command-based, fully reversible mutation log.
@@ -20,11 +20,34 @@ export interface EditorCommand {
 type TransformKey = "x" | "y" | "width" | "height" | "rotation";
 export type Transform = Partial<Record<TransformKey, number>>;
 
+export type DecorationPatch = Partial<
+  Pick<
+    DecorationInstance,
+    | "x"
+    | "y"
+    | "layer"
+    | "flipX"
+    | "flipY"
+    | "rotation"
+    | "parallax"
+    | "animation"
+    | "tint"
+    | "assetId"
+  >
+>;
+
 function mapObjects(
   doc: LevelDocument,
   fn: (o: LevelObjectInstance) => LevelObjectInstance,
 ): LevelDocument {
   return { ...doc, objects: doc.objects.map(fn) };
+}
+
+function mapDecorations(
+  doc: LevelDocument,
+  fn: (d: DecorationInstance) => DecorationInstance,
+): LevelDocument {
+  return { ...doc, decorations: doc.decorations.map(fn) };
 }
 
 function withOverride(o: LevelObjectInstance, key: string, value: unknown): LevelObjectInstance {
@@ -47,6 +70,16 @@ export function moveObjects(ids: readonly string[], dx: number, dy: number): Edi
   return { label: "Move", execute: shift(dx, dy), undo: shift(-dx, -dy) };
 }
 
+/** Move decorations by a net delta. */
+export function moveDecorations(ids: readonly string[], dx: number, dy: number): EditorCommand {
+  const set = new Set(ids);
+  const shift =
+    (sx: number, sy: number) =>
+    (doc: LevelDocument): LevelDocument =>
+      mapDecorations(doc, (d) => (set.has(d.id) ? { ...d, x: d.x + sx, y: d.y + sy } : d));
+  return { label: "Move decorations", execute: shift(dx, dy), undo: shift(-dx, -dy) };
+}
+
 /** Apply a transform patch (resize/move/rotate) to one object, reversibly. */
 export function setTransform(id: string, before: Transform, after: Transform): EditorCommand {
   const apply =
@@ -54,6 +87,27 @@ export function setTransform(id: string, before: Transform, after: Transform): E
     (doc: LevelDocument): LevelDocument =>
       mapObjects(doc, (o) => (o.id === id ? { ...o, ...patch } : o));
   return { label: "Resize", execute: apply(after), undo: apply(before) };
+}
+
+/** Patch one decoration's authored fields, reversibly. */
+export function setDecoration(
+  id: string,
+  before: DecorationPatch,
+  after: DecorationPatch,
+): EditorCommand {
+  const apply =
+    (patch: DecorationPatch) =>
+    (doc: LevelDocument): LevelDocument =>
+      mapDecorations(doc, (d) => {
+        if (d.id !== id) return d;
+        const next: DecorationInstance = { ...d };
+        for (const [key, value] of Object.entries(patch) as [keyof DecorationPatch, unknown][]) {
+          if (value === undefined) delete next[key];
+          else (next as unknown as Record<string, unknown>)[key] = value;
+        }
+        return next;
+      });
+  return { label: "Edit decoration", execute: apply(after), undo: apply(before) };
 }
 
 /** Set one editable property (transform or override) on one object. */
@@ -89,6 +143,19 @@ export function addObjects(
     label,
     execute: (doc) => ({ ...doc, objects: [...doc.objects, ...instances] }),
     undo: (doc) => ({ ...doc, objects: doc.objects.filter((o) => !ids.has(o.id)) }),
+  };
+}
+
+/** Add one or more decoration instances. */
+export function addDecorations(
+  instances: readonly DecorationInstance[],
+  label = "Add decoration",
+): EditorCommand {
+  const ids = new Set(instances.map((i) => i.id));
+  return {
+    label,
+    execute: (doc) => ({ ...doc, decorations: [...doc.decorations, ...instances] }),
+    undo: (doc) => ({ ...doc, decorations: doc.decorations.filter((d) => !ids.has(d.id)) }),
   };
 }
 
@@ -297,6 +364,26 @@ export function deleteObjects(doc: LevelDocument, ids: readonly string[]): Edito
       const objects = [...d.objects];
       for (const { o, index } of removed) objects.splice(Math.min(index, objects.length), 0, o);
       return { ...d, objects };
+    },
+  };
+}
+
+/**
+ * Delete decorations, capturing their original positions so undo restores order.
+ */
+export function deleteDecorations(doc: LevelDocument, ids: readonly string[]): EditorCommand {
+  const idSet = new Set(ids);
+  const removed = doc.decorations
+    .map((d, index) => ({ d, index }))
+    .filter((e) => idSet.has(e.d.id));
+  return {
+    label: removed.length > 1 ? "Delete decorations" : "Delete decoration",
+    execute: (d) => ({ ...d, decorations: d.decorations.filter((x) => !idSet.has(x.id)) }),
+    undo: (d) => {
+      const decorations = [...d.decorations];
+      for (const { d: inst, index } of removed)
+        decorations.splice(Math.min(index, decorations.length), 0, inst);
+      return { ...d, decorations };
     },
   };
 }

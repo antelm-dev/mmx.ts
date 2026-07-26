@@ -7,14 +7,16 @@ import {
   CATEGORY_ORDER,
   effectiveValue,
   requireDefinition,
+  type DecorationInstance,
   type GameObjectDefinition,
   type LevelObjectInstance,
 } from "@mmx/content-schema";
+import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { DockviewPanelApi } from "dockview-react";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
-import { selectedObjectIds } from "../core/EditorStore.js";
+import { selectedDecorationIds, selectedObjectIds } from "../core/EditorStore.js";
 import { useUiStore } from "../store/uiStore.js";
-import { cx, ctxItemCls, itemCls, menu, panel, scroll } from "../ui.js";
+import { cx, ctxItemCls, itemCls, menu, panel, scroll, sectionTitle } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
 
 const ctxDangerItem =
@@ -33,6 +35,7 @@ type SceneRow =
 /** Detachable dock panel: the virtualized scene tree. Tab title tracks the object count. */
 export function ScenePanel({ api }: { api?: DockviewPanelApi }): ReactElement {
   const snap = useEditorSnapshot();
+  const decorations = snap.state.document.decorations;
 
   const sceneItems = useMemo<SceneItem[]>(
     () =>
@@ -43,11 +46,13 @@ export function ScenePanel({ api }: { api?: DockviewPanelApi }): ReactElement {
     [snap.state.document.objects],
   );
 
-  useEffect(() => api?.setTitle(`Scene (${sceneItems.length})`), [api, sceneItems.length]);
+  const total = sceneItems.length + decorations.length;
+  useEffect(() => api?.setTitle(`Scene (${total})`), [api, total]);
 
   return (
     <div className={panel}>
       <SceneList items={sceneItems} snap={snap} />
+      {decorations.length > 0 && <DecorationSceneList decorations={decorations} snap={snap} />}
     </div>
   );
 }
@@ -241,5 +246,52 @@ function SceneList({
         </div>
       </div>
     </>
+  );
+}
+
+function DecorationSceneList({
+  decorations,
+  snap,
+}: {
+  decorations: readonly DecorationInstance[];
+  snap: ReturnType<typeof useEditorSnapshot>;
+}) {
+  const selectedIds = selectedDecorationIds(snap.state.selection);
+  const selected = new Set(selectedIds);
+
+  return (
+    <div className="flex-none border-t border-border">
+      <div className={cx(sectionTitle, "pt-2 pb-1")}>
+        Decorations
+        <span className="font-mono text-[9px] font-medium tracking-normal normal-case text-muted ml-1.5">
+          {decorations.length}
+        </span>
+      </div>
+      {decorations.map((dec) => {
+        const asset = getDecorationAsset(dec.assetId);
+        const name = asset?.name ?? dec.assetId;
+        const active = selected.has(dec.id);
+        return (
+          <button
+            key={dec.id}
+            className={itemCls(active)}
+            title={dec.id}
+            onClick={(e) =>
+              e.ctrlKey || e.metaKey
+                ? editor.toggleDecorationSelection(dec.id)
+                : editor.focusDecoration(dec.id)
+            }
+          >
+            <SpritePreview assetId={dec.assetId} size={28} />
+            <span className="flex flex-col gap-px min-w-0">
+              <span className="whitespace-nowrap overflow-hidden text-ellipsis">{name}</span>
+              <span className={cx("font-mono text-[10px]", active ? "text-accent" : "text-muted")}>
+                {dec.x}, {dec.y} · {dec.layer}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
