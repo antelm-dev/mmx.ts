@@ -101,6 +101,7 @@ export function levelDataToDocument(data: LevelData): LevelDocument {
     rows: data.rows,
     tiles: data.tiles.slice(),
     objects,
+    decorations: [],
   };
   if (data.slopes) doc.slopes = { ...data.slopes };
   return doc;

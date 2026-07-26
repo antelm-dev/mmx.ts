@@ -1,15 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import type { LevelDocument, LevelObjectInstance } from "../src/index.js";
+import type { LevelDocument, LevelObjectInstance, DecorationInstance } from "../src/index.js";
 import {
   History,
   SCHEMA_VERSION,
   TerrainTile,
+  addDecorations,
   addObjects,
+  deleteDecorations,
   deleteObjects,
+  moveDecorations,
   moveObjects,
   moveTiles,
+  setDecoration,
   setLevelSettings,
   setProperty,
   setTiles,
@@ -26,11 +30,20 @@ function doc(objects: LevelObjectInstance[]): LevelDocument {
     rows: 8,
     tiles: new Array(64).fill(TerrainTile.Empty),
     objects,
+    decorations: [],
   };
 }
 
 const a: LevelObjectInstance = { id: "a", definitionId: "spawn", x: 0, y: 0 };
 const b: LevelObjectInstance = { id: "b", definitionId: "enemy.metool", x: 32, y: 32 };
+
+const d1: DecorationInstance = {
+  id: "d1",
+  assetId: "prop.crate",
+  x: 8,
+  y: 8,
+  layer: "background",
+};
 
 test("move collapses a drag to one entry and inverts exactly", () => {
   const h = new History(doc([a, b]));
@@ -216,4 +229,49 @@ test("executing after an undo clears the redo stack", () => {
   h.execute(moveObjects(["a"], 0, 5));
   assert.equal(h.canRedo, false);
   assert.deepEqual(h.document.objects[0], { ...a, y: 5 });
+});
+
+test("place/move/duplicate/delete decorations undo and redo", () => {
+  const h = new History(doc([a]));
+  h.execute(addDecorations([d1], "Place decoration"));
+  assert.equal(h.document.decorations.length, 1);
+
+  h.execute(moveDecorations(["d1"], 16, 8));
+  assert.deepEqual(h.document.decorations[0], { ...d1, x: 24, y: 16 });
+
+  const dup: DecorationInstance = { ...d1, id: "d2", x: 40, y: 24 };
+  h.execute(addDecorations([dup], "Duplicate decoration"));
+  assert.equal(h.document.decorations.length, 2);
+
+  h.execute(deleteDecorations(h.document, ["d1"]));
+  assert.deepEqual(
+    h.document.decorations.map((d) => d.id),
+    ["d2"],
+  );
+
+  h.undo();
+  assert.deepEqual(
+    h.document.decorations.map((d) => d.id),
+    ["d1", "d2"],
+  );
+  h.undo();
+  assert.equal(h.document.decorations.length, 1);
+  h.redo();
+  assert.equal(h.document.decorations.length, 2);
+});
+
+test("setDecoration patches layer/flip/tint and reverts", () => {
+  const h = new History({ ...doc([a]), decorations: [d1] });
+  h.execute(
+    setDecoration(
+      "d1",
+      { layer: "background", flipX: undefined, tint: undefined },
+      { layer: "foreground", flipX: true, tint: 0xabcdef },
+    ),
+  );
+  assert.equal(h.document.decorations[0].layer, "foreground");
+  assert.equal(h.document.decorations[0].flipX, true);
+  assert.equal(h.document.decorations[0].tint, 0xabcdef);
+  h.undo();
+  assert.deepEqual(h.document.decorations[0], d1);
 });

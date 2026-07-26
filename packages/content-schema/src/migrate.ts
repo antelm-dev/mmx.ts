@@ -4,15 +4,17 @@ import type { LevelDocument } from "./types.js";
 /**
  * Forward-migration hook for opening older documents.
  *
- * Each entry upgrades a document from version `n` to `n + 1`. There are none yet
- * (the format is at v1), but the seam is here so a future field change is a
- * migration step rather than a breaking read — an unrecognised *newer* version is
- * rejected rather than misread.
+ * Each entry upgrades a document from version `n` to `n + 1`. An unrecognised
+ * *newer* version is rejected rather than misread.
  */
 type Migration = (doc: Record<string, unknown>) => Record<string, unknown>;
 
 const MIGRATIONS: Record<number, Migration> = {
-  // 1: (doc) => ({ ...doc, schemaVersion: 2, /* new field */ }),
+  1: (doc) => ({
+    ...doc,
+    schemaVersion: 2,
+    decorations: Array.isArray(doc.decorations) ? doc.decorations : [],
+  }),
 };
 
 /** Parse and upgrade a raw document to the current schema version. */
@@ -35,5 +37,6 @@ export function migrateDocument(raw: unknown): LevelDocument {
     version = typeof doc.schemaVersion === "number" ? doc.schemaVersion : version + 1;
   }
   doc.schemaVersion = SCHEMA_VERSION;
+  if (!Array.isArray(doc.decorations)) doc.decorations = [];
   return doc as unknown as LevelDocument;
 }

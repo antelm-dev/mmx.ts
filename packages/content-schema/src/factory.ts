@@ -47,5 +47,6 @@ export function createLevelDocument(options: NewLevelOptions = {}): LevelDocumen
     rows,
     tiles,
     objects: [spawn],
+    decorations: [],
   };
 }

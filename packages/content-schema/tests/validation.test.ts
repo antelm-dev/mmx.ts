@@ -14,6 +14,7 @@ function baseDoc(objects: LevelObjectInstance[]): LevelDocument {
     rows: 8,
     tiles: new Array(64).fill(TerrainTile.Empty),
     objects,
+    decorations: [],
   };
 }
 

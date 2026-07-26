@@ -1,5 +1,8 @@
 import { effectiveValue, getDefinition, instanceSize } from "./definitions.js";
+import { DECORATION_LAYERS } from "./types.js";
 import type {
+  DecorationInstance,
+  DecorationLayer,
   LevelDocument,
   LevelObjectInstance,
   ValidationIssue,
@@ -18,18 +21,132 @@ import type {
 
 const SUPPORTED_ENEMY_KINDS = new Set(["metool", "bat"]);
 const SUPPORTED_PICKUP_KINDS = new Set(["small", "large"]);
+const LAYER_SET = new Set<string>(DECORATION_LAYERS);
+
+export interface ValidateDocumentOptions {
+  /** When set, decoration `assetId`s not in this set are errors. */
+  knownDecorationAssetIds?: ReadonlySet<string> | readonly string[];
+}
 
 function boxOf(inst: LevelObjectInstance): { x: number; y: number; w: number; h: number } {
   const { width, height } = instanceSize(inst);
   return { x: inst.x, y: inst.y, w: width, h: height };
 }
 
+function knownAssetSet(options?: ValidateDocumentOptions): ReadonlySet<string> | undefined {
+  const known = options?.knownDecorationAssetIds;
+  if (!known) return undefined;
+  return known instanceof Set ? known : new Set(known);
+}
+
+function validateDecoration(
+  deco: DecorationInstance,
+  knownAssets: ReadonlySet<string> | undefined,
+  add: (issue: ValidationIssue) => void,
+): void {
+  if (!deco.assetId || typeof deco.assetId !== "string") {
+    add({
+      severity: "error",
+      code: "decoration.asset",
+      objectId: deco.id,
+      field: "assetId",
+      message: `Decoration '${deco.id}': assetId is required.`,
+    });
+  } else if (knownAssets && !knownAssets.has(deco.assetId)) {
+    add({
+      severity: "error",
+      code: "decoration.asset.unknown",
+      objectId: deco.id,
+      field: "assetId",
+      message: `Decoration '${deco.id}': unknown asset '${deco.assetId}'.`,
+    });
+  }
+
+  if (!LAYER_SET.has(deco.layer)) {
+    add({
+      severity: "error",
+      code: "decoration.layer",
+      objectId: deco.id,
+      field: "layer",
+      message: `Decoration '${deco.id}': layer '${String(deco.layer)}' is invalid.`,
+    });
+  }
+
+  for (const [key, value] of Object.entries({
+    x: deco.x,
+    y: deco.y,
+    rotation: deco.rotation ?? 0,
+  })) {
+    if (!Number.isFinite(value)) {
+      add({
+        severity: "error",
+        code: "decoration.transform",
+        objectId: deco.id,
+        field: key,
+        message: `Decoration '${deco.id}': ${key} must be a finite number.`,
+      });
+    }
+  }
+
+  if (deco.parallax !== undefined) {
+    if (typeof deco.parallax !== "number" || !Number.isFinite(deco.parallax) || deco.parallax < 0) {
+      add({
+        severity: "error",
+        code: "decoration.parallax",
+        objectId: deco.id,
+        field: "parallax",
+        message: `Decoration '${deco.id}': parallax must be a finite number ≥ 0.`,
+      });
+    }
+  }
+
+  if (deco.tint !== undefined) {
+    if (
+      typeof deco.tint !== "number" ||
+      !Number.isInteger(deco.tint) ||
+      deco.tint < 0 ||
+      deco.tint > 0xffffff
+    ) {
+      add({
+        severity: "error",
+        code: "decoration.tint",
+        objectId: deco.id,
+        field: "tint",
+        message: `Decoration '${deco.id}': tint must be an integer in 0x000000–0xffffff.`,
+      });
+    }
+  }
+
+  if (deco.flipX !== undefined && typeof deco.flipX !== "boolean") {
+    add({
+      severity: "error",
+      code: "decoration.flip",
+      objectId: deco.id,
+      field: "flipX",
+      message: `Decoration '${deco.id}': flipX must be a boolean.`,
+    });
+  }
+  if (deco.flipY !== undefined && typeof deco.flipY !== "boolean") {
+    add({
+      severity: "error",
+      code: "decoration.flip",
+      objectId: deco.id,
+      field: "flipY",
+      message: `Decoration '${deco.id}': flipY must be a boolean.`,
+    });
+  }
+}
+
 /** Validate a whole document, returning every issue found. */
-export function validateDocument(doc: LevelDocument): ValidationResult {
+export function validateDocument(
+  doc: LevelDocument,
+  options?: ValidateDocumentOptions,
+): ValidationResult {
   const issues: ValidationIssue[] = [];
   const add = (issue: ValidationIssue): void => {
     issues.push(issue);
   };
+  const knownAssets = knownAssetSet(options);
 
   // --- Grid integrity ---
   if (doc.tiles.length !== doc.cols * doc.rows) {
@@ -43,7 +160,15 @@ export function validateDocument(doc: LevelDocument): ValidationResult {
     add({ severity: "error", code: "grid.size", message: "cols and rows must be positive." });
   }
 
-  // --- Unique ids ---
+  if (!Array.isArray(doc.decorations)) {
+    add({
+      severity: "error",
+      code: "decorations.array",
+      message: "decorations must be an array.",
+    });
+  }
+
+  // --- Unique ids across objects and decorations ---
   const seen = new Set<string>();
   for (const obj of doc.objects) {
     if (seen.has(obj.id)) {
@@ -55,6 +180,17 @@ export function validateDocument(doc: LevelDocument): ValidationResult {
       });
     }
     seen.add(obj.id);
+  }
+  for (const deco of doc.decorations ?? []) {
+    if (seen.has(deco.id)) {
+      add({
+        severity: "error",
+        code: "id.duplicate",
+        objectId: deco.id,
+        message: `Duplicate id '${deco.id}' (must be unique across objects and decorations).`,
+      });
+    }
+    seen.add(deco.id);
   }
 
   // --- Spawn cardinality ---
@@ -195,7 +331,30 @@ export function validateDocument(doc: LevelDocument): ValidationResult {
     }
   }
 
+  for (const deco of doc.decorations ?? []) {
+    validateDecoration(deco, knownAssets, add);
+    if (
+      Number.isFinite(deco.x) &&
+      Number.isFinite(deco.y) &&
+      (deco.x < -margin ||
+        deco.y < -margin ||
+        deco.x > worldW + margin ||
+        deco.y > worldH + margin)
+    ) {
+      add({
+        severity: "warning",
+        code: "decoration.bounds",
+        objectId: deco.id,
+        message: `Decoration '${deco.id}' lies outside the level bounds.`,
+      });
+    }
+  }
+
   const errorCount = issues.filter((i) => i.severity === "error").length;
   const warningCount = issues.length - errorCount;
   return { issues, ok: errorCount === 0, errorCount, warningCount };
+}
+
+export function isDecorationLayer(value: unknown): value is DecorationLayer {
+  return typeof value === "string" && LAYER_SET.has(value);
 }
