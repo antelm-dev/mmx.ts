@@ -5,7 +5,6 @@
     "declaration": true,
     "declarationMap": true,
     "lib": ["ES2020", "DOM"],
-    "types": ["vite/client"],
     "outDir": "dist",
     "rootDir": "src",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"

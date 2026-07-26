@@ -1,13 +1,20 @@
 {
   "name": "@mmx/browser-audio",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "assets"],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "sync-assets": "node scripts/sync-assets.mjs",
+    "build": "pnpm run sync-assets && tsc -p tsconfig.json",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "@mmx/engine": "workspace:*"
