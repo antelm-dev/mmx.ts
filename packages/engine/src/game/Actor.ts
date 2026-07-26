@@ -47,6 +47,7 @@ export class Actor {
   private _wasOnFloor = false;
 
   floor_snap_enabled = true;
+  collisions_enabled = true;
   conveyor_belt_speed = 0;
   private platforms: readonly MovingPlatform[] = [];
   /** Dynamic floor currently carrying this actor, retained until it truly leaves. */
@@ -212,6 +213,20 @@ export class Actor {
       this.velocity.x + this.bonus_velocity.x,
       this.velocity.y + this.bonus_velocity.y,
     );
+
+    if (!this.collisions_enabled) {
+      this.pos.x += this.final_velocity.x * dt;
+      this.pos.y += this.final_velocity.y * dt;
+      this._onFloor = false;
+      this._onCeiling = false;
+      this._wallDir = 0;
+      this._wallDirExceptFeet = 0;
+      this._reachDir = 0;
+      this._wasOnFloor = false;
+      this.ridingPlatform = null;
+      this.update_facing_direction();
+      return;
+    }
 
     const oldFeet = this.pos.y + this.hh;
     let support = this.ridingPlatform ?? this.findSupportingPlatform();

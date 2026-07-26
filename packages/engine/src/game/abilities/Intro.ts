@@ -60,6 +60,7 @@ export class Intro extends Movement {
     this.hasRun = true;
     this.character.stop_all_movement();
     this.character.listening_to_inputs = false;
+    this.character.collisions_enabled = false;
     this.spawnY = this.character.pos.y;
     this.character.pos.y = this.spawnY - PLAYER_INTRO_DROP_HEIGHT;
     this.phase = "visual";
@@ -86,6 +87,7 @@ export class Intro extends Movement {
     );
     if (this.character.pos.y >= this.spawnY) {
       this.phase = "settle";
+      this.character.collisions_enabled = true;
       this.character.set_vertical_speed(PLAYER_INTRO_BEAM_SPEED);
     }
   }
@@ -131,6 +133,7 @@ export class Intro extends Movement {
   /** Intro.gd:_Interrupt — hand control back once the sequence has played out. */
   override _Interrupt(): void {
     super._Interrupt();
+    this.character.collisions_enabled = true;
     this.character.listening_to_inputs = true;
     this.character.events.emit("gameplay_start");
   }

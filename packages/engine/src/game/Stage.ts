@@ -94,7 +94,10 @@ export class Stage {
     this.player.conveyor_belt_speed = this.conveyorSpeedUnderPlayer();
     this.player.tick(dt);
 
-    if (this.hazards.some((hazard) => bodyOverlapsRect(this.player, hazard))) {
+    if (
+      this.player.collisions_enabled &&
+      this.hazards.some((hazard) => bodyOverlapsRect(this.player, hazard))
+    ) {
       this.player.kill();
     }
 
@@ -134,7 +137,11 @@ export class Stage {
     if (!this.player.has_health()) return;
     for (const pickup of this.pickups) {
       if (pickup.consumed) continue;
-      if (!pickup.collecting && bodyOverlapsRect(this.player, pickup)) {
+      if (
+        this.player.collisions_enabled &&
+        !pickup.collecting &&
+        bodyOverlapsRect(this.player, pickup)
+      ) {
         pickup.beginConsuming();
         pickup.tick(dt, this.player, this.world);
         return;
@@ -164,7 +171,11 @@ export class Stage {
     if (this.recovering) return;
     for (const capsule of this.weaponCapsules) {
       if (capsule.consumed) continue;
-      if (!capsule.collecting && bodyOverlapsRect(this.player, capsule)) {
+      if (
+        this.player.collisions_enabled &&
+        !capsule.collecting &&
+        bodyOverlapsRect(this.player, capsule)
+      ) {
         capsule.beginConsuming();
         capsule.tick(dt, this.player, this.world);
         return;
@@ -230,6 +241,7 @@ export class Stage {
    */
   private resolveContact(): void {
     if (!this.player.has_health()) return; // Death is running; nothing can touch a corpse
+    if (!this.player.collisions_enabled) return;
     for (const enemy of this.enemies) {
       if (!enemy.has_health() || enemy.exploding) continue;
       if (!bodiesOverlap(enemy, this.player)) continue;
