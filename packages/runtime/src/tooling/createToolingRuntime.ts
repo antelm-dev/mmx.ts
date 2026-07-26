@@ -9,9 +9,9 @@ import {
 } from "../core/index.js";
 import { BrowserInput, type BrowserInputBindings } from "../browser/BrowserInput.js";
 import type { GetGamepads } from "../browser/GamepadInput.js";
-import type {
-  FixedStepFrameStats,
+import {
   FixedStepLoop,
+  type FixedStepFrameStats,
 } from "../browser/FixedStepLoop.js";
 
 export const TOOLING_BINDINGS: BrowserInputBindings = {
@@ -49,8 +49,8 @@ export interface ToolingRuntime {
   setAudio(audio: RuntimeAudio | undefined): void;
   render(): void;
   /**
-   * Attaches browser input listeners and starts the fixed-step loop. Dynamic
-   * import keeps requestAnimationFrame out of headless sessions until called.
+   * Attaches browser input listeners and starts the fixed-step loop.
+   * Safe to skip in headless sessions — scheduling only begins when called.
    */
   startBrowser(): Promise<void>;
   stopBrowser(): void;
@@ -146,8 +146,6 @@ class ToolingRuntimeImpl implements ToolingRuntime {
 
   async startBrowser(): Promise<void> {
     if (this.clock?.isRunning) return;
-
-    const { FixedStepLoop } = await import("../browser/FixedStepLoop.js");
 
     this.frameStats = new FrameStats();
     this.input.attach();

@@ -7,15 +7,18 @@ import {
   type RuntimePresentation,
   type RuntimeSessionOptions,
 } from "../core/index.js";
-import type {
+import {
   FixedStepLoop,
-  FixedStepLoopOptions,
+  type FixedStepLoopOptions,
 } from "../browser/FixedStepLoop.js";
 
 export interface CreatePlayerRuntimeOptions extends RuntimeSessionOptions {}
 
 export interface PlayerLoopHooks
-  extends Pick<FixedStepLoopOptions, "onStep" | "onRender" | "onFrameStart" | "onFrameStats" | "onError"> {
+  extends Pick<
+    FixedStepLoopOptions,
+    "onStep" | "onRender" | "onFrameStart" | "onFrameStats" | "onError"
+  > {
   maxFrameSeconds?: number;
 }
 
@@ -31,11 +34,7 @@ export interface PlayerRuntime {
   setPresentation(presentation: RuntimePresentation | undefined): void;
   setAudio(audio: RuntimeAudio | undefined): void;
   render(): void;
-  /**
-   * Builds a browser fixed-step loop. Imports scheduling only when called so
-   * headless player sessions stay free of DOM APIs.
-   */
-  createLoop(hooks: PlayerLoopHooks): Promise<FixedStepLoop>;
+  createLoop(hooks: PlayerLoopHooks): FixedStepLoop;
   dispose(): void;
 }
 
@@ -56,8 +55,7 @@ export function createPlayerRuntime(
     setPresentation: (presentation) => session.setPresentation(presentation),
     setAudio: (audio) => session.setAudio(audio),
     render: () => session.render(),
-    async createLoop(hooks) {
-      const { FixedStepLoop } = await import("../browser/FixedStepLoop.js");
+    createLoop(hooks) {
       return new FixedStepLoop({
         stepSeconds: DT,
         maxFrameSeconds: hooks.maxFrameSeconds ?? 0.25,
