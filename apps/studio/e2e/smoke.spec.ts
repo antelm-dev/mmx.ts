@@ -42,3 +42,27 @@ test("switches to the Scene tab and lists placed objects", async () => {
   await page.getByRole("tab", { name: /Scene/ }).click();
   await expect(page.locator("button[title]").first()).toBeVisible();
 });
+
+test("toggles developer tools from the Help menu", async () => {
+  await page.getByRole("button", { name: "Help menu" }).click();
+  await page.getByRole("menuitem", { name: /Toggle Developer Tools/ }).click();
+
+  await expect
+    .poll(() =>
+      app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0]?.webContents.isDevToolsOpened(),
+      ),
+    )
+    .toBe(true);
+
+  await page.getByRole("button", { name: "Help menu" }).click();
+  await page.getByRole("menuitem", { name: /Toggle Developer Tools/ }).click();
+
+  await expect
+    .poll(() =>
+      app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0]?.webContents.isDevToolsOpened(),
+      ),
+    )
+    .toBe(false);
+});

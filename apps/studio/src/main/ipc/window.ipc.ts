@@ -47,6 +47,9 @@ export function createWindowIpc() {
         async (event): Promise<boolean> =>
           BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false,
       ),
+      "toggle-dev-tools": handle(async (event): Promise<void> => {
+        event.sender.toggleDevTools();
+      }),
       close: handle(async (event): Promise<void> => {
         BrowserWindow.fromWebContents(event.sender)?.close();
       }),

@@ -3,6 +3,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   Check,
   ClipboardCopy,
+  Code2,
   Copy,
   FilePlus2,
   FolderOpen,
@@ -66,6 +67,7 @@ export function TitleBar() {
       <div className="flex items-stretch ml-2 [-webkit-app-region:no-drag]">
         <FileMenu />
         <ViewMenu />
+        <HelpMenu />
       </div>
 
       <div className="flex-1" />
@@ -239,6 +241,20 @@ function ViewMenu() {
         }}
       >
         <LayoutTemplate size={13} /> Reset Layout
+      </DropdownMenu.Item>
+    </MenuRoot>
+  );
+}
+
+function HelpMenu() {
+  return (
+    <MenuRoot label="Help" ariaLabel="Help menu">
+      <DropdownMenu.Item
+        className={ctxItemCls(false)}
+        onSelect={() => void controls()?.toggleDevTools()}
+      >
+        <Code2 size={13} /> Toggle Developer Tools
+        <span className={menuShortcut}>{modLabel}+Shift+I</span>
       </DropdownMenu.Item>
     </MenuRoot>
   );
