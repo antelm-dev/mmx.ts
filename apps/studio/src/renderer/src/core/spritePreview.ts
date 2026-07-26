@@ -1,6 +1,12 @@
 import { getDefinition } from "@mmx/content-schema";
 import type { AnimData, Region } from "@mmx/asset-schema";
-import { animData, enemyAnims, getDecorationAsset, pickupAnims, SHEET_URLS } from "@mmx/renderer-pixi";
+import {
+  animData,
+  enemyAnims,
+  getDecorationAsset,
+  pickupAnims,
+  SHEET_URLS,
+} from "@mmx/renderer-pixi";
 
 export interface SpritePreview {
   url: string;

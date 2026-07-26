@@ -12,7 +12,9 @@ import {
   type LevelObjectInstance,
 } from "../src/index.js";
 
-function deco(partial: Partial<DecorationInstance> & Pick<DecorationInstance, "id">): DecorationInstance {
+function deco(
+  partial: Partial<DecorationInstance> & Pick<DecorationInstance, "id">,
+): DecorationInstance {
   return {
     assetId: "prop.crate",
     x: 16,

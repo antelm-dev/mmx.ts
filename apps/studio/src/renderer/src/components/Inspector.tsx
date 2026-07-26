@@ -435,18 +435,14 @@ function DecorationInspector({ inst }: { inst: DecorationInstance }) {
   const onParallax = (raw: string) => {
     const next = Number(raw);
     if (!Number.isFinite(next) || next === (inst.parallax ?? 1)) return;
-    editor.store.execute(
-      setDecoration(inst.id, { parallax: inst.parallax }, { parallax: next }),
-    );
+    editor.store.execute(setDecoration(inst.id, { parallax: inst.parallax }, { parallax: next }));
   };
 
   const onTint = (raw: string) => {
     const trimmed = raw.trim();
     const next = trimmed === "" ? undefined : Number.parseInt(trimmed.replace("#", ""), 16);
     if (next !== undefined && !Number.isFinite(next)) return;
-    editor.store.execute(
-      setDecoration(inst.id, { tint: inst.tint }, { tint: next }),
-    );
+    editor.store.execute(setDecoration(inst.id, { tint: inst.tint }, { tint: next }));
   };
 
   return (

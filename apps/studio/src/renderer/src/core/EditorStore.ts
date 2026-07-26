@@ -73,9 +73,7 @@ export function selectionsEqual(a: EditorSelection, b: EditorSelection): boolean
     return a.ids.length === b.ids.length && a.ids.every((id) => b.ids.includes(id));
   }
   if (a.kind === "tiles" && b.kind === "tiles") {
-    return (
-      a.indices.length === b.indices.length && a.indices.every((i) => b.indices.includes(i))
-    );
+    return a.indices.length === b.indices.length && a.indices.every((i) => b.indices.includes(i));
   }
   return false;
 }

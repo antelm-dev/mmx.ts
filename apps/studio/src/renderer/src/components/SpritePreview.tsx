@@ -10,9 +10,20 @@ interface Props {
   fallbackColor?: string | null;
 }
 
-export function SpritePreview({ definitionId, assetId, size = 48, flip = false, fallbackColor }: Props) {
+export function SpritePreview({
+  definitionId,
+  assetId,
+  size = 48,
+  flip = false,
+  fallbackColor,
+}: Props) {
   const preview = useMemo(
-    () => (assetId ? previewForDecoration(assetId) : definitionId ? previewForDefinition(definitionId) : null),
+    () =>
+      assetId
+        ? previewForDecoration(assetId)
+        : definitionId
+          ? previewForDefinition(definitionId)
+          : null,
     [definitionId, assetId],
   );
 

@@ -336,10 +336,7 @@ export function validateDocument(
     if (
       Number.isFinite(deco.x) &&
       Number.isFinite(deco.y) &&
-      (deco.x < -margin ||
-        deco.y < -margin ||
-        deco.x > worldW + margin ||
-        deco.y > worldH + margin)
+      (deco.x < -margin || deco.y < -margin || deco.x > worldW + margin || deco.y > worldH + margin)
     ) {
       add({
         severity: "warning",

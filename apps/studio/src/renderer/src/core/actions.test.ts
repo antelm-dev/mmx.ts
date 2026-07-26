@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
-import { EditorStore, selectedDecorationIds, selectedObjectIds, selectedTileIndices } from "./EditorStore.js";
+import {
+  EditorStore,
+  selectedDecorationIds,
+  selectedObjectIds,
+  selectedTileIndices,
+} from "./EditorStore.js";
 import {
   cellIndex,
   deleteSelection,

@@ -16,7 +16,7 @@ import type { DockviewPanelApi } from "dockview-react";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { selectedDecorationIds, selectedObjectIds } from "../core/EditorStore.js";
 import { useUiStore } from "../store/uiStore.js";
-import { cx, ctxItemCls, itemCls, menu, panel, scroll, sectionTitle, sectionTitleSub } from "../ui.js";
+import { cx, ctxItemCls, itemCls, menu, panel, scroll, sectionTitle } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
 
 const ctxDangerItem =
@@ -285,12 +285,7 @@ function DecorationSceneList({
             <SpritePreview assetId={dec.assetId} size={28} />
             <span className="flex flex-col gap-px min-w-0">
               <span className="whitespace-nowrap overflow-hidden text-ellipsis">{name}</span>
-              <span
-                className={cx(
-                  "font-mono text-[10px]",
-                  active ? "text-accent" : "text-muted",
-                )}
-              >
+              <span className={cx("font-mono text-[10px]", active ? "text-accent" : "text-muted")}>
                 {dec.x}, {dec.y} · {dec.layer}
               </span>
             </span>

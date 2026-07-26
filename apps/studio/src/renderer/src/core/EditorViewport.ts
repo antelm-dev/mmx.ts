@@ -537,12 +537,15 @@ export class EditorViewport {
             alpha: 0.75,
           });
         }
-        g.rect(col * grid - 1 / zoom, row * grid - 1 / zoom, grid + 2 / zoom, grid + 2 / zoom).stroke(
-          {
-            width: 2 / zoom,
-            color: COLOR_SELECT,
-          },
-        );
+        g.rect(
+          col * grid - 1 / zoom,
+          row * grid - 1 / zoom,
+          grid + 2 / zoom,
+          grid + 2 / zoom,
+        ).stroke({
+          width: 2 / zoom,
+          color: COLOR_SELECT,
+        });
       }
     }
 

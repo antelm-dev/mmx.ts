@@ -571,7 +571,11 @@ export class EditorController {
         this.deleteSelection();
         break;
       case "Escape":
-        if (state.activeTool === "place" || state.activeTool === "placeDecoration" || state.activeTool === "tile")
+        if (
+          state.activeTool === "place" ||
+          state.activeTool === "placeDecoration" ||
+          state.activeTool === "tile"
+        )
           this.store.setTool("select");
         else this.store.clearSelection();
         break;

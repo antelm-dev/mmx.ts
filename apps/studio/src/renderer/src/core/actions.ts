@@ -15,11 +15,7 @@ import {
   type TileEdit,
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
-import {
-  selectedDecorationIds,
-  selectedObjectIds,
-  type EditorStore,
-} from "./EditorStore.js";
+import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
 
 /**
  * Intent → undoable command. Everything the toolbar, palette, viewport and
