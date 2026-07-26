@@ -5,7 +5,7 @@ import {
   type ValidationResult,
 } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
-import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
+import { GameplaySounds } from "@mmx/browser-audio";
 import {
   emptySelection,
   type EditorSelection,
@@ -67,7 +67,7 @@ export class EditorController {
   private readonly fileAccess: FileAccess = createFileAccess();
   private viewport: EditorViewport | null = null;
   private play: EditorPlaytestSession | null = null;
-  private sounds: GameplaySounds | null = null;
+  private audio: GameplaySounds | null = null;
   /** Bumped on every startPlay so an async renderer creation can detect it was superseded. */
   private playToken = 0;
   private host: HTMLElement | null = null;
@@ -363,10 +363,10 @@ export class EditorController {
 
   private async startPlay(): Promise<void> {
     if (!this.host) return;
-    const sounds = this.getSounds();
+    const audio = this.getAudio();
     // This stays before the first await so a toolbar click or keyboard shortcut
     // satisfies browser/Electron autoplay policy.
-    sounds.effects.unlock();
+    audio.unlock();
     this.closeEmptyContextMenu();
     const result = this.store.validate();
     if (!result.ok) {
@@ -388,10 +388,10 @@ export class EditorController {
     this.store.setMode("play");
     this.viewport?.setVisible(false);
     try {
-      await sounds.effects.load();
+      await audio.load();
       const session = createPlaytest(state.document, {
         host: this.host,
-        sounds,
+        audio,
         onSnapshot: (snapshot) => {
           if (token !== this.playToken) return;
           this.setPlaytestSnapshot(snapshot);
@@ -432,9 +432,9 @@ export class EditorController {
   }
 
   /** Lazily create Web Audio only when the user first enters Play mode. */
-  private getSounds(): GameplaySounds {
-    this.sounds ??= new GameplaySounds(new SoundEffects());
-    return this.sounds;
+  private getAudio(): GameplaySounds {
+    this.audio ??= new GameplaySounds();
+    return this.audio;
   }
 
   // ---------- Playtest debugger commands ----------
