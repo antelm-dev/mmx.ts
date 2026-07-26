@@ -25,7 +25,7 @@
     "level:check": "pnpm level:import && git diff --exit-code -- packages/engine/src/game/levels",
     "enemies:import": "node scripts/build-enemies.mjs",
     "pickups:import": "node scripts/build-pickups.mjs",
-    "test": "pnpm --filter @mmx/engine --filter @mmx/asset-schema --filter @mmx/content-contracts --filter @mmx/content-schema --filter @mmx/content-engine-adapter --filter @mmx/editor-runtime -r test",
+    "test": "pnpm --filter @mmx/engine --filter @mmx/asset-schema --filter @mmx/content-contracts --filter @mmx/content-schema --filter @mmx/content-engine-adapter --filter @mmx/renderer-pixi --filter @mmx/editor-runtime -r test",
     "lint": "oxlint packages apps scripts",
     "lint:fix": "oxlint --fix packages apps scripts",
     "fmt": "oxfmt",
