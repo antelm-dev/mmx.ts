@@ -1,4 +1,11 @@
-import { DT, FrameStats, type Action, type SceneOptions } from "@mmx/engine";
+import {
+  DT,
+  FrameStats,
+  type Action,
+  type LevelData,
+  type Replay,
+  type SceneOptions,
+} from "@mmx/engine";
 import type { SimulationSnapshot } from "@mmx/engine/tooling";
 import {
   RuntimeSession,
@@ -44,6 +51,10 @@ export interface ToolingRuntime {
   restartCheckpoint(): SimulationSnapshot;
   restartLevel(): SimulationSnapshot;
   seek(frame: number): SimulationSnapshot;
+  loadLevel(level: LevelData): SimulationSnapshot;
+  markTainted(): void;
+  toReplay(): Replay;
+  loadReplay(replay: Replay): SimulationSnapshot;
   replaceScene(options?: SceneOptions): SimulationSnapshot;
   setPresentation(presentation: RuntimePresentation | undefined): void;
   setAudio(audio: RuntimeAudio | undefined): void;
@@ -126,6 +137,22 @@ class ToolingRuntimeImpl implements ToolingRuntime {
 
   seek(frame: number): SimulationSnapshot {
     return this.session.seek(frame);
+  }
+
+  loadLevel(level: LevelData): SimulationSnapshot {
+    return this.session.loadLevel(level);
+  }
+
+  markTainted(): void {
+    this.session.markTainted();
+  }
+
+  toReplay(): Replay {
+    return this.session.toReplay();
+  }
+
+  loadReplay(replay: Replay): SimulationSnapshot {
+    return this.session.loadReplay(replay);
   }
 
   replaceScene(options: SceneOptions = {}): SimulationSnapshot {

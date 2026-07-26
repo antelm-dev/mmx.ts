@@ -27,6 +27,11 @@
       "types": "./dist/tooling/index.d.ts",
       "import": "./dist/tooling/index.js",
       "default": "./dist/tooling/index.js"
+    },
+    "./debug": {
+      "types": "./dist/debug/index.d.ts",
+      "import": "./dist/debug/index.js",
+      "default": "./dist/debug/index.js"
     }
   },
   "scripts": {
