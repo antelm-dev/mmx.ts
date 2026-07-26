@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as Select from "@radix-ui/react-select";
 import * as Checkbox from "@radix-ui/react-checkbox";
-import { Check, ChevronDown, ListTree, MousePointer2 } from "lucide-react";
+import { Check, ChevronDown, Grid3x3, ListTree, MousePointer2 } from "lucide-react";
 import {
   effectiveValue,
   instanceSize,
@@ -13,7 +13,9 @@ import {
   type PropertyMeta,
   type ValidationIssue,
 } from "@mmx/content-schema";
+import { Tile } from "@mmx/engine/game/World.js";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
+import { selectedObjectIds } from "../core/EditorStore.js";
 import {
   actionBtn,
   actionBtnDanger,
@@ -44,19 +46,43 @@ interface Single {
   height: number;
 }
 
+function tileKindLabel(value: number): string {
+  switch (value) {
+    case Tile.Solid:
+      return "Solid";
+    case Tile.SlopeUpRight:
+      return "Slope /";
+    case Tile.SlopeUpLeft:
+      return "Slope \\";
+    default:
+      return "Empty";
+  }
+}
+
 /** Right dock: schema-generated inspector with inline validation. */
 export function Inspector() {
   const snap = useEditorSnapshot();
   const state = snap.state;
+  const objectIds = selectedObjectIds(state.selection);
+  const tileSelection = state.selection.kind === "tiles" ? state.selection.indices : [];
 
   const single = useMemo<Single | null>(() => {
-    if (state.selectedIds.length !== 1) return null;
-    const inst = state.document.objects.find((o) => o.id === state.selectedIds[0]);
+    if (objectIds.length !== 1) return null;
+    const inst = state.document.objects.find((o) => o.id === objectIds[0]);
     if (!inst) return null;
     const def = requireDefinition(inst.definitionId);
     const size = instanceSize(inst);
     return { inst, def, width: size.width, height: size.height };
-  }, [state.selectedIds, state.document.objects]);
+  }, [objectIds, state.document.objects]);
+
+  const singleTile = useMemo(() => {
+    if (tileSelection.length !== 1) return null;
+    const index = tileSelection[0];
+    const col = index % state.document.cols;
+    const row = Math.floor(index / state.document.cols);
+    const value = state.document.tiles[index] ?? Tile.Empty;
+    return { index, col, row, value };
+  }, [tileSelection, state.document.cols, state.document.tiles]);
 
   const issues = useMemo<ValidationIssue[]>(() => {
     if (!single) return [];
@@ -267,13 +293,13 @@ export function Inspector() {
               </button>
             </div>
           </>
-        ) : state.selectedIds.length > 1 ? (
+        ) : objectIds.length > 1 ? (
           <>
             <div className={emptyState}>
               <div className={emptyIcon}>
                 <MousePointer2 size={20} />
               </div>
-              <div className={emptyTitle}>{state.selectedIds.length} objects selected</div>
+              <div className={emptyTitle}>{objectIds.length} objects selected</div>
               <div className={emptyCopy}>Duplicate or delete the current selection.</div>
             </div>
             <div className={actions}>
@@ -285,6 +311,49 @@ export function Inspector() {
               </button>
             </div>
           </>
+        ) : singleTile ? (
+          <>
+            <div className="flex items-center gap-3 pt-4 px-3.5 pb-3 font-semibold">
+              <div className={cx(emptyIcon, "mb-0 w-14 h-14")}>
+                <Grid3x3 size={20} />
+              </div>
+              <div className="flex flex-col gap-[3px] min-w-0">
+                <span className="leading-[1.2]">{tileKindLabel(singleTile.value)} tile</span>
+                <span className="font-mono text-[10px] font-medium text-fg-3">
+                  Cell {singleTile.col}, {singleTile.row}
+                </span>
+              </div>
+            </div>
+            <div className={cx(sectionTitle, sectionTitleSub)}>Terrain</div>
+            <div className="py-1 px-3.5 text-xs flex justify-between gap-2.5">
+              <span className="text-muted">Index</span>
+              <span className="font-mono text-[#e6ebf5]">{singleTile.index}</span>
+            </div>
+            <div className="py-1 px-3.5 text-xs flex justify-between gap-2.5">
+              <span className="text-muted">Kind</span>
+              <span className="font-mono text-[#e6ebf5]">{tileKindLabel(singleTile.value)}</span>
+            </div>
+            <div className={actions}>
+              <button className={actionBtnDanger} onClick={() => editor.deleteSelection()}>
+                Erase tile
+              </button>
+            </div>
+          </>
+        ) : tileSelection.length > 1 ? (
+          <>
+            <div className={emptyState}>
+              <div className={emptyIcon}>
+                <Grid3x3 size={20} />
+              </div>
+              <div className={emptyTitle}>{tileSelection.length} tiles selected</div>
+              <div className={emptyCopy}>Erase the selected terrain cells with Delete.</div>
+            </div>
+            <div className={actions}>
+              <button className={actionBtnDanger} onClick={() => editor.deleteSelection()}>
+                Erase tiles
+              </button>
+            </div>
+          </>
         ) : (
           <div className={emptyState}>
             <div className={emptyIcon}>
@@ -292,7 +361,7 @@ export function Inspector() {
             </div>
             <div className={emptyTitle}>Nothing selected</div>
             <div className={emptyCopy}>
-              Choose an object on the canvas or from the Scene tab to edit its properties.
+              Choose an object or solid tile on the canvas, or browse the Scene tab.
             </div>
             <button
               className="inline-flex items-center gap-2 h-8 mt-4 px-3 rounded-lg border border-border-strong bg-raised text-[11.5px] font-semibold text-fg-2 hover:bg-hover hover:text-fg"

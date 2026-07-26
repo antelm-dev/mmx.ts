@@ -5,7 +5,13 @@ import {
   type ValidationResult,
 } from "@mmx/content-schema";
 import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
-import { EditorStore, type ChangeReason, type EditorState } from "../core/EditorStore.js";
+import {
+  emptySelection,
+  type EditorSelection,
+  type ChangeReason,
+  type EditorState,
+  EditorStore,
+} from "../core/EditorStore.js";
 import {
   deleteSelection,
   duplicateSelection,
@@ -61,7 +67,7 @@ export class EditorController {
   private host: HTMLElement | null = null;
 
   private savedView: { zoom: number; viewportPosition: { x: number; y: number } } | null = null;
-  private savedSelection: string[] = [];
+  private savedSelection: EditorSelection = emptySelection();
 
   private snapshot: EditorSnapshot;
   private readonly listeners = new Set<() => void>();
@@ -257,7 +263,7 @@ export class EditorController {
   focusObject(id: string): void {
     const inst = this.store.get().document.objects.find((o) => o.id === id);
     if (!inst) return;
-    this.store.select([id]);
+    this.store.selectObjects([id]);
     const { width, height } = instanceSize(inst);
     this.viewport?.centerOn(inst.x + width / 2, inst.y + height / 2);
   }
@@ -265,7 +271,7 @@ export class EditorController {
   /** Add/remove an object from the current selection without recentering. */
   toggleObjectSelection(id: string): void {
     if (!this.store.get().document.objects.some((o) => o.id === id)) return;
-    this.store.toggleInSelection(id);
+    this.store.toggleObjectInSelection(id);
   }
 
   // ---------- Play ----------
@@ -291,7 +297,10 @@ export class EditorController {
     }
     const state = this.store.get();
     this.savedView = { zoom: state.zoom, viewportPosition: { ...state.viewportPosition } };
-    this.savedSelection = [...state.selectedIds];
+    this.savedSelection =
+      state.selection.kind === "objects"
+        ? { kind: "objects", ids: [...state.selection.ids] }
+        : { kind: "tiles", indices: [...state.selection.indices] };
 
     const token = ++this.playToken;
     this.store.setMode("play");
@@ -333,7 +342,7 @@ export class EditorController {
     this.store.setMode("edit");
     this.viewport?.setVisible(true);
     if (this.savedView) this.store.setView(this.savedView.zoom, this.savedView.viewportPosition);
-    this.store.select(this.savedSelection);
+    this.store.setSelection(this.savedSelection);
     this.viewport?.redraw();
   }
 

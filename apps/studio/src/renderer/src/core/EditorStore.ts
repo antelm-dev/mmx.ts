@@ -5,9 +5,65 @@ import {
   type LevelDocument,
   type ValidationResult,
 } from "@mmx/content-schema";
+import { Tile } from "@mmx/engine/game/World.js";
 
 export type Tool = "select" | "pan" | "place" | "resize" | "tile";
 export type Mode = "edit" | "play";
+
+export type EditorSelection =
+  | { kind: "objects"; ids: string[] }
+  | { kind: "tiles"; indices: number[] };
+
+export type EditorHover =
+  | { kind: "object"; id: string }
+  | { kind: "tile"; index: number };
+
+export function emptySelection(): EditorSelection {
+  return { kind: "objects", ids: [] };
+}
+
+export function selectionSize(sel: EditorSelection): number {
+  return sel.kind === "objects" ? sel.ids.length : sel.indices.length;
+}
+
+export function isSelectionEmpty(sel: EditorSelection): boolean {
+  return selectionSize(sel) === 0;
+}
+
+export function selectedObjectIds(sel: EditorSelection): string[] {
+  return sel.kind === "objects" ? sel.ids : [];
+}
+
+export function selectedTileIndices(sel: EditorSelection): number[] {
+  return sel.kind === "tiles" ? sel.indices : [];
+}
+
+export function cloneSelection(sel: EditorSelection): EditorSelection {
+  return sel.kind === "objects"
+    ? { kind: "objects", ids: [...sel.ids] }
+    : { kind: "tiles", indices: [...sel.indices] };
+}
+
+export function selectionsEqual(a: EditorSelection, b: EditorSelection): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "objects" && b.kind === "objects") {
+    return a.ids.length === b.ids.length && a.ids.every((id) => b.ids.includes(id));
+  }
+  if (a.kind === "tiles" && b.kind === "tiles") {
+    return (
+      a.indices.length === b.indices.length && a.indices.every((i) => b.indices.includes(i))
+    );
+  }
+  return false;
+}
+
+export function hoversEqual(a: EditorHover | undefined, b: EditorHover | undefined): boolean {
+  if (a === b) return true;
+  if (!a || !b || a.kind !== b.kind) return false;
+  if (a.kind === "object" && b.kind === "object") return a.id === b.id;
+  if (a.kind === "tile" && b.kind === "tile") return a.index === b.index;
+  return false;
+}
 
 /**
  * Temporary UI state, kept strictly out of the saved {@link LevelDocument}. The
@@ -16,8 +72,8 @@ export type Mode = "edit" | "play";
  */
 export interface EditorState {
   document: LevelDocument;
-  selectedIds: string[];
-  hoveredId?: string;
+  selection: EditorSelection;
+  hover?: EditorHover;
   activeTool: Tool;
   /** Definition id to place while `activeTool === "place"`. */
   placingDefinitionId?: string;
@@ -46,7 +102,7 @@ export class EditorStore {
     this.savedRef = document;
     this.state = {
       document,
-      selectedIds: [],
+      selection: emptySelection(),
       activeTool: "select",
       zoom: 2,
       viewportPosition: { x: 0, y: 0 },
@@ -98,17 +154,27 @@ export class EditorStore {
 
   undo(): void {
     const doc = this.history.undo();
-    if (doc) this.patch({ document: doc, selectedIds: this.pruneSelection(doc) }, "document");
+    if (doc) this.patch({ document: doc, selection: this.pruneSelection(doc) }, "document");
   }
 
   redo(): void {
     const doc = this.history.redo();
-    if (doc) this.patch({ document: doc, selectedIds: this.pruneSelection(doc) }, "document");
+    if (doc) this.patch({ document: doc, selection: this.pruneSelection(doc) }, "document");
   }
 
-  private pruneSelection(doc: LevelDocument): string[] {
-    const alive = new Set(doc.objects.map((o) => o.id));
-    return this.state.selectedIds.filter((id) => alive.has(id));
+  private pruneSelection(doc: LevelDocument): EditorSelection {
+    const sel = this.state.selection;
+    if (sel.kind === "objects") {
+      const alive = new Set(doc.objects.map((o) => o.id));
+      return { kind: "objects", ids: sel.ids.filter((id) => alive.has(id)) };
+    }
+    const max = doc.cols * doc.rows;
+    return {
+      kind: "tiles",
+      indices: sel.indices.filter(
+        (i) => i >= 0 && i < max && (doc.tiles[i] ?? Tile.Empty) !== Tile.Empty,
+      ),
+    };
   }
 
   /** Open a fresh document; clears history and selection. */
@@ -118,8 +184,8 @@ export class EditorStore {
     this.state = {
       ...this.state,
       document,
-      selectedIds: [],
-      hoveredId: undefined,
+      selection: emptySelection(),
+      hover: undefined,
       activeTool: "select",
       placingDefinitionId: undefined,
       mode: "edit",
@@ -135,24 +201,54 @@ export class EditorStore {
 
   // --- Selection ---
 
-  select(ids: string[]): void {
-    this.patch({ selectedIds: ids }, "selection");
+  selectObjects(ids: string[]): void {
+    const next: EditorSelection = { kind: "objects", ids };
+    if (selectionsEqual(this.state.selection, next)) return;
+    this.patch({ selection: next }, "selection");
   }
 
-  toggleInSelection(id: string): void {
-    const set = new Set(this.state.selectedIds);
+  selectTiles(indices: number[]): void {
+    const next: EditorSelection = { kind: "tiles", indices };
+    if (selectionsEqual(this.state.selection, next)) return;
+    this.patch({ selection: next }, "selection");
+  }
+
+  setSelection(selection: EditorSelection): void {
+    if (selectionsEqual(this.state.selection, selection)) return;
+    this.patch({ selection: cloneSelection(selection) }, "selection");
+  }
+
+  toggleObjectInSelection(id: string): void {
+    if (this.state.selection.kind !== "objects") {
+      this.patch({ selection: { kind: "objects", ids: [id] } }, "selection");
+      return;
+    }
+    const set = new Set(this.state.selection.ids);
     if (set.has(id)) set.delete(id);
     else set.add(id);
-    this.patch({ selectedIds: [...set] }, "selection");
+    this.patch({ selection: { kind: "objects", ids: [...set] } }, "selection");
+  }
+
+  toggleTileInSelection(index: number): void {
+    if (this.state.selection.kind !== "tiles") {
+      this.patch({ selection: { kind: "tiles", indices: [index] } }, "selection");
+      return;
+    }
+    const set = new Set(this.state.selection.indices);
+    if (set.has(index)) set.delete(index);
+    else set.add(index);
+    this.patch({ selection: { kind: "tiles", indices: [...set] } }, "selection");
   }
 
   clearSelection(): void {
-    if (this.state.selectedIds.length > 0) this.patch({ selectedIds: [] }, "selection");
+    if (!isSelectionEmpty(this.state.selection)) {
+      this.patch({ selection: emptySelection() }, "selection");
+    }
   }
 
-  setHover(id: string | undefined): void {
-    if (id === this.state.hoveredId) return;
-    this.patch({ hoveredId: id }, "selection");
+  setHover(hover: EditorHover | undefined): void {
+    if (hoversEqual(hover, this.state.hover)) return;
+    this.patch({ hover }, "selection");
   }
 
   // --- Tools & view ---

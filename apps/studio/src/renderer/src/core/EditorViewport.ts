@@ -10,7 +10,14 @@ import {
 } from "@mmx/content-schema";
 import { loadSheets, regionTexture, SHEET_URLS } from "@mmx/renderer-pixi";
 import { previewForDefinition } from "./spritePreview.js";
-import type { EditorStore } from "./EditorStore.js";
+import {
+  cloneSelection,
+  emptySelection,
+  selectedObjectIds,
+  selectionsEqual,
+  type EditorSelection,
+  type EditorStore,
+} from "./EditorStore.js";
 import { paintTiles, placeAt } from "./actions.js";
 
 const COLOR_BG = 0x05070d;
@@ -54,6 +61,16 @@ function boxOf(inst: LevelObjectInstance): Box {
   return { x: inst.x, y: inst.y, w: width, h: height };
 }
 
+function normalizeBox(x0: number, y0: number, x1: number, y1: number): Box {
+  const x = Math.min(x0, x1);
+  const y = Math.min(y0, y1);
+  return { x, y, w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
+}
+
+function boxesIntersect(a: Box, b: Box): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
 /**
  * The Pixi editing surface: terrain and every placed object, plus all pointer
  * interaction (pan/zoom, selection, drag-move, resize handles, placement).
@@ -94,6 +111,14 @@ export class EditorViewport {
   // that commits as one command on pointer-up.
   private tileStroke: { erase: boolean; changed: Map<number, number> } | null = null;
   private pendingToggle: string | null = null;
+  private pendingTileToggle: number | null = null;
+  private marquee: {
+    start: { x: number; y: number };
+    current: { x: number; y: number };
+    additive: boolean;
+    base: EditorSelection;
+  } | null = null;
+  private marqueeActive = false;
   private pointerWorld = { x: 0, y: 0 };
   private onEmptyContextMenu: EmptyCellContextMenuHandler | null = null;
 
@@ -256,7 +281,8 @@ export class EditorViewport {
 
   private objectDrawBox(inst: LevelObjectInstance): Box {
     const base = boxOf(inst);
-    if (this.live?.type === "move" && this.store.get().selectedIds.includes(inst.id)) {
+    const ids = selectedObjectIds(this.store.get().selection);
+    if (this.live?.type === "move" && ids.includes(inst.id)) {
       return { ...base, x: base.x + this.live.dx, y: base.y + this.live.dy };
     }
     if (this.live?.type === "resize" && this.live.id === inst.id) return this.live.box;
@@ -338,23 +364,39 @@ export class EditorViewport {
     g.clear();
     const state = this.store.get();
     const zoom = state.zoom;
+    const grid = state.document.gridSize;
 
     if (state.activeTool === "tile") {
-      this.drawTileToolOverlay(g, state.document.gridSize, zoom);
+      this.drawTileToolOverlay(g, grid, zoom);
       return;
     }
 
     const byId = new Map(state.document.objects.map((o) => [o.id, o]));
+    const selectedIds = selectedObjectIds(state.selection);
 
-    if (state.hoveredId && !state.selectedIds.includes(state.hoveredId)) {
-      const inst = byId.get(state.hoveredId);
+    if (state.hover?.kind === "object" && !selectedIds.includes(state.hover.id)) {
+      const inst = byId.get(state.hover.id);
       if (inst) {
         const b = this.objectDrawBox(inst);
         g.rect(b.x, b.y, b.w, b.h).stroke({ width: 1 / zoom, color: COLOR_HOVER, alpha: 0.5 });
       }
     }
 
-    for (const id of state.selectedIds) {
+    if (state.hover?.kind === "tile") {
+      const selectedTiles =
+        state.selection.kind === "tiles" ? new Set(state.selection.indices) : null;
+      if (!selectedTiles?.has(state.hover.index)) {
+        const col = state.hover.index % state.document.cols;
+        const row = Math.floor(state.hover.index / state.document.cols);
+        g.rect(col * grid, row * grid, grid, grid).stroke({
+          width: 1 / zoom,
+          color: COLOR_HOVER,
+          alpha: 0.5,
+        });
+      }
+    }
+
+    for (const id of selectedIds) {
       const inst = byId.get(id);
       if (!inst) continue;
       const b = this.objectDrawBox(inst);
@@ -364,7 +406,19 @@ export class EditorViewport {
       });
     }
 
-    // Resize handles for a single selected resizable object.
+    if (state.selection.kind === "tiles") {
+      for (const index of state.selection.indices) {
+        const col = index % state.document.cols;
+        const row = Math.floor(index / state.document.cols);
+        g.rect(col * grid - 1 / zoom, row * grid - 1 / zoom, grid + 2 / zoom, grid + 2 / zoom).stroke(
+          {
+            width: 2 / zoom,
+            color: COLOR_SELECT,
+          },
+        );
+      }
+    }
+
     const handleTarget = this.singleResizable();
     if (handleTarget) {
       const b = this.objectDrawBox(handleTarget);
@@ -375,6 +429,21 @@ export class EditorViewport {
           .fill(COLOR_SELECT)
           .stroke({ width: 1 / zoom, color: 0xffffff });
       }
+    }
+
+    if (this.marquee && this.marqueeActive) {
+      const box = normalizeBox(
+        this.marquee.start.x,
+        this.marquee.start.y,
+        this.marquee.current.x,
+        this.marquee.current.y,
+      );
+      g.rect(box.x, box.y, box.w, box.h).fill({ color: COLOR_SELECT, alpha: 0.12 });
+      g.rect(box.x, box.y, box.w, box.h).stroke({
+        width: 1 / zoom,
+        color: COLOR_SELECT,
+        alpha: 0.95,
+      });
     }
   }
 
@@ -416,9 +485,9 @@ export class EditorViewport {
   }
 
   private singleResizable(): LevelObjectInstance | null {
-    const state = this.store.get();
-    if (state.selectedIds.length !== 1) return null;
-    const inst = state.document.objects.find((o) => o.id === state.selectedIds[0]);
+    const ids = selectedObjectIds(this.store.get().selection);
+    if (ids.length !== 1) return null;
+    const inst = this.store.get().document.objects.find((o) => o.id === ids[0]);
     if (!inst) return null;
     return requireDefinition(inst.definitionId).editor.resizable ? inst : null;
   }
@@ -455,6 +524,67 @@ export class EditorViewport {
       if (wx >= b.x && wx <= b.x + b.w && wy >= b.y && wy <= b.y + b.h) return objects[i];
     }
     return null;
+  }
+
+  private tileIndexAt(wx: number, wy: number): number | null {
+    const doc = this.store.get().document;
+    const col = Math.floor(wx / doc.gridSize);
+    const row = Math.floor(wy / doc.gridSize);
+    if (col < 0 || row < 0 || col >= doc.cols || row >= doc.rows) return null;
+    return row * doc.cols + col;
+  }
+
+  private isTerrainCell(index: number): boolean {
+    return (this.store.get().document.tiles[index] ?? Tile.Empty) !== Tile.Empty;
+  }
+
+  private objectsIntersecting(box: Box): string[] {
+    return this.store
+      .get()
+      .document.objects.filter((o) => boxesIntersect(boxOf(o), box))
+      .map((o) => o.id);
+  }
+
+  private tilesIntersecting(box: Box): number[] {
+    const doc = this.store.get().document;
+    const grid = doc.gridSize;
+    const col0 = Math.max(0, Math.floor(box.x / grid));
+    const row0 = Math.max(0, Math.floor(box.y / grid));
+    const col1 = Math.min(doc.cols - 1, Math.ceil((box.x + box.w) / grid) - 1);
+    const row1 = Math.min(doc.rows - 1, Math.ceil((box.y + box.h) / grid) - 1);
+    if (col1 < col0 || row1 < row0) return [];
+    const out: number[] = [];
+    for (let row = row0; row <= row1; row++) {
+      for (let col = col0; col <= col1; col++) {
+        const index = row * doc.cols + col;
+        if (!this.isTerrainCell(index)) continue;
+        const cell: Box = { x: col * grid, y: row * grid, w: grid, h: grid };
+        if (boxesIntersect(cell, box)) out.push(index);
+      }
+    }
+    return out;
+  }
+
+  private applyMarqueeSelection(): void {
+    const m = this.marquee;
+    if (!m) return;
+    const box = normalizeBox(m.start.x, m.start.y, m.current.x, m.current.y);
+    const objectIds = this.objectsIntersecting(box);
+    let next: EditorSelection;
+    if (objectIds.length > 0) {
+      next =
+        m.additive && m.base.kind === "objects"
+          ? { kind: "objects", ids: [...new Set([...m.base.ids, ...objectIds])] }
+          : { kind: "objects", ids: objectIds };
+    } else {
+      const indices = this.tilesIntersecting(box);
+      next =
+        m.additive && m.base.kind === "tiles"
+          ? { kind: "tiles", indices: [...new Set([...m.base.indices, ...indices])] }
+          : { kind: "tiles", indices };
+    }
+    if (selectionsEqual(this.store.get().selection, next)) return;
+    this.store.setSelection(next);
   }
 
   private handleAt(clientX: number, clientY: number): Handle | null {
@@ -589,14 +719,25 @@ export class EditorViewport {
       if (e.shiftKey) {
         this.pendingToggle = hit.id;
       } else {
-        if (!state.selectedIds.includes(hit.id)) this.store.select([hit.id]);
-        const ids = this.store.get().selectedIds;
+        const selectedIds = selectedObjectIds(state.selection);
+        if (!selectedIds.includes(hit.id)) this.store.selectObjects([hit.id]);
+        const ids = selectedObjectIds(this.store.get().selection);
         const orig = new Map<string, Box>();
         for (const o of state.document.objects) if (ids.includes(o.id)) orig.set(o.id, boxOf(o));
         this.dragStart = { world, ids, orig };
       }
-    } else if (!e.shiftKey) {
-      this.store.clearSelection();
+    } else {
+      this.store.setHover(undefined);
+      const tileIndex = this.tileIndexAt(world.x, world.y);
+      const terrain = tileIndex !== null && this.isTerrainCell(tileIndex);
+      this.pendingTileToggle = e.shiftKey && terrain ? tileIndex : null;
+      this.marquee = {
+        start: world,
+        current: world,
+        additive: e.shiftKey,
+        base: e.shiftKey ? cloneSelection(state.selection) : emptySelection(),
+      };
+      this.marqueeActive = false;
     }
   }
 
@@ -622,6 +763,19 @@ export class EditorViewport {
     if (this.resizeState) {
       this.applyResize(world);
       this.redraw();
+      return;
+    }
+
+    if (this.marquee) {
+      this.marquee.current = world;
+      const zoom = this.store.get().zoom;
+      const dist =
+        Math.hypot(world.x - this.marquee.start.x, world.y - this.marquee.start.y) * zoom;
+      if (dist >= 3) {
+        this.marqueeActive = true;
+        this.applyMarqueeSelection();
+        this.redraw();
+      }
       return;
     }
 
@@ -651,7 +805,16 @@ export class EditorViewport {
         this.redraw();
       } else {
         const hit = this.topObjectAt(world.x, world.y);
-        this.store.setHover(hit?.id);
+        if (hit) {
+          this.store.setHover({ kind: "object", id: hit.id });
+        } else {
+          const index = this.tileIndexAt(world.x, world.y);
+          if (index !== null && this.isTerrainCell(index)) {
+            this.store.setHover({ kind: "tile", index });
+          } else {
+            this.store.setHover(undefined);
+          }
+        }
       }
     }
   }
@@ -690,6 +853,23 @@ export class EditorViewport {
       return;
     }
 
+    if (this.marquee) {
+      if (this.marqueeActive) {
+        this.applyMarqueeSelection();
+      } else if (this.pendingTileToggle !== null && e.shiftKey) {
+        this.store.toggleTileInSelection(this.pendingTileToggle);
+      } else if (!this.marquee.additive) {
+        const index = this.tileIndexAt(this.marquee.start.x, this.marquee.start.y);
+        if (index !== null && this.isTerrainCell(index)) this.store.selectTiles([index]);
+        else this.store.clearSelection();
+      }
+      this.pendingTileToggle = null;
+      this.marquee = null;
+      this.marqueeActive = false;
+      this.redraw();
+      return;
+    }
+
     if (this.tileStroke) {
       const { erase, changed } = this.tileStroke;
       this.tileStroke = null;
@@ -723,9 +903,10 @@ export class EditorViewport {
     }
 
     if (this.pendingToggle && e.shiftKey) {
-      this.store.toggleInSelection(this.pendingToggle);
+      this.store.toggleObjectInSelection(this.pendingToggle);
     }
     this.pendingToggle = null;
+    this.pendingTileToggle = null;
     this.dragStart = null;
     this.dragging = false;
     this.live = null;
@@ -734,9 +915,15 @@ export class EditorViewport {
   private updateCursor(): void {
     const state = this.store.get();
     let cursor = "default";
+    if (this.panning || this.spaceDown || state.activeTool === "pan") cursor = "grab";
+    else if (
+      this.marqueeActive ||
+      state.activeTool === "place" ||
+      state.activeTool === "tile"
+    ) {
+      cursor = "crosshair";
+    }
     if (state.mode === "play") cursor = "default";
-    else if (this.panning || this.spaceDown || state.activeTool === "pan") cursor = "grab";
-    else if (state.activeTool === "place" || state.activeTool === "tile") cursor = "crosshair";
     this.canvas.style.cursor = cursor;
   }
 

@@ -83,7 +83,7 @@ export function Viewport() {
                 ) : (
                   <MousePointer2 size={14} className="text-accent" />
                 )}
-                {snap.state.activeTool === "tile" ? "Tile paint" : "Select"}
+                {snap.state.activeTool === "tile" ? "Tile paint" : "Select / move"}
               </div>
               <div className="inline-flex items-center gap-2 h-8 px-2.5 text-[10.5px] font-mono text-fg-2 bg-[rgba(12,17,26,0.8)] border border-[rgba(64,77,100,0.6)] rounded-lg backdrop-blur-[10px]">
                 <span>{Math.round(snap.state.zoom * 100)}%</span>
@@ -106,8 +106,8 @@ export function Viewport() {
                 </>
               ) : (
                 <>
-                  Scroll to zoom <HintDot /> <Keycap>Space</Keycap> drag to pan <HintDot />{" "}
-                  Right-click to place <HintDot /> <Keycap>T</Keycap> paint
+                  Drag to select objects/tiles <HintDot /> <Keycap>Shift</Keycap> add <HintDot />{" "}
+                  <Keycap>Space</Keycap> pan <HintDot /> <Keycap>T</Keycap> paint
                 </>
               )}
             </div>

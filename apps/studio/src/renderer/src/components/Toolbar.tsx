@@ -85,7 +85,7 @@ export function Toolbar() {
         <div className={divider} />
 
         <div className={group}>
-          <Tooltip label="Select / move objects (V)">
+          <Tooltip label="Select / move — click, drag region, or Shift to add (V)">
             <button
               className={btnCls({ active: tool === "select", icon: true })}
               disabled={playing}

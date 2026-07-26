@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Tile } from "@mmx/engine/game/World.js";
 import { createLevelDocument } from "@mmx/content-schema";
-import { EditorStore } from "./EditorStore.js";
+import { EditorStore, selectedObjectIds, selectedTileIndices } from "./EditorStore.js";
 import {
   cellIndex,
   deleteSelection,
@@ -23,8 +23,9 @@ describe("editor actions", () => {
     placeAt(store, "enemy.metool", 100, 100);
     const state = store.get();
     expect(state.document.objects.length).toBe(before + 1);
-    expect(state.selectedIds.length).toBe(1);
-    const placed = state.document.objects.find((o) => o.id === state.selectedIds[0]);
+    const ids = selectedObjectIds(state.selection);
+    expect(ids.length).toBe(1);
+    const placed = state.document.objects.find((o) => o.id === ids[0]);
     expect(placed?.definitionId).toBe("enemy.metool");
   });
 
@@ -46,7 +47,7 @@ describe("editor actions", () => {
     const count = store.get().document.objects.length;
     deleteSelection(store);
     expect(store.get().document.objects.length).toBe(count - 1);
-    expect(store.get().selectedIds).toEqual([]);
+    expect(selectedObjectIds(store.get().selection)).toEqual([]);
   });
 
   it("undo/redo round-trips a placement", () => {
@@ -63,7 +64,7 @@ describe("editor actions", () => {
   it("nudges the selection by a pixel delta", () => {
     const store = freshStore();
     placeAt(store, "enemy.metool", 100, 100);
-    const id = store.get().selectedIds[0];
+    const id = selectedObjectIds(store.get().selection)[0];
     const before = store.get().document.objects.find((o) => o.id === id)!;
     nudgeSelection(store, 4, -3);
     const after = store.get().document.objects.find((o) => o.id === id)!;
@@ -88,12 +89,25 @@ describe("editor actions", () => {
     expect(store.get().document.tiles[index!]).toBe(Tile.Empty);
   });
 
+  it("deletes selected solid tiles", () => {
+    const store = freshStore();
+    setTileAt(store, 2, 3, true);
+    setTileAt(store, 3, 3, true);
+    const a = cellIndex(store, 2, 3)!;
+    const b = cellIndex(store, 3, 3)!;
+    store.selectTiles([a, b]);
+    expect(selectedTileIndices(store.get().selection)).toEqual([a, b]);
+    deleteSelection(store);
+    expect(store.get().document.tiles[a]).toBe(Tile.Empty);
+    expect(store.get().document.tiles[b]).toBe(Tile.Empty);
+    expect(selectedTileIndices(store.get().selection)).toEqual([]);
+  });
+
   it("ignores an all-redundant paint stroke so history stays clean", () => {
     const store = freshStore();
     const index = cellIndex(store, 1, 1)!;
     setTileAt(store, 1, 1, true);
     const canUndoBefore = store.canUndo;
-    // Painting the same cell solid again changes nothing.
     paintTiles(store, [{ index, value: Tile.Solid }], false);
     expect(store.canUndo).toBe(canUndoBefore);
     store.undo();

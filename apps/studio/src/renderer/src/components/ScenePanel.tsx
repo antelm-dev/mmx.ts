@@ -12,6 +12,7 @@ import {
 } from "@mmx/content-schema";
 import type { DockviewPanelApi } from "dockview-react";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
+import { selectedObjectIds } from "../core/EditorStore.js";
 import { useUiStore } from "../store/uiStore.js";
 import { cx, ctxItemCls, itemCls, menu, panel, scroll } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
@@ -69,8 +70,9 @@ function SceneRowMenu({
   return (
     <ContextMenu.Root
       onOpenChange={(open) => {
-        if (open && !editor.store.get().selectedIds.includes(inst.id)) {
-          editor.store.select([inst.id]);
+        const ids = selectedObjectIds(editor.store.get().selection);
+        if (open && !ids.includes(inst.id)) {
+          editor.store.selectObjects([inst.id]);
         }
       }}
     >
@@ -142,8 +144,9 @@ function SceneList({
     overscan: 12,
   });
 
-  const selected = new Set(snap.state.selectedIds);
-  const selectedCount = snap.state.selectedIds.length;
+  const selectedIds = selectedObjectIds(snap.state.selection);
+  const selected = new Set(selectedIds);
+  const selectedCount = selectedIds.length;
   const sceneFlip = (item: SceneItem) =>
     item.def.category === "enemy" && effectiveValue(item.inst, "FacesRight") === true;
 

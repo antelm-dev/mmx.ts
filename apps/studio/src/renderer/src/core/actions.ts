@@ -9,7 +9,10 @@ import {
   type TileEdit,
 } from "@mmx/content-schema";
 import { Tile } from "@mmx/engine/game/World.js";
-import type { EditorStore } from "./EditorStore.js";
+import {
+  selectedObjectIds,
+  type EditorStore,
+} from "./EditorStore.js";
 
 /**
  * Intent → undoable command. Everything the toolbar, palette, viewport and
@@ -37,12 +40,13 @@ export function placeAt(
     inst.height = height;
   }
   store.execute(addObjects([inst], `Add ${def.name}`));
-  store.select([inst.id]);
+  store.selectObjects([inst.id]);
 }
 
-/** Duplicate the current selection one grid cell down-right, and select the copies. */
+/** Duplicate the current object selection one grid cell down-right, and select the copies. */
 export function duplicateSelection(store: EditorStore): void {
-  const { document, selectedIds } = store.get();
+  const { document, selection } = store.get();
+  const selectedIds = selectedObjectIds(selection);
   if (selectedIds.length === 0) return;
   const grid = document.gridSize;
   const selected = new Set(selectedIds);
@@ -57,14 +61,21 @@ export function duplicateSelection(store: EditorStore): void {
     }));
   if (copies.length === 0) return;
   store.execute(addObjects(copies, "Duplicate"));
-  store.select(copies.map((c) => c.id));
+  store.selectObjects(copies.map((c) => c.id));
 }
 
-/** Delete the current selection. */
+/** Delete the current selection (objects or terrain cells). */
 export function deleteSelection(store: EditorStore): void {
-  const { document, selectedIds } = store.get();
-  if (selectedIds.length === 0) return;
-  store.execute(deleteObjects(document, selectedIds));
+  const { document, selection } = store.get();
+  if (selection.kind === "tiles") {
+    if (selection.indices.length === 0) return;
+    const edits = selection.indices.map((index) => ({ index, value: Tile.Empty }));
+    paintTiles(store, edits, true);
+    store.clearSelection();
+    return;
+  }
+  if (selection.ids.length === 0) return;
+  store.execute(deleteObjects(document, selection.ids));
   store.clearSelection();
 }
 
@@ -94,9 +105,9 @@ export function setTileAt(store: EditorStore, col: number, row: number, solid: b
   paintTiles(store, [{ index, value: solid ? Tile.Solid : Tile.Empty }], !solid);
 }
 
-/** Nudge the selection by a pixel delta (arrow keys). */
+/** Nudge the object selection by a pixel delta (arrow keys). No-op for tile selection. */
 export function nudgeSelection(store: EditorStore, dx: number, dy: number): void {
-  const { selectedIds } = store.get();
+  const selectedIds = selectedObjectIds(store.get().selection);
   if (selectedIds.length === 0) return;
   store.execute(moveObjects(selectedIds, dx, dy));
 }

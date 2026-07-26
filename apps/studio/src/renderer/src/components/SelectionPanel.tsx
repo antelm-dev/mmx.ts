@@ -1,11 +1,26 @@
 import { useMemo, type ReactElement } from "react";
 import { instanceSize, requireDefinition } from "@mmx/content-schema";
+import { Tile } from "@mmx/engine/game/World.js";
 import { useEditorSnapshot } from "../app/useEditor.js";
+import { selectedObjectIds, selectionSize } from "../core/EditorStore.js";
 import { panel, scroll } from "../ui.js";
 
 interface Kv {
   k: string;
   v: string;
+}
+
+function tileKindLabel(value: number): string {
+  switch (value) {
+    case Tile.Solid:
+      return "Solid";
+    case Tile.SlopeUpRight:
+      return "Slope /";
+    case Tile.SlopeUpLeft:
+      return "Slope \\";
+    default:
+      return "Empty";
+  }
 }
 
 /** Movable dock panel: details for the current selection (or level summary when empty). */
@@ -15,7 +30,7 @@ export function SelectionPanel(): ReactElement {
   const selection = useMemo<Kv[]>(() => {
     const s = snap.state;
     const doc = s.document;
-    if (s.selectedIds.length === 0) {
+    if (selectionSize(s.selection) === 0) {
       return [
         { k: "Level", v: doc.name },
         { k: "Grid", v: `${doc.gridSize}px — ${doc.cols}×${doc.rows} tiles` },
@@ -23,8 +38,23 @@ export function SelectionPanel(): ReactElement {
         { k: "Mode", v: s.mode },
       ];
     }
-    if (s.selectedIds.length > 1) return [{ k: "Selected", v: `${s.selectedIds.length} objects` }];
-    const inst = doc.objects.find((o) => o.id === s.selectedIds[0]);
+    if (s.selection.kind === "tiles") {
+      if (s.selection.indices.length > 1) {
+        return [{ k: "Selected", v: `${s.selection.indices.length} tiles` }];
+      }
+      const index = s.selection.indices[0];
+      const col = index % doc.cols;
+      const row = Math.floor(index / doc.cols);
+      const value = doc.tiles[index] ?? Tile.Empty;
+      return [
+        { k: "Type", v: `${tileKindLabel(value)} tile` },
+        { k: "Cell", v: `${col}, ${row}` },
+        { k: "Index", v: String(index) },
+      ];
+    }
+    const objectIds = selectedObjectIds(s.selection);
+    if (objectIds.length > 1) return [{ k: "Selected", v: `${objectIds.length} objects` }];
+    const inst = doc.objects.find((o) => o.id === objectIds[0]);
     if (!inst) return [];
     const def = requireDefinition(inst.definitionId);
     const { width, height } = instanceSize(inst);
