@@ -32,6 +32,8 @@ test("dispose is idempotent and rejects further simulation ops", async () => {
   session.dispose();
 
   assert.deepEqual(session.snapshot(), STOPPED_PLAYTEST);
+  assert.equal(session.snapshot().frameStats.fps, 0);
+  assert.equal(session.snapshot().frameStats.discardedSimulationTime, 0);
   assert.throws(() => session.step(), /disposed/);
   assert.throws(() => session.setCheckpoint(), /disposed/);
   assert.throws(() => session.togglePause(), /disposed/);
@@ -42,6 +44,7 @@ test("stop returns the stopped snapshot and start can run again", async () => {
   await session.start();
   session.step();
   assert.equal(session.snapshot().frame, 1);
+  assert.deepEqual(session.snapshot().frameStats, STOPPED_PLAYTEST.frameStats);
 
   session.stop();
   assert.deepEqual(session.snapshot(), STOPPED_PLAYTEST);

@@ -1,6 +1,6 @@
 import { type ReactElement, type ReactNode } from "react";
 import { Bug, Crosshair, Flag, Pause, Play, RefreshCw, RotateCcw, StepForward } from "lucide-react";
-import type { ActorSnapshot } from "@mmx/editor-runtime";
+import type { ActorSnapshot, FrameStatsSnapshot } from "@mmx/editor-runtime";
 import { editor, usePlaytestSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { cx } from "../ui.js";
@@ -64,11 +64,53 @@ export function PlaytestDebugger(): ReactElement | null {
         </IconButton>
       </div>
 
+      <PerformanceReadout stats={snap.frameStats} />
+
       {inspectorVisible && runtime && (
         <RuntimeInspector runtime={runtime} selectedRuntimeId={snap.selectedRuntimeId} />
       )}
     </div>
   );
+}
+
+function PerformanceReadout({ stats }: { stats: FrameStatsSnapshot }): ReactElement {
+  return (
+    <div className="pointer-events-none flex flex-col items-stretch gap-1 max-w-[480px] px-2.5 py-1.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px] text-[10.5px] text-[#b4c1d4]">
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+        <Readout label="fps" value={stats.fps.toFixed(1)} />
+        <TimingReadout label="sim" summary={stats.simulation} />
+        <TimingReadout label="ren" summary={stats.rendering} />
+        <Readout label="catch-up" value={String(stats.catchUpFrames)} />
+        <Readout label="discarded" value={`${fmtMs(stats.discardedSimulationTime)} ms`} />
+      </div>
+      <div className="text-center text-[8.5px] uppercase tracking-[0.4px] text-[#5f7088]">
+        timing median / p95 / worst (ms)
+      </div>
+    </div>
+  );
+}
+
+function TimingReadout({
+  label,
+  summary,
+}: {
+  label: string;
+  summary: FrameStatsSnapshot["simulation"];
+}): ReactElement {
+  return (
+    <div className="flex items-center gap-1.5 px-0.5" title="median / p95 / worst (ms)">
+      <span className="text-[9.5px] uppercase tracking-[0.5px] text-[#7c8da7]">{label}</span>
+      <span className="font-mono text-[11px] text-[#edf3fc] tabular-nums">
+        {fmtMs(summary.median)} / {fmtMs(summary.p95)} / {fmtMs(summary.worst)}
+      </span>
+    </div>
+  );
+}
+
+function fmtMs(ms: number): string {
+  if (ms >= 100) return ms.toFixed(0);
+  if (ms >= 10) return ms.toFixed(1);
+  return ms.toFixed(2);
 }
 
 function RuntimeInspector({

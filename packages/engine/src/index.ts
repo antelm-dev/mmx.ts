@@ -1,6 +1,7 @@
 export * from "./core/constants.js";
 export * from "./core/AnimationCursor.js";
 export * from "./core/Events.js";
+export * from "./core/FrameStats.js";
 export * from "./core/Input.js";
 export * from "./core/Replay.js";
 export * from "./core/Rng.js";
