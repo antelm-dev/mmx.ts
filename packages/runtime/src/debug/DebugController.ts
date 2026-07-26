@@ -75,6 +75,11 @@ export class DebugController {
     this.host.scene.player.invulnerability = 1;
   }
 
+  /** Programmatic pause without a HUD notice (focus loss, host policy). */
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
   togglePause(): void {
     this.paused = !this.paused;
     this.say(this.paused ? "paused" : "resumed");
