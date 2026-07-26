@@ -56,6 +56,9 @@ importers:
       '@mmx/content-schema':
         specifier: workspace:*
         version: link:../../packages/content-schema
+      '@mmx/editor-runtime':
+        specifier: workspace:*
+        version: link:../../packages/editor-runtime
       '@mmx/engine':
         specifier: workspace:*
         version: link:../../packages/engine

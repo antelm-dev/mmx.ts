@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { editor, type EditorSnapshot } from "./EditorController.js";
-import type { PlaytestSnapshot } from "../core/playtest/PlaytestController.js";
+import type { PlaytestSnapshot } from "@mmx/editor-runtime";
 
 /**
  * Subscribe a component to the editor's immutable snapshot. The controller

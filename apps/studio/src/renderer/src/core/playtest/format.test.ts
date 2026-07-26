@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActorSnapshot } from "@mmx/engine/tooling";
+import type { ActorSnapshot } from "@mmx/editor-runtime";
 import { fmtAbilities, fmtHealth, fmtNumber, fmtPosition, fmtVec } from "./format.js";
 
 const actor = (over: Partial<ActorSnapshot> = {}): ActorSnapshot => ({

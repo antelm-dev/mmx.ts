@@ -21,10 +21,11 @@ import {
 } from "../core/actions.js";
 import { EditorViewport } from "../core/EditorViewport.js";
 import {
-  PlaytestController,
+  createPlaytest,
   STOPPED_PLAYTEST,
+  type EditorPlaytestSession,
   type PlaytestSnapshot,
-} from "../core/playtest/PlaytestController.js";
+} from "@mmx/editor-runtime";
 import {
   createFileAccess,
   parseDocument,
@@ -64,7 +65,7 @@ export class EditorController {
 
   private readonly fileAccess: FileAccess = createFileAccess();
   private viewport: EditorViewport | null = null;
-  private play: PlaytestController | null = null;
+  private play: EditorPlaytestSession | null = null;
   private sounds: GameplaySounds | null = null;
   /** Bumped on every startPlay so an async renderer creation can detect it was superseded. */
   private playToken = 0;
@@ -362,7 +363,9 @@ export class EditorController {
     this.viewport?.setVisible(false);
     try {
       await sounds.effects.load();
-      const controller = await PlaytestController.start(this.host, state.document, sounds, {
+      const session = createPlaytest(state.document, {
+        host: this.host,
+        sounds,
         onSnapshot: (snapshot) => {
           if (token !== this.playToken) return;
           this.setPlaytestSnapshot(snapshot);
@@ -378,11 +381,12 @@ export class EditorController {
           this.focusObject(sourceEntityId);
         },
       });
+      await session.start();
       if (token !== this.playToken || this.store.get().mode !== "play") {
-        controller.stop();
+        session.dispose();
         return;
       }
-      this.play = controller;
+      this.play = session;
     } catch (error) {
       this.toast(`Could not start Play: ${error instanceof Error ? error.message : String(error)}`);
       this.stopPlay();
@@ -391,7 +395,7 @@ export class EditorController {
 
   private stopPlay(): void {
     this.playToken++;
-    this.play?.stop();
+    this.play?.dispose();
     this.play = null;
     this.setPlaytestSnapshot(STOPPED_PLAYTEST);
     this.store.setMode("edit");

@@ -9,7 +9,7 @@ import {
   RotateCcw,
   StepForward,
 } from "lucide-react";
-import type { ActorSnapshot } from "@mmx/engine/tooling";
+import type { ActorSnapshot } from "@mmx/editor-runtime";
 import { editor, usePlaytestSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { cx } from "../ui.js";
@@ -17,10 +17,9 @@ import { fmtAbilities, fmtHealth, fmtPosition, fmtVec } from "../core/playtest/f
 
 /**
  * The Playtest Debugger: a control strip plus a runtime inspector, shown over the
- * game canvas while Play mode is active. It reads the controller's
- * {@link import("../core/playtest/PlaytestController.js").PlaytestSnapshot} and
- * issues commands back through the {@link editor}; it holds no simulation state
- * of its own.
+ * game canvas while Play mode is active. It reads the editor-runtime
+ * {@link PlaytestSnapshot} and issues commands back through the {@link editor};
+ * it holds no simulation state of its own.
  */
 export function PlaytestDebugger(): ReactElement | null {
   const snap = usePlaytestSnapshot();
