@@ -75,7 +75,7 @@ export const scroll = "overflow-y-auto min-h-0 flex-1";
 
 /** Uppercase section heading. Compose with {@link sectionTitleSub} for a top divider. */
 export const sectionTitle =
-  "uppercase tracking-[0.6px] text-[10.5px] font-semibold text-fg-3 px-3.5 pt-[11px] pb-[7px]";
+  "uppercase tracking-[0.6px] text-[10.5px] font-semibold text-fg-2 px-3.5 pt-[11px] pb-[7px]";
 export const sectionTitleSub = "border-t border-border mt-2";
 /** Small caption above a form control. */
 export const fieldLabel = "block text-[10.5px] text-fg-3 mb-[3px]";

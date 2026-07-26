@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { parseDocument, serializeDocument } from "../core/persistence.js";
+import { useUiStore } from "../store/uiStore.js";
 import { actionBtn, actions, cx, panel } from "../ui.js";
 import { setupMonaco } from "./monacoSetup.js";
 
@@ -15,6 +16,7 @@ setupMonaco();
  */
 export function JsonPanel() {
   const snap = useEditorSnapshot();
+  const colorTheme = useUiStore((s) => s.colorTheme);
   const doc = snap.state.document;
   const serialized = useMemo(() => serializeDocument(doc), [doc]);
   const [buffer, setBuffer] = useState(serialized);
@@ -48,7 +50,7 @@ export function JsonPanel() {
         <Editor
           height="100%"
           language="json"
-          theme="vs-dark"
+          theme={colorTheme === "dark" ? "vs-dark" : "light"}
           value={buffer}
           onChange={(v) => setBuffer(v ?? "")}
           options={{

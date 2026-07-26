@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+  persistColorTheme,
+  readStoredTheme,
+  type ColorTheme,
+} from "../app/theme.js";
 import type { EmptyCellContextMenu } from "../core/EditorViewport.js";
 
 /**
@@ -19,6 +24,7 @@ interface UiState {
   /** Grouping toggle + per-category collapse state for the Scene tab. */
   sceneGrouped: boolean;
   collapsedSceneGroups: Record<string, boolean>;
+  colorTheme: ColorTheme;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -26,16 +32,19 @@ interface UiState {
   setPaletteQuery: (query: string) => void;
   setSceneGrouped: (grouped: boolean) => void;
   toggleSceneGroup: (category: string) => void;
+  setColorTheme: (theme: ColorTheme) => void;
+  toggleColorTheme: () => void;
 }
 
 let toastSeq = 0;
 
-export const useUiStore = create<UiState>((set) => ({
+export const useUiStore = create<UiState>((set, get) => ({
   toasts: [],
   contextMenu: null,
   paletteQuery: "",
   sceneGrouped: true,
   collapsedSceneGroups: {},
+  colorTheme: readStoredTheme(),
 
   addToast: (message) => {
     const id = ++toastSeq;
@@ -55,4 +64,13 @@ export const useUiStore = create<UiState>((set) => ({
         [category]: !s.collapsedSceneGroups[category],
       },
     })),
+  setColorTheme: (colorTheme) => {
+    persistColorTheme(colorTheme);
+    set({ colorTheme });
+  },
+  toggleColorTheme: () => {
+    const colorTheme = get().colorTheme === "dark" ? "light" : "dark";
+    persistColorTheme(colorTheme);
+    set({ colorTheme });
+  },
 }));

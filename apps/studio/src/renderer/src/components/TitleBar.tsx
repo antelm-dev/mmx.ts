@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Check, Minus, Square, Copy, X } from "lucide-react";
-import { cx, ctxItemCls, menu } from "../ui.js";
+import { Check, Copy, Minus, Moon, Square, Sun, X } from "lucide-react";
 import { PANELS, togglePanel, useOpenPanelIds } from "../app/dock.js";
+import { useUiStore } from "../store/uiStore.js";
+import { cx, ctxItemCls, menu } from "../ui.js";
 
 /** Shorthand for the frameless-window IPC surface exposed by the preload. */
 const controls = () => window.studio?.window;
@@ -17,6 +18,8 @@ const controls = () => window.studio?.window;
  */
 export function TitleBar() {
   const [maximized, setMaximized] = useState(false);
+  const colorTheme = useUiStore((s) => s.colorTheme);
+  const toggleColorTheme = useUiStore((s) => s.toggleColorTheme);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +36,7 @@ export function TitleBar() {
   }, []);
 
   return (
-    <div className="flex items-stretch h-8 pl-3 bg-[#0b0e15] border-b border-border select-none [-webkit-app-region:drag]">
+    <div className="flex items-stretch h-8 pl-3 bg-chrome border-b border-border select-none [-webkit-app-region:drag]">
       <div className="flex items-center gap-2 min-w-0 text-[11.5px] font-semibold tracking-[0.3px] text-fg-3">
         <img
           src={`${import.meta.env.BASE_URL}favicon.png`}
@@ -52,6 +55,12 @@ export function TitleBar() {
       <div className="flex-1" />
 
       <div className="flex items-stretch [-webkit-app-region:no-drag]">
+        <ControlButton
+          label={colorTheme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          onClick={toggleColorTheme}
+        >
+          {colorTheme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+        </ControlButton>
         <ControlButton label="Minimize" onClick={() => void controls()?.minimize()}>
           <Minus size={15} />
         </ControlButton>

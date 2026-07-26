@@ -77,24 +77,24 @@ export function Viewport() {
         {mode === "edit" && (
           <>
             <div className="absolute z-[3] pointer-events-none left-3.5 top-3.5 flex items-center gap-2">
-              <div className="inline-flex items-center gap-2 h-8 px-2.5 text-[11px] font-bold text-fg bg-[rgba(12,17,26,0.9)] border border-[rgba(64,77,100,0.72)] rounded-lg shadow-[0_5px_18px_rgba(0,0,0,0.28)] backdrop-blur-[10px]">
+              <div className="inline-flex items-center gap-2 h-8 px-2.5 text-[11px] font-bold text-[#edf3fc] bg-[rgba(12,17,26,0.9)] border border-[rgba(64,77,100,0.72)] rounded-lg shadow-[0_5px_18px_rgba(0,0,0,0.28)] backdrop-blur-[10px]">
                 {snap.state.activeTool === "tile" ? (
-                  <Paintbrush size={14} className="text-accent" />
+                  <Paintbrush size={14} className="text-[#4b8eff]" />
                 ) : (
-                  <MousePointer2 size={14} className="text-accent" />
+                  <MousePointer2 size={14} className="text-[#4b8eff]" />
                 )}
                 {snap.state.activeTool === "tile" ? "Tile paint" : "Select / move"}
               </div>
-              <div className="inline-flex items-center gap-2 h-8 px-2.5 text-[10.5px] font-mono text-fg-2 bg-[rgba(12,17,26,0.8)] border border-[rgba(64,77,100,0.6)] rounded-lg backdrop-blur-[10px]">
+              <div className="inline-flex items-center gap-2 h-8 px-2.5 text-[10.5px] font-mono text-[#b4c1d4] bg-[rgba(12,17,26,0.8)] border border-[rgba(64,77,100,0.6)] rounded-lg backdrop-blur-[10px]">
                 <span>{Math.round(snap.state.zoom * 100)}%</span>
-                <span className="w-px h-3 bg-border-strong" />
+                <span className="w-px h-3 bg-[#3a4960]" />
                 <Grid3x3
                   size={12}
-                  className={snap.state.gridVisible ? "text-accent" : "text-fg-3"}
+                  className={snap.state.gridVisible ? "text-[#4b8eff]" : "text-[#7c8da7]"}
                 />
                 <Magnet
                   size={12}
-                  className={snap.state.snapEnabled ? "text-accent" : "text-fg-3"}
+                  className={snap.state.snapEnabled ? "text-[#4b8eff]" : "text-[#7c8da7]"}
                 />
               </div>
             </div>
@@ -220,12 +220,12 @@ export function Viewport() {
 
 function Keycap({ children }: { children: string }) {
   return (
-    <span className="inline-flex items-center justify-center min-w-[19px] h-[19px] mx-1 px-1.5 rounded-[5px] border border-border-strong bg-raised text-[9px] font-mono font-bold text-fg">
+    <span className="inline-flex items-center justify-center min-w-[19px] h-[19px] mx-1 px-1.5 rounded-[5px] border border-[#3a4960] bg-[#161e2b] text-[9px] font-mono font-bold text-[#edf3fc]">
       {children}
     </span>
   );
 }
 
 function HintDot() {
-  return <span className="inline-block w-0.5 h-0.5 mx-2 rounded-full bg-fg-3 align-middle" />;
+  return <span className="inline-block w-0.5 h-0.5 mx-2 rounded-full bg-[#7c8da7] align-middle" />;
 }

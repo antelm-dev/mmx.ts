@@ -70,7 +70,7 @@ function RuntimeInspector({
   const selected = actors.find((a) => a.runtimeId === selectedRuntimeId) ?? runtime.player;
 
   return (
-    <div className="pointer-events-auto w-[236px] p-2.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px] text-[11px] text-fg-2">
+    <div className="pointer-events-auto w-[236px] p-2.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px] text-[11px] text-[#b4c1d4]">
       {actors.length > 1 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {actors.map((a) => (
@@ -80,8 +80,8 @@ function RuntimeInspector({
               className={cx(
                 "px-1.5 h-6 rounded-md text-[10.5px] font-semibold cursor-pointer border transition-colors",
                 a.runtimeId === selected.runtimeId
-                  ? "bg-accent/15 text-accent-fg border-accent/40"
-                  : "text-fg-3 border-transparent hover:bg-hover hover:text-fg",
+                  ? "bg-[rgba(75,142,255,0.15)] text-[#d8e7ff] border-[rgba(75,142,255,0.4)]"
+                  : "text-[#7c8da7] border-transparent hover:bg-[#1b2636] hover:text-[#edf3fc]",
               )}
             >
               {a.kind}
@@ -102,7 +102,7 @@ function RuntimeInspector({
       {selected.sourceEntityId && (
         <button
           onClick={() => editor.playtestFocusSource()}
-          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-7 rounded-lg border border-border-strong text-fg-2 text-[11px] font-semibold cursor-pointer hover:bg-hover hover:text-fg transition-colors"
+          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-7 rounded-lg border border-[#3a4960] text-[#b4c1d4] text-[11px] font-semibold cursor-pointer hover:bg-[#1b2636] hover:text-[#edf3fc] transition-colors"
         >
           <Crosshair size={12} /> Focus authored object
         </button>
@@ -129,7 +129,7 @@ function IconButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex items-center justify-center w-8 h-7 rounded-lg text-fg-2 cursor-pointer transition-colors enabled:hover:bg-hover enabled:hover:text-fg disabled:opacity-40 disabled:cursor-default"
+      className="inline-flex items-center justify-center w-8 h-7 rounded-lg text-[#b4c1d4] cursor-pointer transition-colors enabled:hover:bg-[#1b2636] enabled:hover:text-[#edf3fc] disabled:opacity-40 disabled:cursor-default"
     >
       {children}
     </button>
@@ -137,14 +137,14 @@ function IconButton({
 }
 
 function Divider(): ReactElement {
-  return <span className="w-px h-4 mx-0.5 bg-border-strong" />;
+  return <span className="w-px h-4 mx-0.5 bg-[#3a4960]" />;
 }
 
 function Readout({ label, value }: { label: string; value: string }): ReactElement {
   return (
     <div className="flex items-center gap-1.5 px-1.5">
-      <span className="text-[9.5px] uppercase tracking-[0.5px] text-fg-3">{label}</span>
-      <span className="font-mono text-[11px] text-fg tabular-nums">{value}</span>
+      <span className="text-[9.5px] uppercase tracking-[0.5px] text-[#7c8da7]">{label}</span>
+      <span className="font-mono text-[11px] text-[#edf3fc] tabular-nums">{value}</span>
     </div>
   );
 }
@@ -160,8 +160,8 @@ function Field({
 }): ReactElement {
   return (
     <div className="flex items-baseline justify-between gap-2 py-[1.5px]">
-      <span className="text-[10px] uppercase tracking-[0.4px] text-fg-3 flex-none">{label}</span>
-      <span className={cx("text-right truncate text-fg", mono && "font-mono text-[10.5px]")}>
+      <span className="text-[10px] uppercase tracking-[0.4px] text-[#7c8da7] flex-none">{label}</span>
+      <span className={cx("text-right truncate text-[#edf3fc]", mono && "font-mono text-[10.5px]")}>
         {value}
       </span>
     </div>

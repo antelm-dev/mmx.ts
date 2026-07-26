@@ -4,6 +4,7 @@
 import "pixi.js/unsafe-eval";
 import { createRoot } from "react-dom/client";
 import "dockview-react/dist/styles/dockview.css";
+import "./app/theme.js";
 import "./styles.css";
 import { App } from "./App.js";
 

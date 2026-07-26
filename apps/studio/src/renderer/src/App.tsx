@@ -129,9 +129,9 @@ export function App() {
       <div className="grid grid-rows-[32px_52px_minmax(0,1fr)] h-screen w-screen">
         <TitleBar />
         <Toolbar />
-        <main className="min-h-0 min-w-0 overflow-hidden bg-[#0d1017]">
+        <main className="min-h-0 min-w-0 overflow-hidden bg-bg">
           <DockviewReact
-            className="dockview-theme-dark studio-workspace"
+            className="dockview-theme-studio studio-workspace"
             components={dockComponents}
             onReady={onReady}
           />

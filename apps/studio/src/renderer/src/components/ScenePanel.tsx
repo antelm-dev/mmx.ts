@@ -22,7 +22,7 @@ const ctxDangerItem =
   "text-danger-fg hover:bg-danger hover:text-white data-[highlighted]:bg-danger data-[highlighted]:text-white";
 
 const cat =
-  "flex items-end text-[9.5px] uppercase tracking-[0.7px] text-fg-3 pt-[14px] px-3.5 pb-[5px] font-extrabold";
+  "flex items-end text-[9.5px] uppercase tracking-[0.7px] text-fg-2 pt-[14px] px-3.5 pb-[5px] font-extrabold";
 const emptyNote = "px-3 py-3.5 text-muted text-xs";
 
 type SceneItem = { inst: LevelObjectInstance; def: GameObjectDefinition };

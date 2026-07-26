@@ -31,7 +31,7 @@ export function Toolbar() {
   const zoomPercent = Math.round(snap.state.zoom * 100);
 
   return (
-    <div className="relative z-[5] h-[52px] px-3 flex items-center gap-2 bg-gradient-to-b from-[#151d2a] to-[#111722] border-b border-border shadow-[0_4px_18px_rgba(0,0,0,0.24)]">
+    <div className="relative z-[5] h-[52px] px-3 flex items-center gap-2 bg-gradient-to-b from-chrome-2 to-surface border-b border-border shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <div className={group}>
           <Tooltip label="Start a new blank level">
@@ -160,7 +160,7 @@ export function Toolbar() {
         </div>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 z-[1] px-1 border border-border-strong/70 rounded-[10px] bg-[#0d131e] shadow-[0_4px_14px_rgba(0,0,0,0.22)]">
+      <div className="absolute left-1/2 -translate-x-1/2 z-[1] px-1 border border-border-strong/70 rounded-[10px] bg-bg shadow-[0_4px_14px_rgba(0,0,0,0.12)]">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button

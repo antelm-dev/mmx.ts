@@ -13,7 +13,7 @@ import { itemCls, panel, scroll } from "../ui.js";
 import { SpritePreview } from "./SpritePreview.js";
 
 const cat =
-  "flex items-end text-[9.5px] uppercase tracking-[0.7px] text-fg-3 pt-[14px] px-3.5 pb-[5px] font-extrabold";
+  "flex items-end text-[9.5px] uppercase tracking-[0.7px] text-fg-2 pt-[14px] px-3.5 pb-[5px] font-extrabold";
 const emptyNote = "px-3 py-3.5 text-muted text-xs";
 const itemName = "min-w-0 flex-1 whitespace-nowrap overflow-hidden text-ellipsis";
 
