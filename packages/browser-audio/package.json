@@ -18,12 +18,14 @@
   "scripts": {
     "sync-assets": "node scripts/sync-assets.mjs",
     "build": "pnpm run sync-assets && tsc -p tsconfig.json",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@mmx/engine": "workspace:*"
   },
   "devDependencies": {
+    "tsx": "^4.7.0",
     "typescript": "^5.4.0"
   }
 }
