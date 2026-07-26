@@ -283,19 +283,24 @@ editing an LDtk project to regenerate the engine level modules. The original
 
 ```
 packages/
-  engine/             dependency-free simulation package
-    src/core/         Vec2, Input, EventBus, replay format, constants
-    src/game/       world, actors, abilities, enemies, scene and level data
+  engine/             gameplay simulation (`@mmx/engine` public entry)
+    src/core/         Vec2, Input, EventBus, replay format, constants (internal)
+    src/game/         world, actors, abilities, enemies, scene (internal)
     tests/            node:test gameplay and determinism tests
-  renderer-pixi/      PixiJS game renderer and visual effects
+  renderer-pixi/      PixiJS game renderer (`@mmx/renderer-pixi` public entry)
+  editor-runtime/     Studio playtest façade (`@mmx/editor-runtime`)
+  content-schema/     authoring document model
+  content-engine-adapter/  LevelDocument ↔ LevelData bridge
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
+  studio/             Electron level editor
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
 resources/            Shared sprites, sounds, fonts and animation metadata
-scripts/              animation/sprite asset importers and demo-stage authoring
+scripts/              asset importers + import-boundary guard tests
+fixtures/             lint fixtures (including import-boundaries)
 ```
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
@@ -303,3 +308,41 @@ on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends
 only on the engine, and the engine has no browser, rendering, or native-shell
 dependency. Run commands from the repository root so pnpm can select the correct
 workspace project.
+
+## Package import boundaries
+
+Cross-package imports must use published entry points — never deep paths into
+another package's internals.
+
+**Allowed public entries (examples):**
+
+| Package               | Entry                                             | Role                                                             |
+| --------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `@mmx/engine`         | `.`                                               | Gameplay simulation surface (actors, scene, input, constants, …) |
+| `@mmx/engine`         | `./content`, `./data`, `./behaviors`, `./tooling` | Intentional sub-APIs                                             |
+| `@mmx/renderer-pixi`  | `.`                                               | Game + editor-facing renderer API                                |
+| `@mmx/content-schema` | `.`                                               | Authoring document model                                         |
+| `@mmx/editor-runtime` | `.`                                               | Studio playtest façade                                           |
+
+**Forbidden:**
+
+- `@mmx/engine/game/*`
+- `@mmx/engine/core/*`
+- `@mmx/renderer-pixi/render/*`
+
+Deep imports couple consumers to file layout and block refactors. The Oxlint
+`no-restricted-imports` rule plus `scripts/check-forbidden-imports.mjs` (wired
+into `pnpm lint`) reject them for static imports, `import type`, re-exports,
+dynamic `import()`, and `require()`.
+
+### Exposing a new public API
+
+1. Add the symbol to the package's intentional entry (`src/index.ts` or a named
+   subpath such as `./tooling`) — export the minimal surface, not a barrel of
+   internals.
+2. Keep `package.json` `exports` limited to those entry points.
+3. Migrate callers to the public path; do not work around the rule with relative
+   imports that cross package roots.
+4. Extend `fixtures/import-boundaries` only when adding a new _forbidden_
+   pattern or a new _allowed_ public package entry that the guard should
+   document.

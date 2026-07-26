@@ -6,7 +6,26 @@
   },
   "rules": {
     "unicorn/no-useless-spread": "off",
-    "unicorn/no-new-array": "off"
+    "unicorn/no-new-array": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@mmx/engine/game", "@mmx/engine/game/**"],
+            "message": "Import from @mmx/engine (or @mmx/engine/content|data|behaviors|tooling). Deep @mmx/engine/game/* paths are not a public API."
+          },
+          {
+            "group": ["@mmx/engine/core", "@mmx/engine/core/**"],
+            "message": "Import from @mmx/engine. Deep @mmx/engine/core/* paths are not a public API."
+          },
+          {
+            "group": ["@mmx/renderer-pixi/render", "@mmx/renderer-pixi/render/**"],
+            "message": "Import from @mmx/renderer-pixi. Deep @mmx/renderer-pixi/render/* paths are not a public API."
+          }
+        ]
+      }
+    ]
   },
   "env": {
     "builtin": true
