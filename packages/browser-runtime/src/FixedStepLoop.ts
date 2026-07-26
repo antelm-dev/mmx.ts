@@ -94,23 +94,6 @@ export class FixedStepLoop {
   private running = false;
   private paused = false;
 
-  private readonly frameStart: FixedStepFrameStart = {
-    rawElapsedSeconds: 0,
-    paused: false,
-    stepSeconds: 0,
-    maxFrameSeconds: 0,
-  };
-
-  private readonly renderFrame: FixedStepFrameStats = {
-    rawElapsedSeconds: 0,
-    elapsedSeconds: 0,
-    simulationSteps: 0,
-    accumulatorSeconds: 0,
-    interpolationAlpha: 0,
-    paused: false,
-    clamped: false,
-  };
-
   constructor(options: FixedStepLoopOptions) {
     const { stepSeconds, maxFrameSeconds = DEFAULT_MAX_FRAME_SECONDS } = options;
     if (!Number.isFinite(stepSeconds) || stepSeconds <= 0) {
@@ -126,8 +109,6 @@ export class FixedStepLoop {
     this.onFrameStart = options.onFrameStart;
     this.onFrameStats = options.onFrameStats;
     this.onError = options.onError;
-    this.frameStart.stepSeconds = stepSeconds;
-    this.frameStart.maxFrameSeconds = maxFrameSeconds;
   }
 
   get isRunning(): boolean {
@@ -172,12 +153,14 @@ export class FixedStepLoop {
     this.last = now;
 
     try {
-      this.frameStart.rawElapsedSeconds = rawElapsedSeconds;
-      this.frameStart.paused = this.paused;
-
       let proposed = rawElapsedSeconds;
       if (this.onFrameStart) {
-        const result = this.onFrameStart(this.frameStart);
+        const result = this.onFrameStart({
+          rawElapsedSeconds,
+          paused: this.paused,
+          stepSeconds: this.stepSeconds,
+          maxFrameSeconds: this.maxFrameSeconds,
+        });
         if (result?.elapsedSeconds !== undefined) {
           proposed = result.elapsedSeconds;
         }
@@ -198,14 +181,15 @@ export class FixedStepLoop {
         }
       }
 
-      const frame = this.renderFrame;
-      frame.rawElapsedSeconds = rawElapsedSeconds;
-      frame.elapsedSeconds = elapsedSeconds;
-      frame.simulationSteps = simulationSteps;
-      frame.accumulatorSeconds = this.acc;
-      frame.interpolationAlpha = this.acc / this.stepSeconds;
-      frame.paused = this.paused;
-      frame.clamped = clamped;
+      const frame: FixedStepFrameStats = {
+        rawElapsedSeconds,
+        elapsedSeconds,
+        simulationSteps,
+        accumulatorSeconds: this.acc,
+        interpolationAlpha: this.acc / this.stepSeconds,
+        paused: this.paused,
+        clamped,
+      };
 
       this.onRender(frame);
       this.onFrameStats?.(frame);
