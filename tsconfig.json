@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/asset-schema" },
     { "path": "./packages/engine" },
     { "path": "./packages/renderer-pixi" },
     { "path": "./packages/content-schema" },
