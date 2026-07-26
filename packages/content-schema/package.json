@@ -11,6 +11,7 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
+    "@mmx/content-contracts": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/ldtk-tools": "workspace:*"
   },

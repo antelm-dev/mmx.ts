@@ -1,7 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { createLevelDocument, SCHEMA_VERSION, validateDocument } from "../src/index.js";
+import {
+  createLevelDocument,
+  SCHEMA_VERSION,
+  TerrainTile,
+  validateDocument,
+} from "../src/index.js";
 
 test("createLevelDocument produces a valid, playable level", () => {
   const doc = createLevelDocument();
@@ -28,10 +33,9 @@ test("createLevelDocument lays a solid floor along the bottom row", () => {
   const doc = createLevelDocument();
   const floorRow = doc.rows - 1;
   for (let col = 0; col < doc.cols; col++) {
-    assert.equal(doc.tiles[floorRow * doc.cols + col], 1);
+    assert.equal(doc.tiles[floorRow * doc.cols + col], TerrainTile.Solid);
   }
-  // The row above the floor is empty.
-  assert.equal(doc.tiles[(floorRow - 1) * doc.cols], 0);
+  assert.equal(doc.tiles[(floorRow - 1) * doc.cols], TerrainTile.Empty);
 });
 
 test("createLevelDocument honours overrides", () => {

@@ -1,22 +1,22 @@
+import { TerrainTile } from "@mmx/content-contracts";
 import type { LevelData, LevelEntity } from "@mmx/engine/game/LevelData.js";
-import { Tile } from "@mmx/engine/game/World.js";
 import { applySlopes, type SlopeRect } from "@mmx/ldtk-tools/slopeBake";
 import { effectiveValue, getDefinition, instanceSize, requireDefinition } from "./definitions.js";
 import type { GameObjectDefinition, LevelDocument, LevelObjectInstance } from "./types.js";
 import { SCHEMA_VERSION } from "./types.js";
 
-/** The engine's numeric Tile enum ↔ the string names the slope bake works in. */
-const TILE_NAME: Record<number, string> = {
-  [Tile.Empty]: "Empty",
-  [Tile.Solid]: "Solid",
-  [Tile.SlopeUpRight]: "SlopeUpRight",
-  [Tile.SlopeUpLeft]: "SlopeUpLeft",
+/** Serializable {@link TerrainTile} values ↔ the string names the slope bake works in. */
+const TILE_NAME: Record<TerrainTile, string> = {
+  [TerrainTile.Empty]: "Empty",
+  [TerrainTile.Solid]: "Solid",
+  [TerrainTile.SlopeUpRight]: "SlopeUpRight",
+  [TerrainTile.SlopeUpLeft]: "SlopeUpLeft",
 };
-const TILE_ENUM: Record<string, number> = {
-  Empty: Tile.Empty,
-  Solid: Tile.Solid,
-  SlopeUpRight: Tile.SlopeUpRight,
-  SlopeUpLeft: Tile.SlopeUpLeft,
+const TILE_ENUM: Record<string, TerrainTile> = {
+  Empty: TerrainTile.Empty,
+  Solid: TerrainTile.Solid,
+  SlopeUpRight: TerrainTile.SlopeUpRight,
+  SlopeUpLeft: TerrainTile.SlopeUpLeft,
 };
 
 /**
@@ -116,13 +116,13 @@ export function instanceToEntity(inst: LevelObjectInstance): LevelEntity {
  * replay the same bake @mmx/ldtk-tools runs at import time (one slope tile per
  * column over solid fill to the box's base). Without this a slope placed in the
  * editor is inert metadata in Play — it renders and collides as nothing, since
- * the runtime builds its `World` from `tiles`/`slopes`, never from Slope
+ * the runtime builds collisions from `tiles`/`slopes`, never from Slope
  * entities. Invalid geometry throws with the bake's own descriptive message,
  * which surfaces as the "could not start Play" toast.
  */
 function bakeSlopeObjects(
   doc: LevelDocument,
-  tiles: number[],
+  tiles: TerrainTile[],
   slopes: Record<number, [number, number]>,
 ): void {
   const rects: SlopeRect[] = [];

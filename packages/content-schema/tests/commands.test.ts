@@ -5,6 +5,7 @@ import type { LevelDocument, LevelObjectInstance } from "../src/index.js";
 import {
   History,
   SCHEMA_VERSION,
+  TerrainTile,
   addObjects,
   deleteObjects,
   moveObjects,
@@ -23,7 +24,7 @@ function doc(objects: LevelObjectInstance[]): LevelDocument {
     gridSize: 16,
     cols: 8,
     rows: 8,
-    tiles: new Array(64).fill(0),
+    tiles: new Array(64).fill(TerrainTile.Empty),
     objects,
   };
 }
@@ -109,37 +110,41 @@ test("setTiles paints a stroke and undo restores every prior value", () => {
   const start = h.document.tiles;
   h.execute(
     setTiles(h.document, [
-      { index: 0, value: 1 },
-      { index: 9, value: 1 },
+      { index: 0, value: TerrainTile.Solid },
+      { index: 9, value: TerrainTile.Solid },
     ]),
   );
-  assert.equal(h.document.tiles[0], 1);
-  assert.equal(h.document.tiles[9], 1);
+  assert.equal(h.document.tiles[0], TerrainTile.Solid);
+  assert.equal(h.document.tiles[9], TerrainTile.Solid);
   assert.notEqual(h.document.tiles, start, "returns a fresh tiles array so renderers redraw");
   h.undo();
-  assert.equal(h.document.tiles[0], 0);
-  assert.equal(h.document.tiles[9], 0);
+  assert.equal(h.document.tiles[0], TerrainTile.Empty);
+  assert.equal(h.document.tiles[9], TerrainTile.Empty);
 });
 
 test("setTiles drops cells already at their target value", () => {
-  const tiles = new Array(64).fill(0);
-  tiles[5] = 1;
+  const tiles = new Array(64).fill(TerrainTile.Empty);
+  tiles[5] = TerrainTile.Solid;
   const base: LevelDocument = { ...doc([]), tiles };
   // Cell 5 is already solid; only cell 6 is a real change.
   const cmd = setTiles(base, [
-    { index: 5, value: 1 },
-    { index: 6, value: 1 },
+    { index: 5, value: TerrainTile.Solid },
+    { index: 6, value: TerrainTile.Solid },
   ]);
   const painted = cmd.execute(base);
   const reverted = cmd.undo(painted);
-  assert.equal(reverted.tiles[5], 1, "undo must not clear a cell the command never touched");
-  assert.equal(reverted.tiles[6], 0);
+  assert.equal(
+    reverted.tiles[5],
+    TerrainTile.Solid,
+    "undo must not clear a cell the command never touched",
+  );
+  assert.equal(reverted.tiles[6], TerrainTile.Empty);
 });
 
 test("moveTiles shifts cells and slopes, and aborts when any target is out of bounds", () => {
-  const tiles = new Array(64).fill(0);
-  tiles[10] = 1;
-  tiles[11] = 2;
+  const tiles = new Array(64).fill(TerrainTile.Empty);
+  tiles[10] = TerrainTile.Solid;
+  tiles[11] = TerrainTile.SlopeUpRight;
   const base: LevelDocument = {
     ...doc([]),
     tiles,
@@ -149,14 +154,14 @@ test("moveTiles shifts cells and slopes, and aborts when any target is out of bo
   assert.ok(moved);
   const h = new History(base);
   h.execute(moved!.command);
-  assert.equal(h.document.tiles[10], 0);
-  assert.equal(h.document.tiles[11], 1);
-  assert.equal(h.document.tiles[12], 2);
+  assert.equal(h.document.tiles[10], TerrainTile.Empty);
+  assert.equal(h.document.tiles[11], TerrainTile.Solid);
+  assert.equal(h.document.tiles[12], TerrainTile.SlopeUpRight);
   assert.deepEqual(h.document.slopes, { 12: [0, 8] });
   assert.deepEqual(moved!.nextIndices, [11, 12]);
   h.undo();
-  assert.equal(h.document.tiles[10], 1);
-  assert.equal(h.document.tiles[11], 2);
+  assert.equal(h.document.tiles[10], TerrainTile.Solid);
+  assert.equal(h.document.tiles[11], TerrainTile.SlopeUpRight);
   assert.deepEqual(h.document.slopes, { 11: [0, 8] });
 
   assert.equal(moveTiles(base, [7], 1, 0), null, "col 7 + 1 is out of bounds on an 8-wide grid");
@@ -175,17 +180,21 @@ test("setLevelSettings edits name and grid without touching terrain", () => {
 });
 
 test("setLevelSettings reshapes terrain, keeping cells by (col, row)", () => {
-  const tiles = new Array(64).fill(0);
-  tiles[0] = 1; // (col 0, row 0) — kept
-  tiles[7] = 1; // (col 7, row 0) — cropped when cols shrinks to 4
-  tiles[8] = 1; // (col 0, row 1) — kept, re-keyed to index 4 on a 4-wide grid
+  const tiles = new Array(64).fill(TerrainTile.Empty);
+  tiles[0] = TerrainTile.Solid; // (col 0, row 0) — kept
+  tiles[7] = TerrainTile.Solid; // (col 7, row 0) — cropped when cols shrinks to 4
+  tiles[8] = TerrainTile.Solid; // (col 0, row 1) — kept, re-keyed to index 4 on a 4-wide grid
   const base: LevelDocument = { ...doc([]), tiles };
   const h = new History(base);
   h.execute(setLevelSettings(base, { name: "T", gridSize: 16, cols: 4, rows: 4 }));
   assert.equal(h.document.tiles.length, 16);
-  assert.equal(h.document.tiles[0], 1);
-  assert.equal(h.document.tiles[4], 1, "(0,1) lands at row*newCols + col = 4");
-  assert.equal(h.document.tiles.filter((t) => t === 1).length, 2, "the (7,0) cell was cropped");
+  assert.equal(h.document.tiles[0], TerrainTile.Solid);
+  assert.equal(h.document.tiles[4], TerrainTile.Solid, "(0,1) lands at row*newCols + col = 4");
+  assert.equal(
+    h.document.tiles.filter((t) => t === TerrainTile.Solid).length,
+    2,
+    "the (7,0) cell was cropped",
+  );
   h.undo();
   assert.equal(h.document.tiles, tiles, "undo restores the original terrain array");
   assert.equal(h.document.cols, 8);

@@ -1,3 +1,4 @@
+import { TerrainTile } from "@mmx/content-contracts";
 import type { LevelDocument, LevelObjectInstance } from "./types.js";
 
 /**
@@ -91,10 +92,10 @@ export function addObjects(
   };
 }
 
-/** One terrain edit: set the tile at a row-major `index` to `value` (a World.Tile). */
+/** One terrain edit: set the tile at a row-major `index` to `value` ({@link TerrainTile}). */
 export interface TileEdit {
   index: number;
-  value: number;
+  value: TerrainTile;
 }
 
 /**
@@ -111,7 +112,7 @@ export function setTiles(
   const before: TileEdit[] = [];
   const after: TileEdit[] = [];
   for (const edit of edits) {
-    const prev = doc.tiles[edit.index] ?? 0;
+    const prev = doc.tiles[edit.index] ?? TerrainTile.Empty;
     if (prev === edit.value) continue;
     before.push({ index: edit.index, value: prev });
     after.push(edit);
@@ -148,7 +149,7 @@ export function moveTiles(
   if (unique.length === 0) return null;
 
   const { cols, rows, tiles } = doc;
-  type Payload = { from: number; to: number; value: number; slope?: [number, number] };
+  type Payload = { from: number; to: number; value: TerrainTile; slope?: [number, number] };
   const payloads: Payload[] = [];
   for (const from of unique) {
     if (from < 0 || from >= tiles.length) return null;
@@ -160,7 +161,7 @@ export function moveTiles(
     payloads.push({
       from,
       to: toRow * cols + toCol,
-      value: tiles[from] ?? 0,
+      value: tiles[from] ?? TerrainTile.Empty,
       slope: doc.slopes?.[from],
     });
   }
@@ -168,7 +169,7 @@ export function moveTiles(
   const afterTiles = tiles.slice();
   const afterSlopes: Record<number, [number, number]> = { ...(doc.slopes ?? {}) };
   for (const p of payloads) {
-    afterTiles[p.from] = 0;
+    afterTiles[p.from] = TerrainTile.Empty;
     delete afterSlopes[p.from];
   }
   for (const p of payloads) {
@@ -210,17 +211,18 @@ export interface LevelSettings {
 
 /** Crop/pad row-major terrain to new dimensions, keeping cells by (col, row). */
 function reshapeTiles(
-  tiles: readonly number[],
+  tiles: readonly TerrainTile[],
   oldCols: number,
   oldRows: number,
   newCols: number,
   newRows: number,
-): number[] {
-  const out = new Array(newCols * newRows).fill(0);
+): TerrainTile[] {
+  const out = new Array<TerrainTile>(newCols * newRows).fill(TerrainTile.Empty);
   const copyRows = Math.min(oldRows, newRows);
   const copyCols = Math.min(oldCols, newCols);
   for (let r = 0; r < copyRows; r++)
-    for (let c = 0; c < copyCols; c++) out[r * newCols + c] = tiles[r * oldCols + c] ?? 0;
+    for (let c = 0; c < copyCols; c++)
+      out[r * newCols + c] = tiles[r * oldCols + c] ?? TerrainTile.Empty;
   return out;
 }
 
@@ -267,7 +269,7 @@ export function setLevelSettings(doc: LevelDocument, next: LevelSettings): Edito
   const beforeSlopes = doc.slopes;
 
   const apply =
-    (settings: LevelSettings, tiles: number[], slopes: LevelDocument["slopes"]) =>
+    (settings: LevelSettings, tiles: TerrainTile[], slopes: LevelDocument["slopes"]) =>
     (d: LevelDocument): LevelDocument => {
       const out: LevelDocument = { ...d, ...settings, tiles };
       if (slopes) out.slopes = slopes;
