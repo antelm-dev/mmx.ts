@@ -27,6 +27,13 @@ pnpm desktop:dev    # launch the desktop app with Vite hot reload
 pnpm desktop:build  # build the native executable and platform installers
 ```
 
+### Versioning
+
+Package versions in `packages/*` are managed with
+[Changesets](https://github.com/changesets/changesets) (Semantic Versioning,
+optional `next` prereleases, automatic changelogs, version PR on `master`).
+See [`docs/releasing.md`](docs/releasing.md).
+
 **MMX Studio** (`apps/editor`) is an Angular + Angular Material visual level
 editor: open Stage 1/2, place and edit every authored entity, validate, and
 play-test with the real engine + Pixi renderer. It works on an editor-friendly
