@@ -1,23 +1,59 @@
 {
   "name": "@mmx/engine",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./core/*.js": "./src/core/*.ts",
-    "./game/*.js": "./src/game/*.ts",
-    "./content": "./src/content/index.ts",
-    "./content/*.js": "./src/content/*.ts",
-    "./data": "./src/data/index.ts",
-    "./data/*.js": "./src/data/*.ts",
-    "./behaviors": "./src/behaviors/index.ts",
-    "./behaviors/*.js": "./src/behaviors/*.ts",
-    "./tooling": "./src/tooling/index.ts",
-    "./tooling/*.js": "./src/tooling/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core/*.js": {
+      "types": "./dist/core/*.d.ts",
+      "import": "./dist/core/*.js"
+    },
+    "./game/*.js": {
+      "types": "./dist/game/*.d.ts",
+      "import": "./dist/game/*.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "import": "./dist/content/index.js"
+    },
+    "./content/*.js": {
+      "types": "./dist/content/*.d.ts",
+      "import": "./dist/content/*.js"
+    },
+    "./data": {
+      "types": "./dist/data/index.d.ts",
+      "import": "./dist/data/index.js"
+    },
+    "./data/*.js": {
+      "types": "./dist/data/*.d.ts",
+      "import": "./dist/data/*.js"
+    },
+    "./behaviors": {
+      "types": "./dist/behaviors/index.d.ts",
+      "import": "./dist/behaviors/index.js"
+    },
+    "./behaviors/*.js": {
+      "types": "./dist/behaviors/*.d.ts",
+      "import": "./dist/behaviors/*.js"
+    },
+    "./tooling": {
+      "types": "./dist/tooling/index.d.ts",
+      "import": "./dist/tooling/index.js"
+    },
+    "./tooling/*.js": {
+      "types": "./dist/tooling/*.d.ts",
+      "import": "./dist/tooling/*.js"
+    }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm run build",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
