@@ -167,7 +167,7 @@ export function moveTiles(
   }
 
   const afterTiles = tiles.slice();
-  const afterSlopes: Record<number, [number, number]> = { ...(doc.slopes ?? {}) };
+  const afterSlopes: Record<number, [number, number]> = { ...doc.slopes };
   for (const p of payloads) {
     afterTiles[p.from] = TerrainTile.Empty;
     delete afterSlopes[p.from];

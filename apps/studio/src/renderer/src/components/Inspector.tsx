@@ -3,6 +3,7 @@ import * as Select from "@radix-ui/react-select";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import { Check, ChevronDown, Grid3x3, ListTree, MousePointer2 } from "lucide-react";
 import {
+  TerrainTile,
   effectiveValue,
   instanceSize,
   requireDefinition,
@@ -13,7 +14,6 @@ import {
   type PropertyMeta,
   type ValidationIssue,
 } from "@mmx/content-schema";
-import { Tile } from "@mmx/engine/game/World.js";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { selectedObjectIds } from "../core/EditorStore.js";
 import {
@@ -46,13 +46,13 @@ interface Single {
   height: number;
 }
 
-function tileKindLabel(value: number): string {
+function tileKindLabel(value: TerrainTile): string {
   switch (value) {
-    case Tile.Solid:
+    case TerrainTile.Solid:
       return "Solid";
-    case Tile.SlopeUpRight:
+    case TerrainTile.SlopeUpRight:
       return "Slope /";
-    case Tile.SlopeUpLeft:
+    case TerrainTile.SlopeUpLeft:
       return "Slope \\";
     default:
       return "Empty";
@@ -80,7 +80,7 @@ export function Inspector() {
     const index = tileSelection[0];
     const col = index % state.document.cols;
     const row = Math.floor(index / state.document.cols);
-    const value = state.document.tiles[index] ?? Tile.Empty;
+    const value = state.document.tiles[index] ?? TerrainTile.Empty;
     return { index, col, row, value };
   }, [tileSelection, state.document.cols, state.document.tiles]);
 

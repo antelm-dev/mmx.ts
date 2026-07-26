@@ -1,14 +1,16 @@
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
-import { Tile, World } from "@mmx/engine/game/World.js";
 import {
+  TerrainTile,
   effectiveValue,
   instanceSize,
   moveObjects,
   requireDefinition,
   setTransform,
   type LevelObjectInstance,
+  type SlopeMap,
 } from "@mmx/content-schema";
 import { loadSheets, regionTexture, SHEET_URLS } from "@mmx/renderer-pixi";
+import { EditableTerrain } from "./EditableTerrain.js";
 import { previewForDefinition } from "./spritePreview.js";
 import {
   cloneSelection,
@@ -86,8 +88,11 @@ export class EditorViewport {
   private readonly gridLayer = new Graphics();
   private readonly objectLayer = new Container();
   private readonly overlay = new Graphics();
-  private terrainWorld: World | null = null;
-  private terrainTilesRef: number[] | null = null;
+  private terrainTilesRef: readonly TerrainTile[] | null = null;
+  private terrainSlopesRef: SlopeMap | undefined | null = null;
+  private terrainCols = -1;
+  private terrainRows = -1;
+  private terrainGridSize = -1;
 
   private readonly labelStyle: TextStyle;
 
@@ -118,7 +123,7 @@ export class EditorViewport {
   // Live terrain-paint gesture: `erase` fixes solid-vs-empty for the whole
   // stroke, `changed` maps row-major tile index → target value for a preview
   // that commits as one command on pointer-up.
-  private tileStroke: { erase: boolean; changed: Map<number, number> } | null = null;
+  private tileStroke: { erase: boolean; changed: Map<number, TerrainTile> } | null = null;
   private pendingToggle: string | null = null;
   private pendingTileToggle: number | null = null;
   private marquee: {
@@ -238,7 +243,15 @@ export class EditorViewport {
     this.world.position.set(-viewportPosition.x * zoom, -viewportPosition.y * zoom);
     this.world.scale.set(zoom);
 
-    if (this.terrainTilesRef !== doc.tiles) this.rebuildTerrain();
+    if (
+      this.terrainTilesRef !== doc.tiles ||
+      this.terrainSlopesRef !== doc.slopes ||
+      this.terrainCols !== doc.cols ||
+      this.terrainRows !== doc.rows ||
+      this.terrainGridSize !== doc.gridSize
+    ) {
+      this.rebuildTerrain();
+    }
     this.drawGrid();
     this.drawObjects();
     this.drawOverlay();
@@ -248,22 +261,25 @@ export class EditorViewport {
 
   private rebuildTerrain(): void {
     const doc = this.store.get().document;
-    const world = new World(doc.tiles.slice(), doc.cols, doc.rows, doc.slopes);
-    this.terrainWorld = world;
+    const terrain = new EditableTerrain(doc);
     this.terrainTilesRef = doc.tiles;
+    this.terrainSlopesRef = doc.slopes;
+    this.terrainCols = doc.cols;
+    this.terrainRows = doc.rows;
+    this.terrainGridSize = doc.gridSize;
     const g = this.terrainLayer;
     g.clear();
     const TS = doc.gridSize;
     for (let ty = 0; ty < doc.rows; ty++) {
       for (let tx = 0; tx < doc.cols; tx++) {
-        const kind = world.tileAt(tx, ty);
-        if (kind === Tile.Empty) continue;
+        const kind = terrain.tileAt(tx, ty);
+        if (kind === TerrainTile.Empty) continue;
         const x = tx * TS;
         const y = ty * TS;
-        if (kind === Tile.Solid) {
+        if (kind === TerrainTile.Solid) {
           g.rect(x, y, TS, TS);
         } else {
-          const { l, r } = world.slopeProfile(tx, ty, kind);
+          const { l, r } = terrain.slopeProfile(tx, ty, kind);
           g.poly([x, y + TS, x + TS, y + TS, x + TS, y + TS - r, x, y + TS - l]);
         }
       }
@@ -480,7 +496,7 @@ export class EditorViewport {
         const row = Math.floor(index / doc.cols);
         const x = col * gridSize;
         const y = row * gridSize;
-        if (value === Tile.Empty) {
+        if (value === TerrainTile.Empty) {
           g.rect(x, y, gridSize, gridSize).stroke({ width: 1.5 / zoom, color: COLOR_ERASE });
           g.moveTo(x, y).lineTo(x + gridSize, y + gridSize);
           g.moveTo(x + gridSize, y).lineTo(x, y + gridSize);
@@ -555,7 +571,7 @@ export class EditorViewport {
   }
 
   private isTerrainCell(index: number): boolean {
-    return (this.store.get().document.tiles[index] ?? Tile.Empty) !== Tile.Empty;
+    return (this.store.get().document.tiles[index] ?? TerrainTile.Empty) !== TerrainTile.Empty;
   }
 
   private objectsIntersecting(box: Box): string[] {
@@ -711,7 +727,7 @@ export class EditorViewport {
       worldY: world.y,
       col,
       row,
-      tileSolid: inBounds && doc.tiles[row * doc.cols + col] === Tile.Solid,
+      tileSolid: inBounds && doc.tiles[row * doc.cols + col] === TerrainTile.Solid,
     };
   }
 
@@ -892,7 +908,7 @@ export class EditorViewport {
     const col = Math.floor(world.x / doc.gridSize);
     const row = Math.floor(world.y / doc.gridSize);
     if (col < 0 || row < 0 || col >= doc.cols || row >= doc.rows) return;
-    stroke.changed.set(row * doc.cols + col, stroke.erase ? Tile.Empty : Tile.Solid);
+    stroke.changed.set(row * doc.cols + col, stroke.erase ? TerrainTile.Empty : TerrainTile.Solid);
   }
 
   private applyResize(world: { x: number; y: number }): void {

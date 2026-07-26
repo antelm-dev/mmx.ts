@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Tile } from "@mmx/engine/game/World.js";
-import { createLevelDocument } from "@mmx/content-schema";
+import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
 import { EditorStore, selectedObjectIds, selectedTileIndices } from "./EditorStore.js";
 import {
   cellIndex,
@@ -79,14 +78,14 @@ describe("editor actions", () => {
     expect(index).toBe(3 * cols + 2);
 
     setTileAt(store, 2, 3, true);
-    expect(store.get().document.tiles[index!]).toBe(Tile.Solid);
+    expect(store.get().document.tiles[index!]).toBe(TerrainTile.Solid);
     store.undo();
-    expect(store.get().document.tiles[index!]).toBe(Tile.Empty);
+    expect(store.get().document.tiles[index!]).toBe(TerrainTile.Empty);
     store.redo();
-    expect(store.get().document.tiles[index!]).toBe(Tile.Solid);
+    expect(store.get().document.tiles[index!]).toBe(TerrainTile.Solid);
 
     setTileAt(store, 2, 3, false);
-    expect(store.get().document.tiles[index!]).toBe(Tile.Empty);
+    expect(store.get().document.tiles[index!]).toBe(TerrainTile.Empty);
   });
 
   it("deletes selected solid tiles", () => {
@@ -98,8 +97,8 @@ describe("editor actions", () => {
     store.selectTiles([a, b]);
     expect(selectedTileIndices(store.get().selection)).toEqual([a, b]);
     deleteSelection(store);
-    expect(store.get().document.tiles[a]).toBe(Tile.Empty);
-    expect(store.get().document.tiles[b]).toBe(Tile.Empty);
+    expect(store.get().document.tiles[a]).toBe(TerrainTile.Empty);
+    expect(store.get().document.tiles[b]).toBe(TerrainTile.Empty);
     expect(selectedTileIndices(store.get().selection)).toEqual([]);
   });
 
@@ -110,8 +109,8 @@ describe("editor actions", () => {
     store.selectTiles([from]);
     nudgeSelection(store, store.get().document.gridSize, 0);
     const to = cellIndex(store, 3, 3)!;
-    expect(store.get().document.tiles[from]).toBe(Tile.Empty);
-    expect(store.get().document.tiles[to]).toBe(Tile.Solid);
+    expect(store.get().document.tiles[from]).toBe(TerrainTile.Empty);
+    expect(store.get().document.tiles[to]).toBe(TerrainTile.Solid);
     expect(selectedTileIndices(store.get().selection)).toEqual([to]);
   });
 
@@ -120,10 +119,10 @@ describe("editor actions", () => {
     const index = cellIndex(store, 1, 1)!;
     setTileAt(store, 1, 1, true);
     const canUndoBefore = store.canUndo;
-    paintTiles(store, [{ index, value: Tile.Solid }], false);
+    paintTiles(store, [{ index, value: TerrainTile.Solid }], false);
     expect(store.canUndo).toBe(canUndoBefore);
     store.undo();
-    expect(store.get().document.tiles[index]).toBe(Tile.Empty);
+    expect(store.get().document.tiles[index]).toBe(TerrainTile.Empty);
     expect(store.canUndo).toBe(false);
   });
 
