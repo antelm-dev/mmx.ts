@@ -113,14 +113,7 @@ export function Viewport() {
             </div>
           </>
         )}
-        {mode === "play" && (
-          <>
-            <PlaytestDebugger />
-            <div className="absolute z-[3] text-[10.5px] font-mono pointer-events-none bottom-3 left-1/2 -translate-x-1/2 bg-[rgba(76,141,255,0.15)] border border-[#4c8dff] text-menu-fg-hover rounded-[20px] px-3.5 py-[5px]">
-              ● Play — WASD/Arrows move · Space jump · X dash · C fire · Esc to stop
-            </div>
-          </>
-        )}
+        {mode === "play" && <PlaytestDebugger />}
       </div>
 
       {menuPos && (

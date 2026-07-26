@@ -1,7 +1,17 @@
 import { type ReactElement, type ReactNode } from "react";
-import { Crosshair, Flag, Pause, Play, RefreshCw, RotateCcw, StepForward } from "lucide-react";
+import {
+  Bug,
+  Crosshair,
+  Flag,
+  Pause,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  StepForward,
+} from "lucide-react";
 import type { ActorSnapshot } from "@mmx/engine/tooling";
 import { editor, usePlaytestSnapshot } from "../app/useEditor.js";
+import { useUiStore } from "../store/uiStore.js";
 import { cx } from "../ui.js";
 import { fmtAbilities, fmtHealth, fmtPosition, fmtVec } from "../core/playtest/format.js";
 
@@ -14,6 +24,8 @@ import { fmtAbilities, fmtHealth, fmtPosition, fmtVec } from "../core/playtest/f
  */
 export function PlaytestDebugger(): ReactElement | null {
   const snap = usePlaytestSnapshot();
+  const inspectorVisible = useUiStore((s) => s.playtestInspectorVisible);
+  const toggleInspector = useUiStore((s) => s.togglePlaytestInspector);
   if (snap.status === "stopped") return null;
 
   const paused = snap.status === "paused";
@@ -52,9 +64,19 @@ export function PlaytestDebugger(): ReactElement | null {
         <Readout label="frame" value={String(snap.frame)} />
         <Readout label="ckpt" value={String(snap.checkpointFrame)} />
         <Readout label="digest" value={runtime?.digest ?? "········"} />
+        <Divider />
+        <IconButton
+          label={inspectorVisible ? "Hide inspector (F9)" : "Show inspector (F9)"}
+          active={inspectorVisible}
+          onClick={toggleInspector}
+        >
+          <Bug size={14} />
+        </IconButton>
       </div>
 
-      {runtime && <RuntimeInspector runtime={runtime} selectedRuntimeId={snap.selectedRuntimeId} />}
+      {inspectorVisible && runtime && (
+        <RuntimeInspector runtime={runtime} selectedRuntimeId={snap.selectedRuntimeId} />
+      )}
     </div>
   );
 }
@@ -115,11 +137,13 @@ function IconButton({
   label,
   onClick,
   disabled,
+  active,
   children,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  active?: boolean;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -129,7 +153,12 @@ function IconButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex items-center justify-center w-8 h-7 rounded-lg text-[#b4c1d4] cursor-pointer transition-colors enabled:hover:bg-[#1b2636] enabled:hover:text-[#edf3fc] disabled:opacity-40 disabled:cursor-default"
+      className={cx(
+        "inline-flex items-center justify-center w-8 h-7 rounded-lg cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-default",
+        active
+          ? "bg-[rgba(75,142,255,0.15)] text-[#d8e7ff]"
+          : "text-[#b4c1d4] enabled:hover:bg-[#1b2636] enabled:hover:text-[#edf3fc]",
+      )}
     >
       {children}
     </button>

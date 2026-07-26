@@ -457,6 +457,11 @@ export class EditorController {
         this.playtestStep();
         return;
       }
+      if (e.code === "F9") {
+        e.preventDefault();
+        useUiStore.getState().togglePlaytestInspector();
+        return;
+      }
       return;
     }
 

@@ -26,6 +26,7 @@ interface UiState {
   collapsedSceneGroups: Record<string, boolean>;
   colorTheme: ColorTheme;
   fullscreen: boolean;
+  playtestInspectorVisible: boolean;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -36,6 +37,7 @@ interface UiState {
   setColorTheme: (theme: ColorTheme) => void;
   toggleColorTheme: () => void;
   setFullscreen: (fullscreen: boolean) => void;
+  togglePlaytestInspector: () => void;
 }
 
 let toastSeq = 0;
@@ -48,6 +50,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   collapsedSceneGroups: {},
   colorTheme: readStoredTheme(),
   fullscreen: false,
+  playtestInspectorVisible: true,
 
   addToast: (message) => {
     const id = ++toastSeq;
@@ -77,4 +80,6 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ colorTheme });
   },
   setFullscreen: (fullscreen) => set({ fullscreen }),
+  togglePlaytestInspector: () =>
+    set((s) => ({ playtestInspectorVisible: !s.playtestInspectorVisible })),
 }));
