@@ -1,10 +1,10 @@
+import type { FixedStepLoop } from "@mmx/browser-runtime";
 import { documentToLevelData } from "@mmx/content-engine-adapter";
 import type { LevelDocument } from "@mmx/content-schema";
-import type { SceneOptions } from "@mmx/engine";
+import { DT, type SceneOptions } from "@mmx/engine";
 import { ToolingSession } from "@mmx/engine/tooling";
 import type { AssetCatalog, StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";
-import type { PlaytestClock } from "./PlaytestClock.js";
 import { PlaytestInput } from "./PlaytestInput.js";
 import { STOPPED_PLAYTEST, type PlaytestSnapshot, type SimulationSnapshot } from "./snapshots.js";
 import type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
@@ -23,7 +23,7 @@ export function createPlaytest(
 class PlaytestSession implements EditorPlaytestSession {
   private tooling: ToolingSession | null = null;
   private renderer: StudioPlaytestRenderer | null = null;
-  private clock: PlaytestClock | null = null;
+  private clock: FixedStepLoop | null = null;
   private readonly input = new PlaytestInput();
   private runtime: SimulationSnapshot | null = null;
   private selectedRuntimeId: string | null = "player";
@@ -70,7 +70,8 @@ class PlaytestSession implements EditorPlaytestSession {
 
     try {
       if (this.options.host && visual && assets) {
-        const { PlaytestClock } = await import("./PlaytestClock.js");
+        // Dynamic import keeps requestAnimationFrame scheduling out of headless sessions.
+        const { FixedStepLoop } = await import("@mmx/browser-runtime");
         this.renderer = await visual.createPlaytestRenderer(this.options.host, tooling.scene, {
           assets,
           decorations: this.document.decorations,
@@ -81,7 +82,9 @@ class PlaytestSession implements EditorPlaytestSession {
           return;
         }
         this.input.attach();
-        this.clock = new PlaytestClock({
+        this.clock = new FixedStepLoop({
+          stepSeconds: DT,
+          maxFrameSeconds: 0.25,
           onStep: () => this.tick(),
           onRender: () => this.draw(),
           onError: (error) => this.fail(error),

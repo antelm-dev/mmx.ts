@@ -304,6 +304,9 @@ importers:
 
   packages/editor-runtime:
     dependencies:
+      '@mmx/browser-runtime':
+        specifier: workspace:*
+        version: link:../browser-runtime
       '@mmx/content-engine-adapter':
         specifier: workspace:*
         version: link:../content-engine-adapter
