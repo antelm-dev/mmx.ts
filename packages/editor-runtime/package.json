@@ -22,6 +22,7 @@
   "dependencies": {
     "@mmx/content-engine-adapter": "workspace:*",
     "@mmx/content-schema": "workspace:*",
+    "@mmx/browser-input": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*"
   },

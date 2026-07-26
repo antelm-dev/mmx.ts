@@ -46,8 +46,7 @@ export class BrowserInput {
     window.removeEventListener("focus", this.onFocus);
     window.removeEventListener("gamepadconnected", this.onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", this.onGamepadDisconnected);
-    this.releaseAll();
-    this.pad.releaseAll();
+    this.reset();
     this.attached = false;
   }
 
@@ -63,8 +62,15 @@ export class BrowserInput {
     this.held.setDown(action, down);
   }
 
+  /** Drop keyboard held state. Pad buttons stay until {@link poll} / blur handling. */
   releaseAll(): void {
     for (const action of REPLAY_ACTIONS) this.held.setDown(action, false);
+  }
+
+  /** Clear keyboard and require every pad action to be released before it counts again. */
+  reset(): void {
+    this.releaseAll();
+    this.pad.releaseAll();
   }
 
   takeMenuCodes(): string[] {
@@ -97,8 +103,7 @@ export class BrowserInput {
   };
 
   private readonly onBlur = (): void => {
-    this.releaseAll();
-    this.pad.releaseAll();
+    this.reset();
     this.options.onBlur?.();
   };
 

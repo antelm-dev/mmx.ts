@@ -82,6 +82,7 @@ class PlaytestSession implements EditorPlaytestSession {
         }
         this.input.attach();
         this.clock = new PlaytestClock({
+          onFrame: (dt) => this.input.poll(dt),
           onStep: () => this.tick(),
           onRender: () => this.draw(),
           onError: (error) => this.fail(error),

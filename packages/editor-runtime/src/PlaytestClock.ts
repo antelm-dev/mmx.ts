@@ -3,6 +3,7 @@ import { DT } from "@mmx/engine";
 const MAX_FRAME_SECONDS = 0.25;
 
 export interface PlaytestClockCallbacks {
+  onFrame?: (dt: number) => void;
   onStep: () => void;
   onRender: () => void;
   onError: (error: unknown) => void;
@@ -51,6 +52,7 @@ export class PlaytestClock {
     const elapsed = Math.min(MAX_FRAME_SECONDS, (now - this.last) / 1000);
     this.last = now;
     try {
+      this.callbacks.onFrame?.(elapsed);
       if (!this.paused) {
         this.acc += elapsed;
         while (this.acc >= DT) {
