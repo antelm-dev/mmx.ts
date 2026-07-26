@@ -20,6 +20,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "node --import tsx --test tests/*.test.ts"
   },
+  "dependencies": {
+    "@mmx/content-contracts": "workspace:*"
+  },
   "devDependencies": {
     "@mmx/ldtk-tools": "workspace:*",
     "@types/node": "^24.0.0",
