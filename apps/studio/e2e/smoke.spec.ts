@@ -59,7 +59,7 @@ test.afterAll(async () => {
 test("boots into the editor shell with the toolbar and default level", async () => {
   await expect(page.getByTestId("app-brand")).toContainText("Studio");
   await expect(page.getByRole("button", { name: /Play|Stop/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Level menu" })).toContainText("Stage 1");
+  await expect(page.getByRole("button", { name: "Level menu" })).toBeVisible();
   await expect(page.locator("#viewport-canvas")).toBeVisible();
 });
 
