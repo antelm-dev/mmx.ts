@@ -1,7 +1,7 @@
 import type { Enemy } from "@mmx/engine/game/Enemy.js";
 import type { Player } from "@mmx/engine/game/Player.js";
 import type { Scene } from "@mmx/engine/game/Scene.js";
-import type { SoundEffects } from "./SoundEffects.js";
+import { SoundEffects } from "./SoundEffects.js";
 
 /** Forward loop from MMX's 32 kHz Charge.wav import metadata, in seconds. */
 const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
@@ -11,7 +11,23 @@ const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
  * Call attachScene again whenever a restart replaces the Scene instance.
  */
 export class GameplaySounds {
-  constructor(readonly effects: SoundEffects) {}
+  private readonly effects: SoundEffects;
+
+  constructor(effects: SoundEffects = new SoundEffects()) {
+    this.effects = effects;
+  }
+
+  unlock(): void {
+    this.effects.unlock();
+  }
+
+  load(): Promise<void> {
+    return this.effects.load();
+  }
+
+  stop(): void {
+    this.effects.stopAll();
+  }
 
   attachScene(scene: Scene): void {
     this.stopSustained();
