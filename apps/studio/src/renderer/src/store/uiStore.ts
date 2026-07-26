@@ -1,9 +1,5 @@
 import { create } from "zustand";
-import {
-  persistColorTheme,
-  readStoredTheme,
-  type ColorTheme,
-} from "../app/theme.js";
+import { persistColorTheme, readStoredTheme, type ColorTheme } from "../app/theme.js";
 import type { EmptyCellContextMenu } from "../core/EditorViewport.js";
 
 /**

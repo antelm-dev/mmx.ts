@@ -1,8 +1,4 @@
-import {
-  TerrainTile,
-  type SlopeMap,
-  type SlopeProfile,
-} from "@mmx/content-contracts";
+import { TerrainTile, type SlopeMap, type SlopeProfile } from "@mmx/content-contracts";
 
 export { TerrainTile, type SlopeMap, type SlopeProfile };
 

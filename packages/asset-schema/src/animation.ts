@@ -1,9 +1,4 @@
-export type Region = readonly [
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-];
+export type Region = readonly [x: number, y: number, width: number, height: number];
 
 export interface FrameData {
   region: Region;

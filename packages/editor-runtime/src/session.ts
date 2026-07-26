@@ -46,9 +46,7 @@ class PlaytestSession implements EditorPlaytestSession {
     this.started = true;
 
     const sounds = this.options.sounds;
-    const visual = this.options.host
-      ? await import("@mmx/renderer-pixi")
-      : null;
+    const visual = this.options.host ? await import("@mmx/renderer-pixi") : null;
 
     const sceneOptions: SceneOptions = {
       seed: this.options.seed,

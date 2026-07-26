@@ -19,10 +19,10 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@mmx/asset-schema": "workspace:*",
     "@mmx/browser-audio": "workspace:*",
     "@mmx/content-engine-adapter": "workspace:*",
     "@mmx/content-schema": "workspace:*",
-    "@mmx/asset-schema": "workspace:*",
     "@mmx/editor-runtime": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",

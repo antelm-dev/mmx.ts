@@ -132,6 +132,9 @@ test("Intro beam ignores an overhang above the spawn and still reaches it", () =
   assert.equal(scene.player.collisions_enabled, true);
 
   const frames = runIntroToCompletion(scene);
-  assert.ok(frames < 200, `Intro did not finish after spawn (state: ${scene.player.stateString()})`);
+  assert.ok(
+    frames < 200,
+    `Intro did not finish after spawn (state: ${scene.player.stateString()})`,
+  );
   assert.ok(scene.player.is_on_floor());
 });

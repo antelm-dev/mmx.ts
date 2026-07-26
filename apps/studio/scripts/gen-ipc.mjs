@@ -13,5 +13,9 @@ const plugin = ipcBridge({
   tsconfig: "./tsconfig.node.json",
 });
 
-await plugin.buildStart();
+await plugin.buildStart.call({
+  // The standalone generator does not watch files, but the Rollup hook still
+  // expects the minimal plugin context used to register its watch targets.
+  addWatchFile() {},
+});
 console.log(`[gen:ipc] wrote ${outFile}`);

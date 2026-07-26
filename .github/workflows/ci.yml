@@ -24,6 +24,14 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
 
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
       - run: pnpm install --frozen-lockfile
 
       - name: Lint
@@ -82,6 +90,14 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
 
       - uses: dtolnay/rust-toolchain@1.93.0
         with:

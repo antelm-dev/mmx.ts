@@ -446,12 +446,15 @@ export class EditorViewport {
             alpha: 0.75,
           });
         }
-        g.rect(col * grid - 1 / zoom, row * grid - 1 / zoom, grid + 2 / zoom, grid + 2 / zoom).stroke(
-          {
-            width: 2 / zoom,
-            color: COLOR_SELECT,
-          },
-        );
+        g.rect(
+          col * grid - 1 / zoom,
+          row * grid - 1 / zoom,
+          grid + 2 / zoom,
+          grid + 2 / zoom,
+        ).stroke({
+          width: 2 / zoom,
+          color: COLOR_SELECT,
+        });
       }
     }
 
@@ -1007,11 +1010,7 @@ export class EditorViewport {
     const state = this.store.get();
     let cursor = "default";
     if (this.panning || this.spaceDown || state.activeTool === "pan") cursor = "grab";
-    else if (
-      this.marqueeActive ||
-      state.activeTool === "place" ||
-      state.activeTool === "tile"
-    ) {
+    else if (this.marqueeActive || state.activeTool === "place" || state.activeTool === "tile") {
       cursor = "crosshair";
     }
     if (state.mode === "play") cursor = "default";

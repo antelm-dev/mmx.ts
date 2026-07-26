@@ -29,12 +29,7 @@ describe("EditableTerrain", () => {
       cols: 2,
       rows: 2,
       gridSize: 16,
-      tiles: [
-        TerrainTile.Solid,
-        TerrainTile.Solid,
-        TerrainTile.Solid,
-        TerrainTile.Solid,
-      ],
+      tiles: [TerrainTile.Solid, TerrainTile.Solid, TerrainTile.Solid, TerrainTile.Solid],
     });
     expect(terrain.tileAt(-1, 0)).toBe(TerrainTile.Empty);
     expect(terrain.tileAt(0, -1)).toBe(TerrainTile.Empty);

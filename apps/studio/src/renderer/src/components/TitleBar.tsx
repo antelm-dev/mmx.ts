@@ -86,10 +86,7 @@ export function TitleBar() {
         >
           {maximized ? <Copy size={12} /> : <Square size={12} />}
         </ControlButton>
-        <ControlButton
-          label="Fullscreen"
-          onClick={() => void controls()?.toggleFullscreen()}
-        >
+        <ControlButton label="Fullscreen" onClick={() => void controls()?.toggleFullscreen()}>
           <Maximize2 size={13} />
         </ControlButton>
         <ControlButton label="Close" danger onClick={() => void controls()?.close()}>
@@ -110,10 +107,7 @@ function FileMenu() {
         <FilePlus2 size={13} /> New Level
         <span className={menuShortcut}>{modLabel}+N</span>
       </DropdownMenu.Item>
-      <DropdownMenu.Item
-        className={ctxItemCls(false)}
-        onSelect={() => void editor.openLevel()}
-      >
+      <DropdownMenu.Item className={ctxItemCls(false)} onSelect={() => void editor.openLevel()}>
         <FolderOpen size={13} /> Open…
         <span className={menuShortcut}>{modLabel}+O</span>
       </DropdownMenu.Item>

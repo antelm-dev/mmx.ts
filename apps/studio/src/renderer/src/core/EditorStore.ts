@@ -14,9 +14,7 @@ export type EditorSelection =
   | { kind: "objects"; ids: string[] }
   | { kind: "tiles"; indices: number[] };
 
-export type EditorHover =
-  | { kind: "object"; id: string }
-  | { kind: "tile"; index: number };
+export type EditorHover = { kind: "object"; id: string } | { kind: "tile"; index: number };
 
 export function emptySelection(): EditorSelection {
   return { kind: "objects", ids: [] };
@@ -50,9 +48,7 @@ export function selectionsEqual(a: EditorSelection, b: EditorSelection): boolean
     return a.ids.length === b.ids.length && a.ids.every((id) => b.ids.includes(id));
   }
   if (a.kind === "tiles" && b.kind === "tiles") {
-    return (
-      a.indices.length === b.indices.length && a.indices.every((i) => b.indices.includes(i))
-    );
+    return a.indices.length === b.indices.length && a.indices.every((i) => b.indices.includes(i));
   }
   return false;
 }

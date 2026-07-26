@@ -1,14 +1,5 @@
 import { type ReactElement, type ReactNode } from "react";
-import {
-  Bug,
-  Crosshair,
-  Flag,
-  Pause,
-  Play,
-  RefreshCw,
-  RotateCcw,
-  StepForward,
-} from "lucide-react";
+import { Bug, Crosshair, Flag, Pause, Play, RefreshCw, RotateCcw, StepForward } from "lucide-react";
 import type { ActorSnapshot } from "@mmx/editor-runtime";
 import { editor, usePlaytestSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
@@ -188,7 +179,9 @@ function Field({
 }): ReactElement {
   return (
     <div className="flex items-baseline justify-between gap-2 py-[1.5px]">
-      <span className="text-[10px] uppercase tracking-[0.4px] text-[#7c8da7] flex-none">{label}</span>
+      <span className="text-[10px] uppercase tracking-[0.4px] text-[#7c8da7] flex-none">
+        {label}
+      </span>
       <span className={cx("text-right truncate text-[#edf3fc]", mono && "font-mono text-[10.5px]")}>
         {value}
       </span>

@@ -137,10 +137,7 @@ export function Toolbar() {
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button
-              className={cx(
-                btnCls(),
-                "gap-1.5 max-w-[280px] h-7 text-fg text-[12px] font-[650]",
-              )}
+              className={cx(btnCls(), "gap-1.5 max-w-[280px] h-7 text-fg text-[12px] font-[650]")}
               aria-label="Level menu"
             >
               <span className="text-accent text-[8px] font-extrabold tracking-[0.8px]">LEVEL</span>

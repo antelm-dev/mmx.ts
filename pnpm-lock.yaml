@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   electron-ipc-module@0.1.0:
-    hash: 21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17
+    hash: 1480f61bb06d9b85f0632953dd65d7fc56afde2dab2961fa33c0f33d2b36c3dc
     path: patches/electron-ipc-module@0.1.0.patch
 
 importers:
@@ -19,6 +19,9 @@ importers:
       oxlint:
         specifier: ^1.74.0
         version: 1.74.0
+      turbo:
+        specifier: 2.10.7
+        version: 2.10.7
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
@@ -97,7 +100,7 @@ importers:
         version: 7.0.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       electron-ipc-module:
         specifier: github:antelm-dev/electron-ipc-module#main
-        version: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0)
+        version: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61(patch_hash=1480f61bb06d9b85f0632953dd65d7fc56afde2dab2961fa33c0f33d2b36c3dc)(electron@43.2.0)
       lucide-react:
         specifier: ^1.26.0
         version: 1.26.0(react@19.2.8)
@@ -2134,6 +2137,36 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
+  '@turbo/darwin-64@2.10.7':
+    resolution: {integrity: sha512-/c9cSBRermWDv85oufLhoH6XRLOVbvzJLRd+WLyfJCP+i0HFLQj4PVNDrHcY17/ve5l8X0Oua4bJBqJUgJPnZA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@turbo/darwin-arm64@2.10.7':
+    resolution: {integrity: sha512-8lpCCGWZBl9PIF8w8f2iEWrLMbHBWIfJeV6l2UEGqysD6HRIM4ySj/8R7HGEzbECJ4r/gnJcHmxEoG8yjFe64A==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@turbo/linux-64@2.10.7':
+    resolution: {integrity: sha512-Midw9Ed00yw9rqkWN82fY3LmLNFQ6yiL1GXB56DJKUEjWaEd27zh7ohCxzzrjfjQVrEeVWd3UPytTAV16XDQlA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@turbo/linux-arm64@2.10.7':
+    resolution: {integrity: sha512-UVEy+MW/xn4BcsiV3v3uv0/oObyaQgVtRT+Jj4WE53rNH05VEYEc1Z13q3zV6276wCZR4Yxc4hiTTcjw7PjSpg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@turbo/windows-64@2.10.7':
+    resolution: {integrity: sha512-l2nH9KGLV46SWjcXvyc2+xo5gdf5J0NVADknQk9OCJhzJBpiNl/byd26yIfwZBjLupdqT6UOdPhPxcpUPxRykQ==}
+    cpu: [x64]
+    os: [win32]
+
+  '@turbo/windows-arm64@2.10.7':
+    resolution: {integrity: sha512-qjE1apG6RThuX49vUJd5ks2dV2ndXC2qktDChQonFMvUzrMrEnZMQzO+IgxBiYq1j+NbXQcRwj84nGnk1TBw1g==}
+    cpu: [arm64]
+    os: [win32]
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -3567,6 +3600,10 @@ packages:
   tsx@4.23.1:
     resolution: {integrity: sha512-GQHnkIfxyx1wYCOS/wonik5MVRZU9hi1TEZmzGZSCJB1y9YgoZ8H6itNE/u4suE+yLmOzuE4E5S4TZ/ZX2wcWQ==}
     engines: {node: '>=18.0.0'}
+    hasBin: true
+
+  turbo@2.10.7:
+    resolution: {integrity: sha512-GHx6WExIFSKNJ5qMlzDpXBXlu9ApxaMjqxAVrCNcW94xf/+uqgIz41SAuRUMbXva2ExNAaY/h8V0q90SWSzmRw==}
     hasBin: true
 
   type-fest@0.13.1:
@@ -5145,6 +5182,24 @@ snapshots:
       '@tauri-apps/cli-win32-ia32-msvc': 2.11.4
       '@tauri-apps/cli-win32-x64-msvc': 2.11.4
 
+  '@turbo/darwin-64@2.10.7':
+    optional: true
+
+  '@turbo/darwin-arm64@2.10.7':
+    optional: true
+
+  '@turbo/linux-64@2.10.7':
+    optional: true
+
+  '@turbo/linux-arm64@2.10.7':
+    optional: true
+
+  '@turbo/windows-64@2.10.7':
+    optional: true
+
+  '@turbo/windows-arm64@2.10.7':
+    optional: true
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.29.7
@@ -5633,7 +5688,7 @@ snapshots:
       - electron-builder-squirrel-windows
       - supports-color
 
-  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0):
+  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61(patch_hash=1480f61bb06d9b85f0632953dd65d7fc56afde2dab2961fa33c0f33d2b36c3dc)(electron@43.2.0):
     dependencies:
       electron: 43.2.0
       glob: 11.1.0
@@ -6728,6 +6783,15 @@ snapshots:
       esbuild: 0.28.1
     optionalDependencies:
       fsevents: 2.3.3
+
+  turbo@2.10.7:
+    optionalDependencies:
+      '@turbo/darwin-64': 2.10.7
+      '@turbo/darwin-arm64': 2.10.7
+      '@turbo/linux-64': 2.10.7
+      '@turbo/linux-arm64': 2.10.7
+      '@turbo/windows-64': 2.10.7
+      '@turbo/windows-arm64': 2.10.7
 
   type-fest@0.13.1:
     optional: true

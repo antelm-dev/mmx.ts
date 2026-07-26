@@ -180,8 +180,7 @@ export function moveTiles(
 
   const beforeTiles = tiles.slice();
   const beforeSlopes = doc.slopes ? { ...doc.slopes } : undefined;
-  const slopesAfter =
-    Object.keys(afterSlopes).length > 0 ? afterSlopes : undefined;
+  const slopesAfter = Object.keys(afterSlopes).length > 0 ? afterSlopes : undefined;
 
   return {
     nextIndices: payloads.map((p) => p.to),

@@ -1,4 +1,12 @@
-import { applySlopes, bakeSlope, TILE, type BakedTile, type SlopeMap, type SlopeProfile, type SlopeRect } from "@mmx/slope-tools";
+import {
+  applySlopes,
+  bakeSlope,
+  TILE,
+  type BakedTile,
+  type SlopeMap,
+  type SlopeProfile,
+  type SlopeRect,
+} from "@mmx/slope-tools";
 
 export { applySlopes, bakeSlope, TILE };
 export type { BakedTile, SlopeMap, SlopeProfile, SlopeRect };

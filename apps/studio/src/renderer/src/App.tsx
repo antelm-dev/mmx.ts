@@ -70,9 +70,7 @@ export function App() {
       <div
         className={cx(
           "grid h-screen w-screen",
-          fullscreen
-            ? "grid-rows-[36px_minmax(0,1fr)]"
-            : "grid-rows-[32px_36px_minmax(0,1fr)]",
+          fullscreen ? "grid-rows-[36px_minmax(0,1fr)]" : "grid-rows-[32px_36px_minmax(0,1fr)]",
         )}
       >
         {!fullscreen && <TitleBar />}
