@@ -10,18 +10,18 @@ version depuis la CI.
 
 ## Packages concernés
 
-| Inclus (versionnés) | Ignorés (apps) |
-| --- | --- |
-| `@mmx/asset-schema` | `@mmx/web` |
-| `@mmx/browser-audio` | `@mmx/desktop` |
-| `@mmx/content-contracts` | `@mmx/sim` |
-| `@mmx/content-engine-adapter` | `@mmx/studio` |
-| `@mmx/content-schema` | |
-| `@mmx/editor-runtime` | |
-| `@mmx/engine` | |
-| `@mmx/ldtk-tools` | |
-| `@mmx/renderer-pixi` | |
-| `@mmx/slope-tools` | |
+| Inclus (versionnés)           | Ignorés (apps) |
+| ----------------------------- | -------------- |
+| `@mmx/asset-schema`           | `@mmx/web`     |
+| `@mmx/browser-audio`          | `@mmx/desktop` |
+| `@mmx/content-contracts`      | `@mmx/sim`     |
+| `@mmx/content-engine-adapter` | `@mmx/studio`  |
+| `@mmx/content-schema`         |                |
+| `@mmx/editor-runtime`         |                |
+| `@mmx/engine`                 |                |
+| `@mmx/ldtk-tools`             |                |
+| `@mmx/renderer-pixi`          |                |
+| `@mmx/slope-tools`            |                |
 
 Les packages restent `private: true`. Changesets les versionne quand même grâce
 à `privatePackages.version` dans `.changeset/config.json`.
@@ -118,23 +118,23 @@ Permissions minimales : `contents: write`, `pull-requests: write` (via
 
 ## Scripts root
 
-| Script | Rôle |
-| --- | --- |
-| `pnpm changeset` | créer un changeset |
-| `pnpm changeset:status` | lister les changesets / bumps prévus |
-| `pnpm version-packages` | appliquer les bumps + changelogs |
-| `pnpm version:enter-next` | entrer en mode préversion `next` |
-| `pnpm version:exit-next` | quitter le mode préversion |
+| Script                    | Rôle                                 |
+| ------------------------- | ------------------------------------ |
+| `pnpm changeset`          | créer un changeset                   |
+| `pnpm changeset:status`   | lister les changesets / bumps prévus |
+| `pnpm version-packages`   | appliquer les bumps + changelogs     |
+| `pnpm version:enter-next` | entrer en mode préversion `next`     |
+| `pnpm version:exit-next`  | quitter le mode préversion           |
 
 ## Diagnostic
 
-| Symptôme | Piste |
-| --- | --- |
-| `pnpm version-packages` ne change rien | aucun changeset, ou packages concernés dans `ignore` |
-| PR de version absente | pas de changeset sur `master`, ou workflow `Version` en échec |
-| Changelog sans liens PR | normal hors CI sans `GITHUB_TOKEN` |
-| Versions `*-next.*` après un exit | vérifier que `.changeset/pre.json` a bien disparu, puis relancer `pnpm version-packages` |
-| App bumpée par erreur | les apps sont dans `ignore` ; ne pas les sélectionner dans `pnpm changeset` |
+| Symptôme                               | Piste                                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `pnpm version-packages` ne change rien | aucun changeset, ou packages concernés dans `ignore`                                     |
+| PR de version absente                  | pas de changeset sur `master`, ou workflow `Version` en échec                            |
+| Changelog sans liens PR                | normal hors CI sans `GITHUB_TOKEN`                                                       |
+| Versions `*-next.*` après un exit      | vérifier que `.changeset/pre.json` a bien disparu, puis relancer `pnpm version-packages` |
+| App bumpée par erreur                  | les apps sont dans `ignore` ; ne pas les sélectionner dans `pnpm changeset`              |
 
 ## Hors scope (pour plus tard)
 
