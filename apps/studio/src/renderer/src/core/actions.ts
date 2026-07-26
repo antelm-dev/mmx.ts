@@ -6,10 +6,10 @@ import {
   newId,
   requireDefinition,
   setTiles,
+  TerrainTile,
   type LevelObjectInstance,
   type TileEdit,
 } from "@mmx/content-schema";
-import { Tile } from "@mmx/engine/game/World.js";
 import { selectedObjectIds, type EditorStore } from "./EditorStore.js";
 
 /**
@@ -67,7 +67,7 @@ export function deleteSelection(store: EditorStore): void {
   const { document, selection } = store.get();
   if (selection.kind === "tiles") {
     if (selection.indices.length === 0) return;
-    const edits = selection.indices.map((index) => ({ index, value: Tile.Empty }));
+    const edits = selection.indices.map((index) => ({ index, value: TerrainTile.Empty }));
     paintTiles(store, edits, true);
     store.clearSelection();
     return;
@@ -91,7 +91,7 @@ export function cellIndex(store: EditorStore, col: number, row: number): number 
  */
 export function paintTiles(store: EditorStore, edits: readonly TileEdit[], erasing: boolean): void {
   const tiles = store.get().document.tiles;
-  const changed = edits.filter((e) => (tiles[e.index] ?? Tile.Empty) !== e.value);
+  const changed = edits.filter((e) => (tiles[e.index] ?? TerrainTile.Empty) !== e.value);
   if (changed.length === 0) return;
   store.execute(setTiles(store.get().document, changed, erasing ? "Erase tiles" : "Paint tiles"));
 }
@@ -100,7 +100,7 @@ export function paintTiles(store: EditorStore, edits: readonly TileEdit[], erasi
 export function setTileAt(store: EditorStore, col: number, row: number, solid: boolean): void {
   const index = cellIndex(store, col, row);
   if (index === null) return;
-  paintTiles(store, [{ index, value: solid ? Tile.Solid : Tile.Empty }], !solid);
+  paintTiles(store, [{ index, value: solid ? TerrainTile.Solid : TerrainTile.Empty }], !solid);
 }
 
 /** Move selected terrain cells by a grid offset; updates the selection to the destinations. */

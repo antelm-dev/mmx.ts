@@ -1,6 +1,5 @@
 import { useMemo, type ReactElement } from "react";
-import { instanceSize, requireDefinition } from "@mmx/content-schema";
-import { Tile } from "@mmx/engine/game/World.js";
+import { instanceSize, requireDefinition, TerrainTile } from "@mmx/content-schema";
 import { useEditorSnapshot } from "../app/useEditor.js";
 import { selectedObjectIds, selectionSize } from "../core/EditorStore.js";
 import { panel, scroll } from "../ui.js";
@@ -12,11 +11,11 @@ interface Kv {
 
 function tileKindLabel(value: number): string {
   switch (value) {
-    case Tile.Solid:
+    case TerrainTile.Solid:
       return "Solid";
-    case Tile.SlopeUpRight:
+    case TerrainTile.SlopeUpRight:
       return "Slope /";
-    case Tile.SlopeUpLeft:
+    case TerrainTile.SlopeUpLeft:
       return "Slope \\";
     default:
       return "Empty";
@@ -45,7 +44,7 @@ export function SelectionPanel(): ReactElement {
       const index = s.selection.indices[0];
       const col = index % doc.cols;
       const row = Math.floor(index / doc.cols);
-      const value = doc.tiles[index] ?? Tile.Empty;
+      const value = doc.tiles[index] ?? TerrainTile.Empty;
       return [
         { k: "Type", v: `${tileKindLabel(value)} tile` },
         { k: "Cell", v: `${col}, ${row}` },

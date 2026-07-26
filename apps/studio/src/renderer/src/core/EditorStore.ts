@@ -1,11 +1,11 @@
 import {
   History,
-  validateLevelDocument,
   type EditorCommand,
   type LevelDocument,
   type ValidationResult,
+  TerrainTile,
 } from "@mmx/content-schema";
-import { Tile } from "@mmx/engine/game/World.js";
+import { validateLevelDocument } from "@mmx/content-engine-adapter";
 
 export type Tool = "select" | "pan" | "place" | "resize" | "tile";
 export type Mode = "edit" | "play";
@@ -172,7 +172,7 @@ export class EditorStore {
     return {
       kind: "tiles",
       indices: sel.indices.filter(
-        (i) => i >= 0 && i < max && (doc.tiles[i] ?? Tile.Empty) !== Tile.Empty,
+        (i) => i >= 0 && i < max && (doc.tiles[i] ?? TerrainTile.Empty) !== TerrainTile.Empty,
       ),
     };
   }
