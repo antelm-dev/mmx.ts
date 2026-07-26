@@ -1,19 +1,14 @@
 {
-  "name": "@mmx/ldtk-tools",
+  "name": "@mmx/slope-tools",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./slopeBake": "./src/slopeBake.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "export": "tsx src/export.ts",
-    "import": "tsx src/import.ts"
-  },
-  "dependencies": {
-    "@mmx/slope-tools": "workspace:*"
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

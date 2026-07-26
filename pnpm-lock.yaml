@@ -50,6 +50,9 @@ importers:
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
+      '@mmx/content-engine-adapter':
+        specifier: workspace:*
+        version: link:../../packages/content-engine-adapter
       '@mmx/content-schema':
         specifier: workspace:*
         version: link:../../packages/content-schema
@@ -207,14 +210,29 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
-  packages/content-schema:
+  packages/content-engine-adapter:
     dependencies:
+      '@mmx/content-schema':
+        specifier: workspace:*
+        version: link:../content-schema
       '@mmx/engine':
         specifier: workspace:*
         version: link:../engine
-      '@mmx/ldtk-tools':
+      '@mmx/slope-tools':
         specifier: workspace:*
-        version: link:../ldtk-tools
+        version: link:../slope-tools
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/content-schema:
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -242,6 +260,10 @@ importers:
         version: 5.9.3
 
   packages/ldtk-tools:
+    dependencies:
+      '@mmx/slope-tools':
+        specifier: workspace:*
+        version: link:../slope-tools
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -268,6 +290,18 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.49.0)
+
+  packages/slope-tools:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
 
 packages:
 
