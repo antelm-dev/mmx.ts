@@ -103,7 +103,7 @@ export function setDecoration(
         const next: DecorationInstance = { ...d };
         for (const [key, value] of Object.entries(patch) as [keyof DecorationPatch, unknown][]) {
           if (value === undefined) delete next[key];
-          else (next as Record<string, unknown>)[key] = value;
+          else (next as unknown as Record<string, unknown>)[key] = value;
         }
         return next;
       });
