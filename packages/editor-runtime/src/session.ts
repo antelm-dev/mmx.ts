@@ -1,12 +1,11 @@
 import { documentToLevelData } from "@mmx/content-engine-adapter";
 import type { LevelDocument } from "@mmx/content-schema";
-import type { AnimData } from "@mmx/asset-schema";
 import type { SceneOptions } from "@mmx/engine/game/Scene.js";
 import { ToolingSession } from "@mmx/engine/tooling";
+import type { AssetCatalog, StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";
 import type { PlaytestClock } from "./PlaytestClock.js";
 import { PlaytestInput } from "./PlaytestInput.js";
-import type { PlaytestRenderer } from "./PlaytestRenderer.js";
 import { STOPPED_PLAYTEST, type PlaytestSnapshot, type SimulationSnapshot } from "./snapshots.js";
 import type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
 
@@ -23,7 +22,7 @@ export function createPlaytest(
 
 class PlaytestSession implements EditorPlaytestSession {
   private tooling: ToolingSession | null = null;
-  private renderer: PlaytestRenderer | null = null;
+  private renderer: StudioPlaytestRenderer | null = null;
   private clock: PlaytestClock | null = null;
   private readonly input = new PlaytestInput();
   private runtime: SimulationSnapshot | null = null;
@@ -46,28 +45,22 @@ class PlaytestSession implements EditorPlaytestSession {
     this.started = true;
 
     const sounds = this.options.sounds;
-    const visual = this.options.host
-      ? await import("@mmx/renderer-pixi")
-      : null;
+    // Dynamic import keeps Pixi out of headless playtest sessions.
+    const visual = this.options.host ? await import("@mmx/renderer-pixi") : null;
+    const assets: AssetCatalog | null = visual ? visual.createAssetCatalog() : null;
 
     const sceneOptions: SceneOptions = {
       seed: this.options.seed,
       level: documentToLevelData(this.document),
       onEnemySpawned: (enemy) => {
-        if (visual) {
-          enemy.loadAnimations(visual.enemyAnims.actors[enemy.stats.sheet] as unknown as AnimData);
-        }
+        assets?.attachEnemyAnimations(enemy);
         sounds?.attachEnemy(enemy);
       },
       onPickupSpawned: (pickup) => {
-        if (visual) {
-          pickup.loadAnimations(visual.pickupAnims.actors[pickup.kind] as unknown as AnimData);
-        }
+        assets?.attachLifeCapsuleAnimations(pickup);
       },
       onWeaponCapsuleSpawned: (capsule) => {
-        if (visual) {
-          capsule.loadAnimations(visual.pickupAnims.actors[capsule.sheet] as unknown as AnimData);
-        }
+        assets?.attachWeaponCapsuleAnimations(capsule);
       },
     };
 
@@ -76,10 +69,11 @@ class PlaytestSession implements EditorPlaytestSession {
     sounds?.attachScene(tooling.scene);
 
     try {
-      if (this.options.host) {
-        const { PlaytestRenderer } = await import("./PlaytestRenderer.js");
+      if (this.options.host && visual && assets) {
         const { PlaytestClock } = await import("./PlaytestClock.js");
-        this.renderer = await PlaytestRenderer.create(this.options.host, tooling.scene);
+        this.renderer = await visual.createPlaytestRenderer(this.options.host, tooling.scene, {
+          assets,
+        });
         if (this.disposed || this.stopped) {
           this.renderer.destroy();
           this.renderer = null;
