@@ -16,6 +16,8 @@
  * the engine.
  */
 
+import type { SlopeMap, TerrainTile } from "@mmx/content-contracts";
+
 /** Current on-disk schema version. Bumped only by a migration in ./migrate.ts. */
 export const SCHEMA_VERSION = 1;
 
@@ -120,10 +122,10 @@ export interface LevelDocument {
   gridSize: number;
   cols: number;
   rows: number;
-  /** Row-major terrain, length cols * rows. Values from {@link TerrainTile}. */
-  tiles: number[];
+  /** Row-major terrain, length cols * rows. Values are {@link TerrainTile}. */
+  tiles: TerrainTile[];
   /** Non-45-degree slope profiles, keyed by row-major tile index, as [left, right]. */
-  slopes?: Record<number, [number, number]>;
+  slopes?: SlopeMap;
   objects: LevelObjectInstance[];
 }
 

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import type { LevelDocument, LevelObjectInstance } from "../src/index.js";
-import { SCHEMA_VERSION, validateDocument } from "../src/index.js";
+import { SCHEMA_VERSION, TerrainTile, validateDocument } from "../src/index.js";
 
 function baseDoc(objects: LevelObjectInstance[]): LevelDocument {
   return {
@@ -12,7 +12,7 @@ function baseDoc(objects: LevelObjectInstance[]): LevelDocument {
     gridSize: 16,
     cols: 8,
     rows: 8,
-    tiles: new Array(64).fill(0),
+    tiles: new Array(64).fill(TerrainTile.Empty),
     objects,
   };
 }
@@ -79,7 +79,7 @@ test("camera zones must have positive dimensions", () => {
 
 test("tiles.length must equal cols*rows", () => {
   const doc = baseDoc([spawn()]);
-  doc.tiles = [0, 0, 0];
+  doc.tiles = [TerrainTile.Empty, TerrainTile.Empty, TerrainTile.Empty];
   const result = validateDocument(doc);
   assert.ok(result.issues.some((i) => i.code === "tiles.length"));
 });

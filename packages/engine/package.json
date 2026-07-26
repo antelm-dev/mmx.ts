@@ -21,7 +21,8 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/asset-schema": "workspace:*"
+    "@mmx/asset-schema": "workspace:*",
+    "@mmx/content-contracts": "workspace:*"
   },
   "devDependencies": {
     "@mmx/ldtk-tools": "workspace:*",

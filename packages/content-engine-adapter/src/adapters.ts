@@ -22,7 +22,7 @@ const TILE_NAME: Record<number, string> = {
   [TerrainTile.SlopeUpLeft]: TERRAIN_TILE_NAME[TerrainTile.SlopeUpLeft],
 };
 
-const TILE_ENUM: Record<string, number> = {
+const TILE_ENUM: Record<string, TerrainTile> = {
   Empty: Tile.Empty,
   Solid: Tile.Solid,
   SlopeUpRight: Tile.SlopeUpRight,
@@ -124,7 +124,7 @@ export function instanceToEntity(inst: LevelObjectInstance): LevelEntity {
  */
 function bakeSlopeObjects(
   doc: LevelDocument,
-  tiles: number[],
+  tiles: TerrainTile[],
   slopes: Record<number, [number, number]>,
 ): void {
   const rects: SlopeRect[] = [];

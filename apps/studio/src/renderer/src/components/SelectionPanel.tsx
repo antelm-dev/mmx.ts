@@ -9,7 +9,7 @@ interface Kv {
   v: string;
 }
 
-function tileKindLabel(value: number): string {
+function tileKindLabel(value: TerrainTile): string {
   switch (value) {
     case TerrainTile.Solid:
       return "Solid";

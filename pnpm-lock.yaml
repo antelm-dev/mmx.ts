@@ -97,7 +97,7 @@ importers:
         version: 7.0.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       electron-ipc-module:
         specifier: github:antelm-dev/electron-ipc-module#main
-        version: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0)
+        version: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0)
       lucide-react:
         specifier: ^1.26.0
         version: 1.26.0(react@19.2.8)
@@ -161,7 +161,7 @@ importers:
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)
       electron-run:
         specifier: github:antelm-dev/electron-run#master
-        version: rollup-plugin-electron-run@https://codeload.github.com/antelm-dev/electron-run/tar.gz/6dcb979dd9279ceda7b6e297d7b71cb2c7d6b669(electron@43.2.0)(rollup@4.62.2)
+        version: rollup-plugin-electron-run@https://codeload.github.com/antelm-dev/electron-run/tar.gz/33e745d504f6decb7a28e37963b9d981626ad21a(electron@43.2.0)(rollup@4.62.2)
       rollup:
         specifier: ^4.30.1
         version: 4.62.2
@@ -231,6 +231,18 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/content-contracts:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
   packages/content-engine-adapter:
     dependencies:
       '@mmx/content-schema':
@@ -254,6 +266,10 @@ importers:
         version: 5.9.3
 
   packages/content-schema:
+    dependencies:
+      '@mmx/content-contracts':
+        specifier: workspace:*
+        version: link:../content-contracts
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -295,12 +311,18 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+      vite:
+        specifier: ^5.4.0
+        version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.49.0)
 
   packages/engine:
     dependencies:
       '@mmx/asset-schema':
         specifier: workspace:*
         version: link:../asset-schema
+      '@mmx/content-contracts':
+        specifier: workspace:*
+        version: link:../content-contracts
     devDependencies:
       '@mmx/ldtk-tools':
         specifier: workspace:*
@@ -2523,9 +2545,11 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
 
-  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98:
-    resolution: {tarball: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98}
+  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61:
+    resolution: {tarball: https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61}
     version: 0.1.0
+    engines: {node: 20 || >=22}
+    hasBin: true
     peerDependencies:
       electron: '>=12.0.0'
 
@@ -3338,8 +3362,8 @@ packages:
     resolution: {integrity: sha512-CHhPh+UNHD2GTXNYhPWLnU8ONHdI+5DI+4EYIAOaiD63rHeYlZvyh8P+in5999TTSFgUYuKUAjzRI4mdh/p+2A==}
     engines: {node: '>=8.0'}
 
-  rollup-plugin-electron-run@https://codeload.github.com/antelm-dev/electron-run/tar.gz/6dcb979dd9279ceda7b6e297d7b71cb2c7d6b669:
-    resolution: {tarball: https://codeload.github.com/antelm-dev/electron-run/tar.gz/6dcb979dd9279ceda7b6e297d7b71cb2c7d6b669}
+  rollup-plugin-electron-run@https://codeload.github.com/antelm-dev/electron-run/tar.gz/33e745d504f6decb7a28e37963b9d981626ad21a:
+    resolution: {tarball: https://codeload.github.com/antelm-dev/electron-run/tar.gz/33e745d504f6decb7a28e37963b9d981626ad21a}
     version: 0.1.0
     peerDependencies:
       electron: '>=20.0.0'
@@ -5609,7 +5633,7 @@ snapshots:
       - electron-builder-squirrel-windows
       - supports-color
 
-  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/7c2bc6ad101ade5b97951238cce147ede9c50b98(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0):
+  electron-ipc-module@https://codeload.github.com/antelm-dev/electron-ipc-module/tar.gz/d9539352d3872c9d1924fbb370edcd2072225b61(patch_hash=21ba4ad379ab1e17abcd10fa9611b6ecc3358dd04cd1ac48b9f9af717a068a17)(electron@43.2.0):
     dependencies:
       electron: 43.2.0
       glob: 11.1.0
@@ -6497,7 +6521,7 @@ snapshots:
       sprintf-js: 1.1.3
     optional: true
 
-  rollup-plugin-electron-run@https://codeload.github.com/antelm-dev/electron-run/tar.gz/6dcb979dd9279ceda7b6e297d7b71cb2c7d6b669(electron@43.2.0)(rollup@4.62.2):
+  rollup-plugin-electron-run@https://codeload.github.com/antelm-dev/electron-run/tar.gz/33e745d504f6decb7a28e37963b9d981626ad21a(electron@43.2.0)(rollup@4.62.2):
     dependencies:
       electron: 43.2.0
     optionalDependencies:

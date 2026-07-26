@@ -1,18 +1,10 @@
-/**
- * Stable, serializable terrain values stored in {@link LevelDocument.tiles}.
- *
- * Numerically identical to the engine's `Tile` enum so existing JSON stays
- * compatible, but this package never imports the engine — the engine adapter
- * maps these values explicitly when building runtime `LevelData`.
- */
-export const TerrainTile = {
-  Empty: 0,
-  Solid: 1,
-  SlopeUpRight: 2,
-  SlopeUpLeft: 3,
-} as const;
+import {
+  TerrainTile,
+  type SlopeMap,
+  type SlopeProfile,
+} from "@mmx/content-contracts";
 
-export type TerrainTile = (typeof TerrainTile)[keyof typeof TerrainTile];
+export { TerrainTile, type SlopeMap, type SlopeProfile };
 
 /** Tile-name strings used by the pure slope baker. */
 export const TERRAIN_TILE_NAME: Record<TerrainTile, string> = {

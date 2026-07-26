@@ -1,4 +1,5 @@
 import {
+  TerrainTile,
   addObjects,
   deleteObjects,
   moveObjects,
@@ -6,7 +7,6 @@ import {
   newId,
   requireDefinition,
   setTiles,
-  TerrainTile,
   type LevelObjectInstance,
   type TileEdit,
 } from "@mmx/content-schema";

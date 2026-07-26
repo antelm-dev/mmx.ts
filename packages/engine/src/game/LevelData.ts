@@ -1,4 +1,4 @@
-import type { SlopeMap, Tile } from "./World.js";
+import type { SlopeMap, TerrainTile } from "@mmx/content-contracts";
 
 /** An entity placed on an LDtk Entities layer, in world pixels. */
 export interface LevelEntity {
@@ -28,8 +28,8 @@ export interface LevelData {
   gridSize: number;
   cols: number;
   rows: number;
-  /** Row-major, length cols * rows. */
-  tiles: Tile[];
+  /** Row-major, length cols * rows. Values are {@link TerrainTile}. */
+  tiles: TerrainTile[];
   /**
    * Ramp shapes for the slope tiles that are not 45 degrees, baked out of the
    * level's Slope entities by @mmx/ldtk-tools. Absent when every ramp in

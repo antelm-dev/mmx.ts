@@ -3,12 +3,12 @@ import * as Select from "@radix-ui/react-select";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import { Check, ChevronDown, Grid3x3, ListTree, MousePointer2 } from "lucide-react";
 import {
+  TerrainTile,
   effectiveValue,
   instanceSize,
   requireDefinition,
   setProperty,
   setTransform,
-  TerrainTile,
   type GameObjectDefinition,
   type LevelObjectInstance,
   type PropertyMeta,
@@ -46,7 +46,7 @@ interface Single {
   height: number;
 }
 
-function tileKindLabel(value: number): string {
+function tileKindLabel(value: TerrainTile): string {
   switch (value) {
     case TerrainTile.Solid:
       return "Solid";

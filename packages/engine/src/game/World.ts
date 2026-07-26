@@ -1,4 +1,19 @@
+import {
+  TerrainTile,
+  type SlopeMap,
+  type SlopeProfile,
+} from "@mmx/content-contracts";
 import { TILE_SIZE } from "../core/constants.js";
+
+export { TerrainTile };
+export type { SlopeMap, SlopeProfile };
+
+/**
+ * Backward-compatible alias for {@link TerrainTile}. Prefer `TerrainTile` for
+ * new authoring/schema code; collision and queries stay on {@link World}.
+ */
+export const Tile = TerrainTile;
+export type Tile = TerrainTile;
 
 /**
  * Shrink applied to the max edge of an AABB before mapping it to a tile index,
@@ -15,44 +30,6 @@ export interface Sweep {
   /** True when a solid tile stopped the motion short of the target. */
   hit: boolean;
 }
-
-/**
- * Tile kinds. A slope tile carries a ramp whose surface is linear across the
- * tile; `SlopeUpRight` ('/') rises left-to-right, `SlopeUpLeft` ('\') the
- * mirror. How steeply it rises is the tile's {@link SlopeProfile}, which
- * defaults to the full 45 degrees.
- */
-export enum Tile {
-  Empty = 0,
-  Solid = 1,
-  SlopeUpRight = 2,
-  SlopeUpLeft = 3,
-}
-
-/**
- * How much of a slope tile is filled at each of its vertical edges, in pixels
- * from the tile's base, `0..TILE_SIZE`. The surface between them is a straight
- * line, so a tile expresses any angle up to 45 degrees — steeper than that
- * would need more than a tile of rise, which this cannot represent.
- *
- * Shallow ramps are therefore built from a run of tiles whose profiles chain:
- * a 1-in-2 ramp is `{l:0,r:8}` then `{l:8,r:16}`, and so on. Authoring that by
- * hand is what the Slope entity and its bake in @mmx/ldtk-tools exist to
- * avoid.
- */
-export interface SlopeProfile {
-  /** Fill height at the tile's left edge. */
-  l: number;
-  /** Fill height at the tile's right edge. */
-  r: number;
-}
-
-/**
- * Slope profiles keyed by row-major tile index, as `[left, right]` — the pair
- * form rather than the object survives being written into a generated level
- * module without turning every ramp tile into a line of its own.
- */
-export type SlopeMap = Record<number, [number, number]>;
 
 /** The 45-degree ramp each slope kind means when no profile is given for it. */
 const DEFAULT_PROFILE: Record<number, SlopeProfile> = {
