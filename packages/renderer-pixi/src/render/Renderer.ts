@@ -144,37 +144,42 @@ export class Renderer {
   static async create(canvas: HTMLCanvasElement, stage: Stage): Promise<Renderer> {
     validateAnimationAssets();
     const app = new Application();
-    await app.init({
-      canvas,
-      width: VIEW_WIDTH,
-      height: VIEW_HEIGHT,
-      background: COLOR_BG,
-      antialias: false,
-      // The backdrop is opaque and covers the whole view, so the compositor never
-      // needs to blend the canvas against the page.
-      backgroundAlpha: 1,
-      // The fixed-step loop drives rendering; Pixi's own ticker would render on its
-      // own schedule and decouple the picture from the simulation.
-      autoStart: false,
-      // Device-pixel mapping is handled by fit(), which needs an integer scale.
-      // Pixi's own dpr handling would reintroduce the fractional one.
-      resolution: 1,
-      autoDensity: false,
-    });
+    try {
+      await app.init({
+        canvas,
+        width: VIEW_WIDTH,
+        height: VIEW_HEIGHT,
+        background: COLOR_BG,
+        antialias: false,
+        // The backdrop is opaque and covers the whole view, so the compositor never
+        // needs to blend the canvas against the page.
+        backgroundAlpha: 1,
+        // The fixed-step loop drives rendering; Pixi's own ticker would render on its
+        // own schedule and decouple the picture from the simulation.
+        autoStart: false,
+        // Device-pixel mapping is handled by fit(), which needs an integer scale.
+        // Pixi's own dpr handling would reintroduce the fractional one.
+        resolution: 1,
+        autoDensity: false,
+      });
 
-    // Before the Renderer is built, not after: the HUD cuts its textures out of the
-    // sheets in its constructor.
-    await loadSheets(SHEET_URLS);
+      // Before the Renderer is built, not after: the HUD cuts its textures out of the
+      // sheets in its constructor.
+      await loadSheets(SHEET_URLS);
 
-    const renderer = new Renderer(app);
-    // Spector.js can discover the canvas directly; this also exposes Pixi's
-    // renderer/backend for targeted GPU inspection from DevTools.
-    (window as any).__mmxRenderer = { app, canvas };
-    renderer.terrain = buildTerrain(stage);
-    // Index 1: after world-back decorations (index 0).
-    renderer.scene.addChildAt(renderer.terrain.view, 1);
-    renderer.fit();
-    return renderer;
+      const renderer = new Renderer(app);
+      // Spector.js can discover the canvas directly; this also exposes Pixi's
+      // renderer/backend for targeted GPU inspection from DevTools.
+      (window as any).__mmxRenderer = { app, canvas };
+      renderer.terrain = buildTerrain(stage);
+      // Index 1: after world-back decorations (index 0).
+      renderer.scene.addChildAt(renderer.terrain.view, 1);
+      renderer.fit();
+      return renderer;
+    } catch (error) {
+      app.destroy(true, { children: true });
+      throw error;
+    }
   }
 
   /** Rebuild static terrain after the player selects a different level. */

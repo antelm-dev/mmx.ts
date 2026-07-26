@@ -12,15 +12,16 @@ import { shotAnims } from "./assets.js";
  * lets the whole frame batch into a handful of draw calls.
  */
 
-// Pixel art: nearest-neighbour sampling, never smoothing. Set on the global default
-// rather than per-texture because it has to be in place *before* the first source is
-// created — a source built under the linear default keeps it.
 TextureSource.defaultOptions.scaleMode = "nearest";
 
 const sheets = new Map<string, Texture>();
 const regions = new Map<string, Texture>();
 
 let loadInflight: Promise<void> | null = null;
+
+function isTexture(value: unknown): value is Texture {
+  return value instanceof Texture;
+}
 
 /** Load every missing sheet; concurrent callers share one in-flight load. */
 export async function loadSheets(urls: Record<string, string>): Promise<void> {
@@ -35,8 +36,26 @@ export async function loadSheets(urls: Record<string, string>): Promise<void> {
   loadInflight = (async () => {
     const stillPending = Object.entries(urls).filter(([name]) => !sheets.has(name));
     if (stillPending.length === 0) return;
-    const loaded = await Promise.all(stillPending.map(([, url]) => Assets.load<Texture>(url)));
-    stillPending.forEach(([name], i) => sheets.set(name, loaded[i]));
+
+    const loaded = await Promise.all(
+      stillPending.map(async ([name, url]) => {
+        let result: unknown;
+        try {
+          result = await Assets.load(url);
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to load renderer sheet '${name}' from '${url}': ${detail}`);
+        }
+        if (!isTexture(result)) {
+          throw new Error(`Failed to load renderer sheet '${name}' from '${url}'`);
+        }
+        return [name, result] as const;
+      }),
+    );
+
+    for (const [name, texture] of loaded) {
+      sheets.set(name, texture);
+    }
   })();
 
   try {
@@ -44,6 +63,12 @@ export async function loadSheets(urls: Record<string, string>): Promise<void> {
   } finally {
     loadInflight = null;
   }
+}
+
+export function resetTextureCacheForTests(): void {
+  sheets.clear();
+  regions.clear();
+  loadInflight = null;
 }
 
 /**

@@ -24,28 +24,26 @@ export type SoundName =
   | "introAppear"
   | "introThunder";
 
-const soundUrl = (path: string) => new URL(`../assets/sounds/${path}`, import.meta.url).href;
-
-const URLS: Record<SoundName, string> = {
-  jump: soundUrl("player/jump.wav"),
-  land: soundUrl("player/land.wav"),
-  dash: soundUrl("player/dash.wav"),
-  wallslide: soundUrl("player/wallslide.wav"),
-  damage: soundUrl("player/damage.wav"),
-  charge: soundUrl("weapons/charge.wav"),
-  lemon: soundUrl("weapons/lemon.wav"),
-  mediumShot: soundUrl("weapons/medium-shot.wav"),
-  chargedShot: soundUrl("weapons/charged-shot.wav"),
-  darkArrow: soundUrl("weapons/dark-arrow.ogg"),
-  enemyHit: soundUrl("enemies/enemy-hit.wav"),
-  shieldHit: soundUrl("enemies/shield-hit.ogg"),
-  guardBreak: soundUrl("enemies/guard-break.wav"),
-  enemyDeath: soundUrl("enemies/enemy-death.wav"),
-  playerDeath: soundUrl("player/player-death.wav"),
-  heal: soundUrl("pickups/heal.wav"),
-  introAppear: soundUrl("player/intro-appear.wav"),
-  introThunder: soundUrl("player/intro-thunder.wav"),
-};
+export const SOUND_URLS = {
+  jump: new URL("../assets/sounds/player/jump.wav", import.meta.url).href,
+  land: new URL("../assets/sounds/player/land.wav", import.meta.url).href,
+  dash: new URL("../assets/sounds/player/dash.wav", import.meta.url).href,
+  wallslide: new URL("../assets/sounds/player/wallslide.wav", import.meta.url).href,
+  damage: new URL("../assets/sounds/player/damage.wav", import.meta.url).href,
+  charge: new URL("../assets/sounds/weapons/charge.wav", import.meta.url).href,
+  lemon: new URL("../assets/sounds/weapons/lemon.wav", import.meta.url).href,
+  mediumShot: new URL("../assets/sounds/weapons/medium-shot.wav", import.meta.url).href,
+  chargedShot: new URL("../assets/sounds/weapons/charged-shot.wav", import.meta.url).href,
+  darkArrow: new URL("../assets/sounds/weapons/dark-arrow.ogg", import.meta.url).href,
+  enemyHit: new URL("../assets/sounds/enemies/enemy-hit.wav", import.meta.url).href,
+  shieldHit: new URL("../assets/sounds/enemies/shield-hit.ogg", import.meta.url).href,
+  guardBreak: new URL("../assets/sounds/enemies/guard-break.wav", import.meta.url).href,
+  enemyDeath: new URL("../assets/sounds/enemies/enemy-death.wav", import.meta.url).href,
+  playerDeath: new URL("../assets/sounds/player/player-death.wav", import.meta.url).href,
+  heal: new URL("../assets/sounds/pickups/heal.wav", import.meta.url).href,
+  introAppear: new URL("../assets/sounds/player/intro-appear.wav", import.meta.url).href,
+  introThunder: new URL("../assets/sounds/player/intro-thunder.wav", import.meta.url).href,
+} as const satisfies Record<SoundName, string>;
 
 export interface PlayOptions {
   /** Gain in decibels, matching Godot's AudioStreamPlayer volume_db. */
@@ -79,13 +77,12 @@ export class SoundEffects {
   /** Decode every sample once so later playtests reuse the same buffers. */
   load(): Promise<void> {
     this.loadPromise ??= Promise.all(
-      (Object.entries(URLS) as [SoundName, string][]).map(async ([name, url]) => {
+      (Object.entries(SOUND_URLS) as [SoundName, string][]).map(async ([name, url]) => {
         try {
           const response = await fetch(url);
           if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
           this.buffers.set(name, await this.context.decodeAudioData(await response.arrayBuffer()));
         } catch (error) {
-          // A missing sample must not prevent the game or editor from starting.
           console.warn(`Could not load sound effect ${name}`, error);
         }
       }),

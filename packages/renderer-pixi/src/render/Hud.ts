@@ -1,8 +1,15 @@
-import { Container, NineSliceSprite, Sprite } from "pixi.js";
+import { Container, NineSliceSprite, Sprite, type Texture } from "pixi.js";
+import type { Region } from "@mmx/asset-schema";
 import { DT, SUB_WEAPON_MAX_AMMO, WEAPON_PALETTE, type WeaponId } from "@mmx/engine";
 import type { Camera } from "@mmx/engine";
 import type { Player } from "@mmx/engine";
 import { regionTexture } from "./textures.js";
+
+function requireHudTexture(sheet: string, region: Region): Texture {
+  const texture = regionTexture(sheet, region);
+  if (!texture) throw new Error(`Required HUD texture '${sheet}' is not loaded`);
+  return texture;
+}
 
 /**
  * X's life bar and the weapon-select ammo bar beside it, ported from Hud.tscn's
@@ -108,7 +115,7 @@ class EnergyBar {
 
   constructor(options: EnergyBarOptions) {
     this.frame = new NineSliceSprite({
-      texture: regionTexture(options.frameSheet, [0, 0, BAR_W, 22])!,
+      texture: requireHudTexture(options.frameSheet, [0, 0, BAR_W, 22]),
       leftWidth: 0,
       rightWidth: 0,
       topHeight: CAP_TOP,
@@ -154,7 +161,7 @@ class EnergyBar {
     // inside of the bottom cap. Cropping from the bottom rather than scaling keeps
     // the source's segment ticks fixed to the column instead of sliding with health.
     const { y, h } = barMetrics(this.lastMax);
-    this.fill.texture = regionTexture("hp_fill.png", [0, FILL_H - filled, FILL_W, filled])!;
+    this.fill.texture = requireHudTexture("hp_fill.png", [0, FILL_H - filled, FILL_W, filled]);
     this.fill.y = y + h - CAP_BOTTOM - filled;
   }
 }
