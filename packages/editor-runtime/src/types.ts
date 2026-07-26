@@ -1,11 +1,11 @@
-import type { GameplaySounds } from "@mmx/browser-audio";
 import type { LevelDocument } from "@mmx/content-schema";
+import type { PlaytestAudio } from "./PlaytestAudio.js";
 import type { PlaytestInput } from "./PlaytestInput.js";
 import type { PlaytestSnapshot } from "./snapshots.js";
 
 export interface CreatePlaytestOptions {
   host?: HTMLElement;
-  sounds?: GameplaySounds;
+  audio?: PlaytestAudio;
   seed?: number;
   onSnapshot?: (snapshot: PlaytestSnapshot) => void;
   onError?: (message: string) => void;

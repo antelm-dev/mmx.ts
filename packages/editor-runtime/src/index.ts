@@ -1,4 +1,5 @@
 export { createPlaytest } from "./session.js";
+export type { PlaytestAudio } from "./PlaytestAudio.js";
 export type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
 export { PlaytestInput, type PlaytestAction } from "./PlaytestInput.js";
 export {

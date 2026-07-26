@@ -44,7 +44,7 @@ class PlaytestSession implements EditorPlaytestSession {
     this.stopped = false;
     this.started = true;
 
-    const sounds = this.options.sounds;
+    const audio = this.options.audio;
     // Dynamic import keeps Pixi out of headless playtest sessions.
     const visual = this.options.host ? await import("@mmx/renderer-pixi") : null;
     const assets: AssetCatalog | null = visual ? visual.createAssetCatalog() : null;
@@ -54,7 +54,7 @@ class PlaytestSession implements EditorPlaytestSession {
       level: documentToLevelData(this.document),
       onEnemySpawned: (enemy) => {
         assets?.attachEnemyAnimations(enemy);
-        sounds?.attachEnemy(enemy);
+        audio?.attachEnemy(enemy);
       },
       onPickupSpawned: (pickup) => {
         assets?.attachLifeCapsuleAnimations(pickup);
@@ -66,7 +66,7 @@ class PlaytestSession implements EditorPlaytestSession {
 
     const tooling = new ToolingSession(sceneOptions);
     this.tooling = tooling;
-    sounds?.attachScene(tooling.scene);
+    audio?.attachScene(tooling.scene);
 
     try {
       if (this.options.host && visual && assets) {
@@ -102,7 +102,7 @@ class PlaytestSession implements EditorPlaytestSession {
     this.clock?.stop();
     this.clock = null;
     this.input.detach();
-    this.options.sounds?.effects.stopAll();
+    this.options.audio?.stop();
     this.renderer?.destroy();
     this.renderer = null;
     this.tooling = null;
@@ -208,7 +208,7 @@ class PlaytestSession implements EditorPlaytestSession {
       this.renderer.bindScene(tooling.scene);
       this.renderer.render(tooling.scene);
     }
-    this.options.sounds?.attachScene(tooling.scene);
+    this.options.audio?.attachScene(tooling.scene);
     this.emitNow();
   }
 

@@ -286,9 +286,6 @@ importers:
 
   packages/editor-runtime:
     dependencies:
-      '@mmx/browser-audio':
-        specifier: workspace:*
-        version: link:../browser-audio
       '@mmx/content-engine-adapter':
         specifier: workspace:*
         version: link:../content-engine-adapter
