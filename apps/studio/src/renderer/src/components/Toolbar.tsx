@@ -19,7 +19,7 @@ import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { btnCls, cx, ctxItemCls, menu } from "../ui.js";
 import { Tooltip } from "./Tooltip.js";
 
-const divider = "w-px h-6 mx-0.5 bg-border";
+const divider = "w-px h-4 mx-0.5 bg-border";
 const group = "flex items-center gap-0.5";
 
 /** Fixed command bar above the Dockview workspace. */
@@ -30,7 +30,7 @@ export function Toolbar() {
   const zoomPercent = Math.round(snap.state.zoom * 100);
 
   return (
-    <div className="relative z-[5] h-[52px] px-3 flex items-center gap-2 bg-gradient-to-b from-chrome-2 to-surface border-b border-border shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
+    <div className="relative z-[5] h-9 px-2.5 flex items-center gap-1.5 bg-gradient-to-b from-chrome-2 to-surface border-b border-border shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <div className={group}>
           <Tooltip label="Undo (Ctrl+Z)">
@@ -40,7 +40,7 @@ export function Toolbar() {
               onClick={() => editor.undo()}
               aria-label="Undo"
             >
-              <Undo2 size={16} />
+              <Undo2 size={14} />
             </button>
           </Tooltip>
           <Tooltip label="Redo (Ctrl+Shift+Z)">
@@ -50,7 +50,7 @@ export function Toolbar() {
               onClick={() => editor.redo()}
               aria-label="Redo"
             >
-              <Redo2 size={16} />
+              <Redo2 size={14} />
             </button>
           </Tooltip>
         </div>
@@ -65,7 +65,7 @@ export function Toolbar() {
               onClick={() => editor.store.setTool("select")}
               aria-label="Select tool"
             >
-              <MousePointer2 size={16} />
+              <MousePointer2 size={14} />
             </button>
           </Tooltip>
           <Tooltip label="Paint solid tiles — drag to paint, right-drag / Alt to erase (T)">
@@ -75,7 +75,7 @@ export function Toolbar() {
               onClick={() => editor.toggleTileTool()}
               aria-label="Tile tool"
             >
-              <Blocks size={16} />
+              <Blocks size={14} />
             </button>
           </Tooltip>
         </div>
@@ -88,7 +88,7 @@ export function Toolbar() {
               className={btnCls({ active: snap.state.gridVisible })}
               onClick={() => editor.toggleGrid()}
             >
-              <Grid3x3 size={15} /> Grid
+              <Grid3x3 size={13} /> Grid
             </button>
           </Tooltip>
           <Tooltip label="Toggle snapping (Shift+G)">
@@ -96,7 +96,7 @@ export function Toolbar() {
               className={btnCls({ active: snap.state.snapEnabled })}
               onClick={() => editor.toggleSnap()}
             >
-              <Magnet size={15} /> Snap
+              <Magnet size={13} /> Snap
             </button>
           </Tooltip>
         </div>
@@ -104,48 +104,48 @@ export function Toolbar() {
         <div className={divider} />
 
         <div className={cx(group, "max-[1500px]:hidden")}>
-          <Tooltip label="Zoom out">
+          <Tooltip label="Zoom out (Ctrl+-)">
             <button
               className={btnCls({ icon: true })}
-              onClick={() => editor.zoomBy(1 / 1.2)}
+              onClick={() => editor.zoomOut()}
               aria-label="Zoom out"
             >
-              <ZoomOut size={16} />
+              <ZoomOut size={14} />
             </button>
           </Tooltip>
-          <span className="min-w-[42px] text-fg-2 font-mono text-[11px] text-center">
+          <span className="min-w-[38px] text-fg-2 font-mono text-[10.5px] text-center">
             {zoomPercent}%
           </span>
-          <Tooltip label="Zoom in">
+          <Tooltip label="Zoom in (Ctrl+=)">
             <button
               className={btnCls({ icon: true })}
-              onClick={() => editor.zoomBy(1.2)}
+              onClick={() => editor.zoomIn()}
               aria-label="Zoom in"
             >
-              <ZoomIn size={16} />
+              <ZoomIn size={14} />
             </button>
           </Tooltip>
           <Tooltip label="Fit level to view (F)">
             <button className={btnCls()} onClick={() => editor.fit()}>
-              <Maximize size={15} /> Fit
+              <Maximize size={13} /> Fit
             </button>
           </Tooltip>
         </div>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 z-[1] px-1 border border-border-strong/70 rounded-[10px] bg-bg">
+      <div className="absolute left-1/2 -translate-x-1/2 z-[1] px-0.5 border border-border-strong/70 rounded-lg bg-bg">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button
               className={cx(
                 btnCls(),
-                "gap-2 max-w-[280px] h-[34px] text-fg text-[13px] font-[650]",
+                "gap-1.5 max-w-[280px] h-7 text-fg text-[12px] font-[650]",
               )}
               aria-label="Level menu"
             >
-              <span className="text-accent text-[9px] font-extrabold tracking-[0.8px]">LEVEL</span>
+              <span className="text-accent text-[8px] font-extrabold tracking-[0.8px]">LEVEL</span>
               <span>{snap.levelTitle}</span>
-              <ChevronDown className="text-fg-3" size={13} />
+              <ChevronDown className="text-fg-3" size={12} />
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
@@ -155,9 +155,9 @@ export function Toolbar() {
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 className={ctxItemCls(false)}
-                onSelect={() => void editor.importJson()}
+                onSelect={() => void editor.openLevel()}
               >
-                <FolderOpen size={13} /> Import Level…
+                <FolderOpen size={13} /> Open Level…
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
@@ -168,15 +168,15 @@ export function Toolbar() {
         <Tooltip label="Play / Stop (Ctrl+Enter)">
           <button
             className={cx(
-              "inline-flex items-center justify-center gap-1.5 min-w-[94px] h-9 px-3 rounded-[9px]",
-              "border border-transparent text-white text-[12.5px] font-bold cursor-pointer transition-colors duration-100",
+              "inline-flex items-center justify-center gap-1.5 min-w-[80px] h-7 px-2.5 rounded-lg",
+              "border border-transparent text-white text-[12px] font-bold cursor-pointer transition-colors duration-100",
               playing
-                ? "bg-danger shadow-[0_5px_16px_rgba(239,68,68,0.25)] hover:bg-[#f05555]"
-                : "bg-accent shadow-[0_5px_16px_rgba(59,130,246,0.22)] hover:bg-accent-hover",
+                ? "bg-danger shadow-[0_3px_10px_rgba(239,68,68,0.25)] hover:bg-[#f05555]"
+                : "bg-accent shadow-[0_3px_10px_rgba(59,130,246,0.22)] hover:bg-accent-hover",
             )}
             onClick={() => editor.togglePlay()}
           >
-            {playing ? <Square size={12} /> : <Play size={12} />}
+            {playing ? <Square size={11} /> : <Play size={11} />}
             {playing ? "Stop" : "Play"}
           </button>
         </Tooltip>

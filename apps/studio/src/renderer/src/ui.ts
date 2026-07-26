@@ -15,14 +15,14 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 
 /** Shared button geometry; the color/hover variant is layered on by {@link btnCls}. */
 const btnBase =
-  "inline-flex items-center gap-1.5 h-8 px-2.5 border border-transparent rounded-lg text-[12px] " +
+  "inline-flex items-center gap-1.5 h-7 px-2 border border-transparent rounded-md text-[11.5px] " +
   "font-semibold cursor-pointer transition-colors duration-100 disabled:opacity-40 disabled:cursor-default";
 const btnIdle = "text-fg-2 enabled:hover:bg-hover enabled:hover:text-fg";
 const btnActive = "bg-accent/15 text-accent-fg";
 
 /** Generic toolbar/action button. `active` toggles the selected look; `icon` squares it. */
 export function btnCls(opts: { active?: boolean; icon?: boolean } = {}): string {
-  return cx(btnBase, opts.active ? btnActive : btnIdle, opts.icon && "w-8 px-0 justify-center");
+  return cx(btnBase, opts.active ? btnActive : btnIdle, opts.icon && "w-7 px-0 justify-center");
 }
 
 /** Text/number input field; `bad` swaps to the invalid-outline variant. */
@@ -49,7 +49,7 @@ export function itemCls(active: boolean): string {
 export function ctxItemCls(selected = false): string {
   return cx(
     "flex items-center gap-[9px] w-full bg-transparent text-[12.5px] text-left px-3 py-1.5 " +
-      "cursor-pointer outline-none",
+      "cursor-pointer outline-none data-[disabled]:opacity-40 data-[disabled]:pointer-events-none",
     selected
       ? "bg-selected text-menu-fg-hover"
       : "text-menu-fg hover:bg-popover-hover hover:text-menu-fg-hover " +
@@ -82,5 +82,9 @@ export const fieldLabel = "block text-[10.5px] text-fg-3 mb-[3px]";
 
 /** Popover / dropdown surface (Radix menu content, context menu). */
 export const menu =
-  "z-[41] min-w-[200px] max-w-[260px] flex flex-col bg-popover border border-popover-border " +
+  "z-[41] min-w-[220px] max-w-[300px] flex flex-col bg-popover border border-popover-border " +
   "rounded-lg shadow-[0_12px_32px_rgba(0,0,0,0.45)] py-1.5 overflow-hidden";
+export const menuSep = "h-px my-1.5 mx-2 bg-popover-border";
+export const menuLabel =
+  "px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.6px] text-fg-3";
+export const menuShortcut = "ml-auto pl-5 text-[10.5px] text-fg-3 tracking-wide tabular-nums";

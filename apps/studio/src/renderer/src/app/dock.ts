@@ -141,6 +141,101 @@ export function togglePanel(id: string): void {
   });
 }
 
+/** Build the default Studio workspace layout on a fresh Dockview API. */
+export function buildDefaultLayout(dock: DockviewApi): void {
+  const viewport = dock.addPanel({
+    id: "viewport",
+    component: "viewport",
+    title: "Level",
+    renderer: "always",
+    minimumWidth: 320,
+    minimumHeight: 240,
+  });
+
+  const palette = dock.addPanel({
+    id: "palette",
+    component: "palette",
+    title: "Object Palette",
+    initialWidth: 264,
+    minimumWidth: 220,
+    maximumWidth: 320,
+    position: { referencePanel: viewport, direction: "left" },
+  });
+
+  dock.addPanel({
+    id: "scene",
+    component: "scene",
+    title: "Scene",
+    position: { referencePanel: palette, direction: "within" },
+  });
+
+  const inspector = dock.addPanel({
+    id: "inspector",
+    component: "inspector",
+    title: "Inspector",
+    initialWidth: 300,
+    minimumWidth: 260,
+    maximumWidth: 380,
+    position: { referencePanel: viewport, direction: "right" },
+  });
+
+  dock.addPanel({
+    id: "room",
+    component: "room",
+    title: "Room",
+    position: { referencePanel: inspector, direction: "within" },
+  });
+
+  dock.addPanel({
+    id: "json",
+    component: "json",
+    title: "Document JSON",
+    position: { referencePanel: inspector, direction: "within" },
+  });
+
+  const assets = dock.addPanel({
+    id: "assets",
+    component: "assets",
+    title: "Assets",
+    initialHeight: 176,
+    minimumHeight: 132,
+    maximumHeight: 240,
+    position: { referencePanel: viewport, direction: "below" },
+  });
+
+  const problems = dock.addPanel({
+    id: "problems",
+    component: "problems",
+    title: "Problems",
+    position: { referencePanel: assets, direction: "right" },
+  });
+
+  dock.addPanel({
+    id: "selection",
+    component: "selection",
+    title: "Selection",
+    position: { referencePanel: problems, direction: "right" },
+  });
+
+  requestAnimationFrame(() => {
+    assets.api.setSize({ height: 176 });
+    inspector.api.setSize({ width: 300 });
+    palette.api.setSize({ width: 264 });
+  });
+
+  palette.api.setActive();
+  viewport.api.setActive();
+}
+
+/** Tear down the current dock and restore the default panel arrangement. */
+export function resetLayout(): void {
+  if (!api) return;
+  for (const panel of [...api.panels]) {
+    api.removePanel(panel);
+  }
+  buildDefaultLayout(api);
+}
+
 function subscribe(notify: () => void): () => void {
   listeners.add(notify);
   return () => listeners.delete(notify);

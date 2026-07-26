@@ -13,8 +13,8 @@ export interface OpenedFile {
 }
 
 export interface FileAccess {
-  /** Persist a document's JSON under a suggested filename. */
-  save(name: string, json: string): Promise<void>;
+  /** Persist a document's JSON under a suggested filename. Returns false if cancelled. */
+  save(name: string, json: string): Promise<boolean>;
   /** Prompt for a file and return its contents, or null if cancelled. */
   open(): Promise<OpenedFile | null>;
 }
@@ -23,8 +23,9 @@ const RECOVERY_KEY = "mmx-studio.recovery.v1";
 
 /** Native open/save via the Electron preload bridge. */
 export class ElectronFileAccess implements FileAccess {
-  async save(name: string, json: string): Promise<void> {
-    await window.studio?.files.saveFile(name, json);
+  async save(name: string, json: string): Promise<boolean> {
+    const result = await window.studio?.files.saveFile(name, json);
+    return result != null;
   }
 
   async open(): Promise<OpenedFile | null> {
@@ -35,7 +36,7 @@ export class ElectronFileAccess implements FileAccess {
 
 /** Browser fallback: download for save, hidden `<input type=file>` for open. */
 export class BrowserFileAccess implements FileAccess {
-  async save(name: string, json: string): Promise<void> {
+  async save(name: string, json: string): Promise<boolean> {
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -43,6 +44,7 @@ export class BrowserFileAccess implements FileAccess {
     a.download = name.endsWith(".json") ? name : `${name}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
+    return true;
   }
 
   open(): Promise<OpenedFile | null> {
@@ -109,5 +111,21 @@ export function clearRecovery(): void {
     localStorage.removeItem(RECOVERY_KEY);
   } catch {
     // ignore
+  }
+}
+
+export function hasRecovery(): boolean {
+  try {
+    return localStorage.getItem(RECOVERY_KEY) != null;
+  } catch {
+    return false;
+  }
+}
+
+export function readRecoveryJson(): string | null {
+  try {
+    return localStorage.getItem(RECOVERY_KEY);
+  } catch {
+    return null;
   }
 }

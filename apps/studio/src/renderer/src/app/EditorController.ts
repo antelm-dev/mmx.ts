@@ -28,11 +28,15 @@ import {
 import {
   createFileAccess,
   parseDocument,
+  readRecovery,
+  readRecoveryJson,
   serializeDocument,
   writeRecovery,
   type FileAccess,
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
+
+const ZOOM_STEP = 1.2;
 
 /**
  * A single immutable view of everything the React tree renders from. Rebuilt on
@@ -184,27 +188,67 @@ export class EditorController {
 
   /** Start a fresh, blank level with a floor and a single Spawn. */
   newLevel(): void {
+    if (!this.confirmDiscardIfDirty("Create a new level?")) return;
     if (this.store.get().mode === "play") this.togglePlay();
     this.openDocument(createLevelDocument());
     this.toast("New level created.");
   }
 
   save(): void {
+    void this.saveAsync();
+  }
+
+  private async saveAsync(): Promise<void> {
     const doc = this.store.get().document;
-    void this.fileAccess.save(doc.id || doc.name || "level", serializeDocument(doc));
+    const ok = await this.fileAccess.save(doc.id || doc.name || "level", serializeDocument(doc));
+    if (!ok) return;
     this.store.markSaved();
     this.toast("Level saved.");
   }
 
-  async importJson(): Promise<void> {
+  async openLevel(): Promise<void> {
+    if (!this.confirmDiscardIfDirty("Open another level?")) return;
     try {
       const opened = await this.fileAccess.open();
       if (!opened) return;
+      if (this.store.get().mode === "play") this.togglePlay();
       this.openDocument(parseDocument(opened.json));
-      this.toast(`Imported ${opened.name}.`);
+      this.toast(`Opened ${opened.name}.`);
     } catch (error) {
-      this.toast(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.toast(`Open failed: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  async copyDocumentJson(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(serializeDocument(this.store.get().document));
+      this.toast("JSON copied to clipboard.");
+    } catch {
+      this.toast("Could not copy JSON.");
+    }
+  }
+
+  hasRecoveryDraft(): boolean {
+    const json = readRecoveryJson();
+    if (!json) return false;
+    return json !== serializeDocument(this.store.get().document);
+  }
+
+  restoreRecovery(): void {
+    if (!this.confirmDiscardIfDirty("Restore the recovery draft?")) return;
+    const doc = readRecovery();
+    if (!doc) {
+      this.toast("No recovery draft found.");
+      return;
+    }
+    if (this.store.get().mode === "play") this.togglePlay();
+    this.openDocument(doc);
+    this.toast("Recovery draft restored.");
+  }
+
+  private confirmDiscardIfDirty(action: string): boolean {
+    if (!this.store.isDirty) return true;
+    return window.confirm(`${action}\n\nUnsaved changes will be lost.`);
   }
 
   private openDocument(doc: LevelDocument): void {
@@ -231,6 +275,17 @@ export class EditorController {
 
   zoomBy(factor: number): void {
     this.viewport?.zoomByCentered(factor);
+  }
+  zoomIn(): void {
+    this.zoomBy(ZOOM_STEP);
+  }
+  zoomOut(): void {
+    this.zoomBy(1 / ZOOM_STEP);
+  }
+  setZoom(zoom: number): void {
+    const current = this.store.get().zoom;
+    if (current <= 0 || current === zoom) return;
+    this.zoomBy(zoom / current);
   }
   fit(): void {
     this.viewport?.fitToDocument();
@@ -405,6 +460,12 @@ export class EditorController {
       return;
     }
 
+    if (e.code === "Escape" && useUiStore.getState().fullscreen) {
+      e.preventDefault();
+      void window.studio?.window.toggleFullscreen();
+      return;
+    }
+
     if (e.code === "Escape" && useUiStore.getState().contextMenu) {
       e.preventDefault();
       this.closeEmptyContextMenu();
@@ -428,6 +489,31 @@ export class EditorController {
     if (mod && e.code === "KeyS") {
       e.preventDefault();
       this.save();
+      return;
+    }
+    if (mod && e.code === "KeyN") {
+      e.preventDefault();
+      this.newLevel();
+      return;
+    }
+    if (mod && e.code === "KeyO") {
+      e.preventDefault();
+      void this.openLevel();
+      return;
+    }
+    if (mod && (e.code === "Equal" || e.code === "NumpadAdd")) {
+      e.preventDefault();
+      this.zoomIn();
+      return;
+    }
+    if (mod && (e.code === "Minus" || e.code === "NumpadSubtract")) {
+      e.preventDefault();
+      this.zoomOut();
+      return;
+    }
+    if (mod && e.code === "Digit0") {
+      e.preventDefault();
+      this.setZoom(1);
       return;
     }
     if (mod && e.code === "KeyD") {

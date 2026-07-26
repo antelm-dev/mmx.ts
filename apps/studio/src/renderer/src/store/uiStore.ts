@@ -25,6 +25,7 @@ interface UiState {
   sceneGrouped: boolean;
   collapsedSceneGroups: Record<string, boolean>;
   colorTheme: ColorTheme;
+  fullscreen: boolean;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -34,6 +35,7 @@ interface UiState {
   toggleSceneGroup: (category: string) => void;
   setColorTheme: (theme: ColorTheme) => void;
   toggleColorTheme: () => void;
+  setFullscreen: (fullscreen: boolean) => void;
 }
 
 let toastSeq = 0;
@@ -45,6 +47,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   sceneGrouped: true,
   collapsedSceneGroups: {},
   colorTheme: readStoredTheme(),
+  fullscreen: false,
 
   addToast: (message) => {
     const id = ++toastSeq;
@@ -73,4 +76,5 @@ export const useUiStore = create<UiState>((set, get) => ({
     persistColorTheme(colorTheme);
     set({ colorTheme });
   },
+  setFullscreen: (fullscreen) => set({ fullscreen }),
 }));
