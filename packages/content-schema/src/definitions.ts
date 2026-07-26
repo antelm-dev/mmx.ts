@@ -195,7 +195,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
         type: "enum",
         options: ["UpRight", "UpLeft"],
         default: "UpRight",
-        help: "Ramp direction. Terrain baking is done by @mmx/ldtk-tools, not the editor.",
+        help: "Ramp direction. Terrain baking happens when converting to engine LevelData.",
       },
     ],
   },

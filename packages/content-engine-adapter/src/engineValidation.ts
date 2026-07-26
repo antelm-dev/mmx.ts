@@ -1,21 +1,11 @@
 import { compileLevel, type EngineDiagnostic } from "@mmx/engine/content";
+import {
+  validateDocument,
+  type LevelDocument,
+  type ValidationIssue,
+  type ValidationResult,
+} from "@mmx/content-schema";
 import { documentToLevelData } from "./adapters.js";
-import { validateDocument } from "./validation.js";
-import type { LevelDocument, ValidationIssue, ValidationResult } from "./types.js";
-
-/**
- * The bridge between authoring validation and the engine's level compiler.
- *
- * The two checks overlap by design — the authoring rules in ./validation.ts were
- * written to mirror the engine's load-time invariants — so this module runs both
- * and reconciles them: engine diagnostics are mapped onto {@link ValidationIssue}
- * (entityId → objectId, field → field, code and severity preserved), then merged
- * with the authoring issues and deduplicated. Engine errors block Play the same
- * way authoring errors do; engine warnings never block.
- *
- * The dependency points one way only: content-schema depends on the engine's
- * compile API, and the engine knows nothing of this package.
- */
 
 function mapDiagnostic(d: EngineDiagnostic): ValidationIssue {
   const issue: ValidationIssue = { severity: d.severity, code: d.code, message: d.message };
@@ -28,9 +18,8 @@ function mapDiagnostic(d: EngineDiagnostic): ValidationIssue {
  * Engine-side diagnostics for a document, mapped into authoring issues.
  *
  * Returns an empty list when the document cannot even be converted to
- * {@link import("@mmx/engine/game/LevelData.js").LevelData} (an unknown
- * definition, invalid slope geometry): that failure has an authoring cause which
- * {@link validateDocument} already reports, so there is nothing to add here.
+ * LevelData (an unknown definition, invalid slope geometry): that failure has
+ * an authoring cause which validateDocument already reports.
  */
 export function engineDiagnostics(doc: LevelDocument): ValidationIssue[] {
   try {
@@ -55,8 +44,7 @@ function dedupe(issues: ValidationIssue[]): ValidationIssue[] {
 
 /**
  * Full validation for Play mode: authoring checks combined with engine
- * compilation, deduplicated. This is what the editor gates Play on, so an
- * engine-only error (something the authoring pass does not model) still blocks.
+ * compilation, deduplicated.
  */
 export function validateLevelDocument(doc: LevelDocument): ValidationResult {
   const authoring = validateDocument(doc);

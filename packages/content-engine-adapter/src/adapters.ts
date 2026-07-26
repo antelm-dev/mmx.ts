@@ -1,17 +1,27 @@
 import type { LevelData, LevelEntity } from "@mmx/engine/game/LevelData.js";
 import { Tile } from "@mmx/engine/game/World.js";
-import { applySlopes, type SlopeRect } from "@mmx/ldtk-tools/slopeBake";
-import { effectiveValue, getDefinition, instanceSize, requireDefinition } from "./definitions.js";
-import type { GameObjectDefinition, LevelDocument, LevelObjectInstance } from "./types.js";
-import { SCHEMA_VERSION } from "./types.js";
+import { applySlopes, type SlopeRect } from "@mmx/slope-tools";
+import {
+  TERRAIN_TILE_BY_NAME,
+  TERRAIN_TILE_NAME,
+  TerrainTile,
+  effectiveValue,
+  getDefinition,
+  instanceSize,
+  requireDefinition,
+  SCHEMA_VERSION,
+  type GameObjectDefinition,
+  type LevelDocument,
+  type LevelObjectInstance,
+} from "@mmx/content-schema";
 
-/** The engine's numeric Tile enum ↔ the string names the slope bake works in. */
 const TILE_NAME: Record<number, string> = {
-  [Tile.Empty]: "Empty",
-  [Tile.Solid]: "Solid",
-  [Tile.SlopeUpRight]: "SlopeUpRight",
-  [Tile.SlopeUpLeft]: "SlopeUpLeft",
+  [TerrainTile.Empty]: TERRAIN_TILE_NAME[TerrainTile.Empty],
+  [TerrainTile.Solid]: TERRAIN_TILE_NAME[TerrainTile.Solid],
+  [TerrainTile.SlopeUpRight]: TERRAIN_TILE_NAME[TerrainTile.SlopeUpRight],
+  [TerrainTile.SlopeUpLeft]: TERRAIN_TILE_NAME[TerrainTile.SlopeUpLeft],
 };
+
 const TILE_ENUM: Record<string, number> = {
   Empty: Tile.Empty,
   Solid: Tile.Solid,
@@ -19,16 +29,18 @@ const TILE_ENUM: Record<string, number> = {
   SlopeUpLeft: Tile.SlopeUpLeft,
 };
 
-/**
- * The only place the authoring model ({@link LevelDocument}) and the engine model
- * ({@link LevelData}) meet.
- *
- * Both directions are deliberately lossless for the objects the catalog knows:
- * import preserves each entity's stable `iid` as the instance id and its original
- * order, and export rebuilds the same entity from the definition's base fields
- * layered with the instance's overrides — so a round-trip is identity, which is
- * what keeps the LDtk import/export pipeline undisturbed.
- */
+function assertTerrainMapsToEngine(): void {
+  if (
+    TerrainTile.Empty !== Tile.Empty ||
+    TerrainTile.Solid !== Tile.Solid ||
+    TerrainTile.SlopeUpRight !== Tile.SlopeUpRight ||
+    TerrainTile.SlopeUpLeft !== Tile.SlopeUpLeft
+  ) {
+    throw new Error("TerrainTile values drifted from engine Tile");
+  }
+}
+
+assertTerrainMapsToEngine();
 
 /** Resolve an engine entity id (+ its Kind field) to a catalog definition id. */
 function definitionIdFor(entity: LevelEntity): string {
@@ -53,8 +65,6 @@ function definitionIdFor(entity: LevelEntity): string {
     case "CameraZone":
       return "camera-zone";
     default:
-      // Unknown to the catalog. Kept verbatim as the definition id so validation
-      // flags it rather than the import silently dropping the object.
       return entity.id;
   }
 }
@@ -111,14 +121,6 @@ export function instanceToEntity(inst: LevelObjectInstance): LevelEntity {
 /**
  * Expand every Slope object into the terrain the engine actually collides
  * against, mutating `tiles`/`slopes` in place.
- *
- * A slope is authored as a resizable box plus a `Dir`, exactly as in LDtk, so we
- * replay the same bake @mmx/ldtk-tools runs at import time (one slope tile per
- * column over solid fill to the box's base). Without this a slope placed in the
- * editor is inert metadata in Play — it renders and collides as nothing, since
- * the runtime builds its `World` from `tiles`/`slopes`, never from Slope
- * entities. Invalid geometry throws with the bake's own descriptive message,
- * which surfaces as the "could not start Play" toast.
  */
 function bakeSlopeObjects(
   doc: LevelDocument,
@@ -140,12 +142,11 @@ function bakeSlopeObjects(
   }
   if (rects.length === 0) return;
 
-  // Bake through @mmx/ldtk-tools' own routine (name-keyed) so replaying it over
-  // already-baked terrain is exactly idempotent — same tiles, and only the
-  // non-default profiles land in `slopes`, keeping the LDtk round-trip identity.
-  const names = tiles.map((t) => TILE_NAME[t] ?? "Empty");
+  const names = tiles.map((t) => TILE_NAME[t] ?? TERRAIN_TILE_NAME[TerrainTile.Empty]);
   const baked = applySlopes(names, doc.cols, rects, "Slope");
-  for (let i = 0; i < names.length; i++) tiles[i] = TILE_ENUM[names[i]] ?? tiles[i];
+  for (let i = 0; i < names.length; i++) {
+    tiles[i] = TILE_ENUM[names[i]] ?? TERRAIN_TILE_BY_NAME[names[i]] ?? tiles[i];
+  }
   for (const [index, profile] of Object.entries(baked)) slopes[Number(index)] = profile;
 }
 

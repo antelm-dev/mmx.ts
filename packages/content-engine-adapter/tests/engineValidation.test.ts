@@ -1,10 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import type { LevelDocument, LevelObjectInstance } from "../src/index.js";
-import { createLevelDocument, engineDiagnostics, validateLevelDocument } from "../src/index.js";
+import {
+  createLevelDocument,
+  type LevelDocument,
+  type LevelObjectInstance,
+} from "@mmx/content-schema";
+import { engineDiagnostics, validateLevelDocument } from "../src/index.js";
 
-/** A fresh, valid level with the given extra objects appended. */
 function docWith(objects: LevelObjectInstance[]): LevelDocument {
   const doc = createLevelDocument();
   return { ...doc, objects: [...doc.objects, ...objects] };
@@ -30,12 +33,10 @@ test("engine diagnostics map entityId → objectId and field → field", () => {
 });
 
 test("engine warnings do not block Play, engine errors do", () => {
-  // Wholly outside the level → warning only.
   const outside = validateLevelDocument(docWith([platform({ x: 100000 })]));
   assert.equal(outside.ok, true);
   assert.ok(outside.issues.some((i) => i.severity === "warning" && i.code === "bounds"));
 
-  // Negative speed → error, blocks Play.
   const bad = validateLevelDocument(docWith([platform({ overrides: { Speed: -5 } })]));
   assert.equal(bad.ok, false);
   assert.ok(bad.errorCount >= 1);
@@ -56,8 +57,6 @@ test("a clean document produces no issues through the combined validator", () =>
 });
 
 test("engineDiagnostics is empty when conversion itself fails (authoring reports the cause)", () => {
-  // An unknown definition makes documentToLevelData throw; the engine bridge
-  // swallows it and leaves the authoring pass to flag definition.unknown.
   const doc = docWith([{ id: "x1", definitionId: "not-a-real-def", x: 10, y: 10 }]);
   assert.deepEqual(engineDiagnostics(doc), []);
   const combined = validateLevelDocument(doc);

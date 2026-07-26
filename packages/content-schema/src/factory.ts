@@ -1,4 +1,5 @@
 import { newId } from "./ids.js";
+import { TerrainTile } from "./terrain.js";
 import { SCHEMA_VERSION } from "./types.js";
 import type { LevelDocument } from "./types.js";
 
@@ -8,13 +9,7 @@ import type { LevelDocument } from "./types.js";
  * than leaving the document without one) means a freshly created level passes
  * {@link import("./validation.js").validateDocument} and can enter Play mode with
  * no further editing.
- *
- * Tile values mirror `@mmx/engine` `World.Tile` (0 = Empty, 1 = Solid); this
- * package stays engine-free, so they are written as literals.
  */
-
-const EMPTY = 0;
-const SOLID = 1;
 
 export interface NewLevelOptions {
   name?: string;
@@ -30,10 +25,9 @@ export function createLevelDocument(options: NewLevelOptions = {}): LevelDocumen
   const cols = options.cols ?? 40;
   const rows = options.rows ?? 23;
 
-  const tiles = new Array<number>(cols * rows).fill(EMPTY);
-  // Solid floor across the bottom row so the player has ground to stand on.
+  const tiles = new Array<number>(cols * rows).fill(TerrainTile.Empty);
   const floorRow = rows - 1;
-  for (let col = 0; col < cols; col++) tiles[floorRow * cols + col] = SOLID;
+  for (let col = 0; col < cols; col++) tiles[floorRow * cols + col] = TerrainTile.Solid;
 
   // Spawn sitting on the floor, a couple of cells in from the left.
   const spawn = {

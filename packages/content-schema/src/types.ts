@@ -11,9 +11,9 @@
  *      constructs them except while a Play session is running.
  *   4. Renderer/audio assets live in @mmx/renderer-pixi and apps/web.
  *
- * The document below is the *authoring* shape. It is converted to the engine's
- * {@link LevelData} by the adapters in ./adapters.ts, which is the only place the
- * two representations meet.
+ * The document below is the *authoring* shape. Conversion to the engine's
+ * LevelData lives in `@mmx/content-engine-adapter` — this package never imports
+ * the engine.
  */
 
 /** Current on-disk schema version. Bumped only by a migration in ./migrate.ts. */
@@ -120,7 +120,7 @@ export interface LevelDocument {
   gridSize: number;
   cols: number;
   rows: number;
-  /** Row-major terrain, length cols * rows. Tile enum values (see @mmx/engine World.Tile). */
+  /** Row-major terrain, length cols * rows. Values from {@link TerrainTile}. */
   tiles: number[];
   /** Non-45-degree slope profiles, keyed by row-major tile index, as [left, right]. */
   slopes?: Record<number, [number, number]>;
