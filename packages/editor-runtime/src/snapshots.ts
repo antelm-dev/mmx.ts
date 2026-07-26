@@ -1,3 +1,7 @@
+import { ZERO_FRAME_STATS, type FrameStatsSnapshot } from "@mmx/engine";
+
+export type { FrameStatsSnapshot };
+
 export type Vec2Snapshot = Readonly<{
   x: number;
   y: number;
@@ -56,6 +60,7 @@ export type PlaytestSnapshot = Readonly<{
   runtime: SimulationSnapshot | null;
   selectedRuntimeId: string | null;
   sceneRevision: number;
+  frameStats: FrameStatsSnapshot;
 }>;
 
 export const STOPPED_PLAYTEST: PlaytestSnapshot = Object.freeze({
@@ -65,4 +70,5 @@ export const STOPPED_PLAYTEST: PlaytestSnapshot = Object.freeze({
   runtime: null,
   selectedRuntimeId: null,
   sceneRevision: 0,
+  frameStats: ZERO_FRAME_STATS,
 });

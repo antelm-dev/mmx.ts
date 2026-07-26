@@ -136,6 +136,7 @@ class PlaytestSession implements EditorPlaytestSession {
       runtime: this.runtime,
       selectedRuntimeId: this.selectedRuntimeId,
       sceneRevision: this.tooling.sceneRevision,
+      frameStats: this.clock?.frameStatsSnapshot() ?? STOPPED_PLAYTEST.frameStats,
     };
   }
 

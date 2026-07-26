@@ -6,6 +6,7 @@ export {
   STOPPED_PLAYTEST,
   type ActorSnapshot,
   type CameraSnapshot,
+  type FrameStatsSnapshot,
   type PlaytestSnapshot,
   type PlaytestStatus,
   type ProjectileSnapshot,

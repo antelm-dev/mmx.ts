@@ -1,4 +1,4 @@
-import { DT } from "@mmx/engine";
+import { DT, FrameStats, type FrameStatsSnapshot } from "@mmx/engine";
 
 const MAX_FRAME_SECONDS = 0.25;
 
@@ -14,11 +14,17 @@ export class PlaytestClock {
   private last = 0;
   private running = false;
   private paused = false;
+  private readonly stats = new FrameStats();
 
   constructor(private readonly callbacks: PlaytestClockCallbacks) {}
 
   get isPaused(): boolean {
     return this.paused;
+  }
+
+  /** Immutable summarized frame timings for the current collector state. */
+  frameStatsSnapshot(): FrameStatsSnapshot {
+    return this.stats.toSnapshot();
   }
 
   start(): void {
@@ -48,17 +54,40 @@ export class PlaytestClock {
 
   private readonly frame = (now: number): void => {
     if (!this.running) return;
-    const elapsed = Math.min(MAX_FRAME_SECONDS, (now - this.last) / 1000);
+    const rawElapsedSeconds = (now - this.last) / 1000;
+    const frameTimeMs = now - this.last;
     this.last = now;
+
+    let simulationSteps = 0;
+    let simulationMs = 0;
+    let renderingMs = 0;
+
     try {
       if (!this.paused) {
+        this.stats.addDiscardedSeconds(rawElapsedSeconds - MAX_FRAME_SECONDS);
+        const elapsed = Math.min(MAX_FRAME_SECONDS, rawElapsedSeconds);
         this.acc += elapsed;
+        const simStart = performance.now();
         while (this.acc >= DT) {
           this.callbacks.onStep();
           this.acc -= DT;
+          simulationSteps++;
         }
+        simulationMs = performance.now() - simStart;
       }
+
+      const renderStart = performance.now();
       this.callbacks.onRender();
+      renderingMs = performance.now() - renderStart;
+
+      this.stats.record({
+        frameTime: frameTimeMs,
+        simulation: simulationMs,
+        rendering: renderingMs,
+        frameWork: simulationMs + renderingMs,
+        simulationSteps,
+        accumulator: this.acc,
+      });
     } catch (error) {
       this.running = false;
       this.callbacks.onError(error);
