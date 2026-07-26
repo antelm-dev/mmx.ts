@@ -334,6 +334,24 @@ test("frame stats report raw, effective, clamp, steps, accumulator, alpha, pause
   loop.stop();
 });
 
+test("frame stats measure simulation and rendering callback work", () => {
+  installRaf();
+  const { loop, stats } = createLoop({
+    onStep: () => {
+      now += 2;
+    },
+    onRender: () => {
+      now += 3;
+    },
+  });
+  loop.start();
+  advance(20);
+  assert.ok(stats[0]!.simulationMs >= 2);
+  assert.ok(stats[0]!.renderingMs >= 3);
+  assert.equal(stats[0]!.frameWorkMs, stats[0]!.simulationMs + stats[0]!.renderingMs);
+  loop.stop();
+});
+
 test("onFrameStart can return zero and scaled elapsed before clamp", () => {
   installRaf();
   const starts: number[] = [];

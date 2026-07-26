@@ -87,6 +87,9 @@ class PlaytestSession implements EditorPlaytestSession {
         this.clock = new FixedStepLoop({
           stepSeconds: DT,
           maxFrameSeconds: 0.25,
+          onFrameStart: (frame) => {
+            this.input.poll(Math.min(frame.rawElapsedSeconds, frame.maxFrameSeconds));
+          },
           onStep: () => this.tick(),
           onRender: () => this.draw(),
           onFrameStats: (frame) => this.recordFrameStats(frame),

@@ -1,12 +1,7 @@
 {
-  "name": "@mmx/editor-runtime",
+  "name": "@mmx/browser-input",
   "version": "1.0.0",
-  "files": [
-    "dist"
-  ],
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -14,27 +9,23 @@
       "default": "./dist/index.js"
     }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "pnpm run build",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/browser-runtime": "workspace:*",
-    "@mmx/content-engine-adapter": "workspace:*",
-    "@mmx/content-schema": "workspace:*",
-    "@mmx/browser-input": "workspace:*",
-    "@mmx/engine": "workspace:*",
-    "@mmx/renderer-pixi": "workspace:*"
+    "@mmx/engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "pixi.js": "^8.19.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
-  },
-  "peerDependencies": {
-    "pixi.js": "^8.19.0"
   },
   "engines": {
     "node": ">=24 <25"
