@@ -11,6 +11,7 @@
   "dependencies": {
     "@mmx/asset-schema": "workspace:*",
     "@mmx/browser-audio": "workspace:*",
+    "@mmx/browser-input": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
     "@tauri-apps/api": "2.11.0",
