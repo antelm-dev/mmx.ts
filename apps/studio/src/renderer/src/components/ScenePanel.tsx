@@ -227,7 +227,7 @@ function SceneList({
                       <span
                         className={cx(
                           "font-mono text-[10px]",
-                          active ? "text-[#93c5fd]" : "text-muted",
+                          active ? "text-accent" : "text-muted",
                         )}
                       >
                         {inst.x}, {inst.y}

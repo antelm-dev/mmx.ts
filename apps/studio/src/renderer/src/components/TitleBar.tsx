@@ -1,7 +1,19 @@
 import { useEffect, useState, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Check, Copy, Minus, Moon, Square, Sun, X } from "lucide-react";
+import {
+  Check,
+  Copy,
+  FilePlus2,
+  FolderOpen,
+  Minus,
+  Moon,
+  Save,
+  Square,
+  Sun,
+  X,
+} from "lucide-react";
 import { PANELS, togglePanel, useOpenPanelIds } from "../app/dock.js";
+import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { cx, ctxItemCls, menu } from "../ui.js";
 
@@ -49,6 +61,7 @@ export function TitleBar() {
       </div>
 
       <div className="flex items-stretch ml-2 [-webkit-app-region:no-drag]">
+        <FileMenu />
         <ViewMenu />
       </div>
 
@@ -75,6 +88,45 @@ export function TitleBar() {
         </ControlButton>
       </div>
     </div>
+  );
+}
+
+function FileMenu() {
+  const snap = useEditorSnapshot();
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          className="inline-flex items-center h-full px-2.5 text-[11.5px] font-medium text-fg-3 hover:bg-hover hover:text-fg data-[state=open]:bg-hover data-[state=open]:text-fg transition-colors duration-100"
+          aria-label="File menu"
+        >
+          File
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content className={menu} sideOffset={2} align="start">
+          <DropdownMenu.Item className={ctxItemCls(false)} onSelect={() => editor.newLevel()}>
+            <FilePlus2 size={13} /> New
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            className={ctxItemCls(false)}
+            onSelect={() => void editor.importJson()}
+          >
+            <FolderOpen size={13} /> Import…
+          </DropdownMenu.Item>
+          <DropdownMenu.Item className={ctxItemCls(false)} onSelect={() => editor.save()}>
+            <Save size={13} /> Save
+            {snap.dirty && (
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-[#60a5fa] shadow-[0_0_8px_rgba(96,165,250,0.65)]"
+                aria-label="Unsaved changes"
+              />
+            )}
+            <span className="ml-auto text-[10.5px] text-fg-3 tracking-wide">Ctrl+S</span>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 

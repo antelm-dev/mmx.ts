@@ -30,7 +30,7 @@ export function PalettePanel() {
   return (
     <div className={panel}>
       <div className="flex items-center gap-2 h-9 mt-3 mx-3 mb-2 px-2.5 border border-border-strong rounded-lg bg-raised shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] duration-[120ms] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]">
-        <Search size={16} className="text-[#7792bc]" />
+        <Search size={16} className="text-fg-3" />
         <input
           className="min-w-0 flex-1 border-0 outline-0 bg-transparent text-fg text-xs placeholder:text-fg-3"
           placeholder="Search objects…"
@@ -129,12 +129,10 @@ function PaletteList({
                 title={`Place ${def.name}`}
                 onClick={() => editor.selectPalette(def.id)}
               >
-                <span className="grid place-items-center w-7 h-7 flex-none rounded-md bg-[#0b1018] ring-1 ring-border/80">
-                  <SpritePreview definitionId={def.id} size={24} fallbackColor={def.editor.color} />
-                </span>
+                <SpritePreview definitionId={def.id} size={28} fallbackColor={def.editor.color} />
                 <span className={itemName}>{def.name}</span>
-                <span className="grid place-items-center w-6 h-6 rounded-md text-fg-3 opacity-0 bg-[#26344a] group-hover:opacity-100 group-hover:text-accent-fg transition-opacity">
-                  <Plus size={16} />
+                <span className="grid place-items-center w-6 h-6 rounded-md opacity-0 bg-raised text-fg-2 ring-1 ring-border group-hover:opacity-100 group-hover:text-accent transition-opacity">
+                  <Plus size={16} strokeWidth={2.5} />
                 </span>
               </button>
             </div>

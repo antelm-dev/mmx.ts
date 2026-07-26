@@ -10,7 +10,6 @@ import {
   MousePointer2,
   Play,
   Redo2,
-  Save,
   Square,
   Undo2,
   ZoomIn,
@@ -33,32 +32,6 @@ export function Toolbar() {
   return (
     <div className="relative z-[5] h-[52px] px-3 flex items-center gap-2 bg-gradient-to-b from-chrome-2 to-surface border-b border-border shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className={group}>
-          <Tooltip label="Start a new blank level">
-            <button className={btnCls()} onClick={() => editor.newLevel()}>
-              <FilePlus2 size={15} /> New
-            </button>
-          </Tooltip>
-          <Tooltip label="Open a level JSON file">
-            <button className={btnCls()} onClick={() => void editor.importJson()}>
-              <FolderOpen size={15} /> Import
-            </button>
-          </Tooltip>
-          <Tooltip label="Save level JSON (Ctrl+S)">
-            <button className={btnCls()} onClick={() => editor.save()}>
-              <Save size={15} /> Save
-              {snap.dirty && (
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-[#60a5fa] shadow-[0_0_8px_rgba(96,165,250,0.65)]"
-                  aria-label="Unsaved changes"
-                />
-              )}
-            </button>
-          </Tooltip>
-        </div>
-
-        <div className={divider} />
-
         <div className={group}>
           <Tooltip label="Undo (Ctrl+Z)">
             <button
@@ -160,7 +133,7 @@ export function Toolbar() {
         </div>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 z-[1] px-1 border border-border-strong/70 rounded-[10px] bg-bg shadow-[0_4px_14px_rgba(0,0,0,0.12)]">
+      <div className="absolute left-1/2 -translate-x-1/2 z-[1] px-1 border border-border-strong/70 rounded-[10px] bg-bg">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button

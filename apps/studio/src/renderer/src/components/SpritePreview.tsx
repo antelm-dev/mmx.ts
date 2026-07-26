@@ -23,7 +23,7 @@ export function SpritePreview({ definitionId, size = 48, flip = false, fallbackC
     return (
       <span
         className={cx(
-          "grid place-items-center flex-none overflow-hidden rounded-md bg-raised shadow-[0_0_0_1px_rgba(255,255,255,0.08)]",
+          "grid place-items-center flex-none overflow-hidden rounded-md bg-raised ring-1 ring-border",
           flip && "-scale-x-100",
         )}
         style={{ width: size, height: size }}
@@ -48,7 +48,7 @@ export function SpritePreview({ definitionId, size = 48, flip = false, fallbackC
   if (fallbackColor) {
     return (
       <span
-        className="block flex-none rounded-md shadow-[0_0_0_1px_rgba(255,255,255,0.15)]"
+        className="block flex-none rounded-md ring-1 ring-border"
         style={{ width: size, height: size, background: fallbackColor }}
       />
     );
