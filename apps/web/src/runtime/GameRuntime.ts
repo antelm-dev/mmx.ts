@@ -26,7 +26,9 @@ import type { SettingsMenuController } from "../settings/SettingsMenuController.
  * Without it, a tab that was backgrounded for ten seconds returns with six
  * hundred queued steps and fast-forwards through them — and if catching up takes
  * longer than the time it is catching up on, it never converges. The time past
- * this cap is discarded, which is what {@link FrameStats.droppedFrames} counts.
+ * this cap is discarded via {@link FrameStats.addDiscardedSeconds}, which
+ * increments {@link FrameStats.droppedFrames} and accumulates the discarded
+ * duration.
  */
 const MAX_FRAME_SECONDS = 0.25;
 
@@ -71,7 +73,7 @@ export class GameRuntime {
       // does: the accumulator must not fill behind it and then discharge the whole
       // backlog the moment it closes.
       const elapsed = modalVisible ? 0 : debug.scaleElapsed((now - last) / 1000);
-      if (elapsed > MAX_FRAME_SECONDS) debug.stats.droppedFrames++;
+      debug.stats.addDiscardedSeconds(elapsed - MAX_FRAME_SECONDS);
       acc += Math.min(MAX_FRAME_SECONDS, elapsed);
       last = now;
 
