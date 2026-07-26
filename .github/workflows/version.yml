@@ -51,7 +51,7 @@ jobs:
       - name: Create version pull request
         uses: changesets/action@v1
         with:
-          version: pnpm version
+          version: pnpm version-packages
           title: "chore: version packages"
           commit: "chore: version packages"
           createGithubReleases: false

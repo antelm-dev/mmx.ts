@@ -52,7 +52,7 @@ pnpm changeset:status
 
 ## Changelog
 
-À l’application des versions (`pnpm version`), Changesets met à jour
+À l’application des versions (`pnpm version-packages`), Changesets met à jour
 `CHANGELOG.md` dans chaque package bumpé.
 
 Le générateur `@changesets/changelog-github` ajoute, quand les métadonnées sont
@@ -71,14 +71,17 @@ prerelease Changesets avec le tag `next`.
 pnpm version:enter-next
 ```
 
-Cela crée `.changeset/pre.json`. Les prochains `pnpm version` produisent des
-versions du type `1.1.0-next.0`, puis `1.1.0-next.1`, etc.
+Cela crée `.changeset/pre.json`. Les prochains `pnpm version-packages`
+produisent des versions du type `1.1.0-next.0`, puis `1.1.0-next.1`, etc.
+
+Le script s’appelle `version-packages` (et non `version`) pour éviter le
+conflit avec la commande intégrée `pnpm version` / `npm version`.
 
 ### Boucle habituelle en préversion
 
 ```bash
-pnpm changeset          # décrire le changement
-pnpm version            # appliquer 1.1.0-next.N + CHANGELOG
+pnpm changeset           # décrire le changement
+pnpm version-packages    # appliquer 1.1.0-next.N + CHANGELOG
 git commit -am "version: prerelease next"
 ```
 
@@ -89,9 +92,9 @@ Répéter à chaque lot de changements.
 Quand le découplage est terminé :
 
 ```bash
-pnpm version:exit-next  # retire .changeset/pre.json
-pnpm changeset          # éventuellement un dernier résumé
-pnpm version            # passe de 1.1.0-next.N → 1.1.0
+pnpm version:exit-next   # retire .changeset/pre.json
+pnpm changeset           # éventuellement un dernier résumé
+pnpm version-packages    # passe de 1.1.0-next.N → 1.1.0
 ```
 
 ## Pull request de version (CI)
@@ -119,7 +122,7 @@ Permissions minimales : `contents: write`, `pull-requests: write` (via
 | --- | --- |
 | `pnpm changeset` | créer un changeset |
 | `pnpm changeset:status` | lister les changesets / bumps prévus |
-| `pnpm version` | appliquer les bumps + changelogs |
+| `pnpm version-packages` | appliquer les bumps + changelogs |
 | `pnpm version:enter-next` | entrer en mode préversion `next` |
 | `pnpm version:exit-next` | quitter le mode préversion |
 
@@ -127,10 +130,10 @@ Permissions minimales : `contents: write`, `pull-requests: write` (via
 
 | Symptôme | Piste |
 | --- | --- |
-| `pnpm version` ne change rien | aucun changeset, ou packages concernés dans `ignore` |
+| `pnpm version-packages` ne change rien | aucun changeset, ou packages concernés dans `ignore` |
 | PR de version absente | pas de changeset sur `master`, ou workflow `Version` en échec |
 | Changelog sans liens PR | normal hors CI sans `GITHUB_TOKEN` |
-| Versions `*-next.*` après un exit | vérifier que `.changeset/pre.json` a bien disparu, puis relancer `pnpm version` |
+| Versions `*-next.*` après un exit | vérifier que `.changeset/pre.json` a bien disparu, puis relancer `pnpm version-packages` |
 | App bumpée par erreur | les apps sont dans `ignore` ; ne pas les sélectionner dans `pnpm changeset` |
 
 ## Hors scope (pour plus tard)
