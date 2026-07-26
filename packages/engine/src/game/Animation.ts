@@ -19,67 +19,14 @@
  * `animation_finished` once, exactly like AnimatedSprite2D.
  */
 
-import { AnimationCursor, assertTimedClip } from "../core/AnimationCursor.js";
-
-/** Atlas source rectangle, in pixels (top-left origin). */
-export type Region = readonly [x: number, y: number, w: number, h: number];
-
-export interface FrameData {
-  /** Region in the normal atlas (x.png). */
-  region: Region;
-  /** Same pose in the arm-pointing atlas (x_leftarm.png); see scripts/build-anims.mjs. */
-  armRegion?: Region;
-  /** Godot per-frame duration multiplier (usually 1.0). */
-  duration: number;
-}
-
-export interface ClipData {
-  loop: boolean;
-  speed: number; // frames per second
-  frames: FrameData[];
-}
-
-export interface AnimData {
-  animations: Record<string, ClipData>;
-}
-
-/** Runtime validation for generated/imported JSON crossing into the engine. */
-export function assertAnimData(data: unknown, label = "animation data"): asserts data is AnimData {
-  if (!isRecord(data) || !isRecord(data.animations)) {
-    throw new Error(`${label}: expected an animations object`);
-  }
-  if (Object.keys(data.animations).length === 0) {
-    throw new Error(`${label}: must contain at least one animation`);
-  }
-  for (const [name, value] of Object.entries(data.animations)) {
-    if (!isRecord(value) || typeof value.loop !== "boolean" || !Array.isArray(value.frames)) {
-      throw new Error(`${label}: animation '${name}' is malformed`);
-    }
-    assertTimedClip(value as unknown as ClipData, `${label}: animation '${name}'`);
-    value.frames.forEach((frame, index) => {
-      if (!isRecord(frame))
-        throw new Error(`${label}: animation '${name}' frame ${index} is malformed`);
-      assertRegion(frame.region, `${label}: animation '${name}' frame ${index} region`);
-      if (frame.armRegion !== undefined) {
-        assertRegion(frame.armRegion, `${label}: animation '${name}' frame ${index} armRegion`);
-      }
-    });
-  }
-}
-
-export function assertRegion(value: unknown, label = "region"): asserts value is Region {
-  if (
-    !Array.isArray(value) ||
-    value.length !== 4 ||
-    !value.every((part) => Number.isInteger(part)) ||
-    value[0] < 0 ||
-    value[1] < 0 ||
-    value[2] <= 0 ||
-    value[3] <= 0
-  ) {
-    throw new Error(`${label}: expected non-negative integer coordinates and positive dimensions`);
-  }
-}
+import { AnimationCursor } from "../core/AnimationCursor.js";
+import {
+  assertAnimData,
+  type AnimData,
+  type ClipData,
+  type FrameData,
+  type Region,
+} from "@mmx/asset-schema";
 
 /**
  * Which SpriteFrames resource is on the sprite. Shot.gd swaps the whole resource
@@ -163,8 +110,4 @@ export class AnimationPlayer {
     }
     if (this.cursor.advance(dt)) this.onFinished?.(this.current);
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

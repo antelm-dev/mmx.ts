@@ -1,7 +1,7 @@
 import { ToolingSession, type SimulationSnapshot } from "@mmx/engine/tooling";
 import type { GameplaySounds } from "@mmx/browser-audio";
 import type { SceneOptions } from "@mmx/engine/game/Scene.js";
-import type { AnimData } from "@mmx/engine/game/Animation.js";
+import type { AnimData } from "@mmx/asset-schema";
 import { documentToLevelData } from "@mmx/content-engine-adapter";
 import type { LevelDocument } from "@mmx/content-schema";
 import { enemyAnims, pickupAnims } from "@mmx/renderer-pixi";

@@ -1,6 +1,6 @@
 import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
 import type { Scene } from "@mmx/engine/game/Scene.js";
-import type { AnimData } from "@mmx/engine/game/Animation.js";
+import type { AnimData } from "@mmx/asset-schema";
 import {
   DASH_TRAIL,
   DashSmoke,

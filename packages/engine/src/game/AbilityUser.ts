@@ -1,7 +1,8 @@
 import { Actor } from "./Actor.js";
 import { BaseAbility } from "./ability/BaseAbility.js";
 import { Ability } from "./ability/Ability.js";
-import { AnimationPlayer, AnimData, AnimationLayer, Region } from "./Animation.js";
+import { AnimationPlayer, type AnimationLayer } from "./Animation.js";
+import type { AnimData, Region } from "@mmx/asset-schema";
 import type { World } from "./World.js";
 
 /**
