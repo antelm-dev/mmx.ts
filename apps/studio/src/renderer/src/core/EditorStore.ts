@@ -1,29 +1,45 @@
 import {
   History,
+  DECORATION_LAYERS,
+  type DecorationLayer,
   type EditorCommand,
   type LevelDocument,
   type ValidationResult,
   TerrainTile,
 } from "@mmx/content-schema";
 import { validateLevelDocument } from "@mmx/content-engine-adapter";
+import { knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
-export type Tool = "select" | "pan" | "place" | "resize" | "tile";
+export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile";
 export type Mode = "edit" | "play";
 
 export type EditorSelection =
   | { kind: "objects"; ids: string[] }
+  | { kind: "decorations"; ids: string[] }
   | { kind: "tiles"; indices: number[] };
 
 export type EditorHover =
   | { kind: "object"; id: string }
+  | { kind: "decoration"; id: string }
   | { kind: "tile"; index: number };
+
+export type LayerVisibility = Record<DecorationLayer, boolean>;
+export type LayerLocks = Record<DecorationLayer, boolean>;
+
+function allLayersTrue(): LayerVisibility {
+  return Object.fromEntries(DECORATION_LAYERS.map((l) => [l, true])) as LayerVisibility;
+}
+
+function allLayersFalse(): LayerLocks {
+  return Object.fromEntries(DECORATION_LAYERS.map((l) => [l, false])) as LayerLocks;
+}
 
 export function emptySelection(): EditorSelection {
   return { kind: "objects", ids: [] };
 }
 
 export function selectionSize(sel: EditorSelection): number {
-  return sel.kind === "objects" ? sel.ids.length : sel.indices.length;
+  return sel.kind === "tiles" ? sel.indices.length : sel.ids.length;
 }
 
 export function isSelectionEmpty(sel: EditorSelection): boolean {
@@ -34,19 +50,26 @@ export function selectedObjectIds(sel: EditorSelection): string[] {
   return sel.kind === "objects" ? sel.ids : [];
 }
 
+export function selectedDecorationIds(sel: EditorSelection): string[] {
+  return sel.kind === "decorations" ? sel.ids : [];
+}
+
 export function selectedTileIndices(sel: EditorSelection): number[] {
   return sel.kind === "tiles" ? sel.indices : [];
 }
 
 export function cloneSelection(sel: EditorSelection): EditorSelection {
-  return sel.kind === "objects"
-    ? { kind: "objects", ids: [...sel.ids] }
-    : { kind: "tiles", indices: [...sel.indices] };
+  if (sel.kind === "objects") return { kind: "objects", ids: [...sel.ids] };
+  if (sel.kind === "decorations") return { kind: "decorations", ids: [...sel.ids] };
+  return { kind: "tiles", indices: [...sel.indices] };
 }
 
 export function selectionsEqual(a: EditorSelection, b: EditorSelection): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === "objects" && b.kind === "objects") {
+    return a.ids.length === b.ids.length && a.ids.every((id) => b.ids.includes(id));
+  }
+  if (a.kind === "decorations" && b.kind === "decorations") {
     return a.ids.length === b.ids.length && a.ids.every((id) => b.ids.includes(id));
   }
   if (a.kind === "tiles" && b.kind === "tiles") {
@@ -61,6 +84,7 @@ export function hoversEqual(a: EditorHover | undefined, b: EditorHover | undefin
   if (a === b) return true;
   if (!a || !b || a.kind !== b.kind) return false;
   if (a.kind === "object" && b.kind === "object") return a.id === b.id;
+  if (a.kind === "decoration" && b.kind === "decoration") return a.id === b.id;
   if (a.kind === "tile" && b.kind === "tile") return a.index === b.index;
   return false;
 }
@@ -77,6 +101,8 @@ export interface EditorState {
   activeTool: Tool;
   /** Definition id to place while `activeTool === "place"`. */
   placingDefinitionId?: string;
+  /** Decoration asset id to place while `activeTool === "placeDecoration"`. */
+  placingAssetId?: string;
   /** Device-independent world→screen zoom. */
   zoom: number;
   /** World coordinate shown at the viewport's top-left corner. */
@@ -84,6 +110,10 @@ export interface EditorState {
   gridVisible: boolean;
   snapEnabled: boolean;
   mode: Mode;
+  /** Editor-only: which decoration layers are drawn. */
+  decorationLayerVisible: LayerVisibility;
+  /** Editor-only: locked layers stay visible but are not selectable. */
+  decorationLayerLocked: LayerLocks;
 }
 
 /** Why the store emitted — lets subscribers skip expensive work they don't need. */
@@ -109,6 +139,8 @@ export class EditorStore {
       gridVisible: true,
       snapEnabled: true,
       mode: "edit",
+      decorationLayerVisible: allLayersTrue(),
+      decorationLayerLocked: allLayersFalse(),
     };
   }
 
@@ -168,6 +200,10 @@ export class EditorStore {
       const alive = new Set(doc.objects.map((o) => o.id));
       return { kind: "objects", ids: sel.ids.filter((id) => alive.has(id)) };
     }
+    if (sel.kind === "decorations") {
+      const alive = new Set(doc.decorations.map((d) => d.id));
+      return { kind: "decorations", ids: sel.ids.filter((id) => alive.has(id)) };
+    }
     const max = doc.cols * doc.rows;
     return {
       kind: "tiles",
@@ -188,7 +224,10 @@ export class EditorStore {
       hover: undefined,
       activeTool: "select",
       placingDefinitionId: undefined,
+      placingAssetId: undefined,
       mode: "edit",
+      decorationLayerVisible: allLayersTrue(),
+      decorationLayerLocked: allLayersFalse(),
     };
     this.emit("open");
   }
@@ -203,6 +242,12 @@ export class EditorStore {
 
   selectObjects(ids: string[]): void {
     const next: EditorSelection = { kind: "objects", ids };
+    if (selectionsEqual(this.state.selection, next)) return;
+    this.patch({ selection: next }, "selection");
+  }
+
+  selectDecorations(ids: string[]): void {
+    const next: EditorSelection = { kind: "decorations", ids };
     if (selectionsEqual(this.state.selection, next)) return;
     this.patch({ selection: next }, "selection");
   }
@@ -229,6 +274,17 @@ export class EditorStore {
     this.patch({ selection: { kind: "objects", ids: [...set] } }, "selection");
   }
 
+  toggleDecorationInSelection(id: string): void {
+    if (this.state.selection.kind !== "decorations") {
+      this.patch({ selection: { kind: "decorations", ids: [id] } }, "selection");
+      return;
+    }
+    const set = new Set(this.state.selection.ids);
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    this.patch({ selection: { kind: "decorations", ids: [...set] } }, "selection");
+  }
+
   toggleTileInSelection(index: number): void {
     if (this.state.selection.kind !== "tiles") {
       this.patch({ selection: { kind: "tiles", indices: [index] } }, "selection");
@@ -253,8 +309,25 @@ export class EditorStore {
 
   // --- Tools & view ---
 
-  setTool(tool: Tool, placingDefinitionId?: string): void {
-    this.patch({ activeTool: tool, placingDefinitionId }, "ui");
+  setTool(tool: Tool, placingId?: string): void {
+    if (tool === "place") {
+      this.patch(
+        { activeTool: tool, placingDefinitionId: placingId, placingAssetId: undefined },
+        "ui",
+      );
+      return;
+    }
+    if (tool === "placeDecoration") {
+      this.patch(
+        { activeTool: tool, placingAssetId: placingId, placingDefinitionId: undefined },
+        "ui",
+      );
+      return;
+    }
+    this.patch(
+      { activeTool: tool, placingDefinitionId: undefined, placingAssetId: undefined },
+      "ui",
+    );
   }
 
   setView(zoom: number, viewportPosition: { x: number; y: number }): void {
@@ -269,6 +342,24 @@ export class EditorStore {
     this.patch({ snapEnabled: !this.state.snapEnabled }, "ui");
   }
 
+  setDecorationLayerVisible(layer: DecorationLayer, visible: boolean): void {
+    this.patch(
+      {
+        decorationLayerVisible: { ...this.state.decorationLayerVisible, [layer]: visible },
+      },
+      "ui",
+    );
+  }
+
+  setDecorationLayerLocked(layer: DecorationLayer, locked: boolean): void {
+    this.patch(
+      {
+        decorationLayerLocked: { ...this.state.decorationLayerLocked, [layer]: locked },
+      },
+      "ui",
+    );
+  }
+
   setMode(mode: Mode): void {
     this.patch({ mode }, "mode");
   }
@@ -276,7 +367,9 @@ export class EditorStore {
   // --- Derived ---
 
   validate(): ValidationResult {
-    return validateLevelDocument(this.state.document);
+    return validateLevelDocument(this.state.document, {
+      knownDecorationAssetIds: knownDecorationAssetIds(),
+    });
   }
 
   /** Snap a world coordinate to the grid when snapping is on. */

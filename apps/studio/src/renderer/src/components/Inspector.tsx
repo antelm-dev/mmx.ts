@@ -1,21 +1,26 @@
 import { useMemo } from "react";
 import * as Select from "@radix-ui/react-select";
 import * as Checkbox from "@radix-ui/react-checkbox";
-import { Check, ChevronDown, Grid3x3, ListTree, MousePointer2 } from "lucide-react";
+import { Check, ChevronDown, Grid3x3, ListTree, MousePointer2, Sparkles } from "lucide-react";
 import {
+  DECORATION_LAYERS,
   TerrainTile,
   effectiveValue,
   instanceSize,
   requireDefinition,
+  setDecoration,
   setProperty,
   setTransform,
+  type DecorationInstance,
+  type DecorationLayer,
   type GameObjectDefinition,
   type LevelObjectInstance,
   type PropertyMeta,
   type ValidationIssue,
 } from "@mmx/content-schema";
+import { getDecorationAsset } from "@mmx/renderer-pixi";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
-import { selectedObjectIds } from "../core/EditorStore.js";
+import { selectedDecorationIds, selectedObjectIds } from "../core/EditorStore.js";
 import {
   actionBtn,
   actionBtnDanger,
@@ -64,6 +69,7 @@ export function Inspector() {
   const snap = useEditorSnapshot();
   const state = snap.state;
   const objectIds = selectedObjectIds(state.selection);
+  const decorationIds = selectedDecorationIds(state.selection);
   const tileSelection = state.selection.kind === "tiles" ? state.selection.indices : [];
 
   const single = useMemo<Single | null>(() => {
@@ -74,6 +80,11 @@ export function Inspector() {
     const size = instanceSize(inst);
     return { inst, def, width: size.width, height: size.height };
   }, [objectIds, state.document.objects]);
+
+  const singleDecoration = useMemo<DecorationInstance | null>(() => {
+    if (decorationIds.length !== 1) return null;
+    return state.document.decorations.find((d) => d.id === decorationIds[0]) ?? null;
+  }, [decorationIds, state.document.decorations]);
 
   const singleTile = useMemo(() => {
     if (tileSelection.length !== 1) return null;
@@ -311,6 +322,26 @@ export function Inspector() {
               </button>
             </div>
           </>
+        ) : singleDecoration ? (
+          <DecorationInspector inst={singleDecoration} />
+        ) : decorationIds.length > 1 ? (
+          <>
+            <div className={emptyState}>
+              <div className={emptyIcon}>
+                <Sparkles size={20} />
+              </div>
+              <div className={emptyTitle}>{decorationIds.length} decorations selected</div>
+              <div className={emptyCopy}>Duplicate or delete the current selection.</div>
+            </div>
+            <div className={actions}>
+              <button className={actionBtn} onClick={() => editor.duplicateSelection()}>
+                Duplicate
+              </button>
+              <button className={actionBtnDanger} onClick={() => editor.deleteSelection()}>
+                Delete
+              </button>
+            </div>
+          </>
         ) : singleTile ? (
           <>
             <div className="flex items-center gap-3 pt-4 px-3.5 pb-3 font-semibold">
@@ -373,5 +404,165 @@ export function Inspector() {
         )}
       </div>
     </div>
+  );
+}
+
+function DecorationInspector({ inst }: { inst: DecorationInstance }) {
+  const asset = getDecorationAsset(inst.assetId);
+  const name = asset?.name ?? inst.assetId;
+
+  const onLayer = (layer: string) => {
+    if (layer === inst.layer) return;
+    editor.store.execute(
+      setDecoration(inst.id, { layer: inst.layer }, { layer: layer as DecorationLayer }),
+    );
+  };
+
+  const onFlip = (axis: "flipX" | "flipY", checked: boolean) => {
+    editor.store.execute(
+      setDecoration(inst.id, { [axis]: inst[axis] ?? false }, { [axis]: checked }),
+    );
+  };
+
+  const onRotation = (raw: string) => {
+    const next = Number(raw);
+    if (!Number.isFinite(next) || next === (inst.rotation ?? 0)) return;
+    editor.store.execute(
+      setDecoration(inst.id, { rotation: inst.rotation }, { rotation: next || undefined }),
+    );
+  };
+
+  const onParallax = (raw: string) => {
+    const next = Number(raw);
+    if (!Number.isFinite(next) || next === (inst.parallax ?? 1)) return;
+    editor.store.execute(
+      setDecoration(inst.id, { parallax: inst.parallax }, { parallax: next }),
+    );
+  };
+
+  const onTint = (raw: string) => {
+    const trimmed = raw.trim();
+    const next = trimmed === "" ? undefined : Number.parseInt(trimmed.replace("#", ""), 16);
+    if (next !== undefined && !Number.isFinite(next)) return;
+    editor.store.execute(
+      setDecoration(inst.id, { tint: inst.tint }, { tint: next }),
+    );
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-3 pt-4 px-3.5 pb-3 font-semibold">
+        <SpritePreview assetId={inst.assetId} size={56} />
+        <div className="flex flex-col gap-[3px] min-w-0">
+          <span className="leading-[1.2]">{name}</span>
+          <span className="font-mono text-[10px] font-medium text-fg-3 break-all">{inst.id}</span>
+        </div>
+      </div>
+
+      <div className={cx(sectionTitle, sectionTitleSub)}>Layer</div>
+      <div className="py-[3px] px-3.5">
+        <Select.Root value={inst.layer} onValueChange={onLayer}>
+          <Select.Trigger className="flex items-center justify-between gap-2 w-full h-8 px-[9px] border border-border-strong rounded-[7px] bg-raised text-fg text-xs cursor-pointer outline-none">
+            <Select.Value />
+            <Select.Icon>
+              <ChevronDown size={14} />
+            </Select.Icon>
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content
+              className="z-[60] bg-popover border border-popover-border rounded-lg shadow-[0_12px_32px_rgba(0,0,0,0.45)] py-1 overflow-hidden"
+              position="popper"
+              sideOffset={4}
+            >
+              <Select.Viewport>
+                {DECORATION_LAYERS.map((l) => (
+                  <Select.Item
+                    key={l}
+                    value={l}
+                    className="flex items-center h-[30px] px-3 text-menu-fg text-xs cursor-pointer outline-none data-[highlighted]:bg-popover-hover data-[highlighted]:text-menu-fg-hover"
+                  >
+                    <Select.ItemText>{l}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+      </div>
+
+      <div className={cx(sectionTitle, sectionTitleSub)}>Properties</div>
+      <div className="py-[3px] px-3.5">
+        <label className="flex items-center gap-[9px] text-xs text-fg cursor-pointer mb-2">
+          <Checkbox.Root
+            className="w-[18px] h-[18px] inline-flex items-center justify-center border border-border-strong rounded-[5px] bg-raised data-[state=checked]:bg-accent data-[state=checked]:border-accent data-[state=checked]:text-white"
+            checked={inst.flipX === true}
+            onCheckedChange={(c) => onFlip("flipX", c === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={14} />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          Flip X
+        </label>
+        <label className="flex items-center gap-[9px] text-xs text-fg cursor-pointer mb-2">
+          <Checkbox.Root
+            className="w-[18px] h-[18px] inline-flex items-center justify-center border border-border-strong rounded-[5px] bg-raised data-[state=checked]:bg-accent data-[state=checked]:border-accent data-[state=checked]:text-white"
+            checked={inst.flipY === true}
+            onCheckedChange={(c) => onFlip("flipY", c === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={14} />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          Flip Y
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-2 py-[3px] px-3.5">
+        <label className="flex flex-col min-w-0">
+          <span className={fieldLabel}>Rotation</span>
+          <input
+            className={inputCls()}
+            type="number"
+            step="any"
+            defaultValue={inst.rotation ?? 0}
+            key={`rot-${inst.id}-${inst.rotation}`}
+            onBlur={(e) => onRotation(e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col min-w-0">
+          <span className={fieldLabel}>Parallax</span>
+          <input
+            className={inputCls()}
+            type="number"
+            step="any"
+            defaultValue={inst.parallax ?? 1}
+            key={`par-${inst.id}-${inst.parallax}`}
+            onBlur={(e) => onParallax(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="py-[3px] px-3.5">
+        <label className="flex flex-col min-w-0">
+          <span className={fieldLabel}>Tint (hex)</span>
+          <input
+            className={inputCls()}
+            type="text"
+            defaultValue={inst.tint !== undefined ? inst.tint.toString(16).padStart(6, "0") : ""}
+            key={`tint-${inst.id}-${inst.tint}`}
+            placeholder="ffffff"
+            onBlur={(e) => onTint(e.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className={actions}>
+        <button className={actionBtn} onClick={() => editor.duplicateSelection()}>
+          Duplicate
+        </button>
+        <button className={actionBtnDanger} onClick={() => editor.deleteSelection()}>
+          Delete
+        </button>
+      </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
-import { EditorStore, selectedObjectIds, selectedTileIndices } from "./EditorStore.js";
+import { EditorStore, selectedDecorationIds, selectedObjectIds, selectedTileIndices } from "./EditorStore.js";
 import {
   cellIndex,
   deleteSelection,
@@ -8,6 +8,7 @@ import {
   nudgeSelection,
   paintTiles,
   placeAt,
+  placeDecorationAt,
   setTileAt,
 } from "./actions.js";
 
@@ -138,5 +139,60 @@ describe("editor actions", () => {
     expect(store.snap(19)).toBe(16);
     store.toggleSnap();
     expect(store.snap(19)).toBe(19);
+  });
+
+  it("places a decoration and selects it", () => {
+    const store = freshStore();
+    const before = store.get().document.decorations.length;
+    placeDecorationAt(store, "prop.life-capsule", 50, 60);
+    const state = store.get();
+    expect(state.document.decorations.length).toBe(before + 1);
+    const ids = selectedDecorationIds(state.selection);
+    expect(ids.length).toBe(1);
+    const placed = state.document.decorations.find((d) => d.id === ids[0]);
+    expect(placed?.assetId).toBe("prop.life-capsule");
+  });
+
+  it("duplicates a decoration selection offset by one grid cell", () => {
+    const store = freshStore();
+    placeDecorationAt(store, "prop.life-capsule", 50, 60);
+    const original = store.get().document.decorations.at(-1)!;
+    const grid = store.get().document.gridSize;
+    duplicateSelection(store);
+    const copy = store.get().document.decorations.at(-1)!;
+    expect(copy.id).not.toBe(original.id);
+    expect(copy.x).toBe(original.x + grid);
+    expect(copy.y).toBe(original.y + grid);
+  });
+
+  it("deletes a decoration selection and clears it", () => {
+    const store = freshStore();
+    placeDecorationAt(store, "prop.life-capsule", 50, 60);
+    const count = store.get().document.decorations.length;
+    deleteSelection(store);
+    expect(store.get().document.decorations.length).toBe(count - 1);
+    expect(selectedDecorationIds(store.get().selection)).toEqual([]);
+  });
+
+  it("undoes a decoration placement", () => {
+    const store = freshStore();
+    const before = store.get().document.decorations.length;
+    placeDecorationAt(store, "prop.life-capsule", 50, 60);
+    expect(store.get().document.decorations.length).toBe(before + 1);
+    store.undo();
+    expect(store.get().document.decorations.length).toBe(before);
+    store.redo();
+    expect(store.get().document.decorations.length).toBe(before + 1);
+  });
+
+  it("nudges a decoration selection by pixel delta", () => {
+    const store = freshStore();
+    placeDecorationAt(store, "prop.life-capsule", 50, 60);
+    const id = selectedDecorationIds(store.get().selection)[0];
+    const before = store.get().document.decorations.find((d) => d.id === id)!;
+    nudgeSelection(store, 3, -2);
+    const after = store.get().document.decorations.find((d) => d.id === id)!;
+    expect(after.x).toBe(before.x + 3);
+    expect(after.y).toBe(before.y - 2);
   });
 });

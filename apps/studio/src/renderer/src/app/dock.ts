@@ -62,7 +62,7 @@ export const PANELS: PanelSpec[] = [
   },
   {
     id: "assets",
-    title: "Assets",
+    title: "Decorations",
     component: "assets",
     ref: "viewport",
     dir: "below",
@@ -196,7 +196,7 @@ export function buildDefaultLayout(dock: DockviewApi): void {
   const assets = dock.addPanel({
     id: "assets",
     component: "assets",
-    title: "Assets",
+    title: "Decorations",
     initialHeight: 176,
     minimumHeight: 132,
     maximumHeight: 240,
