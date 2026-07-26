@@ -30,9 +30,16 @@
     "lint:fix": "oxlint --fix packages apps scripts",
     "test:import-boundaries": "node --test scripts/import-boundaries.test.mjs",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "version-packages": "changeset version",
+    "version:enter-next": "changeset pre enter next",
+    "version:exit-next": "changeset pre exit"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.1",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
     "turbo": "2.10.7",
