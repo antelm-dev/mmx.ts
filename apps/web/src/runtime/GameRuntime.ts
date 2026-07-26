@@ -1,4 +1,8 @@
-import { FixedStepLoop, type FixedStepFrameStart, type FixedStepRenderFrame } from "@mmx/browser-runtime";
+import {
+  FixedStepLoop,
+  type FixedStepFrameStart,
+  type FixedStepRenderFrame,
+} from "@mmx/browser-runtime";
 import { DT } from "@mmx/engine";
 import type { DebugPanel } from "../debug/DebugPanel.js";
 import type { AnimationInspector } from "../debug/AnimationInspector.js";

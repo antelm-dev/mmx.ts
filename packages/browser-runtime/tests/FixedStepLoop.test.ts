@@ -66,9 +66,7 @@ afterEach(() => {
 
 const STEP = 1 / 60;
 
-function createLoop(
-  overrides: Partial<ConstructorParameters<typeof FixedStepLoop>[0]> = {},
-): {
+function createLoop(overrides: Partial<ConstructorParameters<typeof FixedStepLoop>[0]> = {}): {
   loop: FixedStepLoop;
   steps: number[];
   renders: FixedStepRenderFrame[];
@@ -377,7 +375,10 @@ test("without onError, step errors propagate from the frame callback", () => {
     onRender: () => {},
   });
   loop.start();
-  assert.throws(() => advance(100), (error: unknown) => error === boom);
+  assert.throws(
+    () => advance(100),
+    (error: unknown) => error === boom,
+  );
   assert.equal(loop.isRunning, false);
 });
 

@@ -53,9 +53,7 @@ export interface FixedStepLoopOptions {
    * while a modal is open). The returned value is still clamped to
    * `maxFrameSeconds` afterwards.
    */
-  onFrameStart?: (
-    frame: FixedStepFrameStart,
-  ) => void | { elapsedSeconds?: number };
+  onFrameStart?: (frame: FixedStepFrameStart) => void | { elapsedSeconds?: number };
   onFrameStats?: (stats: FixedStepFrameStats) => void;
   /**
    * Called when `onFrameStart`, `onStep`, `onRender`, or `onFrameStats` throws.
@@ -119,9 +117,7 @@ export class FixedStepLoop {
       throw new RangeError(`stepSeconds must be a finite number > 0 (got ${stepSeconds})`);
     }
     if (!Number.isFinite(maxFrameSeconds) || maxFrameSeconds <= 0) {
-      throw new RangeError(
-        `maxFrameSeconds must be a finite number > 0 (got ${maxFrameSeconds})`,
-      );
+      throw new RangeError(`maxFrameSeconds must be a finite number > 0 (got ${maxFrameSeconds})`);
     }
     this.stepSeconds = stepSeconds;
     this.maxFrameSeconds = maxFrameSeconds;
