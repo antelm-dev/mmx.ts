@@ -9,9 +9,13 @@ import {
   type LevelObjectInstance,
   type SlopeMap,
 } from "@mmx/content-schema";
-import { loadSheets, regionTexture, SHEET_URLS } from "@mmx/renderer-pixi";
+import {
+  createAssetCatalog,
+  getSpritePreview,
+  loadEditorAssets,
+  type AssetCatalog,
+} from "@mmx/renderer-pixi";
 import { EditableTerrain } from "./EditableTerrain.js";
-import { previewForDefinition } from "./spritePreview.js";
 import {
   cloneSelection,
   emptySelection,
@@ -140,6 +144,7 @@ export class EditorViewport {
     private readonly app: Application,
     private readonly canvas: HTMLCanvasElement,
     private readonly store: EditorStore,
+    private readonly assets: AssetCatalog,
   ) {
     this.labelStyle = new TextStyle({
       fontFamily: "Inter, system-ui, sans-serif",
@@ -166,8 +171,9 @@ export class EditorViewport {
       width: host.clientWidth || 800,
       height: host.clientHeight || 600,
     });
-    const viewport = new EditorViewport(app, canvas, store);
-    await loadSheets(SHEET_URLS);
+    const assets = createAssetCatalog();
+    await loadEditorAssets(assets);
+    const viewport = new EditorViewport(app, canvas, store, assets);
     const resize = (): void => viewport.onResize(host);
     new ResizeObserver(resize).observe(host);
     resize();
@@ -324,11 +330,11 @@ export class EditorViewport {
       const def = requireDefinition(inst.definitionId);
       const color = hexToNum(def.editor.color);
       const box = this.objectDrawBox(inst);
-      const preview = previewForDefinition(inst.definitionId);
+      const preview = getSpritePreview(def, this.assets);
       const g = new Graphics();
       const isCamera = def.category === "camera";
       const isSlope = def.category === "slope";
-      const hasSprite = !!preview && !!regionTexture(preview.sheet, preview.region);
+      const hasSprite = !!preview?.texture;
 
       if (isSlope) {
         // A slope reads as its ramp, not a box: fill the solid (lower) triangle
@@ -360,18 +366,15 @@ export class EditorViewport {
       }
       layer.addChild(g);
 
-      if (preview) {
-        const texture = regionTexture(preview.sheet, preview.region);
-        if (texture) {
-          const sprite = new Sprite(texture);
-          sprite.anchor.set(0.5);
-          sprite.position.set(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2));
-          if (def.category === "enemy") {
-            const facesRight = effectiveValue(inst, "FacesRight") === true;
-            sprite.scale.x = facesRight ? -1 : 1;
-          }
-          layer.addChild(sprite);
+      if (preview?.texture) {
+        const sprite = new Sprite(preview.texture);
+        sprite.anchor.set(0.5);
+        sprite.position.set(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2));
+        if (def.category === "enemy") {
+          const facesRight = effectiveValue(inst, "FacesRight") === true;
+          sprite.scale.x = facesRight ? -1 : 1;
         }
+        layer.addChild(sprite);
       }
 
       const label = new Text({
@@ -446,12 +449,15 @@ export class EditorViewport {
             alpha: 0.75,
           });
         }
-        g.rect(col * grid - 1 / zoom, row * grid - 1 / zoom, grid + 2 / zoom, grid + 2 / zoom).stroke(
-          {
-            width: 2 / zoom,
-            color: COLOR_SELECT,
-          },
-        );
+        g.rect(
+          col * grid - 1 / zoom,
+          row * grid - 1 / zoom,
+          grid + 2 / zoom,
+          grid + 2 / zoom,
+        ).stroke({
+          width: 2 / zoom,
+          color: COLOR_SELECT,
+        });
       }
     }
 
@@ -1007,11 +1013,7 @@ export class EditorViewport {
     const state = this.store.get();
     let cursor = "default";
     if (this.panning || this.spaceDown || state.activeTool === "pan") cursor = "grab";
-    else if (
-      this.marqueeActive ||
-      state.activeTool === "place" ||
-      state.activeTool === "tile"
-    ) {
+    else if (this.marqueeActive || state.activeTool === "place" || state.activeTool === "tile") {
       cursor = "crosshair";
     }
     if (state.mode === "play") cursor = "default";

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { previewForDefinition } from "../core/spritePreview.js";
+import { getDefinition } from "@mmx/content-schema";
+import { getSpritePreview } from "@mmx/renderer-pixi";
 import { cx } from "../ui.js";
 
 interface Props {
@@ -15,7 +16,10 @@ interface Props {
  * requested box while preserving nearest-neighbour pixels.
  */
 export function SpritePreview({ definitionId, size = 48, flip = false, fallbackColor }: Props) {
-  const preview = useMemo(() => previewForDefinition(definitionId), [definitionId]);
+  const preview = useMemo(() => {
+    const def = getDefinition(definitionId);
+    return def ? getSpritePreview(def) : null;
+  }, [definitionId]);
 
   if (preview) {
     const [rx, ry, rw, rh] = preview.region;
@@ -35,7 +39,7 @@ export function SpritePreview({ definitionId, size = 48, flip = false, fallbackC
         >
           <img
             className="absolute max-w-none [image-rendering:pixelated] pointer-events-none"
-            src={preview.url}
+            src={preview.imageUrl}
             style={{ left: -rx, top: -ry }}
             alt=""
             draggable={false}
