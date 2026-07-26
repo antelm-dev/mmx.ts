@@ -31,8 +31,18 @@ export {
   type CreatePlaytestRendererOptions,
   type StudioPlaytestRenderer,
 } from "./editor/playtest.js";
+export {
+  createScenePresentation,
+  createScenePresentationWithHost,
+  type CreateScenePresentationWithHostOptions,
+  type ScenePresentation,
+  type ScenePresentationEffects,
+  type ScenePresentationHost,
+  type ScenePresentationOptions,
+} from "./presentation/ScenePresentation.js";
+export { dashSmokeOrigin, selectTrailStyle } from "./presentation/cosmetics.js";
 
-/** @deprecated Studio/editor-runtime should use createAssetCatalog / loadEditorAssets. Kept for apps/web. */
+/** @deprecated Prefer createAssetCatalog / ScenePresentation. Kept for transitional consumers. */
 export { animData, enemyAnims, pickupAnims, SHEET_URLS } from "./render/assets.js";
 /** @deprecated Studio/editor-runtime should use loadEditorAssets / getSpritePreview. Kept for apps/web. */
 export { loadSheets, regionTexture } from "./render/textures.js";
