@@ -1,32 +1,13 @@
 import { assertAnimData, assertRegion, type Region } from "@mmx/asset-schema";
 import { assertTimedClip } from "@mmx/engine";
-import animDataJson from "../../../../resources/sprites/player/x_anims.json?raw";
-import atlasUrl from "../../../../resources/sprites/player/x.png";
-import armAtlasUrl from "../../../../resources/sprites/player/x_leftarm.png";
-import shotAnimDataJson from "../../../../resources/sprites/effects/shot_anims.json?raw";
-import lemonUrl from "../../../../resources/sprites/effects/lemon.png";
-import mediumShotUrl from "../../../../resources/sprites/effects/medium_shot.png";
-import heavyShotUrl from "../../../../resources/sprites/effects/heavy_shot.png";
-import darkArrowUrl from "../../../../resources/sprites/effects/dark_arrow.png";
-import lemonHitUrl from "../../../../resources/sprites/effects/lemon_hit.png";
-import chargeHitUrl from "../../../../resources/sprites/effects/charge_hit.png";
-import charge1Url from "../../../../resources/sprites/effects/charge_1.png";
-import charge2Url from "../../../../resources/sprites/effects/charge_2.png";
-import dashUrl from "../../../../resources/sprites/effects/dash.png";
-import explosionUrl from "../../../../resources/sprites/effects/explosion.png";
-import remainsUrl from "../../../../resources/sprites/effects/remains.png";
-import xBarUrl from "../../../../resources/sprites/hud/x_bar.png";
-import hpFillUrl from "../../../../resources/sprites/hud/hp_fill.png";
-import weaponBarUrl from "../../../../resources/sprites/hud/weapon_bar.png";
-import weaponIconDarkArrowUrl from "../../../../resources/sprites/hud/weapon_icon_dark_arrow.png";
-import enemyAnimDataJson from "../../../../resources/sprites/enemies/enemy_anims.json?raw";
-import metoolUrl from "../../../../resources/sprites/enemies/metool.png";
-import batUrl from "../../../../resources/sprites/enemies/sbat.png";
-import pickupAnimDataJson from "../../../../resources/sprites/pickups/pickup_anims.json?raw";
-import healUrl from "../../../../resources/sprites/pickups/heal.png";
-import shealUrl from "../../../../resources/sprites/pickups/sheal.png";
-import ammoUrl from "../../../../resources/sprites/pickups/ammo.png";
-import sammoUrl from "../../../../resources/sprites/pickups/sammo.png";
+import {
+  animData,
+  enemyAnims as enemyAnimsJson,
+  pickupAnims as pickupAnimsJson,
+  shotAnims as shotAnimsJson,
+} from "./generatedAssetJson.js";
+
+const assetUrl = (path: string) => new URL(`../../assets/${path}`, import.meta.url).href;
 
 /**
  * Every image the renderer draws from, and the clip tables that index into them.
@@ -37,34 +18,29 @@ import sammoUrl from "../../../../resources/sprites/pickups/sammo.png";
  * table instead of a variable per image.
  */
 export const SHEET_URLS: Record<string, string> = {
-  "x.png": atlasUrl,
-  "x_leftarm.png": armAtlasUrl,
-  "lemon.png": lemonUrl,
-  "medium_shot.png": mediumShotUrl,
-  "heavy_shot.png": heavyShotUrl,
-  "dark_arrow.png": darkArrowUrl,
-  "lemon_hit.png": lemonHitUrl,
-  "charge_hit.png": chargeHitUrl,
-  "charge_1.png": charge1Url,
-  "charge_2.png": charge2Url,
-  "dash.png": dashUrl,
-  "explosion.png": explosionUrl,
-  "remains.png": remainsUrl,
-  // HUD furniture, from the original's src/HUD.
-  "x_bar.png": xBarUrl,
-  "hp_fill.png": hpFillUrl,
-  "weapon_bar.png": weaponBarUrl,
-  // Weapon-select icon crops, from the original's src/Options — one weapon
-  // ported so far.
-  "weapon_icon_dark_arrow.png": weaponIconDarkArrowUrl,
-  // Enemies, imported by scripts/build-enemies.mjs.
-  "metool.png": metoolUrl,
-  "sbat.png": batUrl,
-  // Life Energy and Weapon Energy capsules, imported by scripts/build-pickups.mjs.
-  "heal.png": healUrl,
-  "sheal.png": shealUrl,
-  "ammo.png": ammoUrl,
-  "sammo.png": sammoUrl,
+  "x.png": assetUrl("sprites/player/x.png"),
+  "x_leftarm.png": assetUrl("sprites/player/x_leftarm.png"),
+  "lemon.png": assetUrl("sprites/effects/lemon.png"),
+  "medium_shot.png": assetUrl("sprites/effects/medium_shot.png"),
+  "heavy_shot.png": assetUrl("sprites/effects/heavy_shot.png"),
+  "dark_arrow.png": assetUrl("sprites/effects/dark_arrow.png"),
+  "lemon_hit.png": assetUrl("sprites/effects/lemon_hit.png"),
+  "charge_hit.png": assetUrl("sprites/effects/charge_hit.png"),
+  "charge_1.png": assetUrl("sprites/effects/charge_1.png"),
+  "charge_2.png": assetUrl("sprites/effects/charge_2.png"),
+  "dash.png": assetUrl("sprites/effects/dash.png"),
+  "explosion.png": assetUrl("sprites/effects/explosion.png"),
+  "remains.png": assetUrl("sprites/effects/remains.png"),
+  "x_bar.png": assetUrl("sprites/hud/x_bar.png"),
+  "hp_fill.png": assetUrl("sprites/hud/hp_fill.png"),
+  "weapon_bar.png": assetUrl("sprites/hud/weapon_bar.png"),
+  "weapon_icon_dark_arrow.png": assetUrl("sprites/hud/weapon_icon_dark_arrow.png"),
+  "metool.png": assetUrl("sprites/enemies/metool.png"),
+  "sbat.png": assetUrl("sprites/enemies/sbat.png"),
+  "heal.png": assetUrl("sprites/pickups/heal.png"),
+  "sheal.png": assetUrl("sprites/pickups/sheal.png"),
+  "ammo.png": assetUrl("sprites/pickups/ammo.png"),
+  "sammo.png": assetUrl("sprites/pickups/sammo.png"),
 };
 
 /**
@@ -117,11 +93,9 @@ interface EnemyAnimData {
  */
 type PickupAnimData = EnemyAnimData;
 
-// Raw imports keep shared resource JSON outside this package's TypeScript rootDir.
-const animData: unknown = JSON.parse(animDataJson);
-export const shotAnims = JSON.parse(shotAnimDataJson) as ShotAnimData;
-export const enemyAnims = JSON.parse(enemyAnimDataJson) as EnemyAnimData;
-export const pickupAnims = JSON.parse(pickupAnimDataJson) as PickupAnimData;
+export const shotAnims = shotAnimsJson as unknown as ShotAnimData;
+export const enemyAnims = enemyAnimsJson as unknown as EnemyAnimData;
+export const pickupAnims = pickupAnimsJson as unknown as PickupAnimData;
 export { animData };
 
 /** Validate generated JSON once at startup, before any malformed frame reaches Pixi. */

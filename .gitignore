@@ -4,5 +4,7 @@ dist*/
 **/src-tauri/target/
 **/src-tauri/gen/schemas/
 *.tsbuildinfo
+packages/*/assets/
+packages/renderer-pixi/src/render/generatedAssetJson.ts
 
 *.log

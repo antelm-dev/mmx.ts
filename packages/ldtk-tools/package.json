@@ -1,14 +1,27 @@
 {
   "name": "@mmx/ldtk-tools",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./slopeBake": "./src/slopeBake.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./slopeBake": {
+      "types": "./dist/slopeBake.d.ts",
+      "import": "./dist/slopeBake.js",
+      "default": "./dist/slopeBake.js"
+    }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm run build",
     "export": "tsx src/export.ts",
     "import": "tsx src/import.ts"
   },

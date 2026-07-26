@@ -24,25 +24,27 @@ export type SoundName =
   | "introAppear"
   | "introThunder";
 
+const soundUrl = (path: string) => new URL(`../assets/sounds/${path}`, import.meta.url).href;
+
 const URLS: Record<SoundName, string> = {
-  jump: new URL("../../../resources/sounds/player/jump.wav", import.meta.url).href,
-  land: new URL("../../../resources/sounds/player/land.wav", import.meta.url).href,
-  dash: new URL("../../../resources/sounds/player/dash.wav", import.meta.url).href,
-  wallslide: new URL("../../../resources/sounds/player/wallslide.wav", import.meta.url).href,
-  damage: new URL("../../../resources/sounds/player/damage.wav", import.meta.url).href,
-  charge: new URL("../../../resources/sounds/weapons/charge.wav", import.meta.url).href,
-  lemon: new URL("../../../resources/sounds/weapons/lemon.wav", import.meta.url).href,
-  mediumShot: new URL("../../../resources/sounds/weapons/medium-shot.wav", import.meta.url).href,
-  chargedShot: new URL("../../../resources/sounds/weapons/charged-shot.wav", import.meta.url).href,
-  darkArrow: new URL("../../../resources/sounds/weapons/dark-arrow.ogg", import.meta.url).href,
-  enemyHit: new URL("../../../resources/sounds/enemies/enemy-hit.wav", import.meta.url).href,
-  shieldHit: new URL("../../../resources/sounds/enemies/shield-hit.ogg", import.meta.url).href,
-  guardBreak: new URL("../../../resources/sounds/enemies/guard-break.wav", import.meta.url).href,
-  enemyDeath: new URL("../../../resources/sounds/enemies/enemy-death.wav", import.meta.url).href,
-  playerDeath: new URL("../../../resources/sounds/player/player-death.wav", import.meta.url).href,
-  heal: new URL("../../../resources/sounds/pickups/heal.wav", import.meta.url).href,
-  introAppear: new URL("../../../resources/sounds/player/intro-appear.wav", import.meta.url).href,
-  introThunder: new URL("../../../resources/sounds/player/intro-thunder.wav", import.meta.url).href,
+  jump: soundUrl("player/jump.wav"),
+  land: soundUrl("player/land.wav"),
+  dash: soundUrl("player/dash.wav"),
+  wallslide: soundUrl("player/wallslide.wav"),
+  damage: soundUrl("player/damage.wav"),
+  charge: soundUrl("weapons/charge.wav"),
+  lemon: soundUrl("weapons/lemon.wav"),
+  mediumShot: soundUrl("weapons/medium-shot.wav"),
+  chargedShot: soundUrl("weapons/charged-shot.wav"),
+  darkArrow: soundUrl("weapons/dark-arrow.ogg"),
+  enemyHit: soundUrl("enemies/enemy-hit.wav"),
+  shieldHit: soundUrl("enemies/shield-hit.ogg"),
+  guardBreak: soundUrl("enemies/guard-break.wav"),
+  enemyDeath: soundUrl("enemies/enemy-death.wav"),
+  playerDeath: soundUrl("player/player-death.wav"),
+  heal: soundUrl("pickups/heal.wav"),
+  introAppear: soundUrl("player/intro-appear.wav"),
+  introThunder: soundUrl("player/intro-thunder.wav"),
 };
 
 export interface PlayOptions {
