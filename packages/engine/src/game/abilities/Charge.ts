@@ -167,3 +167,5 @@ export class Charge extends Ability {
     this.vfxAnimation.seek(0);
   }
 }
+
+export type ChargeVfx = Pick<Charge, "vfx_tier" | "vfx_frame">;

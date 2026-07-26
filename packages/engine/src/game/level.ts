@@ -12,6 +12,9 @@ import type { Conveyor, Hazard, MovingPlatformSpawn } from "./Environment.js";
 import { level as mechanicsDemo } from "./levels/stage2.js";
 import { level as stageOne } from "./levels/stage1.js";
 
+export { level as stage1 } from "./levels/stage1.js";
+export { level as stage2 } from "./levels/stage2.js";
+
 /**
  * The active mechanics demo, authored in levels/stage2.ldtk and generated into
  * levels/stage2.ts by `pnpm level:import`. Its 160x48 grid has three tiers:
