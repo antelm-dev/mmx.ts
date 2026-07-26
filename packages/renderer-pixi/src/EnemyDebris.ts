@@ -6,7 +6,7 @@ import {
   ENEMY_DEBRIS_SPEED,
   ENEMY_DEBRIS_SPEED_RANDOM,
   ENEMY_DEBRIS_SPREAD_DEGREES,
-} from "@mmx/engine/core/constants.js";
+} from "@mmx/engine";
 
 /**
  * The chunks an enemy scatters when it dies — port of the "remains_particles"

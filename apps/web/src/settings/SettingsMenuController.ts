@@ -1,5 +1,5 @@
 import type { Container } from "pixi.js";
-import type { Action } from "@mmx/engine/core/Input.js";
+import type { Action } from "@mmx/engine";
 import { DEFAULT_WINDOW_SCALE } from "../DesktopBridge.js";
 import type { AppLifecycle } from "../runtime/AppLifecycle.js";
 import type { SoundEffects } from "@mmx/browser-audio";

@@ -1,5 +1,5 @@
 import { defaultFilterVert, Filter, GlProgram, UniformGroup } from "pixi.js";
-import { WEAPON_PALETTE, type Palette6, type WeaponId } from "@mmx/engine/core/constants.js";
+import { WEAPON_PALETTE, type Palette6, type WeaponId } from "@mmx/engine";
 
 /**
  * Recolors X's body sprite per equipped weapon — port of Player.gd's

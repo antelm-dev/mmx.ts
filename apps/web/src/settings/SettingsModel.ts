@@ -1,4 +1,4 @@
-import type { Action } from "@mmx/engine/core/Input.js";
+import type { Action } from "@mmx/engine";
 import {
   BINDABLE_ACTIONS,
   cloneBindings,

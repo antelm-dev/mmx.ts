@@ -1,5 +1,5 @@
-import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
-import type { Scene } from "@mmx/engine/game/Scene.js";
+import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
+import type { Scene } from "@mmx/engine";
 import type { DecorationInstance } from "@mmx/content-schema";
 import { DashSmoke } from "../DashSmoke.js";
 import { EnemyDebris } from "../EnemyDebris.js";

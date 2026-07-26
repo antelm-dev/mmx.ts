@@ -1,10 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { level as stage1 } from "@mmx/engine/game/levels/stage1.js";
-import { level as stage2 } from "@mmx/engine/game/levels/stage2.js";
-import type { LevelData } from "@mmx/engine/game/LevelData.js";
-import { Tile } from "@mmx/engine/game/World.js";
+import { stage1, stage2, Tile, type LevelData } from "@mmx/engine";
 import { SCHEMA_VERSION, TerrainTile, type LevelDocument } from "@mmx/content-schema";
 import { documentToLevelData, levelDataToDocument } from "../src/index.js";
 

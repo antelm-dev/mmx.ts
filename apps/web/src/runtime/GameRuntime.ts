@@ -1,4 +1,4 @@
-import { DT } from "@mmx/engine/core/constants.js";
+import { DT } from "@mmx/engine";
 import type { DebugPanel } from "../debug/DebugPanel.js";
 import type { AnimationInspector } from "../debug/AnimationInspector.js";
 import type { DebugSession } from "../debug/DebugSession.js";

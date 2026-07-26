@@ -1,6 +1,6 @@
-import type { Enemy } from "@mmx/engine/game/Enemy.js";
-import type { Player } from "@mmx/engine/game/Player.js";
-import type { Scene } from "@mmx/engine/game/Scene.js";
+import type { Enemy } from "@mmx/engine";
+import type { Player } from "@mmx/engine";
+import type { Scene } from "@mmx/engine";
 import { SoundEffects } from "./SoundEffects.js";
 
 /** Forward loop from MMX's 32 kHz Charge.wav import metadata, in seconds. */

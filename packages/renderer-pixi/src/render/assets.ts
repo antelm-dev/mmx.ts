@@ -1,5 +1,5 @@
 import { assertAnimData, assertRegion, type Region } from "@mmx/asset-schema";
-import { assertTimedClip } from "@mmx/engine/core/AnimationCursor.js";
+import { assertTimedClip } from "@mmx/engine";
 import animDataJson from "../../../../resources/sprites/player/x_anims.json?raw";
 import atlasUrl from "../../../../resources/sprites/player/x.png";
 import armAtlasUrl from "../../../../resources/sprites/player/x_leftarm.png";

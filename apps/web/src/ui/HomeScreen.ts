@@ -1,6 +1,6 @@
 import { Container, Graphics, Text } from "pixi.js";
-import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
-import type { LevelData } from "@mmx/engine/game/LevelData.js";
+import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
+import type { LevelData } from "@mmx/engine";
 import { UI_CHAR_W } from "./font.js";
 import { TextLayer } from "./TextLayer.js";
 import { COLOR_BG, COLOR_BORDER, COLOR_SELECTED, COLOR_TEXT } from "./theme.js";

@@ -1,5 +1,5 @@
-import { DASH_FX_FPS, DASH_FX_FRAME_COUNT } from "@mmx/engine/core/constants.js";
-import { AnimationCursor, uniformClip } from "@mmx/engine/core/AnimationCursor.js";
+import { DASH_FX_FPS, DASH_FX_FRAME_COUNT } from "@mmx/engine";
+import { AnimationCursor, uniformClip } from "@mmx/engine";
 
 /**
  * The dust X kicks up when he pushes off into a dash — the other half of

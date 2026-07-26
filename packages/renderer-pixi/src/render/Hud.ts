@@ -1,12 +1,7 @@
 import { Container, NineSliceSprite, Sprite } from "pixi.js";
-import {
-  DT,
-  SUB_WEAPON_MAX_AMMO,
-  WEAPON_PALETTE,
-  type WeaponId,
-} from "@mmx/engine/core/constants.js";
-import type { Camera } from "@mmx/engine/game/Camera.js";
-import type { Player } from "@mmx/engine/game/Player.js";
+import { DT, SUB_WEAPON_MAX_AMMO, WEAPON_PALETTE, type WeaponId } from "@mmx/engine";
+import type { Camera } from "@mmx/engine";
+import type { Player } from "@mmx/engine";
 import { regionTexture } from "./textures.js";
 
 /**

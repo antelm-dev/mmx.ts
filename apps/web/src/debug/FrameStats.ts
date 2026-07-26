@@ -34,7 +34,7 @@ function summarize(values: readonly number[]): Summary {
   if (values.length === 0) return { median: 0, p95: 0, worst: 0 };
   const sorted = [...values].sort((a, b) => a - b);
   const percentile = (p: number): number => sorted[Math.ceil((sorted.length - 1) * p)]!;
-  return { median: percentile(0.5), p95: percentile(0.95), worst: sorted.at(-1)! };
+  return { median: percentile(0.5), p95: percentile(0.95), worst: sorted[sorted.length - 1]! };
 }
 
 export function formatSummary(summary: Summary): string {
@@ -66,7 +66,7 @@ export class FrameStats {
   }
 
   get latest(): FrameSample | undefined {
-    return this.samples.at(-1);
+    return this.samples[this.samples.length - 1];
   }
 
   get history(): readonly FrameSample[] {

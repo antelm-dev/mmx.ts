@@ -1,4 +1,4 @@
-import { DT } from "@mmx/engine/core/constants.js";
+import { DT } from "@mmx/engine";
 
 const MAX_FRAME_SECONDS = 0.25;
 

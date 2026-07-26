@@ -14,6 +14,7 @@ export * from "./game/Camera.js";
 export * from "./game/Enemy.js";
 export * from "./game/Environment.js";
 export * from "./game/LevelData.js";
+export * from "./game/Pickup.js";
 export * from "./game/Player.js";
 export * from "./game/Projectile.js";
 export * from "./game/Recorder.js";
@@ -21,5 +22,7 @@ export * from "./game/Scene.js";
 export * from "./game/Stage.js";
 export * from "./game/World.js";
 export * from "./game/level.js";
+export { spawnEnemy } from "./game/enemies/index.js";
+export type { ChargeVfx } from "./game/abilities/Charge.js";
 
 export * from "./tooling/index.js";
