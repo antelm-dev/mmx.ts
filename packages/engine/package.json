@@ -5,52 +5,65 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./core/*.js": {
       "types": "./dist/core/*.d.ts",
-      "import": "./dist/core/*.js"
+      "import": "./dist/core/*.js",
+      "default": "./dist/core/*.js"
     },
     "./game/*.js": {
       "types": "./dist/game/*.d.ts",
-      "import": "./dist/game/*.js"
+      "import": "./dist/game/*.js",
+      "default": "./dist/game/*.js"
     },
     "./content": {
       "types": "./dist/content/index.d.ts",
-      "import": "./dist/content/index.js"
+      "import": "./dist/content/index.js",
+      "default": "./dist/content/index.js"
     },
     "./content/*.js": {
       "types": "./dist/content/*.d.ts",
-      "import": "./dist/content/*.js"
+      "import": "./dist/content/*.js",
+      "default": "./dist/content/*.js"
     },
     "./data": {
       "types": "./dist/data/index.d.ts",
-      "import": "./dist/data/index.js"
+      "import": "./dist/data/index.js",
+      "default": "./dist/data/index.js"
     },
     "./data/*.js": {
       "types": "./dist/data/*.d.ts",
-      "import": "./dist/data/*.js"
+      "import": "./dist/data/*.js",
+      "default": "./dist/data/*.js"
     },
     "./behaviors": {
       "types": "./dist/behaviors/index.d.ts",
-      "import": "./dist/behaviors/index.js"
+      "import": "./dist/behaviors/index.js",
+      "default": "./dist/behaviors/index.js"
     },
     "./behaviors/*.js": {
       "types": "./dist/behaviors/*.d.ts",
-      "import": "./dist/behaviors/*.js"
+      "import": "./dist/behaviors/*.js",
+      "default": "./dist/behaviors/*.js"
     },
     "./tooling": {
       "types": "./dist/tooling/index.d.ts",
-      "import": "./dist/tooling/index.js"
+      "import": "./dist/tooling/index.js",
+      "default": "./dist/tooling/index.js"
     },
     "./tooling/*.js": {
       "types": "./dist/tooling/*.d.ts",
-      "import": "./dist/tooling/*.js"
+      "import": "./dist/tooling/*.js",
+      "default": "./dist/tooling/*.js"
     }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "pnpm run build",

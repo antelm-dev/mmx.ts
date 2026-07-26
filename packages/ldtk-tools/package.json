@@ -5,16 +5,20 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./slopeBake": {
       "types": "./dist/slopeBake.d.ts",
-      "import": "./dist/slopeBake.js"
+      "import": "./dist/slopeBake.js",
+      "default": "./dist/slopeBake.js"
     }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "pnpm run build",
