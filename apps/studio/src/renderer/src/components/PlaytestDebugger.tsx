@@ -1,6 +1,22 @@
 import { type ReactElement, type ReactNode } from "react";
-import { Bug, Crosshair, Flag, Pause, Play, RefreshCw, RotateCcw, StepForward } from "lucide-react";
-import type { ActorSnapshot, FrameStatsSnapshot } from "@mmx/editor-runtime";
+import {
+  Bug,
+  ClipboardCopy,
+  Crosshair,
+  FastForward,
+  Flag,
+  FolderOpen,
+  Gauge,
+  Pause,
+  Play,
+  RefreshCw,
+  Rewind,
+  RotateCcw,
+  Save,
+  Shield,
+  StepForward,
+} from "lucide-react";
+import type { ActorSnapshot, FrameStatsSnapshot, PlaytestDebugInfo } from "@mmx/editor-runtime";
 import { editor, usePlaytestSnapshot } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { cx } from "../ui.js";
@@ -20,6 +36,7 @@ export function PlaytestDebugger(): ReactElement | null {
 
   const paused = snap.status === "paused";
   const runtime = snap.runtime;
+  const debug = snap.debug;
 
   return (
     <div className="absolute z-[4] top-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
@@ -38,6 +55,14 @@ export function PlaytestDebugger(): ReactElement | null {
           <StepForward size={14} />
         </IconButton>
         <Divider />
+        <IconButton label="Slower ([)" onClick={() => editor.playtestNudgeTimeScale(-1)}>
+          <Rewind size={14} />
+        </IconButton>
+        <Readout label="speed" value={`x${debug.timeScale}`} />
+        <IconButton label="Faster (])" onClick={() => editor.playtestNudgeTimeScale(1)}>
+          <FastForward size={14} />
+        </IconButton>
+        <Divider />
         <IconButton label="Set checkpoint (Ctrl+F8)" onClick={() => editor.playtestSetCheckpoint()}>
           <Flag size={14} />
         </IconButton>
@@ -49,6 +74,30 @@ export function PlaytestDebugger(): ReactElement | null {
         </IconButton>
         <IconButton label="Restart level" onClick={() => editor.playtestRestartLevel()}>
           <RefreshCw size={14} />
+        </IconButton>
+        <Divider />
+        <IconButton
+          label={
+            debug.invulnerable
+              ? "Disable invulnerability (Ctrl+I)"
+              : "Enable invulnerability (Ctrl+I)"
+          }
+          active={debug.invulnerable}
+          onClick={() => editor.playtestSetInvulnerable(!debug.invulnerable)}
+        >
+          <Shield size={14} />
+        </IconButton>
+        <IconButton label="Save replay (Ctrl+U)" onClick={() => editor.playtestSaveReplay()}>
+          <Save size={14} />
+        </IconButton>
+        <IconButton label="Load replay (Ctrl+O)" onClick={() => editor.playtestLoadReplay()}>
+          <FolderOpen size={14} />
+        </IconButton>
+        <IconButton
+          label="Copy diagnostics (Ctrl+Y)"
+          onClick={() => editor.playtestCopyDiagnostics()}
+        >
+          <ClipboardCopy size={14} />
         </IconButton>
         <Divider />
         <Readout label="frame" value={String(snap.frame)} />
@@ -64,7 +113,20 @@ export function PlaytestDebugger(): ReactElement | null {
         </IconButton>
       </div>
 
-      <PerformanceReadout stats={snap.frameStats} />
+      <TimelineStrip
+        frame={snap.frame}
+        recordedLength={debug.recordedLength}
+        checkpointFrame={snap.checkpointFrame}
+        paused={paused}
+      />
+
+      <PerformanceReadout stats={snap.frameStats} debug={debug} />
+
+      {debug.notice && (
+        <div className="pointer-events-none px-2.5 py-1 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-lg text-[11px] text-[#d8e7ff]">
+          {debug.notice}
+        </div>
+      )}
 
       {inspectorVisible && runtime && (
         <RuntimeInspector runtime={runtime} selectedRuntimeId={snap.selectedRuntimeId} />
@@ -73,15 +135,56 @@ export function PlaytestDebugger(): ReactElement | null {
   );
 }
 
-function PerformanceReadout({ stats }: { stats: FrameStatsSnapshot }): ReactElement {
+function TimelineStrip({
+  frame,
+  recordedLength,
+  checkpointFrame,
+  paused,
+}: {
+  frame: number;
+  recordedLength: number;
+  checkpointFrame: number;
+  paused: boolean;
+}): ReactElement {
+  const max = Math.max(recordedLength, frame, 1);
   return (
-    <div className="pointer-events-none flex flex-col items-stretch gap-1 max-w-[480px] px-2.5 py-1.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px] text-[10.5px] text-[#b4c1d4]">
+    <div className="pointer-events-auto flex items-center gap-2 max-w-[520px] w-[min(520px,92vw)] px-2.5 py-1.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px]">
+      <Gauge size={12} className="text-[#7c8da7] flex-none" />
+      <input
+        type="range"
+        min={0}
+        max={max}
+        value={frame}
+        disabled={!paused && recordedLength === 0}
+        onChange={(e) => editor.playtestSeek(Number(e.target.value))}
+        className="flex-1 accent-[#4b8eff] h-1.5 cursor-pointer disabled:opacity-40"
+        aria-label="Seek timeline"
+        title={`Seek to frame (ckpt ${checkpointFrame})`}
+      />
+      <span className="font-mono text-[10.5px] text-[#edf3fc] tabular-nums flex-none">
+        {frame}/{max}
+      </span>
+    </div>
+  );
+}
+
+function PerformanceReadout({
+  stats,
+  debug,
+}: {
+  stats: FrameStatsSnapshot;
+  debug: PlaytestDebugInfo;
+}): ReactElement {
+  return (
+    <div className="pointer-events-none flex flex-col items-stretch gap-1 max-w-[520px] px-2.5 py-1.5 bg-[rgba(12,17,26,0.94)] border border-[rgba(64,77,100,0.72)] rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.34)] backdrop-blur-[10px] text-[10.5px] text-[#b4c1d4]">
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
         <Readout label="fps" value={stats.fps.toFixed(1)} />
         <TimingReadout label="sim" summary={stats.simulation} />
         <TimingReadout label="ren" summary={stats.rendering} />
         <Readout label="catch-up" value={String(stats.catchUpFrames)} />
         <Readout label="discarded" value={`${fmtMs(stats.discardedSimulationTime)} ms`} />
+        <Readout label="rec" value={String(debug.recordedLength)} />
+        {debug.tainted && <Readout label="replay" value="tainted" />}
       </div>
       <div className="text-center text-[8.5px] uppercase tracking-[0.4px] text-[#5f7088]">
         timing median / p95 / worst (ms)

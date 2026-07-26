@@ -4,9 +4,11 @@ export type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
 export { PlaytestInput, type PlaytestAction } from "./PlaytestInput.js";
 export {
   STOPPED_PLAYTEST,
+  STOPPED_DEBUG,
   type ActorSnapshot,
   type CameraSnapshot,
   type FrameStatsSnapshot,
+  type PlaytestDebugInfo,
   type PlaytestSnapshot,
   type PlaytestStatus,
   type ProjectileSnapshot,
