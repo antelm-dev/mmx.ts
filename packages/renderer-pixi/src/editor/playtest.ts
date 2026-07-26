@@ -1,20 +1,27 @@
 import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine/core/constants.js";
 import type { Scene } from "@mmx/engine/game/Scene.js";
-import type { AnimData } from "@mmx/asset-schema";
 import type { DecorationInstance } from "@mmx/content-schema";
-import {
-  DASH_TRAIL,
-  DashSmoke,
-  EnemyDebris,
-  EnemyExplosion,
-  Renderer,
-  Trail,
-  WALLSLIDE_TRAIL,
-  animData,
-  spriteSnapshot,
-} from "@mmx/renderer-pixi";
+import { DashSmoke } from "../DashSmoke.js";
+import { EnemyDebris } from "../EnemyDebris.js";
+import { EnemyExplosion } from "../EnemyExplosion.js";
+import { DASH_TRAIL, WALLSLIDE_TRAIL, Trail } from "../Trail.js";
+import { Renderer } from "../render/Renderer.js";
+import { spriteSnapshot } from "../render/sprite.js";
+import { createAssetCatalog, type AssetCatalog } from "./catalog.js";
 
-export class PlaytestRenderer {
+export interface StudioPlaytestRenderer {
+  bindScene(scene: Scene): void;
+  sampleCosmetics(scene: Scene): void;
+  render(scene: Scene): void;
+  destroy(): void;
+}
+
+export interface CreatePlaytestRendererOptions {
+  assets?: AssetCatalog;
+  decorations?: readonly DecorationInstance[];
+}
+
+class PlaytestRendererImpl implements StudioPlaytestRenderer {
   private readonly trail = new Trail();
   private readonly smoke = new DashSmoke();
   private readonly explosion = new EnemyExplosion();
@@ -27,6 +34,7 @@ export class PlaytestRenderer {
     private readonly host: HTMLElement,
     private readonly canvas: HTMLCanvasElement,
     private readonly renderer: Renderer,
+    private readonly assets: AssetCatalog,
   ) {
     this.resizeObserver = new ResizeObserver(() => this.fit());
   }
@@ -34,8 +42,10 @@ export class PlaytestRenderer {
   static async create(
     host: HTMLElement,
     scene: Scene,
-    decorations: readonly DecorationInstance[] = [],
-  ): Promise<PlaytestRenderer> {
+    assets: AssetCatalog,
+    decorations: readonly DecorationInstance[],
+  ): Promise<PlaytestRendererImpl> {
+    await assets.load();
     const canvas = document.createElement("canvas");
     canvas.id = "play-canvas";
     Object.assign(canvas.style, {
@@ -56,7 +66,7 @@ export class PlaytestRenderer {
       throw error;
     }
 
-    const instance = new PlaytestRenderer(host, canvas, renderer);
+    const instance = new PlaytestRendererImpl(host, canvas, renderer, assets);
     instance.bindScene(scene);
     instance.fit();
     instance.resizeObserver.observe(host);
@@ -71,7 +81,7 @@ export class PlaytestRenderer {
     if (this.boundScene === scene) return;
     this.boundScene = scene;
 
-    scene.player.loadAnimations(animData as unknown as AnimData);
+    this.assets.attachPlayerAnimations(scene.player);
 
     scene.player.events.on("dash_smoke", (clip: string, dir: number) => {
       if (this.boundScene !== scene) return;
@@ -126,4 +136,13 @@ export class PlaytestRenderer {
     this.renderer.destroy();
     this.canvas.remove();
   }
+}
+
+export async function createPlaytestRenderer(
+  host: HTMLElement,
+  scene: Scene,
+  options: CreatePlaytestRendererOptions = {},
+): Promise<StudioPlaytestRenderer> {
+  const assets = options.assets ?? createAssetCatalog();
+  return PlaytestRendererImpl.create(host, scene, assets, options.decorations ?? []);
 }

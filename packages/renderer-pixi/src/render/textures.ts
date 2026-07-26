@@ -20,11 +20,30 @@ TextureSource.defaultOptions.scaleMode = "nearest";
 const sheets = new Map<string, Texture>();
 const regions = new Map<string, Texture>();
 
-/** Load every sheet up front; the loop does not start until this resolves. */
+let loadInflight: Promise<void> | null = null;
+
+/** Load every missing sheet; concurrent callers share one in-flight load. */
 export async function loadSheets(urls: Record<string, string>): Promise<void> {
-  const names = Object.keys(urls);
-  const loaded = await Promise.all(names.map((name) => Assets.load<Texture>(urls[name])));
-  names.forEach((name, i) => sheets.set(name, loaded[i]));
+  const pending = Object.entries(urls).filter(([name]) => !sheets.has(name));
+  if (pending.length === 0) return;
+
+  if (loadInflight) {
+    await loadInflight;
+    return loadSheets(urls);
+  }
+
+  loadInflight = (async () => {
+    const stillPending = Object.entries(urls).filter(([name]) => !sheets.has(name));
+    if (stillPending.length === 0) return;
+    const loaded = await Promise.all(stillPending.map(([, url]) => Assets.load<Texture>(url)));
+    stillPending.forEach(([name], i) => sheets.set(name, loaded[i]));
+  })();
+
+  try {
+    await loadInflight;
+  } finally {
+    loadInflight = null;
+  }
 }
 
 /**

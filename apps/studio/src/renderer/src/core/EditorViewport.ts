@@ -14,12 +14,12 @@ import {
 import {
   decorationBounds,
   getDecorationAsset,
-  loadSheets,
-  regionTexture,
-  SHEET_URLS,
+  createAssetCatalog,
+  getSpritePreview,
+  loadEditorAssets,
+  type AssetCatalog,
 } from "@mmx/renderer-pixi";
 import { EditableTerrain } from "./EditableTerrain.js";
-import { previewForDefinition } from "./spritePreview.js";
 import {
   cloneSelection,
   emptySelection,
@@ -159,6 +159,7 @@ export class EditorViewport {
     private readonly app: Application,
     private readonly canvas: HTMLCanvasElement,
     private readonly store: EditorStore,
+    private readonly assets: AssetCatalog,
   ) {
     this.labelStyle = new TextStyle({
       fontFamily: "Inter, system-ui, sans-serif",
@@ -192,8 +193,9 @@ export class EditorViewport {
       width: host.clientWidth || 800,
       height: host.clientHeight || 600,
     });
-    const viewport = new EditorViewport(app, canvas, store);
-    await loadSheets(SHEET_URLS);
+    const assets = createAssetCatalog();
+    await loadEditorAssets(assets);
+    const viewport = new EditorViewport(app, canvas, store, assets);
     const resize = (): void => viewport.onResize(host);
     new ResizeObserver(resize).observe(host);
     resize();
@@ -352,7 +354,7 @@ export class EditorViewport {
       if (!vis[inst.layer]) continue;
       const asset = getDecorationAsset(inst.assetId);
       if (!asset) continue;
-      const texture = regionTexture(asset.sheet, asset.region);
+      const texture = this.assets.getDecorationPreview(inst.assetId)?.texture;
       if (!texture) continue;
       const pos = this.decorationDrawPos(inst);
       const sprite = new Sprite(texture);
@@ -387,11 +389,11 @@ export class EditorViewport {
       const def = requireDefinition(inst.definitionId);
       const color = hexToNum(def.editor.color);
       const box = this.objectDrawBox(inst);
-      const preview = previewForDefinition(inst.definitionId);
+      const preview = getSpritePreview(def, this.assets);
       const g = new Graphics();
       const isCamera = def.category === "camera";
       const isSlope = def.category === "slope";
-      const hasSprite = !!preview && !!regionTexture(preview.sheet, preview.region);
+      const hasSprite = !!preview?.texture;
 
       if (isSlope) {
         // A slope reads as its ramp, not a box: fill the solid (lower) triangle
@@ -423,18 +425,15 @@ export class EditorViewport {
       }
       layer.addChild(g);
 
-      if (preview) {
-        const texture = regionTexture(preview.sheet, preview.region);
-        if (texture) {
-          const sprite = new Sprite(texture);
-          sprite.anchor.set(0.5);
-          sprite.position.set(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2));
-          if (def.category === "enemy") {
-            const facesRight = effectiveValue(inst, "FacesRight") === true;
-            sprite.scale.x = facesRight ? -1 : 1;
-          }
-          layer.addChild(sprite);
+      if (preview?.texture) {
+        const sprite = new Sprite(preview.texture);
+        sprite.anchor.set(0.5);
+        sprite.position.set(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2));
+        if (def.category === "enemy") {
+          const facesRight = effectiveValue(inst, "FacesRight") === true;
+          sprite.scale.x = facesRight ? -1 : 1;
         }
+        layer.addChild(sprite);
       }
 
       const label = new Text({

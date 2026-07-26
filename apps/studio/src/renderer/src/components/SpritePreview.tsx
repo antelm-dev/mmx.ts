@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { previewForDecoration, previewForDefinition } from "../core/spritePreview.js";
+import { getDefinition } from "@mmx/content-schema";
+import { getDecorationPreview, getSpritePreview } from "@mmx/renderer-pixi";
 import { cx } from "../ui.js";
 
 interface Props {
@@ -17,15 +18,12 @@ export function SpritePreview({
   flip = false,
   fallbackColor,
 }: Props) {
-  const preview = useMemo(
-    () =>
-      assetId
-        ? previewForDecoration(assetId)
-        : definitionId
-          ? previewForDefinition(definitionId)
-          : null,
-    [definitionId, assetId],
-  );
+  const preview = useMemo(() => {
+    if (assetId) return getDecorationPreview(assetId);
+    if (!definitionId) return null;
+    const def = getDefinition(definitionId);
+    return def ? getSpritePreview(def) : null;
+  }, [definitionId, assetId]);
 
   if (preview) {
     const [rx, ry, rw, rh] = preview.region;
@@ -45,7 +43,7 @@ export function SpritePreview({
         >
           <img
             className="absolute max-w-none [image-rendering:pixelated] pointer-events-none"
-            src={preview.url}
+            src={preview.imageUrl}
             style={{ left: -rx, top: -ry }}
             alt=""
             draggable={false}

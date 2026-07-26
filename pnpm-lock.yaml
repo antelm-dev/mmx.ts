@@ -286,9 +286,6 @@ importers:
 
   packages/editor-runtime:
     dependencies:
-      '@mmx/asset-schema':
-        specifier: workspace:*
-        version: link:../asset-schema
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../browser-audio
