@@ -21,11 +21,14 @@ export { loadProject, requireProject } from "./loadProject.js";
 export {
   assertWithinProjectRoot,
   assertWithinRoot,
+  containAbsolutePath,
+  containEmittedAssetPath,
+  resolveContainedProjectPath,
   resolveEmittedAssetPath,
   resolveProjectPath,
   toPortablePath,
 } from "./paths.js";
-export type { ResolvedEmittedAssetPath } from "./paths.js";
+export type { ContainedPath, ResolvedEmittedAssetPath } from "./paths.js";
 export type {
   AssetEmissionPlan,
   BrowserLevelBundle,

@@ -5,7 +5,7 @@ import { parseProject } from "@mmx/project-schema";
 import { PROJECT_MANIFEST } from "./constants.js";
 import { validateLevelObjects } from "./compileLevel.js";
 import { ProjectLoadError } from "./errors.js";
-import { resolveProjectPath } from "./paths.js";
+import { containAbsolutePath, resolveContainedProjectPath } from "./paths.js";
 import type { LoadProjectResult, LoadedProject, ProjectIssue } from "./types.js";
 
 function toIssues(
@@ -19,20 +19,31 @@ function toIssues(
   }));
 }
 
-async function fileExists(absolutePath: string): Promise<boolean> {
-  try {
-    await fs.access(absolutePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function loadProject(root: string): Promise<LoadProjectResult> {
   const rootResolved = path.resolve(root);
   const manifestPath = path.join(rootResolved, PROJECT_MANIFEST);
 
-  if (!(await fileExists(manifestPath))) {
+  let manifestContained;
+  try {
+    manifestContained = await containAbsolutePath(rootResolved, manifestPath, PROJECT_MANIFEST);
+  } catch (error) {
+    if (error instanceof ProjectLoadError) {
+      return {
+        ok: false,
+        issues: [
+          {
+            severity: "error",
+            code: error.code,
+            path: PROJECT_MANIFEST,
+            message: error.message,
+          },
+        ],
+      };
+    }
+    throw error;
+  }
+
+  if (!manifestContained.exists) {
     return {
       ok: false,
       issues: [
@@ -40,7 +51,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
           severity: "error",
           code: "manifest.missing",
           path: PROJECT_MANIFEST,
-          message: `Project manifest '${PROJECT_MANIFEST}' was not found in '${rootResolved}'.`,
+          message: `Project manifest '${PROJECT_MANIFEST}' was not found.`,
         },
       ],
     };
@@ -48,7 +59,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
 
   let raw: unknown;
   try {
-    raw = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    raw = JSON.parse(await fs.readFile(manifestContained.absolutePath, "utf8"));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return {
@@ -74,9 +85,9 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   const levels: LoadedProject["levels"] = [];
 
   for (const ref of manifest.levels) {
-    let absolute: string;
+    let contained;
     try {
-      absolute = resolveProjectPath(rootResolved, ref.path);
+      contained = await resolveContainedProjectPath(rootResolved, ref.path);
     } catch (error) {
       if (error instanceof ProjectLoadError) {
         issues.push({
@@ -90,7 +101,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
       throw error;
     }
 
-    if (!(await fileExists(absolute))) {
+    if (!contained.exists) {
       issues.push({
         severity: "error",
         code: "level.missing",
@@ -102,7 +113,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
 
     let document;
     try {
-      const levelRaw = JSON.parse(await fs.readFile(absolute, "utf8")) as unknown;
+      const levelRaw = JSON.parse(await fs.readFile(contained.absolutePath, "utf8")) as unknown;
       document = migrateDocument(levelRaw);
       validateLevelObjects(document);
     } catch (error) {
@@ -120,9 +131,9 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   }
 
   for (const asset of manifest.assets) {
-    let absolute: string;
+    let contained;
     try {
-      absolute = resolveProjectPath(rootResolved, asset.path);
+      contained = await resolveContainedProjectPath(rootResolved, asset.path);
     } catch (error) {
       if (error instanceof ProjectLoadError) {
         issues.push({
@@ -136,7 +147,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
       throw error;
     }
 
-    if (!(await fileExists(absolute))) {
+    if (!contained.exists) {
       issues.push({
         severity: "error",
         code: "asset.missing",

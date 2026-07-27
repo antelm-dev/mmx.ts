@@ -20,7 +20,7 @@ import {
 import { levelDocumentToLevelData } from "./compileLevel.js";
 import { hashedAssetFileName, hashContent } from "./contentHash.js";
 import { ProjectBuildError } from "./errors.js";
-import { resolveProjectPath } from "./paths.js";
+import { resolveContainedProjectPath } from "./paths.js";
 import type {
   AssetEmissionPlan,
   BrowserProjectBundle,
@@ -42,8 +42,14 @@ export async function planAssetEmission(
   const byLogicalPath: Record<string, EmittedAsset> = {};
 
   for (const asset of sortAssets(project.manifest.assets)) {
-    const absolute = resolveProjectPath(project.root, asset.path);
-    const bytes = await readBytes(absolute);
+    const contained = await resolveContainedProjectPath(project.root, asset.path);
+    if (!contained.exists) {
+      throw new ProjectBuildError(
+        "asset.missing",
+        `Asset '${asset.id}' file '${asset.path}' does not exist.`,
+      );
+    }
+    const bytes = await readBytes(contained.absolutePath);
     const contentHash = hashContent(bytes);
     const fileName = hashedAssetFileName(contentHash, asset.path);
     const emitted: EmittedAsset = {
@@ -61,9 +67,11 @@ export async function planAssetEmission(
   return { assets, byId, byLogicalPath };
 }
 
-async function readOptionalJson<T>(absolutePath: string): Promise<T | null> {
+async function readOptionalContainedJson<T>(root: string, relativePath: string): Promise<T | null> {
+  const contained = await resolveContainedProjectPath(root, relativePath);
+  if (!contained.exists) return null;
   try {
-    const raw = await fs.readFile(absolutePath, "utf8");
+    const raw = await fs.readFile(contained.absolutePath, "utf8");
     return JSON.parse(raw) as T;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
@@ -72,8 +80,7 @@ async function readOptionalJson<T>(absolutePath: string): Promise<T | null> {
 }
 
 async function loadGameData(root: string): Promise<GameData> {
-  const absolute = resolveProjectPath(root, GAME_DATA_FILE);
-  const authored = await readOptionalJson<GameData>(absolute);
+  const authored = await readOptionalContainedJson<GameData>(root, GAME_DATA_FILE);
   return authored ?? GAME_DATA;
 }
 
@@ -86,12 +93,14 @@ type RendererBindingSource = {
 async function loadRendererBindingSource(
   project: LoadedProject,
 ): Promise<RendererBindingSource | null> {
-  const studio = await readOptionalJson<StudioGameDataFile>(
-    resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
+  const studio = await readOptionalContainedJson<StudioGameDataFile>(
+    project.root,
+    STUDIO_GAME_DATA_FILE,
   );
 
-  const canonical = await readOptionalJson<RendererAssetBindings>(
-    resolveProjectPath(project.root, RENDERER_BINDINGS_FILE),
+  const canonical = await readOptionalContainedJson<RendererAssetBindings>(
+    project.root,
+    RENDERER_BINDINGS_FILE,
   );
   if (canonical) {
     return { bindings: canonical, studioShotAnimations: null, studio };
@@ -172,9 +181,7 @@ export async function compileBrowserProjectBundle(
 
   const studioForSounds =
     bindingSource?.studio ??
-    (await readOptionalJson<StudioGameDataFile>(
-      resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
-    ));
+    (await readOptionalContainedJson<StudioGameDataFile>(project.root, STUDIO_GAME_DATA_FILE));
   const { soundBindings, soundIds } = compileSoundPlan(studioForSounds, project.manifest, emission);
 
   const levels = project.levels.map((level) => ({
@@ -211,9 +218,15 @@ export async function emitAssetsToDirectory(
   const written: string[] = [];
 
   for (const asset of emission.assets) {
-    const source = resolveProjectPath(project.root, asset.logicalPath);
+    const contained = await resolveContainedProjectPath(project.root, asset.logicalPath);
+    if (!contained.exists) {
+      throw new ProjectBuildError(
+        "asset.missing",
+        `Asset '${asset.assetId}' file '${asset.logicalPath}' does not exist.`,
+      );
+    }
     const target = path.join(assetsDir, asset.fileName);
-    await fs.copyFile(source, target);
+    await fs.copyFile(contained.absolutePath, target);
     written.push(path.relative(outDir, target).split(path.sep).join("/"));
   }
 

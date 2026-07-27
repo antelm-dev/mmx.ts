@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import path from "node:path";
 import { isPortableRelativePath } from "@mmx/project-schema";
 import { ProjectBuildError, ProjectLoadError } from "./errors.js";
@@ -46,6 +47,115 @@ export function toPortablePath(root: string, absolutePath: string): string {
   const relative = path.relative(path.resolve(root), path.resolve(absolutePath));
   assertWithinProjectRoot(root, absolutePath);
   return relative.split(path.sep).join("/");
+}
+
+export type ContainedPath = {
+  absolutePath: string;
+  exists: boolean;
+};
+
+function linkEscapeError(logicalPath: string): ProjectLoadError {
+  return new ProjectLoadError(
+    "path.traversal",
+    logicalPath,
+    `Project path '${logicalPath}' escapes the project root through a filesystem link.`,
+  );
+}
+
+function assertRealpathWithinRoot(
+  rootReal: string,
+  candidateReal: string,
+  logicalPath: string,
+): void {
+  try {
+    assertWithinRoot(rootReal, candidateReal);
+  } catch (error) {
+    if (error instanceof ProjectLoadError) {
+      throw linkEscapeError(logicalPath);
+    }
+    throw error;
+  }
+}
+
+async function containMissingPath(
+  rootReal: string,
+  absolute: string,
+  logicalPath: string,
+): Promise<ContainedPath> {
+  let probe = absolute;
+  for (;;) {
+    const parent = path.dirname(probe);
+    if (parent === probe) {
+      throw linkEscapeError(logicalPath);
+    }
+    try {
+      const parentReal = await fs.realpath(parent);
+      assertRealpathWithinRoot(rootReal, parentReal, logicalPath);
+      const suffix = path.relative(parent, absolute);
+      if (suffix === ".." || suffix.startsWith(`..${path.sep}`) || path.isAbsolute(suffix)) {
+        throw linkEscapeError(logicalPath);
+      }
+      const reconstructed = suffix.length === 0 ? parentReal : path.resolve(parentReal, suffix);
+      assertRealpathWithinRoot(rootReal, reconstructed, logicalPath);
+      return { absolutePath: reconstructed, exists: false };
+    } catch (error) {
+      if (error instanceof ProjectLoadError) {
+        throw error;
+      }
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === "ENOENT") {
+        probe = parent;
+        continue;
+      }
+      throw linkEscapeError(logicalPath);
+    }
+  }
+}
+
+export async function containAbsolutePath(
+  root: string,
+  absolutePath: string,
+  logicalPath = path.basename(absolutePath),
+): Promise<ContainedPath> {
+  const rootReal = await fs.realpath(path.resolve(root));
+  const absolute = path.resolve(absolutePath);
+
+  try {
+    const real = await fs.realpath(absolute);
+    assertRealpathWithinRoot(rootReal, real, logicalPath);
+    return { absolutePath: real, exists: true };
+  } catch (error) {
+    if (error instanceof ProjectLoadError) {
+      throw error;
+    }
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === "ENOENT") {
+      return containMissingPath(rootReal, absolute, logicalPath);
+    }
+    throw linkEscapeError(logicalPath);
+  }
+}
+
+export async function resolveContainedProjectPath(
+  root: string,
+  relativePath: string,
+): Promise<ContainedPath> {
+  const absolute = resolveProjectPath(root, relativePath);
+  return containAbsolutePath(root, absolute, relativePath);
+}
+
+export async function containEmittedAssetPath(
+  assetsRoot: string,
+  absolutePath: string,
+): Promise<ContainedPath> {
+  try {
+    return await containAbsolutePath(assetsRoot, absolutePath, path.basename(absolutePath));
+  } catch (error) {
+    if (error instanceof ProjectLoadError && error.code === "path.traversal") {
+      throw new ProjectBuildError("asset.path", "Asset URL is malformed.");
+    }
+    throw error;
+  }
 }
 
 export type ResolvedEmittedAssetPath = {

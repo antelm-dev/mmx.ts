@@ -141,9 +141,7 @@ test("loadProject rejects a directory junction that points outside the project",
     await createJunction(outside, linkDir);
 
     await writeManifest(root, (manifest) => {
-      manifest.assets = [
-        { id: "sprite.escape", kind: "sprite", path: "assets/escaped/bg.png" },
-      ];
+      manifest.assets = [{ id: "sprite.escape", kind: "sprite", path: "assets/escaped/bg.png" }];
     });
 
     const result = await loadProject(root);
@@ -226,9 +224,7 @@ test("planAssetEmission rejects hashing assets that escape through a junction", 
     await fs.writeFile(path.join(outside, "bg.png"), Buffer.from([9, 9, 9, 9]));
     await createJunction(outside, path.join(root, "assets", "escaped"));
     await writeManifest(root, (manifest) => {
-      manifest.assets = [
-        { id: "sprite.escape", kind: "sprite", path: "assets/escaped/bg.png" },
-      ];
+      manifest.assets = [{ id: "sprite.escape", kind: "sprite", path: "assets/escaped/bg.png" }];
     });
 
     const loaded = await loadProject(root);
@@ -277,9 +273,7 @@ test("emitAssetsToDirectory rejects copying assets that escape through a junctio
     const poisonedEmission = {
       ...emission,
       assets: emission.assets.map((asset) =>
-        asset.assetId === "sprite.bg"
-          ? { ...asset, logicalPath: "assets/escaped/bg.png" }
-          : asset,
+        asset.assetId === "sprite.bg" ? { ...asset, logicalPath: "assets/escaped/bg.png" } : asset,
       ),
     };
 

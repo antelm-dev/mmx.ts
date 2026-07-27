@@ -8,7 +8,7 @@ import {
 import type { LevelDocument, LevelObjectInstance } from "@mmx/content-schema";
 import type { LevelData, LevelEntity } from "@mmx/engine";
 import { ProjectBuildError } from "./errors.js";
-import { resolveProjectPath } from "./paths.js";
+import { resolveContainedProjectPath } from "./paths.js";
 
 function objectToEntity(inst: LevelObjectInstance): LevelEntity {
   const def = requireDefinition(inst.definitionId);
@@ -62,8 +62,8 @@ export async function readLevelDocument(
   relativePath: string,
   readText: (absolutePath: string) => Promise<string>,
 ): Promise<LevelDocument> {
-  const absolute = resolveProjectPath(root, relativePath);
-  const raw = JSON.parse(await readText(absolute)) as unknown;
+  const contained = await resolveContainedProjectPath(root, relativePath);
+  const raw = JSON.parse(await readText(contained.absolutePath)) as unknown;
   const document = migrateDocument(raw);
   validateLevelObjects(document);
   return document;

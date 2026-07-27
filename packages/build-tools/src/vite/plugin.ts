@@ -13,7 +13,7 @@ import {
   VIRTUAL_PROJECT_MODULE,
   VIRTUAL_PROJECT_PREFIX,
 } from "../constants.js";
-import { resolveEmittedAssetPath } from "../paths.js";
+import { resolveEmittedAssetPath, containEmittedAssetPath } from "../paths.js";
 import type { BrowserProjectBundle } from "../types.js";
 import { createRebuildScheduler } from "./rebuildScheduler.js";
 
@@ -208,7 +208,15 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
           return;
         }
         import("node:fs")
-          .then((fs) => fs.promises.readFile(filePath))
+          .then(async (fs) => {
+            const contained = await containEmittedAssetPath(assetsRoot, filePath);
+            if (!contained.exists) {
+              const missing = new Error("missing");
+              (missing as NodeJS.ErrnoException).code = "ENOENT";
+              throw missing;
+            }
+            return fs.promises.readFile(contained.absolutePath);
+          })
           .then((data) => {
             const ext = path.extname(fileName).toLowerCase();
             const type =
@@ -223,9 +231,18 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
             res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
             res.end(data);
           })
-          .catch(() => {
-            res.statusCode = 404;
-            res.end("Not Found");
+          .catch((error: unknown) => {
+            if (
+              error instanceof Error &&
+              "code" in error &&
+              (error as { code?: string }).code === "ENOENT"
+            ) {
+              res.statusCode = 404;
+              res.end("Not Found");
+              return;
+            }
+            res.statusCode = 400;
+            res.end("Bad Request");
           });
       });
     },
