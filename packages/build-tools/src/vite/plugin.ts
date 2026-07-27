@@ -15,6 +15,7 @@ import {
 } from "../constants.js";
 import { resolveEmittedAssetPath } from "../paths.js";
 import type { BrowserProjectBundle } from "../types.js";
+import { createRebuildScheduler } from "./rebuildScheduler.js";
 
 export type MmxProjectPluginOptions = {
   projectDir: string;
@@ -24,8 +25,6 @@ export type MmxProjectPluginOptions = {
 
 type PluginState = {
   bundle: BrowserProjectBundle | null;
-  generation: number;
-  buildPromise: Promise<void> | null;
 };
 
 function projectWatchGlobs(projectDir: string): string[] {
@@ -50,11 +49,11 @@ function isUnderProject(projectDir: string, file: string): boolean {
 export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
   const state: PluginState = {
     bundle: null,
-    generation: 0,
-    buildPromise: null,
   };
 
-  async function rebuild(): Promise<BrowserProjectBundle> {
+  let server: ViteDevServer | undefined;
+
+  async function runRebuild(): Promise<BrowserProjectBundle> {
     const project = await requireProject(options.projectDir);
     const emission = await planAssetEmission(project);
     if (options.emitDir) {
@@ -65,42 +64,46 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
     if (bundleContainsAbsolutePaths(source)) {
       throw new Error("Browser project bundle contains absolute source paths.");
     }
-    state.bundle = bundle;
-    options.onBundle?.(bundle);
     return bundle;
   }
 
-  function scheduleRebuild(server?: ViteDevServer): void {
-    state.generation += 1;
-    const token = state.generation;
-    state.buildPromise = rebuild()
-      .then(() => {
-        if (token !== state.generation) return;
-        const mod = server?.moduleGraph.getModuleById(VIRTUAL_PROJECT_PREFIX);
-        if (mod) server?.moduleGraph.invalidateModule(mod);
-        server?.ws.send({ type: "full-reload" });
-      })
-      .catch((error) => {
-        console.error("[mmx-project]", error);
-      });
+  function commitBundle(bundle: BrowserProjectBundle): void {
+    state.bundle = bundle;
+    options.onBundle?.(bundle);
   }
+
+  function publishBundle(bundle: BrowserProjectBundle): void {
+    commitBundle(bundle);
+    const mod = server?.moduleGraph.getModuleById(VIRTUAL_PROJECT_PREFIX);
+    if (mod) server?.moduleGraph.invalidateModule(mod);
+    server?.ws.send({ type: "full-reload" });
+  }
+
+  const scheduler = createRebuildScheduler({
+    run: runRebuild,
+    publish: publishBundle,
+    onError(error) {
+      console.error("[mmx-project]", error);
+    },
+  });
 
   return {
     name: "mmx-project",
     enforce: "pre",
 
     async buildStart() {
-      await rebuild();
+      commitBundle(await runRebuild());
     },
 
-    configureServer(server) {
+    configureServer(devServer) {
+      server = devServer;
       for (const glob of projectWatchGlobs(options.projectDir)) {
         server.watcher.add(glob);
       }
       server.watcher.on("all", (event, file) => {
         if (event !== "change" && event !== "add" && event !== "unlink") return;
         if (!isUnderProject(options.projectDir, file)) return;
-        scheduleRebuild(server);
+        scheduler.schedule();
       });
 
       server.middlewares.use((req, res, next) => {
@@ -157,11 +160,18 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
 
     async load(id) {
       if (id !== VIRTUAL_PROJECT_PREFIX) return null;
-      if (state.buildPromise) await state.buildPromise;
-      if (!state.bundle) await rebuild();
-      return bundleModuleSource(state.bundle!);
+      await scheduler.waitCurrent();
+      if (!state.bundle) {
+        commitBundle(await runRebuild());
+      }
+      if (!state.bundle) {
+        throw new Error("Project bundle is unavailable.");
+      }
+      return bundleModuleSource(state.bundle);
     },
   };
 }
 
 export { VIRTUAL_PROJECT_MODULE };
+export { createRebuildScheduler } from "./rebuildScheduler.js";
+export type { RebuildScheduler, RebuildSchedulerOptions } from "./rebuildScheduler.js";
