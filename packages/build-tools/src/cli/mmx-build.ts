@@ -15,7 +15,7 @@ type ParsedArgs = {
 };
 
 function printHelp(): void {
-  process.stdout.write(`mmx-build — core build factory for Studio exports
+  process.stdout.write(`mmx-build ÔÇö core build factory for Studio exports
 
 Usage:
   mmx-build build --project <dir> [--out <dir>]
@@ -64,7 +64,7 @@ async function runBuild(projectDir: string, outDir: string): Promise<void> {
   const project = await requireProject(projectDir);
   const report = await buildProjectToDisk(project, outDir);
   process.stdout.write(
-    `Built project '${report.bundle.meta.id}' → ${path.resolve(outDir)}\n` +
+    `Built project '${report.bundle.meta.id}' ÔåÆ ${path.resolve(outDir)}\n` +
       `  assets: ${report.assetFiles.length}\n` +
       `  levels: ${report.bundle.levels.length}\n`,
   );

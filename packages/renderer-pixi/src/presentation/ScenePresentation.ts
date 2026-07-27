@@ -266,9 +266,14 @@ export async function createScenePresentation(
   scene: Scene,
   options: ScenePresentationOptions = {},
 ): Promise<ScenePresentation> {
-  const manifest = options.manifest ?? resolveRendererAssetManifest(options);
-  const assets = options.assets ?? createAssetCatalog({ ...options, manifest });
+  const assets =
+    options.assets ??
+    createAssetCatalog({
+      ...options,
+      manifest: options.manifest ?? resolveRendererAssetManifest(options),
+    });
   await assets.load();
+  const manifest = options.manifest ?? resolveRendererAssetManifest(options);
   const { Renderer } = await import("../render/Renderer.js");
   const renderer = await Renderer.create(canvas, scene.stage, { manifest });
   try {

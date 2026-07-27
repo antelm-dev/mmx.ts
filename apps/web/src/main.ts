@@ -46,6 +46,7 @@ async function bootstrap(): Promise<void> {
     onPlayerDeath: () => debug.restartLevel(),
     onWeaponChanged: (weapon) => debug.notify(`weapon: ${weapon}`),
     assets: createProjectAssetCatalog(projectBundle),
+    manifest: projectBundle.rendererManifest!,
     decorations: decorationsForLevel(projectBundle, projectBundle.meta.entryLevelId),
   });
 

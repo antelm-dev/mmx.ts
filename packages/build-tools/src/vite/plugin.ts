@@ -29,12 +29,12 @@ type PluginState = {
   bundle: BrowserProjectBundle | null;
 };
 
-function projectWatchGlobs(projectDir: string): string[] {
+function projectWatchRoots(projectDir: string): string[] {
   return [
     path.join(projectDir, "project.json"),
-    path.join(projectDir, "levels", "**/*"),
-    path.join(projectDir, "assets", "**/*"),
-    path.join(projectDir, "data", "**/*"),
+    path.join(projectDir, "levels"),
+    path.join(projectDir, "assets"),
+    path.join(projectDir, "data"),
   ];
 }
 
@@ -124,19 +124,20 @@ function assertSingleMmxProjectPlugin(plugins: readonly Plugin[]): void {
 }
 
 export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
+  const projectDir = path.resolve(options.projectDir);
+  const emitDir = options.emitDir
+    ? path.resolve(options.emitDir)
+    : defaultMmxProjectEmitDir(projectDir);
   const state: PluginState = {
     bundle: null,
   };
-  const emitDir = options.emitDir ?? defaultMmxProjectEmitDir(options.projectDir);
 
   let server: ViteDevServer | undefined;
 
   async function runRebuild(): Promise<BrowserProjectBundle> {
-    const project = await requireProject(options.projectDir);
+    const project = await requireProject(projectDir);
     const emission = await planAssetEmission(project);
-    if (options.emitDir) {
-      await emitAssetsToDirectory(project, emission, options.emitDir);
-    }
+    await emitAssetsToDirectory(project, emission, emitDir);
     const bundle = await compileBrowserProjectBundle(project, emission);
     const source = bundleModuleSource(bundle);
     if (bundleContainsAbsolutePaths(source)) {
@@ -180,12 +181,12 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
     configureServer(devServer) {
       server = devServer;
       assertSingleMmxProjectPlugin(devServer.config.plugins);
-      for (const glob of projectWatchGlobs(options.projectDir)) {
-        server.watcher.add(glob);
+      for (const root of projectWatchRoots(projectDir)) {
+        server.watcher.add(root);
       }
       server.watcher.on("all", (event, file) => {
         if (event !== "change" && event !== "add" && event !== "unlink") return;
-        if (!isUnderProject(options.projectDir, file)) return;
+        if (!isUnderProject(projectDir, file)) return;
         scheduler.schedule();
       });
 

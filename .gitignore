@@ -1,5 +1,6 @@
 node_modules/
 .turbo/
+.tmp/
 dist*/
 .mmx-assets/
 **/src-tauri/target/

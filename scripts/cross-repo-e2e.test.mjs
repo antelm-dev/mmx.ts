@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { access, copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -25,7 +24,7 @@ const coreRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const defaultStudioRoot = path.resolve(coreRoot, "../.worktrees/mmx-studio-assets-08");
 const studioRoot = path.resolve(process.env.MMX_STUDIO_ROOT ?? defaultStudioRoot);
 const e2eRoot = path.resolve(
-  process.env.MMX_E2E_ROOT ?? path.join(os.tmpdir(), "mmx-cross-repo-e2e"),
+  process.env.MMX_E2E_ROOT ?? path.join(coreRoot, ".tmp", "mmx-cross-repo-e2e"),
 );
 
 const forbiddenPathFragments = ["Orgs/", "mmx-studio", "mmx-core-ts", ".worktrees"];
@@ -76,6 +75,49 @@ function assertNoForbiddenPaths(source, label, options = {}) {
   }
 }
 
+async function ensurePlayableLevel(exportDir) {
+  const levelsDir = path.join(exportDir, "levels");
+  for (const name of await readdir(levelsDir)) {
+    if (!name.endsWith(".json")) continue;
+    const file = path.join(levelsDir, name);
+    const document = JSON.parse(await readFile(file, "utf8"));
+    const cols = Number(document.cols);
+    const rows = Number(document.rows);
+    const gridSize = Number(document.gridSize ?? 16);
+    if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols <= 0 || rows <= 0) {
+      throw new Error(`Level '${name}' has invalid dimensions.`);
+    }
+    const expected = cols * rows;
+    let tiles = Array.isArray(document.tiles) ? document.tiles.slice() : [];
+    if (tiles.length !== expected) {
+      tiles = new Array(expected).fill(0);
+    }
+    const floorRow = rows - 1;
+    for (let col = 0; col < cols; col += 1) {
+      tiles[floorRow * cols + col] = 1;
+    }
+    document.tiles = tiles;
+
+    const objects = Array.isArray(document.objects) ? document.objects : [];
+    const spawns = objects.filter((object) => object.definitionId === "spawn");
+    const keep =
+      spawns.find((object) => object.id === "spawn.e2e") ??
+      spawns[0] ?? {
+        id: "spawn.e2e",
+        definitionId: "spawn",
+        x: gridSize * 2,
+        y: (floorRow - 1) * gridSize,
+      };
+    keep.x = gridSize * 2;
+    keep.y = (floorRow - 1) * gridSize;
+    document.objects = [
+      ...objects.filter((object) => object.definitionId !== "spawn"),
+      keep,
+    ];
+    await writeFile(file, `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  }
+}
+
 async function prepareStudioExport(exportDir) {
   await rm(exportDir, { recursive: true, force: true });
   await mkdir(exportDir, { recursive: true });
@@ -87,6 +129,7 @@ async function prepareStudioExport(exportDir) {
   const payload = JSON.parse(output);
   assert.equal(payload.ok, true);
   assert.ok(payload.exportedDataFiles.includes("game/data.json"));
+  await ensurePlayableLevel(exportDir);
   return payload;
 }
 
