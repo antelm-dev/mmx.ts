@@ -4,7 +4,9 @@ export type RendererAssetErrorCode =
   | "asset.missing"
   | "asset.invalid_kind"
   | "asset.invalid"
-  | "asset.duplicate_id";
+  | "asset.duplicate_id"
+  | "asset.duplicate_sheet_key"
+  | "asset.ambiguous_sheet_key";
 
 export class RendererAssetError extends Error {
   readonly assetId: string;
@@ -44,5 +46,29 @@ export function invalidAssetError(assetId: string, detail: string): RendererAsse
     assetId,
     "asset.invalid",
     `Renderer asset '${assetId}' is invalid: ${detail}`,
+  );
+}
+
+export function duplicateSheetKeyError(
+  assetId: string,
+  sheetKey: string,
+  existingAssetId: string,
+): RendererAssetError {
+  return new RendererAssetError(
+    assetId,
+    "asset.duplicate_sheet_key",
+    `Renderer sheet key '${sheetKey}' is already bound to asset '${existingAssetId}'; refusing to overwrite with '${assetId}'.`,
+  );
+}
+
+export function ambiguousSheetKeyError(
+  assetId: string,
+  sheetKey: string,
+  claimants: readonly string[],
+): RendererAssetError {
+  return new RendererAssetError(
+    assetId,
+    "asset.ambiguous_sheet_key",
+    `Legacy sheet key '${sheetKey}' is ambiguous between asset ids: ${claimants.join(", ")}. Use logical asset ids as sheetImages keys.`,
   );
 }

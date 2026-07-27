@@ -1,10 +1,16 @@
 export {
+  ambiguousSheetKeyError,
+  duplicateSheetKeyError,
   invalidAssetError,
   invalidKindError,
   missingAssetError,
   RendererAssetError,
   type RendererAssetErrorCode,
 } from "./errors.js";
+export {
+  adaptLegacyFilenameSheetImages,
+  adaptLegacyFilenameShotSheets,
+} from "./legacySheets.js";
 export {
   buildRendererAssetManifest,
   buildRendererAssetManifestFromProject,
@@ -16,6 +22,7 @@ export {
   type ShotAnimManifest,
 } from "./manifest.js";
 export {
+  assetPathBasename,
   createRendererAssetResolver,
   type RendererAssetResolver,
   type RendererAssetResolverContext,

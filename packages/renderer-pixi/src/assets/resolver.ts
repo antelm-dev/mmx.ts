@@ -25,7 +25,7 @@ export interface RendererAssetResolver {
   sheetKey(assetId: string): string;
 }
 
-function sheetKeyFromPath(path: string): string {
+export function assetPathBasename(path: string): string {
   const slash = path.lastIndexOf("/");
   return slash >= 0 ? path.slice(slash + 1) : path;
 }
@@ -81,7 +81,7 @@ export function createRendererAssetResolver(
       if (asset.kind !== "image" && asset.kind !== "sprite" && asset.kind !== "animation") {
         throw invalidKindError(assetId, ["image", "sprite", "animation"], asset.kind);
       }
-      return sheetKeyFromPath(asset.path);
+      return asset.id;
     },
   };
 }

@@ -2,7 +2,7 @@ import { assertAnimData, assertRegion, type AnimData, type Region } from "@mmx/c
 import { assertTimedClip } from "@mmx/engine";
 import type { AnimationClip, AnimationAsset, ProjectDocument } from "@mmx/project-schema";
 import type { ClipActor } from "../editor/preview.js";
-import { invalidAssetError } from "./errors.js";
+import { duplicateSheetKeyError, invalidAssetError } from "./errors.js";
 import { createRendererAssetResolver, type RendererAssetResolver } from "./resolver.js";
 
 export interface ShotAnimManifest {
@@ -61,6 +61,38 @@ function animationToClipActor(
   };
 }
 
+function setSheetUrl(
+  sheetUrls: Record<string, string>,
+  sheetOwners: Map<string, string>,
+  sheetKey: string,
+  imageId: string,
+  url: string,
+): void {
+  const existingOwner = sheetOwners.get(sheetKey);
+  if (existingOwner !== undefined && existingOwner !== imageId) {
+    throw duplicateSheetKeyError(imageId, sheetKey, existingOwner);
+  }
+  const existingUrl = sheetUrls[sheetKey];
+  if (existingUrl !== undefined && existingUrl !== url) {
+    throw duplicateSheetKeyError(imageId, sheetKey, existingOwner ?? sheetKey);
+  }
+  sheetOwners.set(sheetKey, imageId);
+  sheetUrls[sheetKey] = url;
+}
+
+function buildSheetUrls(
+  resolver: RendererAssetResolver,
+  sheetImages: Record<string, string>,
+): Record<string, string> {
+  const sheetUrls: Record<string, string> = {};
+  const sheetOwners = new Map<string, string>();
+  for (const [sheetKey, imageId] of Object.entries(sheetImages)) {
+    const url = resolver.imageUrl(imageId);
+    setSheetUrl(sheetUrls, sheetOwners, sheetKey, imageId, url);
+  }
+  return sheetUrls;
+}
+
 function buildShotAnims(
   resolver: RendererAssetResolver,
   shotAssetId: string,
@@ -96,10 +128,7 @@ export function buildRendererAssetManifest(
   bindings: RendererAssetBindings,
   options: BuildRendererAssetManifestOptions = {},
 ): RendererAssetManifest {
-  const sheetUrls: Record<string, string> = {};
-  for (const [sheetKey, imageId] of Object.entries(bindings.sheetImages)) {
-    sheetUrls[sheetKey] = resolver.imageUrl(imageId);
-  }
+  const sheetUrls = buildSheetUrls(resolver, bindings.sheetImages);
 
   const playerAsset = resolver.requireKind(bindings.playerAnimation, ["animation"]);
   const playerAnims = animationToAnimData(playerAsset, `animation '${bindings.playerAnimation}'`);

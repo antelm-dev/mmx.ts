@@ -28,6 +28,9 @@ export {
   type SpritePreview,
 } from "./editor/catalog.js";
 export {
+  adaptLegacyFilenameSheetImages,
+  adaptLegacyFilenameShotSheets,
+  assetPathBasename,
   buildRendererAssetManifest,
   buildRendererAssetManifestFromProject,
   createRendererAssetResolver,
