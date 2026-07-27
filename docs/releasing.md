@@ -13,8 +13,8 @@ version depuis la CI.
 | Inclus (versionnés)   | Ignorés (apps) |
 | --------------------- | -------------- |
 | `@mmx/contracts`      | `@mmx/web`     |
-| `@mmx/browser-audio`  | `@mmx/desktop` |
-| `@mmx/browser-input`  | `@mmx/sim`     |
+| `@mmx/browser-audio`  | `@mmx/sim`     |
+| `@mmx/browser-input`  |                |
 | `@mmx/content-schema` |                |
 | `@mmx/engine`         |                |
 | `@mmx/ldtk-tools`     |                |
@@ -101,8 +101,7 @@ Le workflow [`.github/workflows/version.yml`](../.github/workflows/version.yml)
 tourne sur `master` :
 
 1. installe les dépendances avec le lockfile figé ;
-2. exécute lint, format, tests et build (même garde-fous que la CI principale,
-   hors job desktop lourd) ;
+2. exécute lint, format, tests et build (même garde-fous que la CI principale) ;
 3. lance [changesets/action](https://github.com/changesets/action) **sans
    publication** ;
 4. s’il existe des changesets en attente, ouvre ou met à jour une PR

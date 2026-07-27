@@ -3,7 +3,6 @@ import { parseSettings, type ClientSettings, type SettingsStorage } from "@mmx/c
 export const WEB_SETTINGS_STORAGE_KEY = "mmx.desktop-settings.v1";
 
 export interface WebSettingsBackend {
-  readonly native: boolean;
   loadRaw(): Promise<unknown>;
   saveRaw(settings: ClientSettings): Promise<void>;
 }

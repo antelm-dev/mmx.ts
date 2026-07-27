@@ -26,10 +26,6 @@
     "preview": {
       "cache": false,
       "persistent": true
-    },
-    "@mmx/desktop#build": {
-      "dependsOn": ["@mmx/web#build"],
-      "cache": false
     }
   }
 }

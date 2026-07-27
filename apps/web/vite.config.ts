@@ -4,7 +4,6 @@ import {
   resolveWebProjectPluginMode,
 } from "./src/project/webBuildContract.js";
 
-const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 const projectDir = process.env.MMX_PROJECT;
 
 async function projectPlugins(command: "build" | "serve"): Promise<PluginOption[]> {
@@ -23,7 +22,7 @@ export default defineConfig(async ({ command }) => ({
   server: {
     port: 5173,
     strictPort: true,
-    open: !isTauri,
+    open: true,
   },
   build: {
     outDir: "dist",

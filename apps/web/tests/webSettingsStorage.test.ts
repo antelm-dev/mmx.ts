@@ -41,7 +41,6 @@ test("web legacy localStorage documents migrate through the shared store", async
   );
 
   const backend = {
-    native: false,
     async loadRaw() {
       const text = storage.getItem(WEB_SETTINGS_STORAGE_KEY);
       return text == null ? null : JSON.parse(text);

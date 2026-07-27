@@ -9,9 +9,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const webDist = path.join(root, "apps", "web", "dist");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 
-test("root build script excludes production web and desktop artifacts", () => {
+test("root build script excludes production web artifacts", () => {
   assert.match(packageJson.scripts.build, /--filter=!@mmx\/web/);
-  assert.match(packageJson.scripts.build, /--filter=!@mmx\/desktop/);
   assert.match(packageJson.scripts.build, /@mmx\/web run typecheck/);
   assert.equal(packageJson.scripts["build:web"], "turbo run build --filter=@mmx/web");
 });

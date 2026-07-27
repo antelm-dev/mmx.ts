@@ -5,11 +5,10 @@ A faithful **TypeScript / Node** port of the _core player gameplay_ from the
 machine (walk / dash / variable jump / air-dash / wall-slide / wall-jump /
 dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
-The engine is **pure TypeScript** with no runtime dependencies. It runs three ways:
+The engine is **pure TypeScript** with no runtime dependencies. It runs two ways:
 
 - **Headless** in Node (deterministic, scripted input) — `pnpm sim`
 - **In the browser** on a canvas with real keyboard input — `pnpm play`
-- **As a desktop app** through Tauri 2 — `pnpm desktop:dev`
 
 ---
 
@@ -23,8 +22,6 @@ pnpm sim          # deterministic headless simulation, prints a state trace
 pnpm test         # unit tests (node:test) for gameplay behaviour
 pnpm build        # compile/typecheck packages (no production web artifact)
 pnpm play         # Vite development server -> http://localhost:5173
-pnpm desktop:dev    # launch the desktop app with Vite hot reload
-pnpm desktop:build  # build the native executable and platform installers
 ```
 
 ### Web project contract
@@ -53,8 +50,6 @@ MMX_PROJECT=/path/to/studio-export pnpm build:web
 CI (`pnpm build`) validates libraries without a game project. The `web-dist`
 artifact is uploaded only when `MMX_PROJECT` is set for that workflow run, so a
 knowingly non-bootable bundle is never labeled as a production web build.
-Desktop production builds are gated the same way because they invoke
-`@mmx/web` `vite build` via Tauri's `beforeBuildCommand`.
 
 ### Cross-repo browser boot
 
@@ -90,7 +85,7 @@ Package versions in `packages/*` are managed with
 optional `next` prereleases, automatic changelogs, version PR on `master`).
 See [`docs/releasing.md`](docs/releasing.md).
 
-Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
+Controls: **← →** / **A D** move · **Space** jump (hold for height) ·
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
 hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
 
@@ -111,38 +106,8 @@ hold _into_ a wall while falling to wall-slide, then **Space** to wall-kick.
 - Compare median, p95, and worst frame time after a representative run. Average
   FPS alone hides intermittent long frames.
 
-### Desktop prerequisites
-
-The desktop shell uses **Tauri 2** and leaves the TypeScript engine and PixiJS
-renderer unchanged. Install Rust plus the native prerequisites for your operating
-system before using the desktop commands. On Windows that means Microsoft C++ Build
-Tools and WebView2; current Windows releases normally already include WebView2.
-
-Production artifacts are written below `apps/desktop/src-tauri/target/release/`. Windows builds
-produce the standalone executable along with MSI and NSIS installers under
-`apps/desktop/src-tauri/target/release/bundle/`.
-
-### Desktop integration
-
-The Tauri build adds a small native layer without moving gameplay out of the
-shared TypeScript engine:
-
-- **U / O** use native Save/Open dialogs for deterministic replay files. Dialogs
-  start in the app's platform-specific `replays` data directory; dropping a replay
-  JSON file onto the desktop window loads it too.
-- **F8** toggles automatic pause when the window loses focus.
-- **F9 / F10** lower or raise master volume in 10% steps.
-- **F11** toggles fullscreen.
-
-Volume, fullscreen and focus-pause preferences are validated by Rust and stored
-as `settings.json` in the operating system's application-data directory. The web
-build keeps the same controls and falls back to `localStorage`, browser file
-pickers/downloads and the browser Fullscreen API.
-
-Native filesystem access is intentionally confined to commands in
-`apps/desktop/src-tauri/src/lib.rs`. Replay contents still pass through the strict TypeScript
-decoder before they can replace a running scene, keeping one authority for the
-on-disk replay format.
+Preferences (volume, fullscreen, focus-pause) persist in `localStorage`. Replays
+use browser file pickers/downloads; fullscreen uses the browser Fullscreen API.
 
 ---
 
@@ -354,7 +319,6 @@ packages/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
-  desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
 scripts/              import-boundary and game-resource guard tests
 ```
@@ -366,7 +330,7 @@ play. See [Web project contract](#web-project-contract).
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
 on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends
-only on the engine, and the engine has no browser, rendering, or native-shell
+only on the engine, and the engine has no browser or rendering
 dependency. Run commands from the repository root so pnpm can select the correct
 workspace project.
 

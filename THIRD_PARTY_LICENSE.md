@@ -88,8 +88,7 @@ license grant.
 
 ## Software dependencies
 
-Third-party JavaScript, Rust, and native dependencies are not relicensed by this
+Third-party JavaScript dependencies are not relicensed by this
 project. Each remains subject to its own license and notices. The applicable
-dependency versions are recorded in `pnpm-lock.yaml` and
-`apps/desktop/src-tauri/Cargo.lock`; packaged distributions should preserve any
-notices required by those dependencies.
+dependency versions are recorded in `pnpm-lock.yaml`; packaged distributions
+should preserve any notices required by those dependencies.
