@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import {
   buildProjectToDisk,
@@ -12,8 +11,6 @@ import {
   planAssetEmission,
 } from "../src/compileProject.js";
 import { requireProject } from "../src/loadProject.js";
-
-const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 test("starter-shaped export compiles renderer and sound bindings", async () => {
   const studioRoot = process.env.MMX_STUDIO_ROOT;
@@ -30,8 +27,11 @@ test("starter-shaped export compiles renderer and sound bindings", async () => {
   assert.equal(bundleContainsAbsolutePaths(source), false);
   assert.ok(bundle.rendererManifest, "renderer manifest should be built from game/data.json");
   assert.ok(bundle.rendererManifest!.playerAnims.animations.idle);
+  assert.ok(bundle.soundBindings);
+  assert.equal(bundle.soundBindings!.jump, "sfx.player.jump");
   assert.ok(bundle.assetUrls["sfx.player.jump"]);
   assert.ok(bundle.soundIds.includes("sfx.player.jump"));
+  assert.equal(bundle.soundIds.includes("jump"), false);
   assert.equal(bundle.meta.entryLevelId, "level.starter");
 });
 

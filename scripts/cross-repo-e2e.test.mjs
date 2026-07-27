@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -131,16 +131,25 @@ test("cross-repo: clean starter export builds and boots", async (t) => {
   assert.ok(bundle.rendererManifest);
   assert.ok(bundle.assetUrls["sprite.hud.x-bar"]);
   assert.ok(bundle.assetUrls["sfx.player.jump"]);
+  assert.ok(bundle.soundBindings);
+  assert.equal(bundle.soundBindings.jump, "sfx.player.jump");
   assert.ok(bundle.soundIds.includes("sfx.player.jump"));
+  assert.equal(bundle.soundIds.includes("jump"), false);
   assertNoForbiddenPaths(bundleModuleSource(bundle), "project bundle");
 
-  await t.test("browser boot via factory dev", async () => {
+  await t.test("browser boot via factory dev", async (browserTest) => {
     let playwright;
     try {
       playwright = await import("playwright");
-    } catch {
-      t.skip("playwright is not installed");
-      return;
+    } catch (error) {
+      if (process.env.MMX_ALLOW_BROWSER_SKIP === "1") {
+        browserTest.skip("playwright is not installed (MMX_ALLOW_BROWSER_SKIP=1)");
+        return;
+      }
+      throw new Error(
+        "playwright is required for browser boot; install it or set MMX_ALLOW_BROWSER_SKIP=1",
+        { cause: error },
+      );
     }
 
     await withDevServer(exportDir, async () => {
@@ -156,6 +165,14 @@ test("cross-repo: clean starter export builds and boots", async (t) => {
         await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle", timeout: 120_000 });
         await page.waitForSelector("#game", { timeout: 120_000 });
         await page.waitForFunction(() => window.mmx != null, undefined, { timeout: 120_000 });
+
+        const audioRejected = errors.some(
+          (message) =>
+            message.includes("SoundAssetError") ||
+            message.includes("Sound asset") ||
+            message.includes("is not in the project bundle"),
+        );
+        assert.equal(audioRejected, false, `audio preload rejected:\n${errors.join("\n")}`);
 
         const canvasWidth = await page.$eval("#game", (canvas) => canvas.width);
         assert.ok(canvasWidth > 0);

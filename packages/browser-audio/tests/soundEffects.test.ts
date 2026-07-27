@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ProjectDocument } from "@mmx/project-schema";
 import { createProjectSoundResolver, SoundAssetError } from "../src/SoundAssetResolver.js";
@@ -282,4 +282,36 @@ test("partial preload success is kept and remaining sounds retry", async () => {
   effects.play("jump");
   effects.play("broken");
   assert.equal(playCount, 2);
+});
+
+test("play resolves runtime names through sound bindings to preloaded asset ids", async () => {
+  const started: string[] = [];
+  const context = createMockContext(async () => createMockBuffer());
+  const originalCreate = context.createBufferSource;
+  context.createBufferSource = () => {
+    const source = originalCreate();
+    const originalStart = source.start;
+    source.start = () => {
+      started.push("ok");
+      originalStart();
+    };
+    return source;
+  };
+
+  const effects = createSoundEffects({
+    resolver: {
+      resolveUrl(soundId: string) {
+        assert.equal(soundId, "sfx.player.jump");
+        return "https://game.test/sounds/jump.wav";
+      },
+    },
+    soundIds: ["sfx.player.jump"],
+    bindings: { jump: "sfx.player.jump" },
+    context: context as unknown as AudioContext,
+    fetchFn: async () => new Response(new ArrayBuffer(8), { status: 200 }),
+  });
+
+  await effects.load();
+  effects.play("jump");
+  assert.equal(started.length, 1);
 });
