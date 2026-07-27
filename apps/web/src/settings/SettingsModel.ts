@@ -10,8 +10,7 @@ import {
   type ClientSettingsStore,
   type KeyBindings,
 } from "@mmx/client-settings";
-import type { DesktopBridge } from "../DesktopBridge.js";
-import { createWebSettingsStorage } from "./webSettingsStorage.js";
+import type { SettingsStorage } from "@mmx/runtime-host";
 
 export type { KeyBindings };
 export {
@@ -32,7 +31,7 @@ export interface DesktopSettings {
 }
 
 export interface SettingsModelOptions {
-  desktop: DesktopBridge;
+  desktop: SettingsStorage & { maxIntegerScale(): Promise<number> };
   onNotice?: (message: string) => void;
   store?: ClientSettingsStore;
 }
@@ -50,7 +49,7 @@ function toView(settings: ClientSettings): DesktopSettings {
 export class SettingsModel {
   private readonly store: ClientSettingsStore;
   private readonly onNotice?: (message: string) => void;
-  private readonly desktop: DesktopBridge;
+  private readonly desktop: SettingsStorage & { maxIntegerScale(): Promise<number> };
   private maxWindowScale = MAX_WINDOW_SCALE;
 
   constructor(options: SettingsModelOptions) {
@@ -59,7 +58,7 @@ export class SettingsModel {
     this.store =
       options.store ??
       createClientSettingsStore({
-        storage: createWebSettingsStorage(options.desktop),
+        storage: options.desktop,
         onSaveError: (error) => {
           console.warn("Could not save desktop settings", error);
           options.onNotice?.(`settings save failed: ${String(error)}`);
@@ -81,7 +80,7 @@ export class SettingsModel {
 
   async load(): Promise<void> {
     await this.store.load();
-    this.maxWindowScale = await this.desktop.maxWindowScale().catch(() => MAX_WINDOW_SCALE);
+    this.maxWindowScale = await this.desktop.maxIntegerScale().catch(() => MAX_WINDOW_SCALE);
     const scale = Math.min(this.store.snapshot().window.integerScale, this.maxWindowScale);
     if (scale !== this.store.snapshot().window.integerScale) {
       this.store.patch({ window: { integerScale: scale } });
@@ -89,7 +88,7 @@ export class SettingsModel {
   }
 
   async refreshMaxScale(): Promise<void> {
-    this.maxWindowScale = await this.desktop.maxWindowScale().catch(() => this.maxWindowScale);
+    this.maxWindowScale = await this.desktop.maxIntegerScale().catch(() => this.maxWindowScale);
   }
 
   patch(partial: Partial<DesktopSettings>): void {

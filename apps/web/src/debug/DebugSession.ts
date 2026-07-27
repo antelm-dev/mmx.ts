@@ -2,6 +2,7 @@ import { Recorder, type LevelData, type Scene, type SceneOptions } from "@mmx/en
 import {
   createRecorderDebugHost,
   DebugController,
+  type ClipboardAccess,
   type ReplayFileAccess,
   type ReplayText,
 } from "@mmx/runtime/debug";
@@ -23,6 +24,7 @@ export interface DebugSessionOptions extends SceneOptions {
   onSceneReplaced: (scene: Scene) => void;
   extraDiagnostics?: () => Record<string, string | number>;
   replayFiles: ReplayFileAccess;
+  clipboard?: ClipboardAccess;
 }
 
 export class DebugSession {
@@ -39,9 +41,11 @@ export class DebugSession {
     this.debug = new DebugController({
       host: createRecorderDebugHost(this.recorder, options.onSceneReplaced),
       replayFiles: options.replayFiles,
-      clipboard: {
-        writeText: (text) => navigator.clipboard.writeText(text),
-      },
+      clipboard:
+        options.clipboard ??
+        ({
+          writeText: (text) => navigator.clipboard.writeText(text),
+        } as ClipboardAccess),
       extraDiagnostics: options.extraDiagnostics,
     });
     this.buildCommands();

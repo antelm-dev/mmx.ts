@@ -53,6 +53,7 @@ debug = new DebugSession({
   onSceneReplaced: (scene) => presenter.attach(scene),
   extraDiagnostics: () => presenter.stats(),
   replayFiles: desktop.replays,
+  clipboard: desktop.clipboard,
 });
 
 debug.registerCommand({

@@ -1,4 +1,4 @@
-import type { DesktopBridge } from "../DesktopBridge.js";
+import type { WindowHost } from "@mmx/runtime-host";
 import type { ScenePresenter } from "../presentation/ScenePresenter.js";
 import type { SettingsModel } from "../settings/SettingsModel.js";
 
@@ -17,7 +17,7 @@ import type { SettingsModel } from "../settings/SettingsModel.js";
  */
 export class AppLifecycle {
   constructor(
-    private readonly desktop: DesktopBridge,
+    private readonly windowHost: WindowHost,
     private readonly settings: SettingsModel,
     private readonly presenter: ScenePresenter,
     private readonly onNotice: (message: string) => void,
@@ -27,12 +27,14 @@ export class AppLifecycle {
   async applyInitial(): Promise<void> {
     const current = this.settings.get();
     if (current.fullscreen) {
-      await this.desktop.setFullscreen(true).catch((error: unknown) => {
+      await this.windowHost.setFullscreen(true).catch((error: unknown) => {
         this.settings.patch({ fullscreen: false });
         console.warn("Could not restore fullscreen", error);
       });
     } else {
-      await this.desktop.applyWindowScale(current.scale).catch((error: unknown) => {
+      const apply = this.windowHost.applyIntegerScale;
+      const next = apply ? apply(current.scale) : Promise.resolve();
+      await next.catch((error: unknown) => {
         console.warn("Could not apply window scale", error);
       });
     }
@@ -50,8 +52,9 @@ export class AppLifecycle {
     if (next === current.scale && !current.fullscreen) return;
     const previous = current;
     this.settings.patch({ scale: next, fullscreen: false });
-    void this.desktop
-      .applyWindowScale(next)
+    const apply = this.windowHost.applyIntegerScale;
+    const task = apply ? apply(next) : Promise.resolve();
+    void task
       .then(() => {
         this.fit();
         this.onNotice(`scale ${next}x`);
@@ -66,10 +69,13 @@ export class AppLifecycle {
     const current = this.settings.get();
     if (fullscreen === current.fullscreen) return;
     this.settings.patch({ fullscreen });
-    void this.desktop
+    void this.windowHost
       .setFullscreen(fullscreen)
       .then(async () => {
-        if (!fullscreen) await this.desktop.applyWindowScale(current.scale);
+        if (!fullscreen) {
+          const apply = this.windowHost.applyIntegerScale;
+          if (apply) await apply(current.scale);
+        }
         this.fit();
         this.onNotice(fullscreen ? "fullscreen" : "windowed");
       })

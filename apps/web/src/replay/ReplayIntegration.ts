@@ -1,5 +1,5 @@
 import type { DebugSession } from "../debug/DebugSession.js";
-import type { DesktopBridge } from "../DesktopBridge.js";
+import type { ReplayFileDropHost } from "@mmx/runtime-host";
 
 /**
  * Wires the desktop's dropped-replay-file event to {@link DebugSession}.
@@ -13,13 +13,22 @@ import type { DesktopBridge } from "../DesktopBridge.js";
  */
 export class ReplayIntegration {
   constructor(
-    private readonly desktop: DesktopBridge,
+    private readonly desktop: ReplayFileDropHost,
     private readonly debug: DebugSession,
   ) {}
 
+  private cleanup?: () => void;
+
   async start(): Promise<void> {
-    await this.desktop.onReplayDropped((file) =>
-      this.debug.loadReplayText(file.contents, file.path),
-    );
+    const result = await this.desktop.onReplayDropped?.((file) => {
+      this.debug.loadReplayText(file.contents, file.path);
+    });
+    const unlisten = typeof result === "function" ? result : undefined;
+    this.cleanup = unlisten;
+  }
+
+  dispose(): void {
+    this.cleanup?.();
+    this.cleanup = undefined;
   }
 }

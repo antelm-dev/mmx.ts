@@ -219,6 +219,9 @@ importers:
       '@mmx/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
+      '@mmx/runtime-host':
+        specifier: workspace:*
+        version: link:../../packages/runtime-host
       '@tauri-apps/api':
         specifier: 2.11.0
         version: 2.11.0
@@ -468,6 +471,22 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/runtime-host:
+    dependencies:
+      '@mmx/client-settings':
+        specifier: workspace:*
+        version: link:../client-settings
+      '@mmx/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+    devDependencies:
       tsx:
         specifier: ^4.7.0
         version: 4.23.1

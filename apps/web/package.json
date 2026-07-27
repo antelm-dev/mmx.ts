@@ -16,6 +16,7 @@
     "@mmx/client-settings": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
+    "@mmx/runtime-host": "workspace:*",
     "@mmx/runtime": "workspace:*",
     "@tauri-apps/api": "2.11.0",
     "pixi.js": "^8.19.0"

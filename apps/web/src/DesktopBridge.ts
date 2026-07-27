@@ -10,7 +10,7 @@ import {
   MAX_WINDOW_SCALE,
   type ClientSettings,
 } from "@mmx/client-settings";
-import type { ReplayFileAccess, ReplayText } from "./debug/DebugSession.js";
+import type { ClipboardAccess, ReplayFileAccess, ReplayText } from "@mmx/runtime/debug";
 import {
   readBrowserSettingsRaw,
   writeBrowserSettings,
@@ -75,6 +75,18 @@ export class DesktopBridge implements WebSettingsBackend {
     },
   };
 
+  readonly clipboard: ClipboardAccess = {
+    writeText: async (text) => navigator.clipboard.writeText(text),
+  };
+
+  async isFullscreen(): Promise<boolean> {
+    if (this.native) {
+      const win = getCurrentWindow();
+      return win.isFullscreen();
+    }
+    return document.fullscreenElement != null;
+  }
+
   async loadRaw(): Promise<unknown> {
     if (this.native) return invoke<unknown>("load_settings");
     return readBrowserSettingsRaw();
@@ -83,6 +95,14 @@ export class DesktopBridge implements WebSettingsBackend {
   async saveRaw(settings: ClientSettings): Promise<void> {
     if (this.native) await invoke("save_settings", { settings });
     else writeBrowserSettings(settings);
+  }
+
+  async load(): Promise<unknown> {
+    return this.loadRaw();
+  }
+
+  async save(settings: ClientSettings): Promise<void> {
+    return this.saveRaw(settings);
   }
 
   /**
@@ -109,6 +129,10 @@ export class DesktopBridge implements WebSettingsBackend {
     );
   }
 
+  async maxIntegerScale(): Promise<number> {
+    return this.maxWindowScale();
+  }
+
   /**
    * Lock the native window to an exact integer zoom of the 398×224 view.
    *
@@ -129,6 +153,10 @@ export class DesktopBridge implements WebSettingsBackend {
     await win.setMaxSize(size);
   }
 
+  async applyIntegerScale(scale: number): Promise<void> {
+    return this.applyWindowScale(scale);
+  }
+
   async setFullscreen(fullscreen: boolean): Promise<void> {
     if (this.native) {
       const win = getCurrentWindow();
@@ -146,9 +174,9 @@ export class DesktopBridge implements WebSettingsBackend {
     if (!fullscreen && document.fullscreenElement) await document.exitFullscreen();
   }
 
-  async onReplayDropped(load: (file: ReplayText) => void): Promise<void> {
-    if (!this.native) return;
-    await getCurrentWebview().onDragDropEvent((event) => {
+  async onReplayDropped(load: (file: ReplayText) => void): Promise<() => void> {
+    if (!this.native) return () => {};
+    const unlisten = await getCurrentWebview().onDragDropEvent((event) => {
       if (event.payload.type !== "drop") return;
       const path = event.payload.paths.find((candidate) =>
         candidate.toLowerCase().endsWith(".json"),
@@ -158,5 +186,7 @@ export class DesktopBridge implements WebSettingsBackend {
         .then(load)
         .catch((error: unknown) => console.warn("Could not open dropped replay", error));
     });
+    if (typeof unlisten === "function") return unlisten as unknown as () => void;
+    return () => {};
   }
 }
