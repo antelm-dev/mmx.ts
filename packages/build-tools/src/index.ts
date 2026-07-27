@@ -39,7 +39,14 @@ export type {
   ProjectIssue,
 } from "./types.js";
 export {
+  MMX_PROJECT_PLUGIN_NAME,
+  countMmxProjectPlugins,
+  createMmxProjectPluginsFromEnv,
+  createMmxWebDevInlineConfig,
+  defaultMmxProjectEmitDir,
+  mmxProjectNullPlugin,
   mmxProjectPlugin,
+  mmxProjectPluginOptionsFromDir,
   VIRTUAL_PROJECT_MODULE as VITE_VIRTUAL_PROJECT_MODULE,
 } from "./vite/plugin.js";
 export type { MmxProjectPluginOptions } from "./vite/plugin.js";

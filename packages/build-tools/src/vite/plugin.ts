@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { Plugin, ViteDevServer } from "vite";
+import type { InlineConfig, Plugin, PluginOption, ViteDevServer } from "vite";
 import {
   bundleContainsAbsolutePaths,
   bundleModuleSource,
@@ -16,6 +16,8 @@ import {
 import { resolveEmittedAssetPath } from "../paths.js";
 import type { BrowserProjectBundle } from "../types.js";
 import { createRebuildScheduler } from "./rebuildScheduler.js";
+
+export const MMX_PROJECT_PLUGIN_NAME = "mmx-project";
 
 export type MmxProjectPluginOptions = {
   projectDir: string;
@@ -46,10 +48,86 @@ function isUnderProject(projectDir: string, file: string): boolean {
   );
 }
 
+export function defaultMmxProjectEmitDir(projectDir: string): string {
+  return path.join(path.resolve(projectDir), ".mmx-assets");
+}
+
+export function mmxProjectPluginOptionsFromDir(projectDir: string): MmxProjectPluginOptions {
+  const resolved = path.resolve(projectDir);
+  return {
+    projectDir: resolved,
+    emitDir: defaultMmxProjectEmitDir(resolved),
+  };
+}
+
+export function countMmxProjectPlugins(plugins: readonly PluginOption[]): number {
+  let count = 0;
+  for (const entry of plugins) {
+    if (!entry) continue;
+    if (Array.isArray(entry)) {
+      count += countMmxProjectPlugins(entry);
+      continue;
+    }
+    if (entry instanceof Promise) continue;
+    if (typeof entry === "object" && "name" in entry && entry.name === MMX_PROJECT_PLUGIN_NAME) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+export function mmxProjectNullPlugin(): Plugin {
+  return {
+    name: MMX_PROJECT_PLUGIN_NAME,
+    enforce: "pre",
+
+    configResolved(config) {
+      assertSingleMmxProjectPlugin(config.plugins);
+    },
+
+    resolveId(source) {
+      if (source === VIRTUAL_PROJECT_MODULE) return VIRTUAL_PROJECT_PREFIX;
+      return null;
+    },
+
+    load(id) {
+      if (id !== VIRTUAL_PROJECT_PREFIX) return null;
+      return "export default null;";
+    },
+  };
+}
+
+export function createMmxProjectPluginsFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): Plugin[] {
+  const projectDir = env.MMX_PROJECT;
+  if (!projectDir) return [mmxProjectNullPlugin()];
+  return [mmxProjectPlugin(mmxProjectPluginOptionsFromDir(projectDir))];
+}
+
+export function createMmxWebDevInlineConfig(options: {
+  webRoot: string;
+}): InlineConfig {
+  return {
+    root: options.webRoot,
+    configFile: path.join(options.webRoot, "vite.config.ts"),
+  };
+}
+
+function assertSingleMmxProjectPlugin(plugins: readonly Plugin[]): void {
+  const count = countMmxProjectPlugins(plugins);
+  if (count > 1) {
+    throw new Error(
+      `${MMX_PROJECT_PLUGIN_NAME} plugin registered ${count} times; apps/web/vite.config.ts owns construction when MMX_PROJECT is set — do not also pass mmxProjectPlugin to createServer()`,
+    );
+  }
+}
+
 export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
   const state: PluginState = {
     bundle: null,
   };
+  const emitDir = options.emitDir ?? defaultMmxProjectEmitDir(options.projectDir);
 
   let server: ViteDevServer | undefined;
 
@@ -88,8 +166,12 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
   });
 
   return {
-    name: "mmx-project",
+    name: MMX_PROJECT_PLUGIN_NAME,
     enforce: "pre",
+
+    configResolved(config) {
+      assertSingleMmxProjectPlugin(config.plugins);
+    },
 
     async buildStart() {
       commitBundle(await runRebuild());
@@ -97,6 +179,7 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
 
     configureServer(devServer) {
       server = devServer;
+      assertSingleMmxProjectPlugin(devServer.config.plugins);
       for (const glob of projectWatchGlobs(options.projectDir)) {
         server.watcher.add(glob);
       }
@@ -112,10 +195,7 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
           next();
           return;
         }
-        const assetsRoot = path.join(
-          options.emitDir ?? path.join(options.projectDir, ".mmx-assets"),
-          "assets",
-        );
+        const assetsRoot = path.join(emitDir, "assets");
         let filePath: string;
         let fileName: string;
         try {

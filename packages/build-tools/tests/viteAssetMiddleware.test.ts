@@ -21,6 +21,9 @@ async function installAssetMiddleware(emitDir: string): Promise<Middleware> {
 
   let middleware: Middleware | undefined;
   const server = {
+    config: {
+      plugins: [plugin],
+    },
     watcher: {
       add() {},
       on() {},
