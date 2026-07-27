@@ -17,6 +17,7 @@ The engine is **pure TypeScript** with no runtime dependencies. It runs three wa
 
 ```bash
 pnpm install
+pnpm playwright:install   # Chromium for the required cross-repo browser boot test
 
 pnpm sim          # deterministic headless simulation, prints a state trace
 pnpm test         # unit tests (node:test) for gameplay behaviour
@@ -54,6 +55,14 @@ artifact is uploaded only when `MMX_PROJECT` is set for that workflow run, so a
 knowingly non-bootable bundle is never labeled as a production web build.
 Desktop production builds are gated the same way because they invoke
 `@mmx/web` `vite build` via Tauri's `beforeBuildCommand`.
+
+### Cross-repo browser boot
+
+`pnpm test:cross-repo` builds a Studio starter export and boots it in Chromium.
+It requires a Studio checkout (`MMX_STUDIO_ROOT`, defaulting to
+`../.worktrees/mmx-studio-assets-08`) plus Playwright Chromium from
+`pnpm playwright:install`. Missing Playwright or Chromium fails the run; set
+`MMX_SKIP_BROWSER_E2E=1` only when you intentionally want the optional skip path.
 
 ### Versioning
 

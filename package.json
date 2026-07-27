@@ -28,6 +28,7 @@
     "test:game-resource-guard": "node --test scripts/game-resource-guard.test.mjs",
     "test:cross-repo": "node --test scripts/cross-repo-e2e.test.mjs",
     "test:web-artifact-contract": "node --test scripts/web-artifact-contract.test.mjs",
+    "playwright:install": "playwright install chromium",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "changeset": "changeset",
@@ -41,6 +42,7 @@
     "@changesets/cli": "^2.31.1",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
+    "playwright": "1.55.0",
     "turbo": "2.10.7",
     "typescript": "^5.4.0"
   },
