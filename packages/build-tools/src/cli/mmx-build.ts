@@ -9,6 +9,7 @@ type ParsedArgs = {
   command: Command;
   project?: string;
   out?: string;
+  port?: number;
   watch?: boolean;
   help?: boolean;
 };
@@ -18,11 +19,12 @@ function printHelp(): void {
 
 Usage:
   mmx-build build --project <dir> [--out <dir>]
-  mmx-build dev --project <dir>
+  mmx-build dev --project <dir> [--port <number>]
 
 Options:
   --project   Path to a Studio project export directory (required)
   --out       Output directory for build artifacts (default: dist-project)
+  --port      Dev server port (default: 5173, strict)
   --watch     Rebuild when project files change (build command only)
   --help      Show this help
 
@@ -46,7 +48,14 @@ function parseArgs(argv: string[]): ParsedArgs {
     const arg = args[i]!;
     if (arg === "--project") parsed.project = args[++i];
     else if (arg === "--out") parsed.out = args[++i];
-    else if (arg === "--watch") parsed.watch = true;
+    else if (arg === "--port") {
+      const raw = args[++i];
+      const port = Number(raw);
+      if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+        throw new Error(`Invalid --port value: ${raw}`);
+      }
+      parsed.port = port;
+    } else if (arg === "--watch") parsed.watch = true;
   }
   return parsed;
 }
@@ -95,13 +104,21 @@ async function watchBuild(projectDir: string, outDir: string): Promise<void> {
   });
 }
 
-async function runDev(projectDir: string): Promise<void> {
+async function runDev(projectDir: string, port = 5173): Promise<void> {
   process.env.MMX_PROJECT = path.resolve(projectDir);
   const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const webRoot = path.resolve(packageRoot, "../../../apps/web");
   const { createServer } = await import("vite");
   const { createMmxWebDevInlineConfig } = await import("../vite/plugin.js");
-  const server = await createServer(createMmxWebDevInlineConfig({ webRoot }));
+  const server = await createServer({
+    ...createMmxWebDevInlineConfig({ webRoot }),
+    server: {
+      host: "127.0.0.1",
+      port,
+      strictPort: true,
+      open: false,
+    },
+  });
   await server.listen();
   server.printUrls();
 }
@@ -120,7 +137,7 @@ async function main(): Promise<void> {
   const projectDir = path.resolve(parsed.project);
   const outDir = path.resolve(parsed.out ?? "dist-project");
   if (parsed.command === "dev") {
-    await runDev(projectDir);
+    await runDev(projectDir, parsed.port);
     return;
   }
   if (parsed.watch) {

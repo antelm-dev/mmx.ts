@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { spawn, spawnSync } from "node:child_process";
-import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import net from "node:net";
+import { spawnSync } from "node:child_process";
+import { access, copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +14,12 @@ import {
   loadProject,
   requireProject,
 } from "../packages/build-tools/dist/index.js";
+import {
+  allocatePort,
+  requirePlaywright,
+  shouldSkipBrowserE2E,
+  withDevServer,
+} from "./cross-repo-e2e-harness.mjs";
 
 const coreRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const defaultStudioRoot = path.resolve(coreRoot, "../.worktrees/mmx-studio-assets-08");
@@ -36,6 +41,16 @@ function run(command, args, options = {}) {
     throw new Error([command, ...args, result.stdout, result.stderr].filter(Boolean).join("\n"));
   }
   return result.stdout.trim();
+}
+
+async function assertStudioRoot() {
+  try {
+    await access(path.join(studioRoot, "scripts/cross-repo-prepare.mjs"));
+  } catch {
+    throw new Error(
+      `Studio fixture missing at ${studioRoot}. Set MMX_STUDIO_ROOT to a Studio checkout that includes scripts/cross-repo-prepare.mjs.`,
+    );
+  }
 }
 
 async function walkFiles(root) {
@@ -83,44 +98,8 @@ async function buildExport(exportDir, outDir) {
   return bundle;
 }
 
-async function waitForPort(port, timeoutMs = 120_000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    const reachable = await new Promise((resolve) => {
-      const socket = net.connect({ host: "127.0.0.1", port }, () => {
-        socket.end();
-        resolve(true);
-      });
-      socket.on("error", () => resolve(false));
-    });
-    if (reachable) return;
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  throw new Error(`Timed out waiting for port ${port}.`);
-}
-
-async function withDevServer(exportDir, runTest) {
-  const cli = path.join(coreRoot, "packages/build-tools/dist/cli/mmx-build.js");
-  const child = spawn(process.execPath, [cli, "dev", "--project", exportDir], {
-    cwd: coreRoot,
-    stdio: "ignore",
-    detached: process.platform !== "win32",
-    windowsHide: true,
-  });
-
-  try {
-    await waitForPort(5173);
-    await runTest();
-  } finally {
-    if (process.platform === "win32") {
-      spawnSync("taskkill", ["/pid", String(child.pid), "/f", "/t"], { stdio: "ignore" });
-    } else {
-      process.kill(-child.pid, "SIGTERM");
-    }
-  }
-}
-
 test("cross-repo: clean starter export builds and boots", async (t) => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "clean-export");
   const buildDir = path.join(e2eRoot, "clean-build");
   const prepared = await prepareStudioExport(exportDir);
@@ -138,22 +117,25 @@ test("cross-repo: clean starter export builds and boots", async (t) => {
   assertNoForbiddenPaths(bundleModuleSource(bundle), "project bundle");
 
   await t.test("browser boot via factory dev", async (browserTest) => {
-    let playwright;
-    try {
-      playwright = await import("playwright");
-    } catch (error) {
-      if (process.env.MMX_ALLOW_BROWSER_SKIP === "1") {
-        browserTest.skip("playwright is not installed (MMX_ALLOW_BROWSER_SKIP=1)");
-        return;
-      }
-      throw new Error(
-        "playwright is required for browser boot; install it or set MMX_ALLOW_BROWSER_SKIP=1",
-        { cause: error },
-      );
+    if (shouldSkipBrowserE2E()) {
+      browserTest.skip("browser boot skipped via MMX_SKIP_BROWSER_E2E=1");
+      return;
     }
 
-    await withDevServer(exportDir, async () => {
-      const browser = await playwright.chromium.launch({ headless: true });
+    const playwright = await requirePlaywright();
+    const port = await allocatePort();
+
+    await withDevServer({ coreRoot, exportDir, port }, async ({ url }) => {
+      let browser;
+      try {
+        browser = await playwright.chromium.launch({ headless: true });
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Chromium is required for cross-repo browser boot. Run \`pnpm playwright:install\`. (${detail})`,
+        );
+      }
+
       try {
         const page = await browser.newPage();
         const errors = [];
@@ -162,7 +144,7 @@ test("cross-repo: clean starter export builds and boots", async (t) => {
         });
         page.on("pageerror", (error) => errors.push(error.message));
 
-        await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle", timeout: 120_000 });
+        await page.goto(url, { waitUntil: "networkidle", timeout: 120_000 });
         await page.waitForSelector("#game", { timeout: 120_000 });
         await page.waitForFunction(() => window.mmx != null, undefined, { timeout: 120_000 });
 
@@ -193,6 +175,7 @@ test("cross-repo: clean starter export builds and boots", async (t) => {
 });
 
 test("cross-repo: missing asset fails before bundling with logical ID", async () => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "missing-source");
   const brokenDir = path.join(e2eRoot, "missing-broken");
   await prepareStudioExport(exportDir);
@@ -220,6 +203,7 @@ test("cross-repo: missing asset fails before bundling with logical ID", async ()
 });
 
 test("cross-repo: wrong asset kind fails validation", async () => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "wrong-kind-source");
   const brokenDir = path.join(e2eRoot, "wrong-kind-broken");
   await prepareStudioExport(exportDir);
@@ -245,6 +229,7 @@ test("cross-repo: wrong asset kind fails validation", async () => {
 });
 
 test("cross-repo: traversal paths are rejected", async () => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "traversal-source");
   const brokenDir = path.join(e2eRoot, "traversal-broken");
   await prepareStudioExport(exportDir);
@@ -270,6 +255,7 @@ test("cross-repo: traversal paths are rejected", async () => {
 });
 
 test("cross-repo: asset content change produces a new content hash", async () => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "hash-export");
   await prepareStudioExport(exportDir);
   const project = await requireProject(exportDir);
@@ -291,6 +277,7 @@ test("cross-repo: asset content change produces a new content hash", async () =>
 });
 
 test("cross-repo: repeated unchanged builds are deterministic", async () => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "deterministic-export");
   await prepareStudioExport(exportDir);
   const project = await requireProject(exportDir);
@@ -308,6 +295,7 @@ test("cross-repo: repeated unchanged builds are deterministic", async () => {
 });
 
 test("cross-repo: final browser bundle has no source worktree paths", async () => {
+  await assertStudioRoot();
   const exportDir = path.join(e2eRoot, "bundle-export");
   await prepareStudioExport(exportDir);
   const webRoot = path.join(coreRoot, "apps/web");
