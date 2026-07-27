@@ -25,6 +25,11 @@ Options:
   --out       Output directory for build artifacts (default: dist-project)
   --watch     Rebuild when project files change (build command only)
   --help      Show this help
+
+Dev:
+  Sets MMX_PROJECT and starts apps/web via Vite. The mmx-project plugin is owned
+  by apps/web/vite.config.ts and registered once (emit dir: <project>/.mmx-assets).
+  Equivalent: MMX_PROJECT=<dir> pnpm --filter @mmx/web dev
 `);
 }
 
@@ -95,18 +100,8 @@ async function runDev(projectDir: string): Promise<void> {
   const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const webRoot = path.resolve(packageRoot, "../../../apps/web");
   const { createServer } = await import("vite");
-  const { mmxProjectPlugin } = await import("../vite/plugin.js");
-  const emitDir = path.join(projectDir, ".mmx-assets");
-  const server = await createServer({
-    root: webRoot,
-    configFile: path.join(webRoot, "vite.config.ts"),
-    plugins: [
-      mmxProjectPlugin({
-        projectDir: path.resolve(projectDir),
-        emitDir,
-      }),
-    ],
-  });
+  const { createMmxWebDevInlineConfig } = await import("../vite/plugin.js");
+  const server = await createServer(createMmxWebDevInlineConfig({ webRoot }));
   await server.listen();
   server.printUrls();
 }
