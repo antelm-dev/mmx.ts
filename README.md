@@ -295,10 +295,13 @@ packages/
     src/game/         world, actors, abilities, enemies, scene (internal)
     tests/            node:test gameplay and determinism tests
   renderer-pixi/      PixiJS game renderer (`@mmx/renderer-pixi` public entry)
-  runtime/            Shared simulation runtime (`@mmx/runtime`, `/browser`, `/player`, `/tooling`)
+  runtime/            Shared simulation runtime (`@mmx/runtime`, `/browser`, `/host`, `/player`, `/tooling`)
   browser-input/      Shared keyboard/gamepad action input (`@mmx/browser-input`)
-  editor-runtime/     Studio LevelDocument playtest adapter over `@mmx/runtime/tooling`
-  content-schema/     authoring document model
+  browser-audio/      Web audio assets and gameplay sounds (`@mmx/browser-audio`)
+  client-settings/    Persisted client settings store (`@mmx/client-settings`)
+  contracts/          Serialized animation and terrain contracts (`@mmx/contracts/animation`, `/terrain`)
+  editor-runtime/     Studio playtest adapter (`@mmx/editor-runtime`, `/adapters`)
+  content-schema/     authoring document model (`@mmx/content-schema`, `/slopes`)
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
