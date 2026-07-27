@@ -1,11 +1,4 @@
-/** Browser sound-effect player backed by Web Audio.
- *
- * The simulation only emits gameplay events. This adapter owns decoding, mixing,
- * overlapping voices and looping channels, so headless runs remain deterministic
- * and do not acquire a browser dependency.
- */
 import type { ProjectDocument } from "@mmx/project-schema";
-import { createBuiltinSoundResolver } from "./builtinSoundResolver.js";
 import { createProjectSoundResolver } from "./SoundAssetResolver.js";
 import type { SoundAssetResolver } from "./SoundAssetResolver.js";
 import { SoundAssetError } from "./SoundAssetResolver.js";
@@ -15,15 +8,10 @@ export type { SoundId, SoundName } from "./soundIds.js";
 export { GAMEPLAY_SOUND_IDS } from "./soundIds.js";
 
 export interface PlayOptions {
-  /** Gain in decibels, matching Godot's AudioStreamPlayer volume_db. */
   db?: number;
-  /** Playback-rate range; a single value disables random pitch. */
   rate?: number | [number, number];
-  /** Loop until stop(name), used by the charge streams. */
   loop?: boolean;
-  /** Loop points in seconds. */
   loopSeconds?: [number, number];
-  /** Retain a non-looping source so an interruption can stop it by name. */
   tracked?: boolean;
 }
 
@@ -46,15 +34,11 @@ export class SoundEffects {
   private loadPromise: Promise<void> | null = null;
   private readonly urlLoads = new Map<string, Promise<AudioBuffer>>();
 
-  constructor(options?: CreateSoundEffectsOptions) {
-    const resolved = options ?? {
-      resolver: createBuiltinSoundResolver(),
-      soundIds: GAMEPLAY_SOUND_IDS,
-    };
-    this.context = resolved.context ?? new AudioContext();
-    this.resolver = resolved.resolver;
-    this.soundIds = resolved.soundIds;
-    this.fetchFn = resolved.fetchFn ?? fetch.bind(globalThis);
+  constructor(options: CreateSoundEffectsOptions) {
+    this.context = options.context ?? new AudioContext();
+    this.resolver = options.resolver;
+    this.soundIds = options.soundIds;
+    this.fetchFn = options.fetchFn ?? fetch.bind(globalThis);
     this.master = this.context.createGain();
     this.master.connect(this.context.destination);
   }
@@ -63,7 +47,6 @@ export class SoundEffects {
     this.master.gain.value = Math.max(0, Math.min(1, volume));
   }
 
-  /** Decode every configured sample once so later playtests reuse the same buffers. */
   load(): Promise<void> {
     this.loadPromise ??= Promise.all(this.soundIds.map((soundId) => this.loadSound(soundId))).then(
       () => undefined,
@@ -71,7 +54,6 @@ export class SoundEffects {
     return this.loadPromise;
   }
 
-  /** Must be called synchronously from an input handler to satisfy autoplay policies. */
   unlock(): void {
     if (this.context.state === "suspended") void this.context.resume();
   }
@@ -109,7 +91,6 @@ export class SoundEffects {
     source.stop();
   }
 
-  /** Stop every voice when a play session ends; decoded buffers remain reusable. */
   stopAll(): void {
     this.active.clear();
     for (const source of this.voices) source.stop();

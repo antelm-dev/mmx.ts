@@ -1,4 +1,3 @@
-import { LEVEL_CATALOG } from "@mmx/engine";
 import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
 import { DesktopBridge } from "./DesktopBridge.js";
 import { DebugPanel } from "./debug/DebugPanel.js";
@@ -13,6 +12,8 @@ import {
   entryLevel,
   loadProjectBundle,
   projectLevelCatalog,
+  projectUiFontUrl,
+  requireProjectBundle,
 } from "./project/projectRuntime.js";
 import { ReplayIntegration } from "./replay/ReplayIntegration.js";
 import { GameRuntime } from "./runtime/GameRuntime.js";
@@ -23,15 +24,13 @@ import { HomeScreen } from "./ui/HomeScreen.js";
 import { loadUiFont } from "./ui/font.js";
 
 async function bootstrap(): Promise<void> {
-  const projectBundle = await loadProjectBundle();
-  const levelCatalog = projectBundle ? projectLevelCatalog(projectBundle) : LEVEL_CATALOG;
+  const projectBundle = requireProjectBundle(await loadProjectBundle());
+  const levelCatalog = projectLevelCatalog(projectBundle);
 
-  const sounds = projectBundle
-    ? new SoundEffects({
-        resolver: createProjectSoundAssetResolver(projectBundle),
-        soundIds: projectBundle.soundIds,
-      })
-    : new SoundEffects();
+  const sounds = new SoundEffects({
+    resolver: createProjectSoundAssetResolver(projectBundle),
+    soundIds: projectBundle.soundIds,
+  });
   const gameplaySounds = new GameplaySounds(sounds);
   const desktop = new DesktopBridge();
 
@@ -45,10 +44,8 @@ async function bootstrap(): Promise<void> {
     sounds: gameplaySounds,
     onPlayerDeath: () => debug.restartLevel(),
     onWeaponChanged: (weapon) => debug.notify(`weapon: ${weapon}`),
-    assets: projectBundle ? createProjectAssetCatalog(projectBundle) : undefined,
-    decorations: projectBundle
-      ? decorationsForLevel(projectBundle, projectBundle.meta.entryLevelId)
-      : undefined,
+    assets: createProjectAssetCatalog(projectBundle),
+    decorations: decorationsForLevel(projectBundle, projectBundle.meta.entryLevelId),
   });
 
   const lifecycle = new AppLifecycle(desktop, model, presenter, (message) => debug.notify(message));
@@ -138,9 +135,7 @@ async function bootstrap(): Promise<void> {
   presenter.attach(debug.scene);
 
   await model.load();
-  if (projectBundle) {
-    debug.loadLevel(entryLevel(projectBundle));
-  }
+  debug.loadLevel(entryLevel(projectBundle));
 
   const applyVolume = (volume: number): void => {
     sounds.setMasterVolume(volume);
@@ -153,9 +148,16 @@ async function bootstrap(): Promise<void> {
 
   const canvas = document.getElementById("game") as HTMLCanvasElement;
   const panel = new DebugPanel(debug);
-  const animationInspector = new AnimationInspector(debug);
+  const animationInspector = new AnimationInspector(
+    debug,
+    projectBundle.rendererManifest!.playerAnims,
+  );
 
-  await Promise.all([presenter.create(canvas, debug.scene.stage), sounds.load(), loadUiFont()]);
+  await Promise.all([
+    presenter.create(canvas, debug.scene.stage),
+    sounds.load(),
+    loadUiFont(projectUiFontUrl(projectBundle)),
+  ]);
   presenter.uiLayer.addChild(home.view, menu.view);
   home.open();
 

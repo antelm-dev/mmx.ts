@@ -15,7 +15,6 @@ import { DashSmoke } from "../DashSmoke.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";
 import { Trail } from "../Trail.js";
-import { createBuiltinRendererAssetManifest } from "../assets/builtinCatalog.js";
 import type { RendererAssetManifest } from "../assets/manifest.js";
 import { validateRendererAssetManifest } from "../assets/manifest.js";
 import { DecorationView } from "./DecorationView.js";
@@ -64,7 +63,7 @@ const CHARGE_TIER_FX: Record<number, { clip: string; tint: number }> = {
 };
 
 export interface RendererCreateOptions {
-  manifest?: RendererAssetManifest;
+  manifest: RendererAssetManifest;
 }
 
 export class Renderer {
@@ -148,9 +147,9 @@ export class Renderer {
   static async create(
     canvas: HTMLCanvasElement,
     stage: Stage,
-    options: RendererCreateOptions = {},
+    options: RendererCreateOptions,
   ): Promise<Renderer> {
-    const manifest = options.manifest ?? createBuiltinRendererAssetManifest();
+    const manifest = options.manifest;
     validateRendererAssetManifest(manifest);
     const app = new Application();
     try {

@@ -1,31 +1,19 @@
 import type { Enemy } from "@mmx/engine";
 import type { Player } from "@mmx/engine";
 import type { Scene } from "@mmx/engine";
-import { createBuiltinSoundResolver } from "./builtinSoundResolver.js";
-import { createSoundEffects, type SoundEffects } from "./SoundEffects.js";
-import { GAMEPLAY_SOUND_IDS } from "./soundIds.js";
+import type { SoundEffects } from "./SoundEffects.js";
 
-/** Forward loop from MMX's 32 kHz Charge.wav import metadata, in seconds. */
 const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
 
 export interface CreateGameplaySoundsOptions {
   effects: SoundEffects;
 }
 
-/**
- * Connects deterministic engine events to browser-owned sound playback.
- * Call attachScene again whenever a restart replaces the Scene instance.
- */
 export class GameplaySounds {
   private readonly effects: SoundEffects;
 
-  constructor(effects?: SoundEffects) {
-    this.effects =
-      effects ??
-      createSoundEffects({
-        resolver: createBuiltinSoundResolver(),
-        soundIds: GAMEPLAY_SOUND_IDS,
-      });
+  constructor(effects: SoundEffects) {
+    this.effects = effects;
   }
 
   unlock(): void {

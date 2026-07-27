@@ -1,5 +1,4 @@
 import { assertAnimData, type AnimData, type Region } from "@mmx/contracts/animation";
-import { createBuiltinRendererAssetManifest } from "../assets/builtinCatalog.js";
 import {
   buildRendererAssetManifest,
   manifestToPreviewTables,
@@ -55,7 +54,9 @@ export function resolveRendererAssetManifest(
   if (options.resolver && options.bindings) {
     return buildRendererAssetManifest(options.resolver, options.bindings);
   }
-  return createBuiltinRendererAssetManifest();
+  throw new Error(
+    "Renderer assets require an injected manifest or resolver/bindings pair.",
+  );
 }
 
 export function createAssetCatalog(options: CreateAssetCatalogOptions = {}): AssetCatalog {
@@ -75,25 +76,21 @@ export function createAssetCatalog(options: CreateAssetCatalogOptions = {}): Ass
   });
 }
 
-const sharedCatalog = createAssetCatalog();
-
-export async function loadEditorAssets(
-  assets: AssetCatalog = sharedCatalog,
-): Promise<AssetCatalog> {
+export async function loadEditorAssets(assets: AssetCatalog): Promise<AssetCatalog> {
   await assets.load();
   return assets;
 }
 
 export function getSpritePreview(
   definition: EditorSpriteDefinition,
-  assets: AssetCatalog = sharedCatalog,
+  assets: AssetCatalog,
 ): SpritePreview | null {
   return assets.getSpritePreview(definition);
 }
 
 export function getDecorationPreview(
   assetId: string,
-  assets: AssetCatalog = sharedCatalog,
+  assets: AssetCatalog,
 ): SpritePreview | null {
   return assets.getDecorationPreview(assetId);
 }

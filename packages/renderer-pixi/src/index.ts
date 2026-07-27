@@ -41,8 +41,6 @@ export {
   type RendererAssetUrlResolver,
   type ShotAnimManifest,
 } from "./assets/index.js";
-/** @deprecated Remove in prompt 07. Use injected manifests instead. */
-export { createBuiltinRendererAssetManifest } from "./assets/builtinCatalog.js";
 export {
   createPlaytestRenderer,
   type CreatePlaytestRendererOptions,
@@ -67,7 +65,4 @@ export {
   type DebugRenderOptions,
 } from "./debug/index.js";
 
-/** @deprecated Prefer createAssetCatalog / ScenePresentation. Kept for transitional consumers. */
-export { animData, enemyAnims, pickupAnims, SHEET_URLS } from "./render/assets.js";
-/** @deprecated Studio/editor-runtime should use loadEditorAssets / getSpritePreview. Kept for apps/web. */
 export { loadSheets, regionTexture } from "./render/textures.js";

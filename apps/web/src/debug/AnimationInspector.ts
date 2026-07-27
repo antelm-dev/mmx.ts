@@ -1,17 +1,7 @@
-import type { AnimData, Region } from "@mmx/contracts/animation";
+import type { AnimData } from "@mmx/contracts/animation";
 import type { AnimationLayer } from "@mmx/engine";
-import { animData } from "@mmx/renderer-pixi";
 import type { DebugSession } from "./DebugSession.js";
 
-/**
- * Interactive player-animation inspector (F3).
- *
- * The panel reads the same generated atlas metadata that is loaded into the
- * engine. Changing a clip, frame, or sprite layer is deliberately treated as a
- * debug cheat: it changes simulation-visible animation state and therefore
- * taints a replay. Pausing and stepping continue to use DebugSession's normal
- * deterministic time controls.
- */
 export class AnimationInspector {
   private readonly root = document.createElement("aside");
   private readonly clip = document.createElement("select");
@@ -19,11 +9,15 @@ export class AnimationInspector {
   private readonly frameValue = document.createElement("output");
   private readonly details = document.createElement("pre");
   private readonly history = document.createElement("ol");
-  private readonly data = animData as unknown as AnimData;
+  private readonly data: AnimData;
   private lastState = "";
   private lastScene: object | null = null;
 
-  constructor(private readonly session: DebugSession) {
+  constructor(
+    private readonly session: DebugSession,
+    playerAnims: AnimData,
+  ) {
+    this.data = playerAnims;
     this.root.id = "animation-inspector";
     this.root.setAttribute("aria-label", "Animation inspector");
 
@@ -76,7 +70,6 @@ export class AnimationInspector {
     document.body.append(this.root);
   }
 
-  /** Synchronise controls and diagnostics with the rendered simulation state. */
   update(): void {
     if (this.root.hidden !== !this.session.animationInspectorVisible) {
       this.root.hidden = !this.session.animationInspectorVisible;
@@ -170,6 +163,6 @@ export class AnimationInspector {
   }
 }
 
-function formatRegion(region: Region | null): string {
+function formatRegion(region: readonly [number, number, number, number] | null): string {
   return region ? `[${region.join(", ")}]` : "-";
 }

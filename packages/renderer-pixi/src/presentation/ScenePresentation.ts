@@ -252,8 +252,7 @@ export function createScenePresentationWithHost(
   scene: Scene,
   options: CreateScenePresentationWithHostOptions = {},
 ): ScenePresentation {
-  const manifest = resolveRendererAssetManifest(options);
-  const assets = options.assets ?? createAssetCatalog({ manifest });
+  const assets = options.assets ?? createAssetCatalog(options);
   const overlay = options.debugOverlay === undefined ? new DebugOverlay() : options.debugOverlay;
   const presentation = new ScenePresentationImpl(host, assets, options.effects, overlay);
   if (options.debugOptions) presentation.setDebugOptions(options.debugOptions);
@@ -267,8 +266,8 @@ export async function createScenePresentation(
   scene: Scene,
   options: ScenePresentationOptions = {},
 ): Promise<ScenePresentation> {
-  const manifest = resolveRendererAssetManifest(options);
-  const assets = options.assets ?? createAssetCatalog({ manifest });
+  const manifest = options.manifest ?? resolveRendererAssetManifest(options);
+  const assets = options.assets ?? createAssetCatalog({ ...options, manifest });
   await assets.load();
   const { Renderer } = await import("../render/Renderer.js");
   const renderer = await Renderer.create(canvas, scene.stage, { manifest });
