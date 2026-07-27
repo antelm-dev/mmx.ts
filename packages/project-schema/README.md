@@ -18,10 +18,28 @@ import {
 } from "@mmx/project-schema";
 ```
 
-- `parseProject(raw)` — migrate then validate; returns path-addressed diagnostics
-- `migrateProject(raw)` — upgrade to the current schema version (v1 has no steps)
-- `validateProject(doc)` — structural checks (ids, paths, duplicates, kinds)
-- `serializeProject(doc)` / `normalizeProject(doc)` — deterministic export order
+- `parseProject(raw)` migrates then validates and returns path-addressed
+  diagnostics.
+- `migrateProject(raw)` upgrades supported older documents to the current
+  schema.
+- `validateProject(doc)` performs structural checks for IDs, paths,
+  references, duplicates, and asset kinds.
+- `serializeProject(doc)` and `normalizeProject(doc)` produce deterministic
+  export order.
 
-This package has no engine, Pixi, Web Audio, Electron, Vite, or Node `fs`
-dependencies.
+Use `parseProject` at untrusted JSON boundaries. It reports ordinary validation
+failures as data; use `assertProject` only where an exception is the intended
+control flow.
+
+Project paths must be portable relative paths. Resolving those paths against a
+filesystem root and enforcing containment belongs to `@mmx/build-tools`.
+
+This package has no engine, Pixi, Web Audio, Electron, Vite, or Node filesystem
+dependency.
+
+## Development
+
+```bash
+pnpm --filter @mmx/project-schema test
+pnpm --filter @mmx/project-schema build
+```

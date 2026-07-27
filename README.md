@@ -302,54 +302,53 @@ lethal spike pit, ramp gradients, wall-jump shafts, upper air-dash routes,
 camera zones, and both enemy types. Studio owns and exports those level
 documents; core only compiles their portable project representation.
 
-```
-packages/
-  engine/             gameplay simulation (`@mmx/engine` public entry)
-    src/core/         Vec2, Input, EventBus, replay format, constants (internal)
-    src/game/         world, actors, abilities, enemies, scene (internal)
-    tests/            node:test gameplay and determinism tests
-  renderer-pixi/      PixiJS game renderer (`@mmx/renderer-pixi` public entry)
-  runtime/            Shared simulation runtime (`@mmx/runtime`, `/browser`, `/host`, `/player`, `/tooling`)
-  browser-input/      Shared keyboard/gamepad action input (`@mmx/browser-input`)
-  browser-audio/      Web audio assets and gameplay sounds (`@mmx/browser-audio`)
-  client-settings/    Persisted client settings store (`@mmx/client-settings`)
-  contracts/          Serialized animation and terrain contracts (`@mmx/contracts/animation`, `/terrain`)
-  content-schema/     authoring document model (`@mmx/content-schema`, `/slopes`)
-  project-schema/     portable Studio export contract (`@mmx/project-schema`)
-apps/
-  web/                browser composition, input, audio, UI and debug tools
-  sim/                deterministic headless runner and replay CLI
-scripts/              import-boundary and game-resource guard tests
-```
+| Workspace                                                        | Role                                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`packages/contracts`](packages/contracts/README.md)             | Dependency-free animation and terrain serialization contracts                        |
+| [`packages/content-schema`](packages/content-schema/README.md)   | Studio authoring document model, commands, validation, and slope baking              |
+| [`packages/project-schema`](packages/project-schema/README.md)   | Portable Studio project and asset-manifest contract                                  |
+| [`packages/engine`](packages/engine/README.md)                   | Deterministic gameplay simulation, content compilation, and tooling snapshots        |
+| [`packages/browser-input`](packages/browser-input/README.md)     | Keyboard/gamepad action input and packed engine masks                                |
+| [`packages/client-settings`](packages/client-settings/README.md) | Versioned settings, migration, bindings, and injected persistence                    |
+| [`packages/browser-audio`](packages/browser-audio/README.md)     | Web Audio asset resolution and gameplay event sounds                                 |
+| [`packages/renderer-pixi`](packages/renderer-pixi/README.md)     | PixiJS renderer, presentation effects, asset catalogs, and debug geometry            |
+| [`packages/runtime`](packages/runtime/README.md)                 | Shared session lifecycle, fixed-step scheduling, player, tooling, and host contracts |
+| [`packages/build-tools`](packages/build-tools/README.md)         | Studio export loading, compilation, asset emission, and Vite integration             |
+| `apps/web`                                                       | Browser composition, UI, settings adapters, and debug tools                          |
+| `apps/sim`                                                       | Deterministic headless runner and replay CLI                                         |
+| `scripts`                                                        | Import-boundary, packaging, and game-resource guard tests                            |
 
 Game sprites, sounds, fonts, and animation metadata live in Studio project exports
 (`mmx-studio/templates/mmx-demo`). Set `MMX_PROJECT` to that export directory
 before `pnpm build:web`, or use `pnpm factory:dev -- --project <dir>` for local
 play. See [Web project contract](#web-project-contract).
 
-The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
-on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends
-only on the engine, and the engine has no browser or rendering
-dependency. Run commands from the repository root so pnpm can select the correct
-workspace project. The simulator also uses `@mmx/build-tools` to load an
-explicit Studio project; it does not rely on a built-in engine level.
+Workspace dependencies flow from small portable contracts and schemas toward
+engine, browser adapters, presentation, runtime composition, and build tools.
+The engine has no browser or rendering dependency. The Web app composes the
+browser-facing packages; the simulator uses the engine plus `@mmx/build-tools`
+to load an explicit Studio project. Run commands from the repository root so
+pnpm can select the correct workspace project.
 
 ## Package import boundaries
 
 Cross-package imports must use published entry points — never deep paths into
 another package's internals.
 
-**Allowed public entries (examples):**
+**Allowed public entries:**
 
-| Package               | Entry                                             | Role                                                             |
-| --------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
-| `@mmx/engine`         | `.`                                               | Gameplay simulation surface (actors, scene, input, constants, …) |
-| `@mmx/engine`         | `./content`, `./data`, `./behaviors`, `./tooling` | Intentional sub-APIs                                             |
-| `@mmx/runtime`        | `./browser`, `./player`, `./tooling`              | Shared simulation session + browser scheduling                   |
-| `@mmx/renderer-pixi`  | `.`                                               | Game + editor-facing renderer API                                |
-| `@mmx/renderer-pixi`  | `./presentation`, `./debug`                       | Shared scene presentation + read-only debug geometry overlay     |
-| `@mmx/content-schema` | `.`                                               | Authoring document model                                         |
-| `@mmx/project-schema` | `.`                                               | Portable Studio project + asset manifest contract                |
+| Package                | Entry points                                                   | Role                                                          |
+| ---------------------- | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| `@mmx/contracts`       | `./animation`, `./terrain`                                     | Small serialized contracts; intentionally no root entry       |
+| `@mmx/content-schema`  | `.`, `./slopes`                                                | Authoring document model and slope baking                     |
+| `@mmx/project-schema`  | `.`                                                            | Portable Studio project and asset manifest                    |
+| `@mmx/engine`          | `.`, `./content`, `./data`, `./behaviors`, `./tooling`         | Gameplay simulation and intentional compiler/tooling sub-APIs |
+| `@mmx/browser-input`   | `.`                                                            | Keyboard/gamepad action input                                 |
+| `@mmx/client-settings` | `.`                                                            | Versioned client settings                                     |
+| `@mmx/browser-audio`   | `.`                                                            | Browser sound loading and gameplay audio                      |
+| `@mmx/renderer-pixi`   | `.`, `./presentation`, `./debug`                               | Renderer, scene presentation, and debug geometry              |
+| `@mmx/runtime`         | `.`, `./browser`, `./player`, `./tooling`, `./debug`, `./host` | Session lifecycle, scheduling, debug, and host contracts      |
+| `@mmx/build-tools`     | `.`, `./vite`                                                  | Project compiler and Vite integration                         |
 
 **Forbidden:**
 

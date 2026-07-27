@@ -1,32 +1,52 @@
 # @mmx/content-schema
 
-The shared authoring model for **MMX Studio**. Pure TypeScript with **no
-runtime dependencies** — every part of it is unit-tested headlessly under the
-repo's `node --test` runner.
+Shared, engine-independent authoring model for MMX Studio. It defines portable
+level documents and prefab instances, validates authored content, supports
+schema migration, and provides undoable editor commands.
 
-It defines and validates:
+## Entry points
 
-- **`GameProject`** — a set of levels pinned to a schema version.
-- **`LevelDocument`** — one authored level (grid, baked terrain, and placed objects).
-- **`GameObjectDefinition`** — a reusable prefab (the palette catalog).
-- **`LevelObjectInstance`** — one placement of a definition in a level.
-- **Property metadata** (`PropertyMeta`) that drives the inspector's controls.
-- **Structural / authoring validation** (`validateDocument` → `ValidationResult`).
-- **Schema versioning + migration** (`SCHEMA_VERSION`, `migrateDocument`).
-- **A command/history system** (`EditorCommand`, `History`, and pure command
-  creators) so every document mutation is undoable.
-- **Stable terrain constants** (`TerrainTile`) for serializable document tiles.
+| Import                       | Purpose                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `@mmx/content-schema`        | Documents, definitions, validation, commands, factories, migration, terrain helpers, and stable IDs |
+| `@mmx/content-schema/slopes` | Slope baking and application helpers                                                                |
 
-This package is the most stable domain layer in the monorepo. It does **not**
-depend on `@mmx/engine`, the Studio, or any runtime adapter.
+The main model includes:
 
-Conversion to engine `LevelData` and engine-backed validation live in
-`@mmx/editor-runtime/adapters`.
+- `GameProject`, `LevelDocument`, `GameObjectDefinition`, and
+  `LevelObjectInstance`
+- property metadata used to build inspector controls
+- presentation-only decoration instances
+- `validateDocument` and structured validation issues
+- `SCHEMA_VERSION` and `migrateDocument`
+- `History`, `EditorCommand`, and pure command creators
+- `createLevelDocument` for a fresh, valid level
 
-## Tests
+```ts
+import { createLevelDocument, validateDocument } from "@mmx/content-schema";
+
+const level = createLevelDocument({ name: "Training Room" });
+const validation = validateDocument(level);
+```
+
+The package depends only on the small serialized types in `@mmx/contracts`; it
+does not import the engine, renderer, Studio application, or filesystem APIs.
+Conversion from `LevelDocument` to engine `LevelData` belongs to
+`@mmx/build-tools`.
+
+## Slopes
+
+```ts
+import { applySlopes, bakeSlope } from "@mmx/content-schema/slopes";
+```
+
+Slope helpers convert authored slope rectangles into the stable tile and slope
+map representation consumed by the engine. Keep slope baking in authoring or
+build workflows rather than recomputing it during simulation.
+
+## Development
 
 ```bash
 pnpm --filter @mmx/content-schema test
+pnpm --filter @mmx/content-schema build
 ```
-
-Covers schema validation, factories, and the command history.
