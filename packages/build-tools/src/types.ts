@@ -1,3 +1,4 @@
+import type { SoundBindingMap } from "@mmx/browser-audio";
 import type { DecorationInstance, LevelDocument } from "@mmx/content-schema";
 import type { LevelData } from "@mmx/engine";
 import type { CompiledGameData } from "@mmx/engine/data";
@@ -50,9 +51,12 @@ export type BrowserProjectBundle = {
   compiledGameData: CompiledGameData;
   rendererManifest: RendererAssetManifest | null;
   rendererBindings: RendererAssetBindings | null;
+  soundBindings: SoundBindingMap | null;
   soundIds: string[];
   assetUrls: Record<string, string>;
 };
+
+export type { SoundBindingMap };
 
 export type DiskBuildReport = {
   bundle: BrowserProjectBundle;
