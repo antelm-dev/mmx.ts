@@ -46,10 +46,15 @@ jobs:
       - name: Generated levels
         run: pnpm level:check
 
-      - name: Typecheck / compile
+      - name: Typecheck / compile packages
         run: pnpm build
 
+      - name: Production web artifact
+        if: ${{ env.MMX_PROJECT != '' }}
+        run: pnpm build:web
+
       - uses: actions/upload-artifact@v4
+        if: ${{ env.MMX_PROJECT != '' }}
         with:
           name: web-dist
           path: apps/web/dist
@@ -110,9 +115,11 @@ jobs:
         run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked
 
       - name: Build desktop
+        if: ${{ env.MMX_PROJECT != '' }}
         run: pnpm --filter @mmx/desktop build -- --locked
 
       - uses: actions/upload-artifact@v4
+        if: ${{ env.MMX_PROJECT != '' }}
         with:
           name: desktop-${{ matrix.platform }}
           path: |
