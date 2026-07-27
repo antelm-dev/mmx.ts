@@ -192,7 +192,7 @@ test("buildRendererAssetManifestFromProject wires project assets end-to-end", ()
   assert.equal(manifest.enemyActors.metool.sheet, "metool.png");
 });
 
-test("createAssetCatalog uses injected manifest without reading resources/", async () => {
+test("createAssetCatalog uses injected manifest without core-owned assets", async () => {
   const manifest = buildRendererAssetManifestFromProject(
     fakeProject(),
     bindings,

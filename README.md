@@ -211,7 +211,7 @@ Shooting plays **no clip of its own**. `Shot.gd` swaps the whole SpriteFrames
 resource (`x.res` -> `x_leftarm.res`, "pointing_cannon") while keeping the current
 clip name _and_ frame index, so every state has an arm-out twin and X keeps walking,
 jumping or wall-sliding with the buster raised. The port models this as an animation
-_layer_: [`scripts/build-anims.mjs`](scripts/build-anims.mjs) writes both atlases' regions
+_layer_: the Studio starter template's `build-anims.mjs` writes both atlases' regions
 into `x_anims.json`, and the renderer picks the sheet the layer asks for.
 
 Clip data is optional. The headless sim and tests run without loading it — clips then
@@ -251,14 +251,14 @@ ability answers which event.
 
 ### Enemy sprites
 
-[`scripts/build-enemies.mjs`](scripts/build-enemies.mjs) (`pnpm enemies:import`)
-builds `resources/sprites/enemies/enemy_anims.json` from the Godot project's **Aseprite**
-sidecars, not its `.res` SpriteFrames — the enemies still have their source
-`.json` checked in, and it carries per-frame atlas rects, per-frame durations in
-milliseconds, and `meta.frameTags` naming the clips. The one thing it cannot carry
-is whether a clip loops, which lives in the Godot resource; that is declared in the
-script and is load-bearing rather than cosmetic (a looping `stun` would leave a
-Metool stunned forever, since `EnemyStun` advances on `animation_finished`).
+Enemy animation metadata is generated from the Godot project's **Aseprite** sidecars
+in `mmx-studio/packages/starter-template/scripts/build-enemies.mjs`, not from `.res`
+SpriteFrames — the enemies still have their source `.json` checked in, and it carries
+per-frame atlas rects, per-frame durations in milliseconds, and `meta.frameTags`
+naming the clips. The one thing it cannot carry is whether a clip loops, which lives
+in the Godot resource; that is declared in the script and is load-bearing rather
+than cosmetic (a looping `stun` would leave a Metool stunned forever, since
+`EnemyStun` advances on `animation_finished`).
 
 ### Not ported (extension points)
 
@@ -298,9 +298,12 @@ apps/
   sim/                deterministic headless runner and replay CLI
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
-resources/            Shared sprites, sounds, fonts and animation metadata
-scripts/              asset importers + import-boundary guard tests and fixtures
+scripts/              import-boundary and game-resource guard tests
 ```
+
+Game sprites, sounds, fonts, and animation metadata live in Studio project exports
+(`mmx-studio/templates/mmx-starter`). Core injects them at build time through
+`@mmx/build-tools` when `MMX_PROJECT` is set.
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
 on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends

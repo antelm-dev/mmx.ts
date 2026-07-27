@@ -54,9 +54,7 @@ export function resolveRendererAssetManifest(
   if (options.resolver && options.bindings) {
     return buildRendererAssetManifest(options.resolver, options.bindings);
   }
-  throw new Error(
-    "Renderer assets require an injected manifest or resolver/bindings pair.",
-  );
+  throw new Error("Renderer assets require an injected manifest or resolver/bindings pair.");
 }
 
 export function createAssetCatalog(options: CreateAssetCatalogOptions = {}): AssetCatalog {
@@ -88,9 +86,6 @@ export function getSpritePreview(
   return assets.getSpritePreview(definition);
 }
 
-export function getDecorationPreview(
-  assetId: string,
-  assets: AssetCatalog,
-): SpritePreview | null {
+export function getDecorationPreview(assetId: string, assets: AssetCatalog): SpritePreview | null {
   return assets.getDecorationPreview(assetId);
 }

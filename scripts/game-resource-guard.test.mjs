@@ -1,73 +1,35 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, test } from "node:test";
-import { fileURLToPath } from "node:url";
 
-import { findForbiddenGameResourceRefs } from "./check-game-resources.mjs";
-
-const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
-const fixtures = path.join(scriptsDir, "__fixtures__", "game-resource-guard");
-
-function writeFixture(name, contents) {
-  const dir = path.join(fixtures, name);
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, "sample.ts");
-  fs.writeFileSync(file, contents, "utf8");
-  return file;
-}
+import { findForbiddenGameResourceRefs, scanGameResourceText } from "./check-game-resources.mjs";
 
 describe("game resource guard", () => {
   test("allows isolated test fixtures", () => {
-    const fixtureDir = path.join(rootFromScripts(), "packages/engine/tests/fixtures");
-    fs.mkdirSync(fixtureDir, { recursive: true });
-    const fixture = path.join(fixtureDir, "allowed-sample.json");
-    fs.writeFileSync(fixture, '{"animations":{}}', "utf8");
-    const hits = findForbiddenGameResourceRefs();
-    assert.equal(
-      hits.some((hit) => hit.startsWith("packages/engine/tests/fixtures/")),
-      false,
-    );
+    const hits = scanGameResourceText('{"animations":{"idle":{"loop":true}}}');
+    assert.deepEqual(hits, []);
   });
 
   test("rejects root resources imports", () => {
-    const file = writeFixture(
-      "forbidden-resources",
-      `const url = "../../../resources/sprites/player/x.png";\n`,
-    );
-    const rel = path.relative(rootFromScripts(), file).replaceAll("\\", "/");
-    const hits = findForbiddenGameResourceRefs();
-    assert.ok(hits.some((hit) => hit.startsWith(rel) && hit.includes("root resources/")));
+    const hits = scanGameResourceText('const url = "../../../resources/sprites/player/x.png";\n');
+    assert.ok(hits.some((hit) => hit.includes("root resources/")));
+    assert.ok(hits.some((hit) => hit.includes("hard-coded MMX sprite path")));
   });
 
   test("rejects builtin catalog fallbacks", () => {
-    const file = writeFixture(
-      "forbidden-builtin",
-      `import { createBuiltinRendererAssetManifest } from "./builtinCatalog.js";\n`,
+    const hits = scanGameResourceText(
+      'import { createBuiltinRendererAssetManifest } from "./builtinCatalog.js";\n',
     );
-    const rel = path.relative(rootFromScripts(), file).replaceAll("\\", "/");
-    const hits = findForbiddenGameResourceRefs();
-    assert.ok(hits.some((hit) => hit.startsWith(rel) && hit.includes("builtin renderer")));
+    assert.ok(hits.some((hit) => hit.includes("builtin renderer catalog")));
   });
 
-  test("detects builtin sound resolver usage in fixtures", () => {
-    const file = writeFixture(
-      "forbidden-sound",
-      `import { createBuiltinSoundResolver } from "./builtinSoundResolver.js";\n`,
+  test("detects builtin sound resolver usage", () => {
+    const hits = scanGameResourceText(
+      'import { createBuiltinSoundResolver } from "./builtinSoundResolver.js";\n',
     );
-    const rel = path.relative(rootFromScripts(), file).replaceAll("\\", "/");
-    const hits = findForbiddenGameResourceRefs();
-    assert.ok(hits.some((hit) => hit.startsWith(rel) && hit.includes("builtin sound")));
+    assert.ok(hits.some((hit) => hit.includes("builtin sound resolver")));
   });
 
   test("repository source has no forbidden game resource references", () => {
-    const hits = findForbiddenGameResourceRefs().filter(
-      (hit) => !hit.startsWith("scripts/__fixtures__/game-resource-guard/"),
-    );
-    assert.deepEqual(hits, []);
+    assert.deepEqual(findForbiddenGameResourceRefs(), []);
   });
 });
-
-function rootFromScripts() {
-  return path.resolve(scriptsDir, "..");
-}

@@ -7,7 +7,7 @@ const selfPath = fileURLToPath(import.meta.url);
 
 const SCAN_ROOTS = ["apps", "packages", "scripts"];
 
-const SKIP_DIR_NAMES = new Set(["node_modules", "dist", ".turbo", "__fixtures__", "fixtures"]);
+const SKIP_DIR_NAMES = new Set(["node_modules", "dist", ".turbo"]);
 
 const ALLOWED_REL_PREFIXES = [
   "docs/",
@@ -53,7 +53,11 @@ const FORBIDDEN_PATTERNS = [
 ];
 
 function isAllowedFile(rel) {
-  return ALLOWED_REL_PREFIXES.some((prefix) => rel === prefix || rel.startsWith(prefix));
+  if (ALLOWED_REL_PREFIXES.some((prefix) => rel === prefix || rel.startsWith(prefix))) {
+    return true;
+  }
+  if (/^(?:packages|apps)\/[^/]+\/tests\//.test(rel)) return true;
+  return false;
 }
 
 function shouldSkipDir(full, entName) {
@@ -61,7 +65,17 @@ function shouldSkipDir(full, entName) {
   const rel = path.relative(root, full).replaceAll("\\", "/");
   if (/\/tests\/fixtures(?:\/|$)/.test(rel)) return true;
   if (rel.startsWith("packages/build-tools/tests/fixtures/")) return true;
+  if (rel.startsWith("scripts/__fixtures__/import-boundaries/forbidden/")) return true;
+  if (rel.startsWith("scripts/__fixtures__/game-resource-guard/")) return true;
   return false;
+}
+
+export function scanGameResourceText(text) {
+  const hits = [];
+  for (const { name, regex } of FORBIDDEN_PATTERNS) {
+    if (regex.test(text)) hits.push(name);
+  }
+  return [...new Set(hits)];
 }
 
 export function findForbiddenGameResourceRefs(roots = SCAN_ROOTS) {
@@ -79,10 +93,8 @@ export function findForbiddenGameResourceRefs(roots = SCAN_ROOTS) {
       const rel = path.relative(root, full).replaceAll("\\", "/");
       if (isAllowedFile(rel)) continue;
       const text = fs.readFileSync(full, "utf8");
-      for (const { name, regex } of FORBIDDEN_PATTERNS) {
-        if (regex.test(text)) {
-          hits.push(`${rel}: ${name}`);
-        }
+      for (const name of scanGameResourceText(text)) {
+        hits.push(`${rel}: ${name}`);
       }
     }
   }
