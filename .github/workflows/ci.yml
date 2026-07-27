@@ -60,6 +60,51 @@ jobs:
           path: apps/web/dist
           if-no-files-found: error
 
+  cross-repo-browser-e2e:
+    name: Cross-repo browser E2E
+    runs-on: ubuntu-latest
+    if: ${{ vars.MMX_STUDIO_REPO != '' }}
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v5
+
+      - name: Checkout Studio fixture
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.MMX_STUDIO_REPO }}
+          ref: ${{ vars.MMX_STUDIO_REF }}
+          path: mmx-studio
+          token: ${{ secrets.MMX_STUDIO_TOKEN || github.token }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install core dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm playwright:install
+
+      - name: Build core
+        run: pnpm build
+
+      - name: Install Studio dependencies
+        working-directory: mmx-studio
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Studio packages used by prepare
+        working-directory: mmx-studio
+        run: pnpm exec turbo run build --filter=@mmx/starter-template --filter=@mmx/project-io
+
+      - name: Strict cross-repo browser boot
+        env:
+          MMX_STUDIO_ROOT: ${{ github.workspace }}/mmx-studio
+        run: pnpm test:cross-repo
+
   desktop:
     name: Desktop (${{ matrix.platform }})
     needs: test-and-build

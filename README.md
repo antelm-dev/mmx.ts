@@ -64,6 +64,25 @@ It requires a Studio checkout (`MMX_STUDIO_ROOT`, defaulting to
 `pnpm playwright:install`. Missing Playwright or Chromium fails the run; set
 `MMX_SKIP_BROWSER_E2E=1` only when you intentionally want the optional skip path.
 
+Strict local command:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm playwright:install
+$env:MMX_STUDIO_ROOT = 'E:\Adel\Documents\Orgs\.worktrees\mmx-studio-assets-08'
+pnpm test:cross-repo
+```
+
+CI runs the same strict path in the `Cross-repo browser E2E` job when the
+repository variable `MMX_STUDIO_REPO` is set (for example `org/mmx-studio`).
+Optional companion settings:
+
+- `MMX_STUDIO_REF` — Studio git ref (defaults to the repository default branch)
+- secret `MMX_STUDIO_TOKEN` — checkout token when Studio is private
+
+Without `MMX_STUDIO_REPO`, the cross-repo job is skipped; the required Test &
+build job still runs. When the job does run, missing Playwright/Chromium fails.
+
 ### Versioning
 
 Package versions in `packages/*` are managed with
