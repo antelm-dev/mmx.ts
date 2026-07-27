@@ -3,7 +3,7 @@ import type { DecorationInstance, DecorationLayer } from "@mmx/content-schema";
 
 /**
  * Catalog of placeable decoration sprites. Instances store only {@link DecorationAsset.id};
- * sheets resolve through {@link SHEET_URLS} — never through paths in level documents.
+ * sheets resolve through the injected renderer manifest — never through paths in level documents.
  *
  * Placeholder assets reuse existing game sheets until a dedicated decorations atlas ships.
  * Animated decoration clips are deferred; only static regions are registered here.
