@@ -12,10 +12,7 @@ import {
 } from "../src/index.js";
 import type { AssetEmissionPlan } from "../src/types.js";
 import type { ProjectDocument } from "@mmx/project-schema";
-import {
-  createStudioShapedFixture,
-  soundAssetId,
-} from "./helpers/createStudioShapedFixture.js";
+import { createStudioShapedFixture, soundAssetId } from "./helpers/createStudioShapedFixture.js";
 
 function emissionFor(ids: string[]): AssetEmissionPlan {
   const assets = ids.map((assetId) => ({

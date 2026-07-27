@@ -12,10 +12,7 @@ import {
   planAssetEmission,
 } from "../src/compileProject.js";
 import { requireProject } from "../src/loadProject.js";
-import {
-  createStudioShapedFixture,
-  soundAssetId,
-} from "./helpers/createStudioShapedFixture.js";
+import { createStudioShapedFixture, soundAssetId } from "./helpers/createStudioShapedFixture.js";
 
 test("studio-shaped export compiles renderer and sound bindings", async () => {
   const fixture = await createStudioShapedFixture();
