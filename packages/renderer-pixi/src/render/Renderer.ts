@@ -80,7 +80,7 @@ export class Renderer {
   private readonly smoke = new SpritePool();
   private readonly player = new Sprite();
   private readonly aura = new Sprite();
-  private readonly hud = new Hud();
+  private readonly hud: Hud;
   private readonly paletteSwap = new PaletteSwapFilter();
   private terrain?: TerrainView;
 
@@ -104,6 +104,14 @@ export class Renderer {
     private readonly app: Application,
     private readonly manifest: RendererAssetManifest,
   ) {
+    this.hud = new Hud({
+      xBar: manifest.hudSheets.xBar,
+      hpFill: manifest.hudSheets.hpFill,
+      weaponBar: manifest.hudSheets.weaponBar,
+      weaponIcons: {
+        dark_arrow: manifest.hudSheets.weaponIconDarkArrow,
+      },
+    });
     this.player.anchor.set(0.5);
     this.aura.anchor.set(0.5);
     this.player.filters = [this.paletteSwap];

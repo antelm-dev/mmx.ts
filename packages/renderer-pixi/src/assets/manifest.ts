@@ -23,6 +23,12 @@ export interface RendererAssetManifest {
   shotAnims: ShotAnimManifest;
   enemyActorIds: Record<string, string>;
   pickupActorIds: Record<string, string>;
+  hudSheets: {
+    xBar: string;
+    hpFill: string;
+    weaponBar: string;
+    weaponIconDarkArrow?: string;
+  };
 }
 
 export interface RendererAssetBindings {
@@ -33,6 +39,12 @@ export interface RendererAssetBindings {
   pickupActors: Record<string, string>;
   shotAnimations: string;
   sheetImages: Record<string, string>;
+  hudSheets: {
+    xBar: string;
+    hpFill: string;
+    weaponBar: string;
+    weaponIconDarkArrow?: string;
+  };
 }
 
 export interface BuildRendererAssetManifestOptions {
@@ -174,6 +186,18 @@ export function buildRendererAssetManifest(
   const shotAnims =
     options.shotAnims ?? buildShotAnims(resolver, bindings.shotAnimations, sheetUrls);
 
+  for (const sheetKey of [
+    bindings.hudSheets.xBar,
+    bindings.hudSheets.hpFill,
+    bindings.hudSheets.weaponBar,
+    bindings.hudSheets.weaponIconDarkArrow,
+  ]) {
+    if (!sheetKey) continue;
+    if (!sheetUrls[sheetKey]) {
+      throw invalidAssetError(sheetKey, `HUD sheet '${sheetKey}' is not listed in sheetImages.`);
+    }
+  }
+
   return {
     sheetUrls,
     playerAnims,
@@ -184,6 +208,7 @@ export function buildRendererAssetManifest(
     shotAnims,
     enemyActorIds,
     pickupActorIds,
+    hudSheets: { ...bindings.hudSheets },
   };
 }
 

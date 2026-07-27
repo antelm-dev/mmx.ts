@@ -57,6 +57,14 @@ export function studioBindingsToRendererBindings(
     throw new ProjectBuildError("studio.bindings", "Studio shotAnimations bindings are empty.");
   }
 
+  const hud = studio.bindings.hudSprites;
+  if (!hud?.xBar || !hud.hpFill || !hud.weaponBar) {
+    throw new ProjectBuildError(
+      "studio.bindings",
+      "Studio hudSprites bindings must define xBar, hpFill, and weaponBar logical asset ids.",
+    );
+  }
+
   return {
     playerAnimation: studio.bindings.playerAnimation,
     playerSheetNormal: playerAnim.sheetAssetId,
@@ -65,6 +73,12 @@ export function studioBindingsToRendererBindings(
     pickupActors: { ...studio.bindings.pickupAnimations },
     shotAnimations: firstShotAnim,
     sheetImages: buildSheetImagesFromManifest(manifest),
+    hudSheets: {
+      xBar: hud.xBar,
+      hpFill: hud.hpFill,
+      weaponBar: hud.weaponBar,
+      weaponIconDarkArrow: hud.weaponIconDarkArrow,
+    },
   };
 }
 

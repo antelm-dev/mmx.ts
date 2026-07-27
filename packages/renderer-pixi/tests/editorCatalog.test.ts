@@ -91,6 +91,11 @@ function fakeTables(): PreviewTables {
         "image.pickup.small": "image.pickup.small",
         "image.pickup.large": "image.pickup.large",
       },
+      hudSheets: {
+        xBar: "image.player",
+        hpFill: "image.player",
+        weaponBar: "image.player",
+      },
     },
     (asset) => `memory://${asset.path}`,
     { shotAnims: { sheets: {}, animations: {} } },

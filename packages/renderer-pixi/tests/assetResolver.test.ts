@@ -100,6 +100,11 @@ const bindings = {
     "image.enemy": "image.enemy",
     "image.pickup": "image.pickup",
   },
+  hudSheets: {
+    xBar: "image.player",
+    hpFill: "image.player",
+    weaponBar: "image.player",
+  },
 } as const;
 
 test("createRendererAssetResolver throws deterministic missing asset errors", () => {
@@ -288,6 +293,11 @@ test("shared basenames in different directories keep distinct sheet identities",
         "image.players.common": "image.players.common",
         "image.enemies.common": "image.enemies.common",
         "image.pickups.common": "image.pickups.common",
+      },
+      hudSheets: {
+        xBar: "image.players.common",
+        hpFill: "image.players.common",
+        weaponBar: "image.players.common",
       },
     },
     {
