@@ -36,3 +36,11 @@ Additional Studio-only tooling: `generate-manifest.mjs`, `sync-resources.mjs`,
 
 `packages/engine/tests/fixtures/x_anims.json` is a minimal player animation
 fixture retained for isolated engine tests. It is not served as game content.
+
+## Renderer sheet identity
+
+Project-injected renderer manifests key sheets by stable project asset ids, not
+path basenames. `sheetImages` and shot sheet refs must use those logical ids.
+Migrate filename-keyed bindings through `adaptLegacyFilenameSheetImages` /
+`adaptLegacyFilenameShotSheets`, which reject ambiguous basenames instead of
+silently overwriting sheets.
