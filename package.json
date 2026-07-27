@@ -26,6 +26,7 @@
     "lint:fix": "oxlint --fix --ignore-pattern scripts/__fixtures__/import-boundaries/forbidden/** packages apps scripts",
     "test:import-boundaries": "node --test scripts/import-boundaries.test.mjs",
     "test:game-resource-guard": "node --test scripts/game-resource-guard.test.mjs",
+    "test:cross-repo": "node --test scripts/cross-repo-e2e.test.mjs",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "changeset": "changeset",
