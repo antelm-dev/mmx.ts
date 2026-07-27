@@ -62,6 +62,9 @@ importers:
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
+      '@mmx/client-settings':
+        specifier: workspace:*
+        version: link:../../packages/client-settings
       '@mmx/content-engine-adapter':
         specifier: workspace:*
         version: link:../../packages/content-engine-adapter

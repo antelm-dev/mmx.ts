@@ -6,6 +6,7 @@ import type {
   ClipboardAccess,
   ReplayFileAccess,
 } from "@mmx/runtime/debug";
+import type { BrowserInputBindings } from "@mmx/runtime/browser";
 
 export interface CreatePlaytestOptions {
   host?: HTMLElement;
@@ -16,6 +17,8 @@ export interface CreatePlaytestOptions {
   onExitToObject?: (sourceEntityId: string) => void;
   replayFiles?: ReplayFileAccess;
   clipboard?: ClipboardAccess;
+  getBindings?: () => BrowserInputBindings;
+  isPauseOnBlur?: () => boolean;
 }
 
 export interface EditorPlaytestSession {

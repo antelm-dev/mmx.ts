@@ -21,6 +21,7 @@
   "dependencies": {
     "@mmx/asset-schema": "workspace:*",
     "@mmx/browser-audio": "workspace:*",
+    "@mmx/client-settings": "workspace:*",
     "@mmx/content-engine-adapter": "workspace:*",
     "@mmx/content-schema": "workspace:*",
     "@mmx/editor-runtime": "workspace:*",

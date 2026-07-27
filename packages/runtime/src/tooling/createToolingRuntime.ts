@@ -41,6 +41,8 @@ export const TOOLING_BINDINGS: BrowserInputBindings = {
 
 export interface CreateToolingRuntimeOptions extends RuntimeSessionOptions {
   getGamepads?: GetGamepads;
+  getBindings?: () => BrowserInputBindings;
+  isPauseOnBlur?: () => boolean;
   onError?: (error: unknown) => void;
   replayFiles?: ReplayFileAccess;
   clipboard?: ClipboardAccess;
@@ -103,6 +105,7 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   private readonly input: BrowserInput;
   private clock: FixedStepLoop | null = null;
   private readonly onError?: (error: unknown) => void;
+  private pausedByBlur = false;
 
   constructor(options: CreateToolingRuntimeOptions) {
     this.session = new RuntimeSession(options);
@@ -114,8 +117,19 @@ class ToolingRuntimeImpl implements ToolingRuntime {
       extraDiagnostics: options.extraDiagnostics,
     });
     this.input = new BrowserInput({
-      getBindings: () => TOOLING_BINDINGS,
+      getBindings: () => options.getBindings?.() ?? TOOLING_BINDINGS,
       getGamepads: options.getGamepads,
+      onBlur: () => {
+        if (options.isPauseOnBlur?.() && !this.debug.isPaused) {
+          this.pause();
+          this.pausedByBlur = true;
+        }
+      },
+      onFocus: () => {
+        if (!this.pausedByBlur) return;
+        this.pausedByBlur = false;
+        this.resume();
+      },
     });
   }
 

@@ -29,6 +29,10 @@ export class GameplaySounds {
     this.effects.stopAll();
   }
 
+  setMasterVolume(volume: number): void {
+    this.effects.setMasterVolume(volume);
+  }
+
   attachScene(scene: Scene): void {
     this.stopSustained();
     this.attachPlayer(scene.player);

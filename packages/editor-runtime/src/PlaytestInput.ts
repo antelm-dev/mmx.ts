@@ -1,5 +1,6 @@
 import {
   BrowserInput,
+  type BrowserInputBindings,
   type GetGamepads,
 } from "@mmx/runtime/browser";
 import { TOOLING_BINDINGS } from "@mmx/runtime/tooling";
@@ -10,9 +11,12 @@ export type PlaytestAction = Action;
 export class PlaytestInput {
   private readonly browser: BrowserInput;
 
-  constructor(options?: { getGamepads?: GetGamepads }) {
+  constructor(options?: {
+    getGamepads?: GetGamepads;
+    getBindings?: () => BrowserInputBindings;
+  }) {
     this.browser = new BrowserInput({
-      getBindings: () => TOOLING_BINDINGS,
+      getBindings: () => options?.getBindings?.() ?? TOOLING_BINDINGS,
       getGamepads: options?.getGamepads,
     });
   }

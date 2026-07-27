@@ -7,6 +7,8 @@ import "dockview-react/dist/styles/dockview.css";
 import "./app/theme.js";
 import "./styles.css";
 import { App } from "./App.js";
+import { initStudioClientSettings } from "./settings/studioClientSettings.js";
+import { useUiStore } from "./store/uiStore.js";
 
 /**
  * MMX Studio (Electron edition) bootstrap. React 19 + Dockview shell; all editor
@@ -19,4 +21,7 @@ import { App } from "./App.js";
  */
 const container = document.getElementById("root");
 if (!container) throw new Error("Missing #root element");
-createRoot(container).render(<App />);
+
+void initStudioClientSettings((message) => useUiStore.getState().addToast(message)).finally(() => {
+  createRoot(container).render(<App />);
+});
