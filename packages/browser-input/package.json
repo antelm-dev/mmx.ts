@@ -20,7 +20,7 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/runtime": "workspace:*"
+    "@mmx/engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

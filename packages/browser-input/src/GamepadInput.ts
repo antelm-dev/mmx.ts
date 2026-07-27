@@ -37,7 +37,7 @@ const PAD_ACTIONS: readonly Action[] = [...new Set(Object.values(BUTTON_ACTIONS)
 
 export type GetGamepads = () => Array<Gamepad | null>;
 
-const defaultGetGamepads: GetGamepads = () => navigator.getGamepads?.() ?? [];
+const defaultGetGamepads: GetGamepads = () => globalThis.navigator?.getGamepads?.() ?? [];
 
 function connectedPads(getGamepads: GetGamepads): Gamepad[] {
   return getGamepads().filter((pad): pad is Gamepad => pad !== null);

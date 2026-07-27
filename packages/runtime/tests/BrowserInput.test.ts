@@ -1,24 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BrowserInput } from "../src/browser/BrowserInput.js";
-import type { Action } from "@mmx/engine";
+import { BrowserInput, DEFAULT_BINDINGS } from "@mmx/browser-input";
 
 const MOVE_LEFT = 1 << 0;
 const MOVE_RIGHT = 1 << 1;
 const JUMP = 1 << 4;
 const DASH = 1 << 5;
-
-const DEFAULT_BINDINGS: Readonly<Partial<Record<Action, readonly string[]>>> = {
-  move_left: ["ArrowLeft", "KeyA"],
-  move_right: ["ArrowRight", "KeyD"],
-  move_up: ["ArrowUp", "KeyW"],
-  move_down: ["ArrowDown", "KeyS"],
-  jump: ["Space", "KeyK"],
-  dash: ["ShiftLeft", "KeyL"],
-  fire: ["KeyJ", "KeyF"],
-  weapon_left: ["KeyQ", "BracketLeft"],
-  weapon_right: ["KeyE", "BracketRight"],
-};
 
 const listeners = new Map<string, Set<(e: unknown) => void>>();
 

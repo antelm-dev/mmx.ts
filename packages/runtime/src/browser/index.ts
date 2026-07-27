@@ -7,10 +7,11 @@ export {
 } from "./FixedStepLoop.js";
 export {
   BrowserInput,
+  GamepadInput,
   type BrowserInputBindings,
   type BrowserInputOptions,
-} from "./BrowserInput.js";
-export { GamepadInput, type GetGamepads } from "./GamepadInput.js";
+  type GetGamepads,
+} from "@mmx/browser-input";
 export {
   FrameStats,
   SAMPLE_COUNT,

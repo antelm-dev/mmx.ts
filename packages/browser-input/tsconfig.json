@@ -10,5 +10,5 @@
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../runtime" }]
+  "references": [{ "path": "../engine" }]
 }

@@ -13,8 +13,13 @@ import {
   type RuntimePresentation,
   type RuntimeSessionOptions,
 } from "../core/index.js";
-import { BrowserInput, type BrowserInputBindings } from "../browser/BrowserInput.js";
-import type { GetGamepads } from "../browser/GamepadInput.js";
+import {
+  BrowserInput,
+  DEFAULT_TOOLING_BINDINGS,
+  type BrowserInputBindings,
+  type BrowserInputOptions,
+  type GetGamepads,
+} from "@mmx/browser-input";
 import {
   FixedStepLoop,
   type FixedStepFrameStats,
@@ -27,20 +32,12 @@ import {
   type ReplayFileAccess,
 } from "../debug/index.js";
 
-export const TOOLING_BINDINGS: BrowserInputBindings = {
-  move_left: ["ArrowLeft", "KeyA"],
-  move_right: ["ArrowRight", "KeyD"],
-  move_up: ["ArrowUp", "KeyW"],
-  move_down: ["ArrowDown", "KeyS"],
-  jump: ["Space", "KeyZ"],
-  dash: ["KeyK", "KeyX", "ShiftLeft"],
-  fire: ["KeyC", "KeyJ"],
-  weapon_left: ["KeyQ"],
-  weapon_right: ["KeyE"],
-};
+export const TOOLING_BINDINGS: BrowserInputBindings = DEFAULT_TOOLING_BINDINGS;
 
 export interface CreateToolingRuntimeOptions extends RuntimeSessionOptions {
+  getBindings?: () => BrowserInputBindings;
   getGamepads?: GetGamepads;
+  beforeKeyDown?: BrowserInputOptions["beforeKeyDown"];
   onError?: (error: unknown) => void;
   replayFiles?: ReplayFileAccess;
   clipboard?: ClipboardAccess;
@@ -114,8 +111,9 @@ class ToolingRuntimeImpl implements ToolingRuntime {
       extraDiagnostics: options.extraDiagnostics,
     });
     this.input = new BrowserInput({
-      getBindings: () => TOOLING_BINDINGS,
+      getBindings: options.getBindings ?? (() => TOOLING_BINDINGS),
       getGamepads: options.getGamepads,
+      beforeKeyDown: options.beforeKeyDown,
     });
   }
 
@@ -150,7 +148,7 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   }
 
   clearInput(): void {
-    this.input.reset();
+    this.input.clear();
   }
 
   toMask(): number {

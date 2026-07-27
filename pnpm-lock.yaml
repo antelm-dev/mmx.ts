@@ -251,9 +251,9 @@ importers:
 
   packages/browser-input:
     dependencies:
-      '@mmx/runtime':
+      '@mmx/engine':
         specifier: workspace:*
-        version: link:../runtime
+        version: link:../engine
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -424,6 +424,9 @@ importers:
 
   packages/runtime:
     dependencies:
+      '@mmx/browser-input':
+        specifier: workspace:*
+        version: link:../browser-input
       '@mmx/engine':
         specifier: workspace:*
         version: link:../engine
