@@ -11,6 +11,12 @@ import {
   type RendererAssetManifest,
 } from "@mmx/renderer-pixi";
 import { ASSET_PUBLIC_PREFIX, GAME_DATA_FILE, RENDERER_BINDINGS_FILE } from "./constants.js";
+import {
+  buildShotAnimsFromStudioBindings,
+  STUDIO_GAME_DATA_FILE,
+  studioBindingsToRendererBindings,
+  type StudioGameDataFile,
+} from "./studioBindings.js";
 import { levelDocumentToLevelData } from "./compileLevel.js";
 import { hashedAssetFileName, hashContent } from "./contentHash.js";
 import { ProjectBuildError } from "./errors.js";
@@ -71,9 +77,30 @@ async function loadGameData(root: string): Promise<GameData> {
   return authored ?? GAME_DATA;
 }
 
-async function loadRendererBindings(root: string): Promise<RendererAssetBindings | null> {
-  const absolute = resolveProjectPath(root, RENDERER_BINDINGS_FILE);
-  return readOptionalJson<RendererAssetBindings>(absolute);
+type RendererBindingSource = {
+  bindings: RendererAssetBindings;
+  studioShotAnimations: Record<string, string> | null;
+};
+
+async function loadRendererBindingSource(
+  project: LoadedProject,
+): Promise<RendererBindingSource | null> {
+  const canonical = await readOptionalJson<RendererAssetBindings>(
+    resolveProjectPath(project.root, RENDERER_BINDINGS_FILE),
+  );
+  if (canonical) {
+    return { bindings: canonical, studioShotAnimations: null };
+  }
+
+  const studio = await readOptionalJson<StudioGameDataFile>(
+    resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
+  );
+  if (!studio?.bindings) return null;
+
+  return {
+    bindings: studioBindingsToRendererBindings(studio, project.manifest),
+    studioShotAnimations: studio.bindings.shotAnimations,
+  };
 }
 
 function compileAuthoredGameData(data: GameData) {
@@ -103,13 +130,24 @@ function collectSoundIds(
 function buildRendererManifest(
   project: LoadedProject,
   emission: AssetEmissionPlan,
-  bindings: RendererAssetBindings | null,
+  bindingSource: RendererBindingSource | null,
 ): RendererAssetManifest | null {
-  if (!bindings) return null;
+  if (!bindingSource) return null;
+
+  const resolveUrl = (asset: ProjectAsset) => emission.byId[asset.id]?.publicUrl ?? "";
+  const shotAnims = bindingSource.studioShotAnimations
+    ? buildShotAnimsFromStudioBindings(
+        project.manifest.assets,
+        bindingSource.studioShotAnimations,
+        resolveUrl,
+      )
+    : undefined;
+
   return buildRendererAssetManifestFromProject(
     project.manifest,
-    bindings,
-    (asset: ProjectAsset) => emission.byId[asset.id]?.publicUrl ?? "",
+    bindingSource.bindings,
+    resolveUrl,
+    shotAnims ? { shotAnims } : undefined,
   );
 }
 
@@ -117,17 +155,17 @@ export async function compileBrowserProjectBundle(
   project: LoadedProject,
   emission: AssetEmissionPlan,
 ): Promise<BrowserProjectBundle> {
-  const bindings = await loadRendererBindings(project.root);
+  const bindingSource = await loadRendererBindingSource(project);
   const gameData = await loadGameData(project.root);
   const compiledGameData = compileAuthoredGameData(gameData);
-  const rendererManifest = buildRendererManifest(project, emission, bindings);
+  const rendererManifest = buildRendererManifest(project, emission, bindingSource);
 
   const assetUrls = Object.fromEntries(
     emission.assets.map((asset) => [asset.assetId, asset.publicUrl]),
   );
 
-  const soundIds = collectSoundIds(project.manifest, bindings);
-  if (bindings) {
+  const soundIds = collectSoundIds(project.manifest, bindingSource?.bindings ?? null);
+  if (bindingSource) {
     const resolver = createProjectSoundResolver(project.manifest, "");
     for (const soundId of soundIds) {
       try {
@@ -155,7 +193,7 @@ export async function compileBrowserProjectBundle(
     levels,
     compiledGameData,
     rendererManifest,
-    rendererBindings: bindings,
+    rendererBindings: bindingSource?.bindings ?? null,
     soundIds,
     assetUrls,
   };
