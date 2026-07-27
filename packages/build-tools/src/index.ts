@@ -7,7 +7,7 @@ export {
   VIRTUAL_PROJECT_MODULE,
 } from "./constants.js";
 export { ProjectBuildError, ProjectLoadError } from "./errors.js";
-export { levelDocumentToLevelData } from "./compileLevel.js";
+export { levelDocumentToLevelData, readLevelDocument } from "./compileLevel.js";
 export {
   buildProjectToDisk,
   bundleContainsAbsolutePaths,
@@ -18,7 +18,14 @@ export {
 } from "./compileProject.js";
 export { hashContent, hashedAssetFileName } from "./contentHash.js";
 export { loadProject, requireProject } from "./loadProject.js";
-export { assertWithinProjectRoot, resolveProjectPath, toPortablePath } from "./paths.js";
+export {
+  assertWithinProjectRoot,
+  assertWithinRoot,
+  resolveEmittedAssetPath,
+  resolveProjectPath,
+  toPortablePath,
+} from "./paths.js";
+export type { ResolvedEmittedAssetPath } from "./paths.js";
 export type {
   AssetEmissionPlan,
   BrowserLevelBundle,
