@@ -1,4 +1,3 @@
-import path from "node:path";
 import { migrateDocument } from "@mmx/content-schema";
 import {
   effectiveValue,
@@ -9,6 +8,7 @@ import {
 import type { LevelDocument, LevelObjectInstance } from "@mmx/content-schema";
 import type { LevelData, LevelEntity } from "@mmx/engine";
 import { ProjectBuildError } from "./errors.js";
+import { resolveProjectPath } from "./paths.js";
 
 function objectToEntity(inst: LevelObjectInstance): LevelEntity {
   const def = requireDefinition(inst.definitionId);
@@ -62,7 +62,7 @@ export async function readLevelDocument(
   relativePath: string,
   readText: (absolutePath: string) => Promise<string>,
 ): Promise<LevelDocument> {
-  const absolute = path.resolve(root, relativePath.split("/").join(path.sep));
+  const absolute = resolveProjectPath(root, relativePath);
   const raw = JSON.parse(await readText(absolute)) as unknown;
   const document = migrateDocument(raw);
   validateLevelObjects(document);
