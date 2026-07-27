@@ -2,11 +2,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { test } from "node:test";
 import { ProjectBuildError, ProjectLoadError } from "../src/errors.js";
-import {
-  assertWithinRoot,
-  resolveEmittedAssetPath,
-  resolveProjectPath,
-} from "../src/paths.js";
+import { assertWithinRoot, resolveEmittedAssetPath, resolveProjectPath } from "../src/paths.js";
 
 const assetsRoot = path.join(path.sep, "proj", "out", "assets");
 const projectRoot = path.join(path.sep, "proj", "game");

@@ -1,8 +1,4 @@
-import {
-  ambiguousSheetKeyError,
-  duplicateSheetKeyError,
-  invalidAssetError,
-} from "./errors.js";
+import { ambiguousSheetKeyError, duplicateSheetKeyError, invalidAssetError } from "./errors.js";
 import { assetPathBasename, type RendererAssetResolver } from "./resolver.js";
 
 export function adaptLegacyFilenameSheetImages(
@@ -46,11 +42,7 @@ export function adaptLegacyFilenameSheetImages(
 
 export function adaptLegacyFilenameShotSheets<
   T extends { sheets: Record<string, string>; animations: unknown },
->(
-  resolver: RendererAssetResolver,
-  logicalSheetImages: Record<string, string>,
-  shotAnims: T,
-): T {
+>(resolver: RendererAssetResolver, logicalSheetImages: Record<string, string>, shotAnims: T): T {
   const basenameToLogical = new Map<string, string>();
   for (const [sheetKey, imageId] of Object.entries(logicalSheetImages)) {
     const asset = resolver.requireKind(imageId, ["image", "sprite"]);

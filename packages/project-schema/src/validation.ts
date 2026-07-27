@@ -488,9 +488,7 @@ export function validateProject(project: ProjectDocument): ValidationResult {
         return;
       }
 
-      const sheet = project.assets.find(
-        (entry) => isRecord(entry) && entry.id === sheetAssetId,
-      );
+      const sheet = project.assets.find((entry) => isRecord(entry) && entry.id === sheetAssetId);
       if (sheet && sheet.kind !== "image" && sheet.kind !== "sprite") {
         add({
           code: "animation.sheet.kind",

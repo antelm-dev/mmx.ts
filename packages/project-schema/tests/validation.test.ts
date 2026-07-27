@@ -370,8 +370,7 @@ test("rejects numeric prerelease identifiers with leading zeroes", () => {
   );
   assert.ok(
     result.issues.some(
-      (issue) =>
-        issue.code === "version.malformed" && issue.path === "/compatibleRuntime/min",
+      (issue) => issue.code === "version.malformed" && issue.path === "/compatibleRuntime/min",
     ),
   );
 });
@@ -392,7 +391,10 @@ test("compatibleRuntime compares prerelease precedence and ignores build metadat
       compatibleRuntime: { min: "1.0.0+build.1", max: "1.0.0+build.2" },
     }),
   );
-  assert.equal(equalWithBuild.issues.some((issue) => issue.code === "runtime.range"), false);
+  assert.equal(
+    equalWithBuild.issues.some((issue) => issue.code === "runtime.range"),
+    false,
+  );
 
   const invertedPrerelease = validateProject(
     validProject({
@@ -416,4 +418,3 @@ test("compatibleRuntime compares prerelease precedence and ignores build metadat
     ),
   );
 });
-

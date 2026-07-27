@@ -97,17 +97,13 @@ export function mmxProjectNullPlugin(): Plugin {
   };
 }
 
-export function createMmxProjectPluginsFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): Plugin[] {
+export function createMmxProjectPluginsFromEnv(env: NodeJS.ProcessEnv = process.env): Plugin[] {
   const projectDir = env.MMX_PROJECT;
   if (!projectDir) return [mmxProjectNullPlugin()];
   return [mmxProjectPlugin(mmxProjectPluginOptionsFromDir(projectDir))];
 }
 
-export function createMmxWebDevInlineConfig(options: {
-  webRoot: string;
-}): InlineConfig {
+export function createMmxWebDevInlineConfig(options: { webRoot: string }): InlineConfig {
   return {
     root: options.webRoot,
     configFile: path.join(options.webRoot, "vite.config.ts"),

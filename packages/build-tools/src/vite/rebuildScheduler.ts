@@ -9,9 +9,7 @@ export type RebuildSchedulerOptions<T> = {
   onError?: (error: unknown) => void;
 };
 
-export function createRebuildScheduler<T>(
-  options: RebuildSchedulerOptions<T>,
-): RebuildScheduler {
+export function createRebuildScheduler<T>(options: RebuildSchedulerOptions<T>): RebuildScheduler {
   let generation = 0;
   let settledGeneration = 0;
   let pending = false;

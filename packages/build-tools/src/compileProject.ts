@@ -175,11 +175,7 @@ export async function compileBrowserProjectBundle(
     (await readOptionalJson<StudioGameDataFile>(
       resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
     ));
-  const { soundBindings, soundIds } = compileSoundPlan(
-    studioForSounds,
-    project.manifest,
-    emission,
-  );
+  const { soundBindings, soundIds } = compileSoundPlan(studioForSounds, project.manifest, emission);
 
   const levels = project.levels.map((level) => ({
     id: level.id,

@@ -1,8 +1,4 @@
-import {
-  collectBoundAssetIds,
-  GAMEPLAY_SOUND_IDS,
-  type SoundBindingMap,
-} from "@mmx/browser-audio";
+import { collectBoundAssetIds, GAMEPLAY_SOUND_IDS, type SoundBindingMap } from "@mmx/browser-audio";
 import type { AnimationAsset, ProjectAsset, ProjectDocument } from "@mmx/project-schema";
 import {
   createRendererAssetResolver,

@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": [".node-version", "tsconfig.base.json"],
+  "globalEnv": ["MMX_STUDIO_ROOT", "MMX_PROJECT", "MMX_SKIP_BROWSER_E2E", "MMX_E2E_ROOT"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

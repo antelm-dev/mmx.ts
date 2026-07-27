@@ -7,10 +7,7 @@ export {
   RendererAssetError,
   type RendererAssetErrorCode,
 } from "./errors.js";
-export {
-  adaptLegacyFilenameSheetImages,
-  adaptLegacyFilenameShotSheets,
-} from "./legacySheets.js";
+export { adaptLegacyFilenameSheetImages, adaptLegacyFilenameShotSheets } from "./legacySheets.js";
 export {
   buildRendererAssetManifest,
   buildRendererAssetManifestFromProject,

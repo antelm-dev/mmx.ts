@@ -48,9 +48,7 @@ function manifestWithSounds(
   };
 }
 
-function completeStudioSounds(
-  overrides: Record<string, string> = {},
-): Record<string, string> {
+function completeStudioSounds(overrides: Record<string, string> = {}): Record<string, string> {
   const sounds = Object.fromEntries(
     GAMEPLAY_SOUND_IDS.map((runtimeName) => [runtimeName, `sfx.${runtimeName}`]),
   );
@@ -117,9 +115,7 @@ test("compileStudioSoundBindings rejects wrong-kind target", () => {
     () =>
       compileStudioSoundBindings(
         sounds,
-        manifestWithSounds(
-          ids.map((id) => ({ id, kind: id === "sfx.jump" ? "sprite" : "sound" })),
-        ),
+        manifestWithSounds(ids.map((id) => ({ id, kind: id === "sfx.jump" ? "sprite" : "sound" }))),
         emissionFor(ids),
       ),
     (error: unknown) => {
@@ -138,11 +134,7 @@ test("compileStudioSoundBindings rejects missing emitted URL", () => {
   const emission = emissionFor(ids.filter((id) => id !== "sfx.jump"));
   assert.throws(
     () =>
-      compileStudioSoundBindings(
-        sounds,
-        manifestWithSounds(ids.map((id) => ({ id }))),
-        emission,
-      ),
+      compileStudioSoundBindings(sounds, manifestWithSounds(ids.map((id) => ({ id }))), emission),
     (error: unknown) => {
       assert.ok(error instanceof ProjectBuildError);
       assert.match(error.message, /jump/);

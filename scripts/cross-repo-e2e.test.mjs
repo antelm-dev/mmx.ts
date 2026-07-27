@@ -100,8 +100,7 @@ async function ensurePlayableLevel(exportDir) {
 
     const objects = Array.isArray(document.objects) ? document.objects : [];
     const spawns = objects.filter((object) => object.definitionId === "spawn");
-    const keep =
-      spawns.find((object) => object.id === "spawn.e2e") ??
+    const keep = spawns.find((object) => object.id === "spawn.e2e") ??
       spawns[0] ?? {
         id: "spawn.e2e",
         definitionId: "spawn",
@@ -110,10 +109,7 @@ async function ensurePlayableLevel(exportDir) {
       };
     keep.x = gridSize * 2;
     keep.y = (floorRow - 1) * gridSize;
-    document.objects = [
-      ...objects.filter((object) => object.definitionId !== "spawn"),
-      keep,
-    ];
+    document.objects = [...objects.filter((object) => object.definitionId !== "spawn"), keep];
     await writeFile(file, `${JSON.stringify(document, null, 2)}\n`, "utf8");
   }
 }

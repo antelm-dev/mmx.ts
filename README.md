@@ -34,12 +34,12 @@ repository. They come from a Studio project export (for example
 `mmx-studio/templates/mmx-starter`). Core injects them at build time through
 `@mmx/build-tools` when `MMX_PROJECT` points at that export.
 
-| Command | `MMX_PROJECT` | Behavior |
-| ------- | ------------- | -------- |
-| `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message. |
-| `pnpm build` | not required | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`. |
-| `pnpm build:web` | **required** | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |
-| `pnpm factory:build -- --project <dir>` | via `--project` | Compiles a Studio export to disk (`dist-project` by default); does not replace `build:web`. |
+| Command                                             | `MMX_PROJECT`                  | Behavior                                                                                                                                          |
+| --------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message.                   |
+| `pnpm build`                                        | not required                   | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`.                                 |
+| `pnpm build:web`                                    | **required**                   | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |
+| `pnpm factory:build -- --project <dir>`             | via `--project`                | Compiles a Studio export to disk (`dist-project` by default); does not replace `build:web`.                                                       |
 
 ```bash
 # PowerShell

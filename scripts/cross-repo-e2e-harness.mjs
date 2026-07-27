@@ -49,9 +49,7 @@ export async function waitForPort(port, options = {}) {
   }
 
   const diagnostics = getDiagnostics();
-  throw new Error(
-    [`Timed out waiting for port ${port}.`, diagnostics].filter(Boolean).join("\n"),
-  );
+  throw new Error([`Timed out waiting for port ${port}.`, diagnostics].filter(Boolean).join("\n"));
 }
 
 export function terminateProcessTree(child) {
@@ -113,16 +111,17 @@ export async function withDevServer(options, runTest) {
       if (settled) return;
       reject(
         new Error(
-          [
-            `Dev server exited early (code=${code}, signal=${signal}).`,
-            getDiagnostics(),
-          ].join("\n"),
+          [`Dev server exited early (code=${code}, signal=${signal}).`, getDiagnostics()].join(
+            "\n",
+          ),
         ),
       );
     });
     child.once("error", (error) => {
       if (settled) return;
-      reject(new Error([`Dev server failed to start: ${error.message}`, getDiagnostics()].join("\n")));
+      reject(
+        new Error([`Dev server failed to start: ${error.message}`, getDiagnostics()].join("\n")),
+      );
     });
   });
 
@@ -141,10 +140,7 @@ export async function withDevServer(options, runTest) {
   }
 
   try {
-    await Promise.race([
-      waitForPort(port, { host, timeoutMs, getDiagnostics }),
-      earlyExit,
-    ]);
+    await Promise.race([waitForPort(port, { host, timeoutMs, getDiagnostics }), earlyExit]);
     await runTest({
       port,
       host,
