@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SOUND_URLS, type SoundName } from "../src/SoundEffects.js";
+import { createBuiltinSoundResolver, SOUND_URLS } from "../src/builtinSoundResolver.js";
+import { GAMEPLAY_SOUND_IDS, type SoundId } from "../src/soundIds.js";
 
-const EXPECTED: Record<SoundName, string> = {
+const EXPECTED: Record<SoundId, string> = {
   jump: "/sounds/player/jump.wav",
   land: "/sounds/player/land.wav",
   dash: "/sounds/player/dash.wav",
@@ -23,21 +24,23 @@ const EXPECTED: Record<SoundName, string> = {
   introThunder: "/sounds/player/intro-thunder.wav",
 };
 
-test("every audio URL is defined and does not end with /undefined", () => {
-  for (const [name, url] of Object.entries(SOUND_URLS)) {
-    assert.equal(typeof url, "string", name);
-    assert.ok(url.length > 0, name);
-    assert.ok(!url.endsWith("/undefined"), `${name}: ${url}`);
-    assert.ok(!url.includes("assets/undefined"), `${name}: ${url}`);
+test("every built-in audio URL is defined and does not end with /undefined", () => {
+  const resolver = createBuiltinSoundResolver();
+  for (const soundId of GAMEPLAY_SOUND_IDS) {
+    const url = resolver.resolveUrl(soundId);
+    assert.equal(typeof url, "string", soundId);
+    assert.ok(url.length > 0, soundId);
+    assert.ok(!url.endsWith("/undefined"), `${soundId}: ${url}`);
+    assert.ok(!url.includes("assets/undefined"), `${soundId}: ${url}`);
   }
 });
 
-test("audio URLs refer to the intended sound paths", () => {
+test("deprecated SOUND_URLS still refer to the intended sound paths", () => {
   assert.deepEqual(Object.keys(SOUND_URLS).sort(), Object.keys(EXPECTED).sort());
-  for (const name of Object.keys(EXPECTED) as SoundName[]) {
+  for (const soundId of GAMEPLAY_SOUND_IDS) {
     assert.ok(
-      SOUND_URLS[name].includes(EXPECTED[name]),
-      `${name}: expected ${EXPECTED[name]} in ${SOUND_URLS[name]}`,
+      SOUND_URLS[soundId].includes(EXPECTED[soundId]),
+      `${soundId}: expected ${EXPECTED[soundId]} in ${SOUND_URLS[soundId]}`,
     );
   }
 });
