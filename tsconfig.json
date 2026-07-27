@@ -1,8 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/asset-schema" },
-    { "path": "./packages/content-contracts" },
+    { "path": "./packages/contracts" },
     { "path": "./packages/engine" },
     { "path": "./packages/browser-input" },
     { "path": "./packages/renderer-pixi" },

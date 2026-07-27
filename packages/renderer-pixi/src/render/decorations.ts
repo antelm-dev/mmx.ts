@@ -1,4 +1,4 @@
-import type { Region } from "@mmx/asset-schema";
+import type { Region } from "@mmx/contracts/animation";
 import type { DecorationInstance, DecorationLayer } from "@mmx/content-schema";
 
 /**

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import type { AnimData } from "@mmx/asset-schema";
+import type { AnimData } from "@mmx/contracts/animation";
 import { createCatalog } from "../src/editor/catalogCore.js";
 import { oncePromise } from "../src/editor/once.js";
 import { resolveSpriteCrop, type PreviewTables } from "../src/editor/preview.js";

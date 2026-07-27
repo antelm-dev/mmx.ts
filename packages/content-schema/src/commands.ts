@@ -1,4 +1,4 @@
-import { TerrainTile } from "@mmx/content-contracts";
+import { TerrainTile } from "@mmx/contracts/terrain";
 import type { DecorationInstance, LevelDocument, LevelObjectInstance } from "./types.js";
 
 /**

@@ -1,4 +1,4 @@
-import { TerrainTile } from "@mmx/content-contracts";
+import { TerrainTile } from "@mmx/contracts/terrain";
 import { newId } from "./ids.js";
 import { SCHEMA_VERSION } from "./types.js";
 import type { LevelDocument } from "./types.js";
@@ -10,7 +10,7 @@ import type { LevelDocument } from "./types.js";
  * {@link import("./validation.js").validateDocument} and can enter Play mode with
  * no further editing.
  *
- * Tile values use {@link TerrainTile} from `@mmx/content-contracts`.
+ * Tile values use {@link TerrainTile} from `@mmx/contracts/terrain`.
  */
 
 export interface NewLevelOptions {

@@ -1,4 +1,4 @@
-import type { SlopeMap, TerrainTile } from "@mmx/content-contracts";
+import type { SlopeMap, TerrainTile } from "@mmx/contracts/terrain";
 
 /** An entity placed on an LDtk Entities layer, in world pixels. */
 export interface LevelEntity {

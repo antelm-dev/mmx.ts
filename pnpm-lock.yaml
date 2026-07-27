@@ -56,9 +56,6 @@ importers:
 
   apps/studio:
     dependencies:
-      '@mmx/asset-schema':
-        specifier: workspace:*
-        version: link:../../packages/asset-schema
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
@@ -68,6 +65,9 @@ importers:
       '@mmx/content-schema':
         specifier: workspace:*
         version: link:../../packages/content-schema
+      '@mmx/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@mmx/editor-runtime':
         specifier: workspace:*
         version: link:../../packages/editor-runtime
@@ -195,9 +195,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@mmx/asset-schema':
-        specifier: workspace:*
-        version: link:../../packages/asset-schema
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
@@ -207,6 +204,9 @@ importers:
       '@mmx/client-settings':
         specifier: workspace:*
         version: link:../../packages/client-settings
+      '@mmx/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@mmx/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -235,18 +235,6 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.49.0)
-
-  packages/asset-schema:
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.13.3
-      tsx:
-        specifier: ^4.7.0
-        version: 4.23.1
-      typescript:
-        specifier: ^5.4.0
-        version: 5.9.3
 
   packages/browser-audio:
     dependencies:
@@ -293,7 +281,11 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
-  packages/content-contracts:
+  packages/content-schema:
+    dependencies:
+      '@mmx/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -305,11 +297,7 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
-  packages/content-schema:
-    dependencies:
-      '@mmx/content-contracts':
-        specifier: workspace:*
-        version: link:../content-contracts
+  packages/contracts:
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -354,12 +342,9 @@ importers:
 
   packages/engine:
     dependencies:
-      '@mmx/asset-schema':
+      '@mmx/contracts':
         specifier: workspace:*
-        version: link:../asset-schema
-      '@mmx/content-contracts':
-        specifier: workspace:*
-        version: link:../content-contracts
+        version: link:../contracts
     devDependencies:
       '@mmx/ldtk-tools':
         specifier: workspace:*
@@ -392,12 +377,12 @@ importers:
 
   packages/renderer-pixi:
     dependencies:
-      '@mmx/asset-schema':
-        specifier: workspace:*
-        version: link:../asset-schema
       '@mmx/content-schema':
         specifier: workspace:*
         version: link:../content-schema
+      '@mmx/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@mmx/engine':
         specifier: workspace:*
         version: link:../engine

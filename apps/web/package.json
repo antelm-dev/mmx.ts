@@ -10,7 +10,7 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/asset-schema": "workspace:*",
+    "@mmx/contracts": "workspace:*",
     "@mmx/browser-audio": "workspace:*",
     "@mmx/browser-input": "workspace:*",
     "@mmx/client-settings": "workspace:*",

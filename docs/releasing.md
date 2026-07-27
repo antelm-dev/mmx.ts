@@ -12,10 +12,9 @@ version depuis la CI.
 
 | Inclus (versionnés)           | Ignorés (apps) |
 | ----------------------------- | -------------- |
-| `@mmx/asset-schema`           | `@mmx/web`     |
+| `@mmx/contracts`              | `@mmx/web`     |
 | `@mmx/browser-audio`          | `@mmx/desktop` |
 | `@mmx/browser-input`          | `@mmx/sim`     |
-| `@mmx/content-contracts`      |                |
 | `@mmx/content-schema`         |                |
 | `@mmx/editor-runtime`         |                |
 | `@mmx/engine`                 |                |

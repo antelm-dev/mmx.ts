@@ -19,7 +19,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@mmx/asset-schema": "workspace:*",
+    "@mmx/contracts": "workspace:*",
     "@mmx/browser-audio": "workspace:*",
     "@mmx/client-settings": "workspace:*",
     "@mmx/content-schema": "workspace:*",

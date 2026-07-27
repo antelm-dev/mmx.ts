@@ -1,4 +1,4 @@
-import { assertAnimData, assertRegion, type Region } from "@mmx/asset-schema";
+import { assertAnimData, assertRegion, type Region } from "@mmx/contracts/animation";
 import { assertTimedClip } from "@mmx/engine";
 import {
   animData,

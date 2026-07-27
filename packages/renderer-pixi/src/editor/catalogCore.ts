@@ -1,4 +1,4 @@
-import type { AnimData, Region } from "@mmx/asset-schema";
+import type { AnimData, Region } from "@mmx/contracts/animation";
 import type { Texture } from "pixi.js";
 import { oncePromise } from "./once.js";
 import {

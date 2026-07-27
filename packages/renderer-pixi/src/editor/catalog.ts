@@ -1,4 +1,4 @@
-import { assertAnimData, type AnimData, type Region } from "@mmx/asset-schema";
+import { assertAnimData, type AnimData, type Region } from "@mmx/contracts/animation";
 import {
   animData,
   enemyAnims,

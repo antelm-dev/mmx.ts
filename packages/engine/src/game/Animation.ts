@@ -26,7 +26,7 @@ import {
   type ClipData,
   type FrameData,
   type Region,
-} from "@mmx/asset-schema";
+} from "@mmx/contracts/animation";
 
 /**
  * Which SpriteFrames resource is on the sprite. Shot.gd swaps the whole resource

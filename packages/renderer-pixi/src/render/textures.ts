@@ -1,5 +1,5 @@
 import { Assets, Rectangle, Texture, TextureSource } from "pixi.js";
-import type { Region } from "@mmx/asset-schema";
+import type { Region } from "@mmx/contracts/animation";
 import { shotAnims } from "./assets.js";
 
 /**

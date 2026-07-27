@@ -16,7 +16,7 @@
  * the engine.
  */
 
-import type { SlopeMap, TerrainTile } from "@mmx/content-contracts";
+import type { SlopeMap, TerrainTile } from "@mmx/contracts/terrain";
 
 /** Current on-disk schema version. Bumped only by a migration in ./migrate.ts. */
 export const SCHEMA_VERSION = 2;

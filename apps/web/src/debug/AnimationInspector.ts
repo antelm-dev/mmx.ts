@@ -1,4 +1,4 @@
-import type { AnimData, Region } from "@mmx/asset-schema";
+import type { AnimData, Region } from "@mmx/contracts/animation";
 import type { AnimationLayer } from "@mmx/engine";
 import { animData } from "@mmx/renderer-pixi";
 import type { DebugSession } from "./DebugSession.js";

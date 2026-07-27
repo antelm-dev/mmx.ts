@@ -40,8 +40,7 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/asset-schema": "workspace:*",
-    "@mmx/content-contracts": "workspace:*"
+    "@mmx/contracts": "workspace:*"
   },
   "devDependencies": {
     "@mmx/ldtk-tools": "workspace:*",

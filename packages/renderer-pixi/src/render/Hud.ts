@@ -1,5 +1,5 @@
 import { Container, NineSliceSprite, Sprite, type Texture } from "pixi.js";
-import type { Region } from "@mmx/asset-schema";
+import type { Region } from "@mmx/contracts/animation";
 import { DT, SUB_WEAPON_MAX_AMMO, WEAPON_PALETTE, type WeaponId } from "@mmx/engine";
 import type { Camera } from "@mmx/engine";
 import type { Player } from "@mmx/engine";
