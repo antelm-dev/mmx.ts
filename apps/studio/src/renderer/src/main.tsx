@@ -22,6 +22,5 @@ import { useUiStore } from "./store/uiStore.js";
 const container = document.getElementById("root");
 if (!container) throw new Error("Missing #root element");
 
-void initStudioClientSettings((message) => useUiStore.getState().addToast(message)).finally(() => {
-  createRoot(container).render(<App />);
-});
+void initStudioClientSettings((message) => useUiStore.getState().addToast(message));
+createRoot(container).render(<App />);

@@ -66,7 +66,7 @@ export function App() {
       const current = await api.isFullscreen();
       if (cancelled) return;
       if (!eventSeen) setFullscreen(current);
-      if (want !== current) await api.toggleFullscreen();
+      if (want && !current) await api.toggleFullscreen();
     })();
     return () => {
       cancelled = true;
