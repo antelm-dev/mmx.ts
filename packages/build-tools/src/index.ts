@@ -2,7 +2,9 @@ export {
   ASSET_PUBLIC_PREFIX,
   DATA_DIR,
   GAME_DATA_FILE,
+  GAME_DIR,
   PROJECT_MANIFEST,
+  PROJECT_WATCH_INPUTS,
   RENDERER_BINDINGS_FILE,
   VIRTUAL_PROJECT_MODULE,
 } from "./constants.js";
@@ -51,13 +53,18 @@ export {
 export type { StudioGameDataFile } from "./studioBindings.js";
 export {
   MMX_PROJECT_PLUGIN_NAME,
+  bindProjectFileWatcher,
   countMmxProjectPlugins,
   createMmxProjectPluginsFromEnv,
   createMmxWebDevInlineConfig,
   defaultMmxProjectEmitDir,
+  isUnderEmitDir,
+  isUnderProject,
   mmxProjectNullPlugin,
   mmxProjectPlugin,
   mmxProjectPluginOptionsFromDir,
+  projectWatchRoots,
+  shouldScheduleProjectRebuild,
   VIRTUAL_PROJECT_MODULE as VITE_VIRTUAL_PROJECT_MODULE,
 } from "./vite/plugin.js";
-export type { MmxProjectPluginOptions } from "./vite/plugin.js";
+export type { MmxProjectPluginOptions, ProjectFileWatcher } from "./vite/plugin.js";

@@ -10,6 +10,7 @@ import {
 import { requireProject } from "../loadProject.js";
 import {
   ASSET_PUBLIC_PREFIX,
+  PROJECT_WATCH_INPUTS,
   VIRTUAL_PROJECT_MODULE,
   VIRTUAL_PROJECT_PREFIX,
 } from "../constants.js";
@@ -29,23 +30,72 @@ type PluginState = {
   bundle: BrowserProjectBundle | null;
 };
 
-function projectWatchRoots(projectDir: string): string[] {
-  return [
-    path.join(projectDir, "project.json"),
-    path.join(projectDir, "levels"),
-    path.join(projectDir, "assets"),
-    path.join(projectDir, "data"),
-  ];
+export type ProjectFileWatcher = {
+  add: (id: string) => unknown;
+  on: (event: "all", listener: (event: string, file: string) => void) => unknown;
+  off: (event: "all", listener: (event: string, file: string) => void) => unknown;
+};
+
+export function projectWatchRoots(projectDir: string): string[] {
+  return PROJECT_WATCH_INPUTS.map((entry) => path.join(projectDir, entry));
 }
 
-function isUnderProject(projectDir: string, file: string): boolean {
+function isContainedPath(root: string, file: string): boolean {
+  const relative = path.relative(path.resolve(root), path.resolve(file));
+  return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+export function isUnderProject(projectDir: string, file: string): boolean {
   const relative = path.relative(path.resolve(projectDir), path.resolve(file));
-  return (
-    relative !== "" &&
-    relative !== ".." &&
-    !relative.startsWith(`..${path.sep}`) &&
-    !path.isAbsolute(relative)
-  );
+  return relative !== "" && isContainedPath(projectDir, file);
+}
+
+export function isUnderEmitDir(emitDir: string, file: string): boolean {
+  return isContainedPath(emitDir, file);
+}
+
+export function shouldScheduleProjectRebuild(options: {
+  projectDir: string;
+  emitDir: string;
+  event: string;
+  file: string;
+}): boolean {
+  if (options.event !== "change" && options.event !== "add" && options.event !== "unlink") {
+    return false;
+  }
+  if (!isUnderProject(options.projectDir, options.file)) return false;
+  if (isUnderEmitDir(options.emitDir, options.file)) return false;
+  return true;
+}
+
+export function bindProjectFileWatcher(options: {
+  watcher: ProjectFileWatcher;
+  projectDir: string;
+  emitDir: string;
+  schedule: () => void;
+}): () => void {
+  for (const root of projectWatchRoots(options.projectDir)) {
+    options.watcher.add(root);
+  }
+
+  const onAll = (event: string, file: string) => {
+    if (
+      !shouldScheduleProjectRebuild({
+        projectDir: options.projectDir,
+        emitDir: options.emitDir,
+        event,
+        file,
+      })
+    ) {
+      return;
+    }
+    options.schedule();
+  };
+
+  options.watcher.on("all", onAll);
+  return () => {
+    options.watcher.off("all", onAll);
+  };
 }
 
 export function defaultMmxProjectEmitDir(projectDir: string): string {
@@ -119,6 +169,22 @@ function assertSingleMmxProjectPlugin(plugins: readonly Plugin[]): void {
   }
 }
 
+function detachWatcherOnServerClose(server: ViteDevServer, detach: () => void): void {
+  let detached = false;
+  const ensureDetached = () => {
+    if (detached) return;
+    detached = true;
+    detach();
+  };
+
+  const previousClose = server.close.bind(server);
+  server.close = async () => {
+    ensureDetached();
+    return previousClose();
+  };
+  server.httpServer?.once("close", ensureDetached);
+}
+
 export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
   const projectDir = path.resolve(options.projectDir);
   const emitDir = options.emitDir
@@ -177,14 +243,13 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
     configureServer(devServer) {
       server = devServer;
       assertSingleMmxProjectPlugin(devServer.config.plugins);
-      for (const root of projectWatchRoots(projectDir)) {
-        server.watcher.add(root);
-      }
-      server.watcher.on("all", (event, file) => {
-        if (event !== "change" && event !== "add" && event !== "unlink") return;
-        if (!isUnderProject(projectDir, file)) return;
-        scheduler.schedule();
+      const detach = bindProjectFileWatcher({
+        watcher: devServer.watcher,
+        projectDir,
+        emitDir,
+        schedule: () => scheduler.schedule(),
       });
+      detachWatcherOnServerClose(devServer, detach);
 
       server.middlewares.use((req, res, next) => {
         const url = req.url?.split("?")[0] ?? "";

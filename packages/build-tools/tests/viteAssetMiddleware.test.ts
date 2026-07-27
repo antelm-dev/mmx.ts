@@ -27,7 +27,9 @@ async function installAssetMiddleware(emitDir: string): Promise<Middleware> {
     watcher: {
       add() {},
       on() {},
+      off() {},
     },
+    async close() {},
     middlewares: {
       use(fn: Middleware) {
         middleware = fn;
