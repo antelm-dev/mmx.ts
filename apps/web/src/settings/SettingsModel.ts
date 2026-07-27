@@ -1,8 +1,6 @@
 import type { Action } from "@mmx/engine";
+import { assignBinding, cloneBindings, DEFAULT_BINDINGS } from "@mmx/browser-input";
 import {
-  BINDABLE_ACTIONS,
-  cloneBindings,
-  DEFAULT_BINDINGS,
   DEFAULT_SETTINGS,
   DesktopBridge,
   MAX_WINDOW_SCALE,
@@ -79,19 +77,7 @@ export class SettingsModel {
   }
 
   setBinding(action: Action, slot: number, code: string): void {
-    const bindings = cloneBindings(this.settings.bindings);
-    // A key can only mean one thing: taking it for this slot releases it
-    // everywhere else, or the earlier action would keep winning the lookup and
-    // the rebind would look like it silently failed.
-    if (code) {
-      for (const other of BINDABLE_ACTIONS) {
-        for (let i = 0; i < bindings[other].length; i++) {
-          if (bindings[other][i] === code) bindings[other][i] = "";
-        }
-      }
-    }
-    bindings[action][slot] = code;
-    this.patch({ bindings });
+    this.patch({ bindings: assignBinding(this.settings.bindings, action, slot, code) });
   }
 
   resetBindings(): void {

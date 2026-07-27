@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@mmx/asset-schema": "workspace:*",
     "@mmx/browser-audio": "workspace:*",
+    "@mmx/browser-input": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
     "@mmx/runtime": "workspace:*",
@@ -18,6 +20,8 @@
     "pixi.js": "^8.19.0"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.4.0",
     "vite": "^5.4.0"
   }

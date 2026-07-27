@@ -1,5 +1,4 @@
-import { BrowserInput } from "@mmx/runtime/browser";
-import type { KeyBindings } from "../DesktopBridge.js";
+import { BrowserInput, type KeyBindings } from "@mmx/browser-input";
 import type { DebugSession } from "../debug/DebugSession.js";
 import type { SoundEffects } from "@mmx/browser-audio";
 
@@ -39,6 +38,7 @@ export class InputBinding {
       afterUnboundKeyDown: (e) => {
         if (!e.repeat && options.debug.handleKey(e.code)) e.preventDefault();
       },
+      onActivity: () => options.sounds.unlock(),
       onBlur: () => this.onBlur(),
       onFocus: () => this.onFocus(),
       onGamepadConnected: (e) => {
@@ -53,11 +53,11 @@ export class InputBinding {
 
   /** This frame's combined action mask, for the fixed step to pack into the scene. */
   packedActions(): number {
-    return this.browser.toMask();
+    return this.browser.packedMask();
   }
 
   pollPad(dt: number, modalOpen: boolean): void {
-    this.browser.poll(dt, modalOpen);
+    this.browser.pollGamepads(dt, modalOpen);
   }
 
   /** Feed the frame's pad presses to whichever player-facing screen is open. */
@@ -74,7 +74,7 @@ export class InputBinding {
   }
 
   releaseAll(): void {
-    this.browser.releaseAll();
+    this.browser.clearKeyboard();
   }
 
   private routeModalKey(e: KeyboardEvent): boolean {

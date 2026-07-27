@@ -4,9 +4,21 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 
 import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
-import type { Action } from "@mmx/engine";
-import { REPLAY_ACTIONS } from "@mmx/engine";
+import {
+  DEFAULT_BINDINGS,
+  cloneBindings,
+  isKeyBindings,
+  mergeBindings,
+  type KeyBindings,
+} from "@mmx/browser-input";
 import type { ReplayFileAccess, ReplayText } from "./debug/DebugSession.js";
+
+export {
+  BINDABLE_ACTIONS,
+  DEFAULT_BINDINGS,
+  cloneBindings,
+  type KeyBindings,
+} from "@mmx/browser-input";
 
 const SETTINGS_KEY = "mmx.desktop-settings.v1";
 
@@ -14,31 +26,6 @@ const SETTINGS_KEY = "mmx.desktop-settings.v1";
 export const DEFAULT_WINDOW_SCALE = 3;
 /** Hard ceiling so the menu cannot walk off into absurd sizes. */
 export const MAX_WINDOW_SCALE = 8;
-
-/**
- * The two key slots every action carries, as `KeyboardEvent.code` values.
- *
- * Two and not a variable-length list because the default map has always had
- * exactly two spellings of each action (arrows and WASD, Space and K), and a
- * fixed pair is what lets the settings menu lay bindings out as a grid the
- * arrow keys walk. An empty string is an unbound slot.
- */
-export type KeyBindings = Record<Action, [string, string]>;
-
-/** Every bindable action, in the order the settings menu lists them. */
-export const BINDABLE_ACTIONS: readonly Action[] = REPLAY_ACTIONS;
-
-export const DEFAULT_BINDINGS: KeyBindings = {
-  move_left: ["ArrowLeft", "KeyA"],
-  move_right: ["ArrowRight", "KeyD"],
-  move_up: ["ArrowUp", "KeyW"],
-  move_down: ["ArrowDown", "KeyS"],
-  jump: ["Space", "KeyK"],
-  dash: ["ShiftLeft", "KeyL"],
-  fire: ["KeyJ", "KeyF"],
-  weapon_left: ["KeyQ", "BracketLeft"],
-  weapon_right: ["KeyE", "BracketRight"],
-};
 
 export interface DesktopSettings {
   version: 3;
@@ -64,26 +51,12 @@ export function clampScale(scale: number, max = MAX_WINDOW_SCALE): number {
   return Math.max(1, Math.min(max, Math.round(scale)));
 }
 
-export function cloneBindings(bindings: KeyBindings): KeyBindings {
-  return Object.fromEntries(
-    BINDABLE_ACTIONS.map((action) => [action, [...bindings[action]] as [string, string]]),
-  ) as KeyBindings;
-}
-
 function isDesktop(): boolean {
   return "__TAURI_INTERNALS__" in window;
 }
 
 function validBindings(value: unknown): value is KeyBindings {
-  if (!value || typeof value !== "object") return false;
-  const bindings = value as Record<string, unknown>;
-  // Exactly the known actions: an unknown key here would be a binding the game
-  // can never dispatch, and Tauri's deserializer rejects it on the way back out.
-  if (Object.keys(bindings).length !== BINDABLE_ACTIONS.length) return false;
-  return BINDABLE_ACTIONS.every((action) => {
-    const slots = bindings[action];
-    return Array.isArray(slots) && slots.length === 2 && slots.every((s) => typeof s === "string");
-  });
+  return isKeyBindings(value);
 }
 
 function validSettings(value: unknown): value is DesktopSettings {
@@ -141,20 +114,6 @@ function migrate(value: unknown): unknown {
 
 /** Keep every action the stored map already binds; default the rest (new actions,
  *  or a slot malformed enough that it cannot be trusted as a `[string, string]`). */
-function mergeBindings(value: unknown): KeyBindings {
-  const existing = (value && typeof value === "object" ? value : {}) as Partial<
-    Record<Action, unknown>
-  >;
-  return Object.fromEntries(
-    BINDABLE_ACTIONS.map((action) => {
-      const slots = existing[action];
-      const valid =
-        Array.isArray(slots) && slots.length === 2 && slots.every((s) => typeof s === "string");
-      return [action, valid ? [...(slots as [string, string])] : [...DEFAULT_BINDINGS[action]]];
-    }),
-  ) as KeyBindings;
-}
-
 function download(contents: string, suggestedName: string): void {
   const blob = new Blob([contents], { type: "application/json" });
   const url = URL.createObjectURL(blob);
