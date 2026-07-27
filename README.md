@@ -291,6 +291,7 @@ packages/
   client-settings/    Persisted client settings store (`@mmx/client-settings`)
   contracts/          Serialized animation and terrain contracts (`@mmx/contracts/animation`, `/terrain`)
   content-schema/     authoring document model (`@mmx/content-schema`, `/slopes`)
+  project-schema/     portable Studio export contract (`@mmx/project-schema`)
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
@@ -322,6 +323,7 @@ another package's internals.
 | `@mmx/renderer-pixi`  | `.`                                               | Game + editor-facing renderer API                                |
 | `@mmx/renderer-pixi`  | `./presentation`, `./debug`                       | Shared scene presentation + read-only debug geometry overlay     |
 | `@mmx/content-schema` | `.`                                               | Authoring document model                                         |
+| `@mmx/project-schema` | `.`                                               | Portable Studio project + asset manifest contract                |
 
 **Forbidden:**
 

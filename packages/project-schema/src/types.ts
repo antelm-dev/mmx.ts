@@ -56,12 +56,7 @@ export type FontAsset = AssetFields & {
   kind: "font";
 };
 
-export type ProjectAsset =
-  | ImageAsset
-  | SpriteAsset
-  | AnimationAsset
-  | SoundAsset
-  | FontAsset;
+export type ProjectAsset = ImageAsset | SpriteAsset | AnimationAsset | SoundAsset | FontAsset;
 
 export type ProjectDocument = {
   schemaVersion: number;

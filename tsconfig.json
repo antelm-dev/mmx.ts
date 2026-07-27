@@ -6,6 +6,7 @@
     { "path": "./packages/browser-input" },
     { "path": "./packages/renderer-pixi" },
     { "path": "./packages/content-schema" },
+    { "path": "./packages/project-schema" },
     { "path": "./packages/client-settings" },
     { "path": "./apps/web" },
     { "path": "./apps/sim" }

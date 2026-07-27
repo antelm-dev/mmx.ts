@@ -19,7 +19,9 @@ const ASSET_KIND_SET = new Set<string>(ASSET_KINDS);
 
 type IssueCollector = {
   issues: ValidationIssue[];
-  add: (issue: Omit<ValidationIssue, "severity"> & { severity?: ValidationIssue["severity"] }) => void;
+  add: (
+    issue: Omit<ValidationIssue, "severity"> & { severity?: ValidationIssue["severity"] },
+  ) => void;
 };
 
 function collector(): IssueCollector {
@@ -70,7 +72,11 @@ export function isPortableRelativePath(value: string): boolean {
   return true;
 }
 
-function validateLogicalId(value: unknown, path: string, add: IssueCollector["add"]): value is string {
+function validateLogicalId(
+  value: unknown,
+  path: string,
+  add: IssueCollector["add"],
+): value is string {
   if (typeof value !== "string" || value.length === 0) {
     add({
       code: "id.missing",
@@ -198,7 +204,11 @@ function validateAnimationFrame(
     return false;
   }
   let ok = validateRegion(value.region, `${path}/region`, add);
-  if (typeof value.duration !== "number" || !Number.isFinite(value.duration) || value.duration <= 0) {
+  if (
+    typeof value.duration !== "number" ||
+    !Number.isFinite(value.duration) ||
+    value.duration <= 0
+  ) {
     add({
       code: "animation.duration",
       path: `${path}/duration`,
