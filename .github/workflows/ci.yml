@@ -43,20 +43,11 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Studio tests
-        run: pnpm studio:test
-
-      - name: Studio typecheck
-        run: pnpm studio:typecheck
-
       - name: Generated levels
         run: pnpm level:check
 
       - name: Typecheck / compile
         run: pnpm build
-
-      - name: Studio build
-        run: pnpm studio:build
 
       - uses: actions/upload-artifact@v4
         with:

@@ -9,6 +9,13 @@ export const FORBIDDEN_SPECIFIERS =
   /['"]@mmx\/(?:engine\/(?:game|core)|renderer-pixi\/render)(?:\/[^'"]*)?['"]/g;
 
 const SKIP_SUFFIXES = ["scripts/check-forbidden-imports.mjs", "scripts/import-boundaries.test.mjs"];
+const FORBIDDEN_FIXTURES = path.join(
+  root,
+  "scripts",
+  "__fixtures__",
+  "import-boundaries",
+  "forbidden",
+);
 
 export function findForbiddenImports(roots = ["apps", "packages", "scripts"]) {
   const hits = [];
@@ -18,6 +25,7 @@ export function findForbiddenImports(roots = ["apps", "packages", "scripts"]) {
       if (ent.name === "node_modules" || ent.name === "dist" || ent.name === ".turbo") continue;
       const full = path.join(dir, ent.name);
       if (ent.isDirectory()) {
+        if (path.resolve(full) === FORBIDDEN_FIXTURES) continue;
         walk(full);
         continue;
       }
@@ -42,7 +50,7 @@ if (invokedDirectly) {
   if (hits.length > 0) {
     console.error("Forbidden deep imports detected:\n" + hits.join("\n"));
     console.error(
-      "\nUse @mmx/engine, @mmx/runtime, @mmx/renderer-pixi, @mmx/content-schema, or @mmx/editor-runtime public entry points.",
+      "\nUse @mmx/engine, @mmx/runtime, @mmx/renderer-pixi, or @mmx/content-schema public entry points.",
     );
     process.exit(1);
   }

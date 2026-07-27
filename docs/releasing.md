@@ -16,7 +16,6 @@ version depuis la CI.
 | `@mmx/browser-audio`  | `@mmx/desktop` |
 | `@mmx/browser-input`  | `@mmx/sim`     |
 | `@mmx/content-schema` |                |
-| `@mmx/editor-runtime` |                |
 | `@mmx/engine`         |                |
 | `@mmx/ldtk-tools`     |                |
 | `@mmx/renderer-pixi`  |                |
@@ -103,7 +102,7 @@ tourne sur `master` :
 
 1. installe les dépendances avec le lockfile figé ;
 2. exécute lint, format, tests et build (même garde-fous que la CI principale,
-   hors jobs desktop/studio lourds) ;
+   hors job desktop lourd) ;
 3. lance [changesets/action](https://github.com/changesets/action) **sans
    publication** ;
 4. s’il existe des changesets en attente, ouvre ou met à jour une PR

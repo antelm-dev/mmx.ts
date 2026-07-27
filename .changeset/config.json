@@ -7,7 +7,7 @@
   "access": "restricted",
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
-  "ignore": ["@mmx/web", "@mmx/desktop", "@mmx/sim", "@mmx/studio"],
+  "ignore": ["@mmx/web", "@mmx/desktop", "@mmx/sim"],
   "bumpVersionsWithWorkspaceProtocolOnly": true,
   "privatePackages": {
     "version": true,

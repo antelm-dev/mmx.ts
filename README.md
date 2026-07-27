@@ -21,8 +21,6 @@ pnpm install
 pnpm sim          # deterministic headless simulation, prints a state trace
 pnpm test         # unit tests (node:test) for gameplay behaviour
 pnpm play         # Vite development server -> http://localhost:5173
-pnpm editor       # MMX Studio, the visual level editor -> http://localhost:5174
-pnpm editor:build # type-check + production build of the editor
 pnpm desktop:dev    # launch the desktop app with Vite hot reload
 pnpm desktop:build  # build the native executable and platform installers
 ```
@@ -33,14 +31,6 @@ Package versions in `packages/*` are managed with
 [Changesets](https://github.com/changesets/changesets) (Semantic Versioning,
 optional `next` prereleases, automatic changelogs, version PR on `master`).
 See [`docs/releasing.md`](docs/releasing.md).
-
-**MMX Studio** (`apps/editor`) is an Angular + Angular Material visual level
-editor: open Stage 1/2, place and edit every authored entity, validate, and
-play-test with the real engine + Pixi renderer. It works on an editor-friendly
-`LevelDocument` (see [`packages/content-schema`](packages/content-schema)) and
-never touches the generated level modules. Angular runs under Vite (via the
-Analog plugin) so the renderer's Vite-native asset imports keep working. See
-[`apps/editor/README.md`](apps/editor/README.md).
 
 Controls (browser and desktop): **← →** / **A D** move · **Space** jump (hold for height) ·
 **Shift** / **L** dash · **J** fire (tap = lemon, hold+release = charged) ·
@@ -300,13 +290,11 @@ packages/
   browser-audio/      Web audio assets and gameplay sounds (`@mmx/browser-audio`)
   client-settings/    Persisted client settings store (`@mmx/client-settings`)
   contracts/          Serialized animation and terrain contracts (`@mmx/contracts/animation`, `/terrain`)
-  editor-runtime/     Studio playtest adapter (`@mmx/editor-runtime`, `/adapters`)
   content-schema/     authoring document model (`@mmx/content-schema`, `/slopes`)
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
-  studio/             Electron level editor
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
 resources/            Shared sprites, sounds, fonts and animation metadata
@@ -334,7 +322,6 @@ another package's internals.
 | `@mmx/renderer-pixi`  | `.`                                               | Game + editor-facing renderer API                                |
 | `@mmx/renderer-pixi`  | `./presentation`, `./debug`                       | Shared scene presentation + read-only debug geometry overlay     |
 | `@mmx/content-schema` | `.`                                               | Authoring document model                                         |
-| `@mmx/editor-runtime` | `.`                                               | Studio LevelDocument adapter over `@mmx/runtime/tooling`         |
 
 **Forbidden:**
 
