@@ -19,3 +19,12 @@ export {
   type ValidationIssue,
   type ValidationResult,
 } from "./types.js";
+export { migrateProject } from "./migrate.js";
+export { parseProject } from "./parse.js";
+export { normalizeProject, serializeProject } from "./serialize.js";
+export {
+  assertProject,
+  isLogicalId,
+  isPortableRelativePath,
+  validateProject,
+} from "./validation.js";
