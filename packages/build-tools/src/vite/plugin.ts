@@ -13,6 +13,7 @@ import {
   VIRTUAL_PROJECT_MODULE,
   VIRTUAL_PROJECT_PREFIX,
 } from "../constants.js";
+import { resolveEmittedAssetPath } from "../paths.js";
 import type { BrowserProjectBundle } from "../types.js";
 
 export type MmxProjectPluginOptions = {
@@ -38,7 +39,12 @@ function projectWatchGlobs(projectDir: string): string[] {
 
 function isUnderProject(projectDir: string, file: string): boolean {
   const relative = path.relative(path.resolve(projectDir), path.resolve(file));
-  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
+  return (
+    relative !== "" &&
+    relative !== ".." &&
+    !relative.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relative)
+  );
 }
 
 export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
@@ -103,12 +109,24 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
           next();
           return;
         }
-        const fileName = url.slice(ASSET_PUBLIC_PREFIX.length);
-        const filePath = path.join(
+        const assetsRoot = path.join(
           options.emitDir ?? path.join(options.projectDir, ".mmx-assets"),
           "assets",
-          fileName,
         );
+        let filePath: string;
+        let fileName: string;
+        try {
+          const resolved = resolveEmittedAssetPath(
+            assetsRoot,
+            url.slice(ASSET_PUBLIC_PREFIX.length),
+          );
+          filePath = resolved.absolutePath;
+          fileName = resolved.fileName;
+        } catch {
+          res.statusCode = 400;
+          res.end("Bad Request");
+          return;
+        }
         import("node:fs")
           .then((fs) => fs.promises.readFile(filePath))
           .then((data) => {
@@ -125,7 +143,10 @@ export function mmxProjectPlugin(options: MmxProjectPluginOptions): Plugin {
             res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
             res.end(data);
           })
-          .catch(() => next());
+          .catch(() => {
+            res.statusCode = 404;
+            res.end("Not Found");
+          });
       });
     },
 
