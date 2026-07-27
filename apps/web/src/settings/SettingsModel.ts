@@ -1,65 +1,107 @@
 import type { Action } from "@mmx/engine";
-import { assignBinding, cloneBindings, DEFAULT_BINDINGS } from "@mmx/browser-input";
 import {
-  DEFAULT_SETTINGS,
-  DesktopBridge,
+  BINDABLE_ACTIONS,
+  DEFAULT_BINDINGS,
+  DEFAULT_WINDOW_SCALE,
   MAX_WINDOW_SCALE,
-  type DesktopSettings,
-} from "../DesktopBridge.js";
+  cloneBindings,
+  createClientSettingsStore,
+  type ClientSettings,
+  type ClientSettingsStore,
+  type KeyBindings,
+} from "@mmx/client-settings";
+import type { DesktopBridge } from "../DesktopBridge.js";
+import { createWebSettingsStorage } from "./webSettingsStorage.js";
 
-/**
- * The single copy of {@link DesktopSettings}, plus its persistence.
- *
- * Everything downstream (the settings menu, the debug F-keys, window
- * lifecycle) reads and mutates settings through here rather than holding its
- * own copy, so there is exactly one place a rebind or a volume change can
- * actually take effect. Window/OS operations (applying a scale, entering
- * fullscreen) are deliberately not here — see `AppLifecycle` — this class
- * only ever touches the data and disk/localStorage.
- */
+export type { KeyBindings };
+export {
+  BINDABLE_ACTIONS,
+  DEFAULT_BINDINGS,
+  DEFAULT_WINDOW_SCALE,
+  MAX_WINDOW_SCALE,
+  cloneBindings,
+};
+
+/** Flat projection kept for the Pixi settings menu and lifecycle callers. */
+export interface DesktopSettings {
+  masterVolume: number;
+  scale: number;
+  fullscreen: boolean;
+  pauseOnBlur: boolean;
+  bindings: KeyBindings;
+}
 
 export interface SettingsModelOptions {
   desktop: DesktopBridge;
-  /** Transient user-facing feedback, e.g. routed to the debug HUD. */
   onNotice?: (message: string) => void;
+  store?: ClientSettingsStore;
+}
+
+function toView(settings: ClientSettings): DesktopSettings {
+  return {
+    masterVolume: settings.audio.masterVolume,
+    scale: settings.window.integerScale,
+    fullscreen: settings.window.fullscreen,
+    pauseOnBlur: settings.gameplay.pauseOnBlur,
+    bindings: settings.input.bindings,
+  };
 }
 
 export class SettingsModel {
-  private settings: DesktopSettings = {
-    ...DEFAULT_SETTINGS,
-    bindings: cloneBindings(DEFAULT_BINDINGS),
-  };
+  private readonly store: ClientSettingsStore;
+  private readonly onNotice?: (message: string) => void;
+  private readonly desktop: DesktopBridge;
   private maxWindowScale = MAX_WINDOW_SCALE;
-  private saveTimer = 0;
 
-  constructor(private readonly options: SettingsModelOptions) {}
+  constructor(options: SettingsModelOptions) {
+    this.desktop = options.desktop;
+    this.onNotice = options.onNotice;
+    this.store =
+      options.store ??
+      createClientSettingsStore({
+        storage: createWebSettingsStorage(options.desktop),
+        onSaveError: (error) => {
+          console.warn("Could not save desktop settings", error);
+          options.onNotice?.(`settings save failed: ${String(error)}`);
+        },
+      });
+  }
+
+  get storeRef(): ClientSettingsStore {
+    return this.store;
+  }
 
   get(): DesktopSettings {
-    return this.settings;
+    return toView(this.store.snapshot());
   }
 
   get maxScale(): number {
     return this.maxWindowScale;
   }
 
-  /** Load persisted settings and the display's scale ceiling. Call once at startup. */
   async load(): Promise<void> {
-    this.settings = await this.options.desktop.loadSettings();
-    this.maxWindowScale = await this.options.desktop.maxWindowScale().catch(() => MAX_WINDOW_SCALE);
-    this.settings = { ...this.settings, scale: Math.min(this.settings.scale, this.maxWindowScale) };
+    await this.store.load();
+    this.maxWindowScale = await this.desktop.maxWindowScale().catch(() => MAX_WINDOW_SCALE);
+    const scale = Math.min(this.store.snapshot().window.integerScale, this.maxWindowScale);
+    if (scale !== this.store.snapshot().window.integerScale) {
+      this.store.patch({ window: { integerScale: scale } });
+    }
   }
 
-  /** Refresh the scale ceiling — the menu calls this whenever it opens. */
   async refreshMaxScale(): Promise<void> {
-    this.maxWindowScale = await this.options.desktop
-      .maxWindowScale()
-      .catch(() => this.maxWindowScale);
+    this.maxWindowScale = await this.desktop.maxWindowScale().catch(() => this.maxWindowScale);
   }
 
-  /** Merge a partial update into the live settings and persist it. */
   patch(partial: Partial<DesktopSettings>): void {
-    this.settings = { ...this.settings, ...partial };
-    this.persist();
+    this.store.patch({
+      audio: partial.masterVolume !== undefined ? { masterVolume: partial.masterVolume } : undefined,
+      gameplay: partial.pauseOnBlur !== undefined ? { pauseOnBlur: partial.pauseOnBlur } : undefined,
+      window: {
+        fullscreen: partial.fullscreen,
+        integerScale: partial.scale,
+      },
+      input: partial.bindings !== undefined ? { bindings: partial.bindings } : undefined,
+    });
   }
 
   setVolume(volume: number): void {
@@ -67,40 +109,25 @@ export class SettingsModel {
   }
 
   adjustVolume(delta: number): void {
-    this.setVolume(Math.round((this.settings.masterVolume + delta) * 10) / 10);
-    this.options.onNotice?.(`volume ${Math.round(this.settings.masterVolume * 100)}%`);
+    this.setVolume(Math.round((this.get().masterVolume + delta) * 10) / 10);
+    this.onNotice?.(`volume ${Math.round(this.get().masterVolume * 100)}%`);
   }
 
   setPauseOnBlur(pauseOnBlur: boolean): void {
     this.patch({ pauseOnBlur });
-    this.options.onNotice?.(`pause on focus loss ${pauseOnBlur ? "on" : "off"}`);
+    this.onNotice?.(`pause on focus loss ${pauseOnBlur ? "on" : "off"}`);
   }
 
   setBinding(action: Action, slot: number, code: string): void {
-    this.patch({ bindings: assignBinding(this.settings.bindings, action, slot, code) });
+    this.store.setBinding(action, slot, code);
   }
 
   resetBindings(): void {
-    this.patch({ bindings: cloneBindings(DEFAULT_BINDINGS) });
-    this.options.onNotice?.("key bindings restored to defaults");
+    this.store.resetBindings();
+    this.onNotice?.("key bindings restored to defaults");
   }
 
-  /**
-   * Write the settings out, coalescing a burst into one write.
-   *
-   * Holding an arrow key on the menu's volume row emits a change per key repeat,
-   * and each one is a disk write on desktop. The delay is short enough that a
-   * player who closes the menu and quits immediately still keeps their choice,
-   * because closing the window does not cancel a pending timer that has already
-   * been given the final value.
-   */
-  private persist(): void {
-    clearTimeout(this.saveTimer);
-    this.saveTimer = window.setTimeout(() => {
-      void this.options.desktop.saveSettings(this.settings).catch((error: unknown) => {
-        console.warn("Could not save desktop settings", error);
-        this.options.onNotice?.(`settings save failed: ${String(error)}`);
-      });
-    }, 200);
+  flush(): Promise<void> {
+    return this.store.flush();
   }
 }

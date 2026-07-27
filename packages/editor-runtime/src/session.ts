@@ -58,6 +58,8 @@ class PlaytestSession implements EditorPlaytestSession {
       onError: (error) => this.fail(error),
       replayFiles: this.options.replayFiles,
       clipboard: this.options.clipboard,
+      getBindings: this.options.getBindings,
+      isPauseOnBlur: this.options.isPauseOnBlur,
     });
     this.runtime = runtime;
 

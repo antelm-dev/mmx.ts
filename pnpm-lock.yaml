@@ -62,6 +62,9 @@ importers:
       '@mmx/browser-audio':
         specifier: workspace:*
         version: link:../../packages/browser-audio
+      '@mmx/client-settings':
+        specifier: workspace:*
+        version: link:../../packages/client-settings
       '@mmx/content-engine-adapter':
         specifier: workspace:*
         version: link:../../packages/content-engine-adapter
@@ -204,6 +207,9 @@ importers:
       '@mmx/browser-input':
         specifier: workspace:*
         version: link:../../packages/browser-input
+      '@mmx/client-settings':
+        specifier: workspace:*
+        version: link:../../packages/client-settings
       '@mmx/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -280,6 +286,22 @@ importers:
         specifier: workspace:*
         version: link:../runtime
     devDependencies:
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/client-settings:
+    dependencies:
+      '@mmx/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
       tsx:
         specifier: ^4.7.0
         version: 4.23.1

@@ -37,6 +37,7 @@ import {
   type FileAccess,
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
+import { ensureStudioClientSettings } from "../settings/studioClientSettings.js";
 
 const ZOOM_STEP = 1.2;
 
@@ -368,6 +369,14 @@ export class EditorController {
     // satisfies browser/Electron autoplay policy.
     audio.unlock();
     this.closeEmptyContextMenu();
+
+    const settings = await ensureStudioClientSettings().catch((error: unknown) => {
+      this.toast(`settings load failed: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    });
+    if (!settings) return;
+    audio.setMasterVolume(settings.snapshot().audio.masterVolume);
+
     const result = this.store.validate();
     if (!result.ok) {
       this.toast(
@@ -393,6 +402,8 @@ export class EditorController {
       const session = createPlaytest(state.document, {
         host: this.host,
         audio,
+        getBindings: () => settings.snapshot().input.bindings,
+        isPauseOnBlur: () => settings.snapshot().gameplay.pauseOnBlur,
         replayFiles: {
           save: async (contents, suggestedName) => {
             const ok = await files.save(suggestedName, contents);

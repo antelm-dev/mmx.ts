@@ -17,6 +17,10 @@ import { JsonPanel } from "./components/JsonPanel.js";
 import { Toasts } from "./components/Toasts.js";
 import { useUiStore } from "./store/uiStore.js";
 import { cx } from "./ui.js";
+import {
+  ensureStudioClientSettings,
+  getStudioClientSettingsStore,
+} from "./settings/studioClientSettings.js";
 
 /** Dockview panel registry. Panels read the shared controller; props are unused. */
 const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElement> = {
@@ -35,6 +39,7 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
 export function App() {
   const fullscreen = useUiStore((s) => s.fullscreen);
   const setFullscreen = useUiStore((s) => s.setFullscreen);
+  const addToast = useUiStore((s) => s.addToast);
 
   useEffect(() => {
     const api = window.studio?.window;
@@ -43,16 +48,31 @@ export function App() {
     let eventSeen = false;
     const unsub = api.onFullscreenChanged((v) => {
       eventSeen = true;
-      if (!cancelled) setFullscreen(v);
+      if (cancelled) return;
+      setFullscreen(v);
+      try {
+        getStudioClientSettingsStore().patch({ window: { fullscreen: v } });
+      } catch {
+        /* store not ready yet */
+      }
     });
-    void api.isFullscreen().then((v) => {
-      if (!cancelled && !eventSeen) setFullscreen(v);
-    });
+    void (async () => {
+      const settings = await ensureStudioClientSettings().catch((error: unknown) => {
+        addToast(`settings load failed: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+      });
+      if (cancelled || !settings) return;
+      const want = settings.snapshot().window.fullscreen;
+      const current = await api.isFullscreen();
+      if (cancelled) return;
+      if (!eventSeen) setFullscreen(current);
+      if (want && !current) await api.toggleFullscreen();
+    })();
     return () => {
       cancelled = true;
       unsub();
     };
-  }, [setFullscreen]);
+  }, [setFullscreen, addToast]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => editor.handleKeydown(e);

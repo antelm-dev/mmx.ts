@@ -1,4 +1,5 @@
-import { BrowserInput, type KeyBindings } from "@mmx/browser-input";
+import { BrowserInput } from "@mmx/browser-input";
+import type { KeyBindings } from "../settings/SettingsModel.js";
 import type { DebugSession } from "../debug/DebugSession.js";
 import type { SoundEffects } from "@mmx/browser-audio";
 

@@ -39,6 +39,7 @@ export interface CreateToolingRuntimeOptions extends RuntimeSessionOptions {
   getBindings?: () => BrowserInputBindings;
   getGamepads?: GetGamepads;
   beforeKeyDown?: BrowserInputOptions["beforeKeyDown"];
+  isPauseOnBlur?: () => boolean;
   onError?: (error: unknown) => void;
   replayFiles?: ReplayFileAccess;
   clipboard?: ClipboardAccess;
@@ -101,6 +102,7 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   private readonly input: BrowserInput;
   private clock: FixedStepLoop | null = null;
   private readonly onError?: (error: unknown) => void;
+  private pausedByBlur = false;
 
   constructor(options: CreateToolingRuntimeOptions) {
     this.session = new RuntimeSession(options);
@@ -117,6 +119,17 @@ class ToolingRuntimeImpl implements ToolingRuntime {
       beforeKeyDown: (e) => {
         if (options.beforeKeyDown?.(e)) return true;
         return isEditableKeyTarget(e.target);
+      },
+      onBlur: () => {
+        if (options.isPauseOnBlur?.() && !this.debug.isPaused) {
+          this.pause();
+          this.pausedByBlur = true;
+        }
+      },
+      onFocus: () => {
+        if (!this.pausedByBlur) return;
+        this.pausedByBlur = false;
+        this.resume();
       },
     });
   }
