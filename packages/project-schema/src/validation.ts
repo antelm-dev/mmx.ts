@@ -476,23 +476,30 @@ export function validateProject(project: ProjectDocument): ValidationResult {
     });
 
     project.assets.forEach((asset, index) => {
-      if (asset.kind === "animation" && asset.sheetAssetId !== undefined) {
-        if (!assetIds.has(asset.sheetAssetId)) {
+      if (!isRecord(asset)) return;
+      if (asset.kind !== "animation" || asset.sheetAssetId === undefined) return;
+
+      const sheetAssetId = asset.sheetAssetId;
+      if (typeof sheetAssetId !== "string" || !assetIds.has(sheetAssetId)) {
+        if (typeof sheetAssetId === "string") {
           add({
             code: "animation.sheet.unknown",
             path: `/assets/${index}/sheetAssetId`,
-            message: `sheetAssetId '${asset.sheetAssetId}' does not match any asset id.`,
+            message: `sheetAssetId '${sheetAssetId}' does not match any asset id.`,
           });
-        } else {
-          const sheet = project.assets.find((entry) => entry.id === asset.sheetAssetId);
-          if (sheet && sheet.kind !== "image" && sheet.kind !== "sprite") {
-            add({
-              code: "animation.sheet.kind",
-              path: `/assets/${index}/sheetAssetId`,
-              message: `sheetAssetId '${asset.sheetAssetId}' must reference an image or sprite asset.`,
-            });
-          }
         }
+        return;
+      }
+
+      const sheet = project.assets.find(
+        (entry) => isRecord(entry) && entry.id === sheetAssetId,
+      );
+      if (sheet && sheet.kind !== "image" && sheet.kind !== "sprite") {
+        add({
+          code: "animation.sheet.kind",
+          path: `/assets/${index}/sheetAssetId`,
+          message: `sheetAssetId '${sheetAssetId}' must reference an image or sprite asset.`,
+        });
       }
     });
   }
