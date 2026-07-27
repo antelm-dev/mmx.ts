@@ -48,10 +48,16 @@ export class SoundEffects {
   }
 
   load(): Promise<void> {
-    this.loadPromise ??= Promise.all(this.soundIds.map((soundId) => this.loadSound(soundId))).then(
-      () => undefined,
-    );
-    return this.loadPromise;
+    if (this.loadPromise) return this.loadPromise;
+
+    const pending = Promise.all(this.soundIds.map((soundId) => this.loadSound(soundId)))
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        if (this.loadPromise === pending) this.loadPromise = null;
+        throw error;
+      });
+    this.loadPromise = pending;
+    return pending;
   }
 
   unlock(): void {
@@ -98,6 +104,8 @@ export class SoundEffects {
   }
 
   private async loadSound(soundId: string): Promise<void> {
+    if (this.buffers.has(soundId)) return;
+
     let url: string;
     try {
       url = this.resolver.resolveUrl(soundId);
@@ -160,8 +168,12 @@ export class SoundEffects {
       }
     })();
 
-    this.urlLoads.set(url, promise);
-    return promise;
+    const tracked = promise.catch((error: unknown) => {
+      if (this.urlLoads.get(url) === tracked) this.urlLoads.delete(url);
+      throw error;
+    });
+    this.urlLoads.set(url, tracked);
+    return tracked;
   }
 }
 
