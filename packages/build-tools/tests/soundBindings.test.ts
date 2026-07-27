@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
@@ -13,6 +12,10 @@ import {
 } from "../src/index.js";
 import type { AssetEmissionPlan } from "../src/types.js";
 import type { ProjectDocument } from "@mmx/project-schema";
+import {
+  createStudioShapedFixture,
+  soundAssetId,
+} from "./helpers/createStudioShapedFixture.js";
 
 function emissionFor(ids: string[]): AssetEmissionPlan {
   const assets = ids.map((assetId) => ({
@@ -145,41 +148,38 @@ test("compileStudioSoundBindings rejects missing emitted URL", () => {
   );
 });
 
-test("starter bindings resolve every gameplay sound without legacy runtime preload ids", async () => {
-  const studioRoot = process.env.MMX_STUDIO_ROOT;
-  assert.ok(studioRoot, "MMX_STUDIO_ROOT must point at the Studio starter worktree");
+test("studio-shaped bindings resolve every gameplay sound without legacy runtime preload ids", async () => {
+  const fixture = await createStudioShapedFixture();
+  try {
+    const project = await requireProject(fixture.root);
+    const emission = await planAssetEmission(project);
+    const bundle = await compileBrowserProjectBundle(project, emission);
 
-  const templateRoot = path.join(studioRoot, "templates/mmx-starter");
-  const project = await requireProject(templateRoot);
-  const emission = await planAssetEmission(project);
-  const bundle = await compileBrowserProjectBundle(project, emission);
-
-  assert.ok(bundle.soundBindings);
-  for (const runtimeName of GAMEPLAY_SOUND_IDS) {
-    const assetId = bundle.soundBindings![runtimeName];
-    assert.ok(assetId, `missing binding for ${runtimeName}`);
-    assert.ok(bundle.assetUrls[assetId], `missing URL for ${runtimeName} → ${assetId}`);
-    assert.ok(bundle.soundIds.includes(assetId));
-    assert.equal(bundle.soundIds.includes(runtimeName), false);
+    assert.ok(bundle.soundBindings);
+    for (const runtimeName of GAMEPLAY_SOUND_IDS) {
+      const assetId = bundle.soundBindings![runtimeName];
+      assert.ok(assetId, `missing binding for ${runtimeName}`);
+      assert.equal(assetId, soundAssetId(runtimeName));
+      assert.ok(bundle.assetUrls[assetId], `missing URL for ${runtimeName} → ${assetId}`);
+      assert.ok(bundle.soundIds.includes(assetId));
+      assert.equal(bundle.soundIds.includes(runtimeName), false);
+    }
+  } finally {
+    await fixture.dispose();
   }
 });
 
-test("incomplete starter sound map fails before browser bootstrap", async () => {
-  const studioRoot = process.env.MMX_STUDIO_ROOT;
-  assert.ok(studioRoot, "MMX_STUDIO_ROOT must point at the Studio starter worktree");
-
-  const templateRoot = path.join(studioRoot, "templates/mmx-starter");
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-sound-bindings-"));
+test("incomplete studio-shaped sound map fails before browser bootstrap", async () => {
+  const fixture = await createStudioShapedFixture("mmx-sound-bindings-");
   try {
-    await fs.cp(templateRoot, tempRoot, { recursive: true });
-    const dataPath = path.join(tempRoot, "game/data.json");
+    const dataPath = path.join(fixture.root, "game/data.json");
     const data = JSON.parse(await fs.readFile(dataPath, "utf8")) as {
       bindings: { sounds: Record<string, string> };
     };
     delete data.bindings.sounds.jump;
     await fs.writeFile(dataPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 
-    const project = await requireProject(tempRoot);
+    const project = await requireProject(fixture.root);
     const emission = await planAssetEmission(project);
     await assert.rejects(
       () => compileBrowserProjectBundle(project, emission),
@@ -190,6 +190,6 @@ test("incomplete starter sound map fails before browser bootstrap", async () => 
       },
     );
   } finally {
-    await fs.rm(tempRoot, { recursive: true, force: true });
+    await fixture.dispose();
   }
 });

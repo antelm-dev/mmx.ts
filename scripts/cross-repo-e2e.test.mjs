@@ -1,16 +1,21 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { access, copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { access, copyFile, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
+import { GAMEPLAY_SOUND_IDS } from "../packages/browser-audio/dist/index.js";
 import {
   buildProjectToDisk,
   bundleContainsAbsolutePaths,
   bundleModuleSource,
+  compileBrowserProjectBundle,
   hashContent,
   loadProject,
+  planAssetEmission,
+  ProjectBuildError,
   requireProject,
 } from "../packages/build-tools/dist/index.js";
 import {
@@ -136,6 +141,72 @@ async function buildExport(exportDir, outDir) {
   const bundle = JSON.parse(await readFile(path.join(outDir, "project-bundle.json"), "utf8"));
   return bundle;
 }
+
+test("cross-repo: checked-in starter template compiles renderer and sound bindings", async () => {
+  await assertStudioRoot();
+
+  const templateRoot = path.join(studioRoot, "templates/mmx-starter");
+  const project = await requireProject(templateRoot);
+  const emission = await planAssetEmission(project);
+  const bundle = await compileBrowserProjectBundle(project, emission);
+
+  assert.equal(bundleContainsAbsolutePaths(bundleModuleSource(bundle)), false);
+  assert.ok(bundle.rendererManifest, "renderer manifest should be built from game/data.json");
+  assert.ok(bundle.rendererManifest.playerAnims.animations.idle);
+  assert.ok(bundle.soundBindings);
+  assert.equal(bundle.soundBindings.jump, "sfx.player.jump");
+  assert.ok(bundle.assetUrls["sfx.player.jump"]);
+  assert.ok(bundle.soundIds.includes("sfx.player.jump"));
+  assert.equal(bundle.soundIds.includes("jump"), false);
+  assert.equal(bundle.meta.entryLevelId, "level.starter");
+  for (const runtimeName of GAMEPLAY_SOUND_IDS) {
+    const assetId = bundle.soundBindings[runtimeName];
+    assert.ok(assetId, `missing starter binding for ${runtimeName}`);
+    assert.ok(bundle.assetUrls[assetId], `missing URL for ${runtimeName} → ${assetId}`);
+    assert.ok(bundle.soundIds.includes(assetId));
+    assert.equal(bundle.soundIds.includes(runtimeName), false);
+  }
+});
+
+test("cross-repo: incomplete starter sound map fails before browser bootstrap", async () => {
+  await assertStudioRoot();
+
+  const templateRoot = path.join(studioRoot, "templates/mmx-starter");
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "mmx-sound-bindings-"));
+  try {
+    await cp(templateRoot, tempRoot, { recursive: true });
+    const dataPath = path.join(tempRoot, "game/data.json");
+    const data = JSON.parse(await readFile(dataPath, "utf8"));
+    delete data.bindings.sounds.jump;
+    await writeFile(dataPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+
+    const project = await requireProject(tempRoot);
+    const emission = await planAssetEmission(project);
+    await assert.rejects(
+      () => compileBrowserProjectBundle(project, emission),
+      (error) => {
+        assert.ok(error instanceof ProjectBuildError);
+        assert.match(error.message, /jump/);
+        return true;
+      },
+    );
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("cross-repo: starter template builds deterministically to disk", async () => {
+  await assertStudioRoot();
+  const templateRoot = path.join(studioRoot, "templates/mmx-starter");
+  const project = await requireProject(templateRoot);
+  const reportA = await buildProjectToDisk(project, path.join(e2eRoot, "starter-template-a"));
+  const reportB = await buildProjectToDisk(project, path.join(e2eRoot, "starter-template-b"));
+  assert.deepEqual(
+    reportA.emission.assets.map((asset) => asset.contentHash),
+    reportB.emission.assets.map((asset) => asset.contentHash),
+  );
+  assert.equal(bundleContainsAbsolutePaths(bundleModuleSource(reportA.bundle)), false);
+});
 
 test("cross-repo: clean starter export builds and boots", async (t) => {
   await assertStudioRoot();
