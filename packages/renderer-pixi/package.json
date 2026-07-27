@@ -35,7 +35,8 @@
   "dependencies": {
     "@mmx/content-schema": "workspace:*",
     "@mmx/contracts": "workspace:*",
-    "@mmx/engine": "workspace:*"
+    "@mmx/engine": "workspace:*",
+    "@mmx/project-schema": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
