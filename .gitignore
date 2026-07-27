@@ -1,6 +1,7 @@
 node_modules/
 .turbo/
 dist*/
+.mmx-assets/
 **/src-tauri/target/
 **/src-tauri/gen/schemas/
 *.tsbuildinfo
