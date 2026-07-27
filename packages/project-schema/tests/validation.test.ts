@@ -189,3 +189,118 @@ test("isPortableRelativePath helper matches validation rules", () => {
   assert.equal(isPortableRelativePath("/x.png"), false);
   assert.equal(isPortableRelativePath("C:/x.png"), false);
 });
+
+const validLevel = { id: "intro", path: "levels/intro.json" };
+const validImage = { id: "image.bg", kind: "image", path: "assets/sprites/bg.png" };
+const validAnim = {
+  id: "anim.hero",
+  kind: "animation",
+  path: "assets/anims/hero.json",
+  sheetAssetId: "image.bg",
+  animations: {
+    idle: {
+      loop: true,
+      speed: 1,
+      frames: [{ region: [0, 0, 8, 8], duration: 0.1 }],
+    },
+  },
+};
+
+test("parseProject stays total for malformed levels, assets, and references", () => {
+  const cases: Array<{
+    name: string;
+    overrides: Record<string, unknown>;
+    expectedCodes: string[];
+  }> = [
+    {
+      name: "null asset entry",
+      overrides: { assets: [null] },
+      expectedCodes: ["asset.object"],
+    },
+    {
+      name: "primitive asset entries",
+      overrides: { assets: [42, "image", true] },
+      expectedCodes: ["asset.object", "asset.object", "asset.object"],
+    },
+    {
+      name: "array asset entry",
+      overrides: { assets: [[validImage]] },
+      expectedCodes: ["asset.object"],
+    },
+    {
+      name: "partially shaped asset object",
+      overrides: { assets: [{ kind: "sprite" }] },
+      expectedCodes: ["id.missing", "path.missing"],
+    },
+    {
+      name: "null level entry",
+      overrides: { levels: [null], assets: [] },
+      expectedCodes: ["level.object"],
+    },
+    {
+      name: "primitive and array level entries",
+      overrides: { levels: [1, "intro", [validLevel]], assets: [] },
+      expectedCodes: ["level.object", "level.object", "level.object"],
+    },
+    {
+      name: "partially shaped level object",
+      overrides: { levels: [{ id: "intro" }], assets: [] },
+      expectedCodes: ["path.missing"],
+    },
+    {
+      name: "animation with unknown sheetAssetId",
+      overrides: {
+        assets: [
+          {
+            ...validAnim,
+            sheetAssetId: "missing.sheet",
+          },
+        ],
+      },
+      expectedCodes: ["animation.sheet.unknown"],
+    },
+    {
+      name: "animation with wrong sheet kind",
+      overrides: {
+        assets: [
+          { id: "sfx.jump", kind: "sound", path: "assets/sounds/jump.wav" },
+          { ...validAnim, sheetAssetId: "sfx.jump" },
+        ],
+      },
+      expectedCodes: ["animation.sheet.kind"],
+    },
+    {
+      name: "mixed valid and invalid assets including null",
+      overrides: {
+        assets: [null, validImage, 7, validAnim, { id: "bad", kind: "nope", path: "x.png" }],
+      },
+      expectedCodes: ["asset.object", "asset.object", "asset.kind"],
+    },
+    {
+      name: "null among assets used by sheet lookup",
+      overrides: {
+        assets: [null, validImage, validAnim],
+      },
+      expectedCodes: ["asset.object"],
+    },
+  ];
+
+  for (const { name, overrides, expectedCodes } of cases) {
+    const raw = {
+      ...validProject(),
+      ...overrides,
+    };
+    let parsed: ReturnType<typeof parseProject> | undefined;
+    assert.doesNotThrow(() => {
+      parsed = parseProject(raw);
+    }, name);
+    assert.ok(parsed, name);
+    assert.equal(parsed.ok, false, name);
+    for (const code of expectedCodes) {
+      assert.ok(
+        parsed.issues.some((issue) => issue.code === code),
+        `${name}: expected code ${code}, got ${parsed.issues.map((issue) => issue.code).join(", ")}`,
+      );
+    }
+  }
+});
