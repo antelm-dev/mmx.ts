@@ -6,7 +6,7 @@ import {
   type SlopeMap,
   type SlopeProfile,
   type SlopeRect,
-} from "@mmx/slope-tools";
+} from "@mmx/content-schema/slopes";
 
 export { applySlopes, bakeSlope, TILE };
 export type { BakedTile, SlopeMap, SlopeProfile, SlopeRect };

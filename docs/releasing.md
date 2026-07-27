@@ -23,7 +23,6 @@ version depuis la CI.
 | `@mmx/ldtk-tools`             |                |
 | `@mmx/renderer-pixi`          |                |
 | `@mmx/runtime`                |                |
-| `@mmx/slope-tools`            |                |
 
 Les packages restent `private: true`. Changesets les versionne quand même grâce
 à `privatePackages.version` dans `.changeset/config.json`.

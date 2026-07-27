@@ -25,7 +25,7 @@
     "level:check": "pnpm level:import && git diff --exit-code -- packages/engine/src/game/levels",
     "enemies:import": "node scripts/build-enemies.mjs",
     "pickups:import": "node scripts/build-pickups.mjs",
-    "test": "turbo run test --filter=!@mmx/studio --filter=!@mmx/slope-tools",
+    "test": "turbo run test --filter=!@mmx/studio",
     "lint": "oxlint packages apps scripts && node scripts/check-forbidden-imports.mjs && node --test scripts/import-boundaries.test.mjs",
     "lint:fix": "oxlint --fix packages apps scripts",
     "test:import-boundaries": "node --test scripts/import-boundaries.test.mjs",

@@ -21,8 +21,7 @@
   },
   "dependencies": {
     "@mmx/content-schema": "workspace:*",
-    "@mmx/engine": "workspace:*",
-    "@mmx/slope-tools": "workspace:*"
+    "@mmx/engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

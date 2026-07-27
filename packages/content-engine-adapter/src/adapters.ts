@@ -1,6 +1,6 @@
 import type { LevelData, LevelEntity } from "@mmx/engine";
 import { Tile } from "@mmx/engine";
-import { applySlopes, type SlopeRect } from "@mmx/slope-tools";
+import { applySlopes, type SlopeRect } from "@mmx/content-schema/slopes";
 import {
   TERRAIN_TILE_BY_NAME,
   TERRAIN_TILE_NAME,

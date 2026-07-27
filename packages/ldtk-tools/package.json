@@ -26,7 +26,7 @@
     "import": "tsx src/import.ts"
   },
   "dependencies": {
-    "@mmx/slope-tools": "workspace:*"
+    "@mmx/content-schema": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

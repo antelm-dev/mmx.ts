@@ -75,8 +75,6 @@ function validate(rect: SlopeRect, where: string): { run: number; rise: number }
     );
   }
   if (run % rise !== 0) {
-    // Name the two legal runs either side, since "a whole multiple" still
-    // leaves the author working out which widths those are.
     const below = Math.floor(run / rise) * rise;
     const above = below + rise;
     fail(
@@ -99,12 +97,10 @@ export function bakeSlope(rect: SlopeRect, where = "slope"): BakedTile[] {
   const kind = DIRECTIONS[rect.dir];
   const col0 = rect.x / TILE;
   const bottomRow = rect.y / TILE + rise - 1;
-  const k = run / rise; // columns spanned per tile of rise
+  const k = run / rise;
   const out: BakedTile[] = [];
 
   for (let i = 0; i < run; i++) {
-    // An up-left ramp is an up-right one read from the far end, with each
-    // tile's two edge heights swapped.
     const j = kind === "SlopeUpRight" ? i : run - 1 - i;
     const step = j % k;
     const low = (step * TILE) / k;
@@ -118,7 +114,6 @@ export function bakeSlope(rect: SlopeRect, where = "slope"): BakedTile[] {
       tile: kind,
       profile: kind === "SlopeUpRight" ? [low, high] : [high, low],
     });
-    // Everything under the ramp tile, down to the box's base, is filled.
     for (let solidY = ty + 1; solidY <= bottomRow; solidY++) {
       out.push({ tx, ty: solidY, tile: "Solid", profile: null });
     }
@@ -126,7 +121,6 @@ export function bakeSlope(rect: SlopeRect, where = "slope"): BakedTile[] {
   return out;
 }
 
-/** Does this profile already say what a bare slope tile of its kind means? */
 function isDefault45([l, r]: SlopeProfile): boolean {
   return (l === 0 && r === TILE) || (l === TILE && r === 0);
 }
@@ -149,9 +143,6 @@ export function applySlopes(
   const slopes: SlopeMap = {};
   for (const rect of rects) {
     for (const { tx, ty, tile, profile } of bakeSlope(rect, where)) {
-      // Columns are bounds-checked against `cols`, not against the flat index:
-      // a box running off the right edge still lands inside the array, one row
-      // down, so an index-only check would silently rewrite unrelated terrain.
       if (tx < 0 || tx >= cols || ty < 0 || ty * cols + tx >= tiles.length) {
         throw new Error(
           `${where}: Slope at ${rect.x},${rect.y} (${rect.w}x${rect.h}) reaches tile ` +
@@ -160,8 +151,6 @@ export function applySlopes(
       }
       const index = ty * cols + tx;
       tiles[index] = tile;
-      // 45 degrees is what a bare slope tile already means; leaving those out
-      // keeps the generated map to the ramps that actually need describing.
       if (profile !== null && !isDefault45(profile)) slopes[index] = profile;
     }
   }
