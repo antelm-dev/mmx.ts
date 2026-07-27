@@ -23,7 +23,8 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/engine": "workspace:*"
+    "@mmx/engine": "workspace:*",
+    "@mmx/project-schema": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
