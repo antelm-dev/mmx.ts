@@ -75,3 +75,26 @@ test("checkpoints and restarts stay behind the public façade", async () => {
 
   session.dispose();
 });
+
+test("debug controller fields surface through playtest snapshot", async () => {
+  const session = createPlaytest(createLevelDocument());
+  await session.start();
+
+  session.step();
+  session.step();
+  session.setCheckpoint();
+  session.step();
+  session.seek(2);
+  assert.equal(session.snapshot().frame, 2);
+  assert.equal(session.snapshot().status, "paused");
+
+  session.setTimeScale(0.25);
+  session.setInvulnerable(true);
+  const snap = session.snapshot();
+  assert.equal(snap.debug.timeScale, 0.25);
+  assert.equal(snap.debug.invulnerable, true);
+  assert.equal(snap.debug.tainted, true);
+  assert.ok(snap.debug.recordedLength >= 2);
+
+  session.dispose();
+});

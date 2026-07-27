@@ -1,4 +1,10 @@
-import { DT, FrameStats, type Action, type SceneOptions } from "@mmx/engine";
+import {
+  DT,
+  type Action,
+  type LevelData,
+  type Replay,
+  type SceneOptions,
+} from "@mmx/engine";
 import type { SimulationSnapshot } from "@mmx/engine/tooling";
 import {
   RuntimeSession,
@@ -13,6 +19,13 @@ import {
   FixedStepLoop,
   type FixedStepFrameStats,
 } from "../browser/FixedStepLoop.js";
+import {
+  createRuntimeDebugHost,
+  DebugController,
+  type ClipboardAccess,
+  type DebugSnapshot,
+  type ReplayFileAccess,
+} from "../debug/index.js";
 
 export const TOOLING_BINDINGS: BrowserInputBindings = {
   move_left: ["ArrowLeft", "KeyA"],
@@ -29,14 +42,19 @@ export const TOOLING_BINDINGS: BrowserInputBindings = {
 export interface CreateToolingRuntimeOptions extends RuntimeSessionOptions {
   getGamepads?: GetGamepads;
   onError?: (error: unknown) => void;
+  replayFiles?: ReplayFileAccess;
+  clipboard?: ClipboardAccess;
+  extraDiagnostics?: () => Record<string, string | number>;
 }
 
 export interface ToolingRuntime {
   readonly session: RuntimeSession;
-  readonly frameStats: FrameStats;
+  readonly debug: DebugController;
+  readonly frameStats: DebugController["stats"];
   readonly isPaused: boolean;
   step(mask?: number): SimulationSnapshot;
   inspect(): RuntimeInspect;
+  debugSnapshot(): DebugSnapshot;
   setAction(action: Action, down: boolean): void;
   clearInput(): void;
   toMask(): number;
@@ -44,6 +62,18 @@ export interface ToolingRuntime {
   restartCheckpoint(): SimulationSnapshot;
   restartLevel(): SimulationSnapshot;
   seek(frame: number): SimulationSnapshot;
+  loadLevel(level: LevelData): SimulationSnapshot;
+  markTainted(): void;
+  toReplay(): Replay;
+  loadReplay(replay: Replay): SimulationSnapshot;
+  loadReplayText(text: string, source?: string): void;
+  saveReplay(): void;
+  promptLoadReplay(): void;
+  setInvulnerable(enabled: boolean): void;
+  setTimeScale(scale: number): void;
+  nudgeTimeScale(delta: number): void;
+  copyDiagnostics(): Promise<void>;
+  diagnostics(): string;
   replaceScene(options?: SceneOptions): SimulationSnapshot;
   setPresentation(presentation: RuntimePresentation | undefined): void;
   setAudio(audio: RuntimeAudio | undefined): void;
@@ -68,7 +98,7 @@ export function createToolingRuntime(
 
 class ToolingRuntimeImpl implements ToolingRuntime {
   readonly session: RuntimeSession;
-  frameStats = new FrameStats();
+  readonly debug: DebugController;
 
   private readonly input: BrowserInput;
   private clock: FixedStepLoop | null = null;
@@ -77,20 +107,31 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   constructor(options: CreateToolingRuntimeOptions) {
     this.session = new RuntimeSession(options);
     this.onError = options.onError;
+    this.debug = new DebugController({
+      host: createRuntimeDebugHost(this.session),
+      replayFiles: options.replayFiles,
+      clipboard: options.clipboard,
+      extraDiagnostics: options.extraDiagnostics,
+    });
     this.input = new BrowserInput({
       getBindings: () => TOOLING_BINDINGS,
       getGamepads: options.getGamepads,
     });
   }
 
+  get frameStats() {
+    return this.debug.stats;
+  }
+
   get isPaused(): boolean {
-    return this.clock?.isPaused ?? false;
+    return this.debug.isPaused;
   }
 
   step(mask?: number): SimulationSnapshot {
-    if (this.clock && !this.clock.isPaused) {
+    if (this.clock && !this.debug.isPaused) {
       return this.session.inspect().simulation;
     }
+    this.debug.beforeStep();
     const snap = this.session.step(mask ?? this.toMask());
     this.session.render();
     return snap;
@@ -98,6 +139,10 @@ class ToolingRuntimeImpl implements ToolingRuntime {
 
   inspect(): RuntimeInspect {
     return this.session.inspect();
+  }
+
+  debugSnapshot(): DebugSnapshot {
+    return this.debug.snapshot();
   }
 
   setAction(action: Action, down: boolean): void {
@@ -113,19 +158,76 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   }
 
   setCheckpoint(): void {
-    this.session.setCheckpoint();
+    this.debug.setCheckpoint();
   }
 
   restartCheckpoint(): SimulationSnapshot {
-    return this.session.restartCheckpoint();
+    this.debug.restartCheckpoint();
+    return this.session.inspect().simulation;
   }
 
   restartLevel(): SimulationSnapshot {
-    return this.session.restartLevel();
+    this.debug.restartLevel();
+    return this.session.inspect().simulation;
   }
 
   seek(frame: number): SimulationSnapshot {
-    return this.session.seek(frame);
+    this.debug.seek(frame);
+    return this.session.inspect().simulation;
+  }
+
+  loadLevel(level: LevelData): SimulationSnapshot {
+    this.debug.loadLevel(level);
+    return this.session.inspect().simulation;
+  }
+
+  markTainted(): void {
+    this.session.markTainted();
+  }
+
+  toReplay(): Replay {
+    return this.session.toReplay();
+  }
+
+  loadReplay(replay: Replay): SimulationSnapshot {
+    this.session.loadReplay(replay);
+    this.debug.setPaused(true);
+    this.debug.notify(
+      `loaded ${replay.frames.length} frames — paused at the end`,
+    );
+    return this.session.inspect().simulation;
+  }
+
+  loadReplayText(text: string, source?: string): void {
+    this.debug.loadReplayText(text, source);
+  }
+
+  saveReplay(): void {
+    this.debug.saveReplay();
+  }
+
+  promptLoadReplay(): void {
+    this.debug.promptLoadReplay();
+  }
+
+  setInvulnerable(enabled: boolean): void {
+    this.debug.setInvulnerable(enabled);
+  }
+
+  setTimeScale(scale: number): void {
+    this.debug.setTimeScale(scale);
+  }
+
+  nudgeTimeScale(delta: number): void {
+    this.debug.nudgeTimeScale(delta);
+  }
+
+  copyDiagnostics(): Promise<void> {
+    return this.debug.copyDiagnostics();
+  }
+
+  diagnostics(): string {
+    return this.debug.diagnostics();
   }
 
   replaceScene(options: SceneOptions = {}): SimulationSnapshot {
@@ -147,7 +249,6 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   async startBrowser(): Promise<void> {
     if (this.clock?.isRunning) return;
 
-    this.frameStats = new FrameStats();
     this.input.attach();
 
     this.clock = new FixedStepLoop({
@@ -155,11 +256,20 @@ class ToolingRuntimeImpl implements ToolingRuntime {
       maxFrameSeconds: 0.25,
       onFrameStart: (frame) => {
         this.input.poll(Math.min(frame.rawElapsedSeconds, frame.maxFrameSeconds));
+        const elapsed = this.debug.scaleElapsed(
+          Math.min(frame.rawElapsedSeconds, frame.maxFrameSeconds),
+        );
+        return { elapsedSeconds: elapsed };
       },
       onStep: () => {
+        this.debug.beforeStep();
         this.session.step(this.toMask());
       },
       onRender: () => {
+        while (this.debug.shouldStep()) {
+          this.debug.beforeStep();
+          this.session.step(this.toMask());
+        }
         this.session.render();
       },
       onFrameStats: (frame) => this.recordFrameStats(frame),
@@ -178,18 +288,17 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   }
 
   togglePause(): void {
-    if (!this.clock) return;
-    if (this.clock.isPaused) this.resume();
-    else this.pause();
+    this.debug.togglePause();
+    if (this.debug.isPaused) this.clearInput();
   }
 
   pause(): void {
-    this.clock?.pause();
+    this.debug.pause();
     this.clearInput();
   }
 
   resume(): void {
-    this.clock?.resume();
+    this.debug.resume();
   }
 
   dispose(): void {
@@ -198,10 +307,10 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   }
 
   private recordFrameStats(frame: FixedStepFrameStats): void {
-    if (!frame.paused) {
-      this.frameStats.addDiscardedSeconds(frame.rawElapsedSeconds - frame.elapsedSeconds);
+    if (!this.debug.isPaused) {
+      this.debug.stats.addDiscardedSeconds(frame.rawElapsedSeconds - frame.elapsedSeconds);
     }
-    this.frameStats.record({
+    this.debug.stats.record({
       frameTime: frame.rawElapsedSeconds * 1000,
       simulation: frame.simulationMs,
       rendering: frame.renderingMs,

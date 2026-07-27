@@ -1,3 +1,5 @@
+import type { Replay } from "../core/Replay.js";
+import type { LevelData } from "../game/LevelData.js";
 import { Recorder } from "../game/Recorder.js";
 import type { Scene, SceneOptions } from "../game/Scene.js";
 import { snapshotScene, type SimulationSnapshot } from "./snapshot.js";
@@ -45,6 +47,18 @@ export class ToolingSession {
     return this.revision;
   }
 
+  get recordedLength(): number {
+    return this.recorder.length;
+  }
+
+  get lastMask(): number {
+    return this.recorder.lastMask;
+  }
+
+  get isTainted(): boolean {
+    return this.recorder.isTainted;
+  }
+
   /** Advance exactly one deterministic fixed step under `mask`, returning the new state. */
   step(mask: number): SimulationSnapshot {
     this.recorder.step(mask);
@@ -74,6 +88,22 @@ export class ToolingSession {
   /** Rebuild and fast-forward to `frame`, clamped to the recorded range. */
   seek(frame: number): SimulationSnapshot {
     return this.replaceWith(() => this.recorder.rewindTo(frame));
+  }
+
+  loadLevel(level: LevelData): SimulationSnapshot {
+    return this.replaceWith(() => this.recorder.loadLevel(level));
+  }
+
+  markTainted(): void {
+    this.recorder.markTainted();
+  }
+
+  toReplay(): Replay {
+    return this.recorder.toReplay();
+  }
+
+  loadReplay(replay: Replay): SimulationSnapshot {
+    return this.replaceWith(() => this.recorder.load(replay));
   }
 
   private replaceWith(rebuild: () => Scene): SimulationSnapshot {

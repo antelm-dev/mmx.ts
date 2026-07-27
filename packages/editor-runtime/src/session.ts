@@ -56,6 +56,8 @@ class PlaytestSession implements EditorPlaytestSession {
       },
       audio,
       onError: (error) => this.fail(error),
+      replayFiles: this.options.replayFiles,
+      clipboard: this.options.clipboard,
     });
     this.runtime = runtime;
 
@@ -111,6 +113,7 @@ class PlaytestSession implements EditorPlaytestSession {
   snapshot(): PlaytestSnapshot {
     if (this.disposed || this.stopped || !this.runtime) return STOPPED_PLAYTEST;
     const inspect = this.runtime.inspect();
+    const debug = this.runtime.debugSnapshot();
     return {
       status: this.runtime.isPaused ? "paused" : "running",
       frame: inspect.frame,
@@ -121,6 +124,14 @@ class PlaytestSession implements EditorPlaytestSession {
       frameStats: this.browser
         ? this.runtime.frameStats.toSnapshot()
         : STOPPED_PLAYTEST.frameStats,
+      debug: {
+        timeScale: debug.timeScale,
+        invulnerable: debug.invulnerable,
+        tainted: debug.tainted,
+        recordedLength: debug.recordedLength,
+        lastMask: debug.lastMask,
+        notice: debug.notice,
+      },
     };
   }
 
@@ -152,6 +163,54 @@ class PlaytestSession implements EditorPlaytestSession {
     this.emitNow();
   }
 
+  seek(frame: number): void {
+    this.assertLive();
+    this.requireRuntime().seek(frame);
+    this.emitNow();
+  }
+
+  setTimeScale(scale: number): void {
+    this.assertLive();
+    this.requireRuntime().setTimeScale(scale);
+    this.emitNow();
+  }
+
+  nudgeTimeScale(delta: number): void {
+    this.assertLive();
+    this.requireRuntime().nudgeTimeScale(delta);
+    this.emitNow();
+  }
+
+  setInvulnerable(enabled: boolean): void {
+    this.assertLive();
+    this.requireRuntime().setInvulnerable(enabled);
+    this.emitNow();
+  }
+
+  saveReplay(): void {
+    this.assertLive();
+    this.requireRuntime().saveReplay();
+    this.emitNow();
+  }
+
+  loadReplay(): void {
+    this.assertLive();
+    this.requireRuntime().promptLoadReplay();
+    this.emitNow();
+  }
+
+  loadReplayText(text: string, source?: string): void {
+    this.assertLive();
+    this.requireRuntime().loadReplayText(text, source);
+    this.emitNow();
+  }
+
+  async copyDiagnostics(): Promise<void> {
+    this.assertLive();
+    await this.requireRuntime().copyDiagnostics();
+    this.emitNow();
+  }
+
   select(runtimeId: string | null): void {
     this.assertLive();
     this.selectedRuntimeId = runtimeId;
@@ -173,7 +232,7 @@ class PlaytestSession implements EditorPlaytestSession {
       sampleCosmetics: (scene) => renderer.sampleCosmetics(scene),
       render: (scene) => {
         renderer.render(scene);
-        if (!this.runtime?.isPaused) this.emitThrottled();
+        this.emitThrottled();
       },
       destroy: () => {
         renderer.destroy();

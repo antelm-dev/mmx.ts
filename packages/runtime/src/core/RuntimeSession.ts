@@ -1,4 +1,4 @@
-import type { Scene, SceneOptions } from "@mmx/engine";
+import type { LevelData, Replay, Scene, SceneOptions } from "@mmx/engine";
 import { ToolingSession, type SimulationSnapshot } from "@mmx/engine/tooling";
 import type {
   RuntimeAudio,
@@ -40,6 +40,18 @@ export class RuntimeSession {
     return this.tooling.sceneRevision;
   }
 
+  get recordedLength(): number {
+    return this.tooling.recordedLength;
+  }
+
+  get lastMask(): number {
+    return this.tooling.lastMask;
+  }
+
+  get isTainted(): boolean {
+    return this.tooling.isTainted;
+  }
+
   step(mask: number): SimulationSnapshot {
     this.assertLive();
     const snap = this.tooling.step(mask);
@@ -79,6 +91,30 @@ export class RuntimeSession {
   seek(frame: number): SimulationSnapshot {
     this.assertLive();
     const snap = this.tooling.seek(frame);
+    this.rebind();
+    return snap;
+  }
+
+  loadLevel(level: LevelData): SimulationSnapshot {
+    this.assertLive();
+    const snap = this.tooling.loadLevel(level);
+    this.rebind();
+    return snap;
+  }
+
+  markTainted(): void {
+    this.assertLive();
+    this.tooling.markTainted();
+  }
+
+  toReplay(): Replay {
+    this.assertLive();
+    return this.tooling.toReplay();
+  }
+
+  loadReplay(replay: Replay): SimulationSnapshot {
+    this.assertLive();
+    const snap = this.tooling.loadReplay(replay);
     this.rebind();
     return snap;
   }

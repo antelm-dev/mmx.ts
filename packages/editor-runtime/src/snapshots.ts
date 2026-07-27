@@ -53,6 +53,15 @@ export type SimulationSnapshot = Readonly<{
 
 export type PlaytestStatus = "stopped" | "running" | "paused";
 
+export type PlaytestDebugInfo = Readonly<{
+  timeScale: number;
+  invulnerable: boolean;
+  tainted: boolean;
+  recordedLength: number;
+  lastMask: number;
+  notice: string;
+}>;
+
 export type PlaytestSnapshot = Readonly<{
   status: PlaytestStatus;
   frame: number;
@@ -61,7 +70,17 @@ export type PlaytestSnapshot = Readonly<{
   selectedRuntimeId: string | null;
   sceneRevision: number;
   frameStats: FrameStatsSnapshot;
+  debug: PlaytestDebugInfo;
 }>;
+
+export const STOPPED_DEBUG: PlaytestDebugInfo = Object.freeze({
+  timeScale: 1,
+  invulnerable: false,
+  tainted: false,
+  recordedLength: 0,
+  lastMask: 0,
+  notice: "",
+});
 
 export const STOPPED_PLAYTEST: PlaytestSnapshot = Object.freeze({
   status: "stopped",
@@ -71,4 +90,5 @@ export const STOPPED_PLAYTEST: PlaytestSnapshot = Object.freeze({
   selectedRuntimeId: null,
   sceneRevision: 0,
   frameStats: ZERO_FRAME_STATS,
+  debug: STOPPED_DEBUG,
 });

@@ -389,9 +389,23 @@ export class EditorController {
     this.viewport?.setVisible(false);
     try {
       await audio.load();
+      const files = this.fileAccess;
       const session = createPlaytest(state.document, {
         host: this.host,
         audio,
+        replayFiles: {
+          save: async (contents, suggestedName) => {
+            const ok = await files.save(suggestedName, contents);
+            return ok ? suggestedName : null;
+          },
+          open: async () => {
+            const file = await files.open();
+            return file ? { path: file.name, contents: file.json } : null;
+          },
+        },
+        clipboard: {
+          writeText: (text) => navigator.clipboard.writeText(text),
+        },
         onSnapshot: (snapshot) => {
           if (token !== this.playToken) return;
           this.setPlaytestSnapshot(snapshot);
@@ -454,6 +468,24 @@ export class EditorController {
   playtestRestartLevel(): void {
     this.play?.restartLevel();
   }
+  playtestSeek(frame: number): void {
+    this.play?.seek(frame);
+  }
+  playtestNudgeTimeScale(delta: number): void {
+    this.play?.nudgeTimeScale(delta);
+  }
+  playtestSetInvulnerable(enabled: boolean): void {
+    this.play?.setInvulnerable(enabled);
+  }
+  playtestSaveReplay(): void {
+    this.play?.saveReplay();
+  }
+  playtestLoadReplay(): void {
+    this.play?.loadReplay();
+  }
+  playtestCopyDiagnostics(): void {
+    void this.play?.copyDiagnostics();
+  }
   playtestSelect(runtimeId: string | null): void {
     this.play?.select(runtimeId);
   }
@@ -473,8 +505,6 @@ export class EditorController {
         this.togglePlay();
         return;
       }
-      // Debugger shortcuts. preventDefault keeps F8/F10 from triggering any
-      // browser/Electron devtools or menu default.
       if (e.code === "F8") {
         e.preventDefault();
         if (mod) this.playtestSetCheckpoint();
@@ -490,6 +520,37 @@ export class EditorController {
       if (e.code === "F9") {
         e.preventDefault();
         useUiStore.getState().togglePlaytestInspector();
+        return;
+      }
+      if (e.code === "BracketLeft") {
+        e.preventDefault();
+        this.playtestNudgeTimeScale(-1);
+        return;
+      }
+      if (e.code === "BracketRight") {
+        e.preventDefault();
+        this.playtestNudgeTimeScale(1);
+        return;
+      }
+      if (e.code === "KeyI" && mod) {
+        e.preventDefault();
+        const next = !this.playtestSnapshot.debug.invulnerable;
+        this.playtestSetInvulnerable(next);
+        return;
+      }
+      if (e.code === "KeyY" && mod) {
+        e.preventDefault();
+        this.playtestCopyDiagnostics();
+        return;
+      }
+      if (e.code === "KeyU" && mod) {
+        e.preventDefault();
+        this.playtestSaveReplay();
+        return;
+      }
+      if (e.code === "KeyO" && mod) {
+        e.preventDefault();
+        this.playtestLoadReplay();
         return;
       }
       return;

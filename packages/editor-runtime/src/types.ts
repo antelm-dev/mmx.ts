@@ -2,14 +2,20 @@ import type { LevelDocument } from "@mmx/content-schema";
 import type { PlaytestAudio } from "./PlaytestAudio.js";
 import type { PlaytestInput } from "./PlaytestInput.js";
 import type { PlaytestSnapshot } from "./snapshots.js";
+import type {
+  ClipboardAccess,
+  ReplayFileAccess,
+} from "@mmx/runtime/debug";
 
 export interface CreatePlaytestOptions {
   host?: HTMLElement;
   audio?: PlaytestAudio;
   seed?: number;
   onSnapshot?: (snapshot: PlaytestSnapshot) => void;
-  onError?: (message: string) => void;
+  onError?: (error: string) => void;
   onExitToObject?: (sourceEntityId: string) => void;
+  replayFiles?: ReplayFileAccess;
+  clipboard?: ClipboardAccess;
 }
 
 export interface EditorPlaytestSession {
@@ -24,6 +30,14 @@ export interface EditorPlaytestSession {
   setCheckpoint(): void;
   restartCheckpoint(): void;
   restartLevel(): void;
+  seek(frame: number): void;
+  setTimeScale(scale: number): void;
+  nudgeTimeScale(delta: number): void;
+  setInvulnerable(enabled: boolean): void;
+  saveReplay(): void;
+  loadReplay(): void;
+  loadReplayText(text: string, source?: string): void;
+  copyDiagnostics(): Promise<void>;
   select(runtimeId: string | null): void;
   focusSelectedSource(): void;
 }

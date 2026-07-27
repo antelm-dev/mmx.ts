@@ -1,4 +1,4 @@
-import { DT, type SceneOptions } from "@mmx/engine";
+import { DT, type LevelData, type Replay, type SceneOptions } from "@mmx/engine";
 import type { SimulationSnapshot } from "@mmx/engine/tooling";
 import {
   RuntimeSession,
@@ -30,6 +30,10 @@ export interface PlayerRuntime {
   restartCheckpoint(): SimulationSnapshot;
   restartLevel(): SimulationSnapshot;
   seek(frame: number): SimulationSnapshot;
+  loadLevel(level: LevelData): SimulationSnapshot;
+  markTainted(): void;
+  toReplay(): Replay;
+  loadReplay(replay: Replay): SimulationSnapshot;
   replaceScene(options?: SceneOptions): SimulationSnapshot;
   setPresentation(presentation: RuntimePresentation | undefined): void;
   setAudio(audio: RuntimeAudio | undefined): void;
@@ -51,6 +55,10 @@ export function createPlayerRuntime(
     restartCheckpoint: () => session.restartCheckpoint(),
     restartLevel: () => session.restartLevel(),
     seek: (frame) => session.seek(frame),
+    loadLevel: (level) => session.loadLevel(level),
+    markTainted: () => session.markTainted(),
+    toReplay: () => session.toReplay(),
+    loadReplay: (replay) => session.loadReplay(replay),
     replaceScene: (sceneOptions) => session.replaceScene(sceneOptions),
     setPresentation: (presentation) => session.setPresentation(presentation),
     setAudio: (audio) => session.setAudio(audio),
