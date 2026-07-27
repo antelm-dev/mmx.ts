@@ -1,6 +1,7 @@
 import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
 import type { Enemy, LifeCapsule, Scene, WeaponCapsule } from "@mmx/engine";
 import type { DecorationInstance } from "@mmx/content-schema";
+import type { DebugRenderOptions } from "../debug/options.js";
 import { createAssetCatalog, type AssetCatalog } from "./catalog.js";
 import {
   createScenePresentation,
@@ -15,12 +16,15 @@ export interface StudioPlaytestRenderer {
   sampleCosmetics(scene: Scene): void;
   render(scene: Scene): void;
   setDecorations(decorations: readonly DecorationInstance[]): void;
+  setDebugOptions(options: Partial<DebugRenderOptions>): void;
+  debugOptions(): DebugRenderOptions;
   destroy(): void;
 }
 
 export interface CreatePlaytestRendererOptions {
   assets?: AssetCatalog;
   decorations?: readonly DecorationInstance[];
+  debugOptions?: Partial<DebugRenderOptions>;
 }
 
 class PlaytestRendererImpl implements StudioPlaytestRenderer {
@@ -39,6 +43,7 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
     scene: Scene,
     assets: AssetCatalog,
     decorations: readonly DecorationInstance[],
+    debugOptions?: Partial<DebugRenderOptions>,
   ): Promise<PlaytestRendererImpl> {
     const canvas = document.createElement("canvas");
     canvas.id = "play-canvas";
@@ -53,7 +58,11 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
 
     let presentation: ScenePresentation;
     try {
-      presentation = await createScenePresentation(canvas, scene, { assets, decorations });
+      presentation = await createScenePresentation(canvas, scene, {
+        assets,
+        decorations,
+        debugOptions,
+      });
     } catch (error) {
       canvas.remove();
       throw error;
@@ -67,6 +76,14 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
 
   setDecorations(decorations: readonly DecorationInstance[]): void {
     this.presentation.setDecorations(decorations);
+  }
+
+  setDebugOptions(options: Partial<DebugRenderOptions>): void {
+    this.presentation.setDebugOptions(options);
+  }
+
+  debugOptions(): DebugRenderOptions {
+    return this.presentation.debugOptions();
   }
 
   bindScene(scene: Scene): void {
@@ -116,5 +133,11 @@ export async function createPlaytestRenderer(
   options: CreatePlaytestRendererOptions = {},
 ): Promise<StudioPlaytestRenderer> {
   const assets = options.assets ?? createAssetCatalog();
-  return PlaytestRendererImpl.create(host, scene, assets, options.decorations ?? []);
+  return PlaytestRendererImpl.create(
+    host,
+    scene,
+    assets,
+    options.decorations ?? [],
+    options.debugOptions,
+  );
 }

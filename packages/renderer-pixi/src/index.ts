@@ -41,6 +41,14 @@ export {
   type ScenePresentationOptions,
 } from "./presentation/ScenePresentation.js";
 export { dashSmokeOrigin, selectTrailStyle } from "./presentation/cosmetics.js";
+export {
+  DebugOverlay,
+  DEBUG_RENDER_OPTIONS_OFF,
+  anyDebugRenderOption,
+  mergeDebugRenderOptions,
+  type DebugGeometryOverlay,
+  type DebugRenderOptions,
+} from "./debug/index.js";
 
 /** @deprecated Prefer createAssetCatalog / ScenePresentation. Kept for transitional consumers. */
 export { animData, enemyAnims, pickupAnims, SHEET_URLS } from "./render/assets.js";

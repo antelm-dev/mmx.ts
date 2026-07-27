@@ -332,6 +332,7 @@ another package's internals.
 | `@mmx/engine`         | `./content`, `./data`, `./behaviors`, `./tooling` | Intentional sub-APIs                                             |
 | `@mmx/runtime`        | `./browser`, `./player`, `./tooling`              | Shared simulation session + browser scheduling                   |
 | `@mmx/renderer-pixi`  | `.`                                               | Game + editor-facing renderer API                                |
+| `@mmx/renderer-pixi`  | `./presentation`, `./debug`                       | Shared scene presentation + read-only debug geometry overlay     |
 | `@mmx/content-schema` | `.`                                               | Authoring document model                                         |
 | `@mmx/editor-runtime` | `.`                                               | Studio LevelDocument adapter over `@mmx/runtime/tooling`         |
 
@@ -345,6 +346,17 @@ Deep imports couple consumers to file layout and block refactors. The Oxlint
 `no-restricted-imports` rule plus `scripts/check-forbidden-imports.mjs` (wired
 into `pnpm lint`) reject them for static imports, `import type`, re-exports,
 dynamic `import()`, and `require()`.
+
+### Scene presentation
+
+`@mmx/renderer-pixi/presentation` owns shared Pixi scene cosmetics for Web and
+Studio: animation binding, trails, dash smoke, enemy death FX, scene rebinding,
+and host-agnostic fitting. Hosts keep only adapter concerns (Web audio/UI/fit
+policy, Studio canvas/`ResizeObserver`/decorations).
+
+`@mmx/renderer-pixi/debug` exposes the read-only geometry overlay
+(`DebugOverlay` + `DebugRenderOptions`). Presentation accepts
+`setDebugOptions`; runtime debugger UI/state belongs elsewhere.
 
 ### Exposing a new public API
 
