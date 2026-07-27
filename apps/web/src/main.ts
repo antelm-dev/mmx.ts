@@ -30,6 +30,7 @@ async function bootstrap(): Promise<void> {
   const sounds = new SoundEffects({
     resolver: createProjectSoundAssetResolver(projectBundle),
     soundIds: projectBundle.soundIds,
+    bindings: projectBundle.soundBindings,
   });
   const gameplaySounds = new GameplaySounds(sounds);
   const desktop = new DesktopBridge();

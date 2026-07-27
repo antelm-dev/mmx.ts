@@ -37,12 +37,15 @@ export function createProjectAssetCatalog(bundle: BrowserProjectBundle): AssetCa
 export function createProjectSoundAssetResolver(bundle: BrowserProjectBundle): SoundAssetResolver {
   return {
     resolveUrl(soundId: string): string {
-      const url = bundle.assetUrls[soundId];
+      const assetId = bundle.soundBindings?.[soundId] ?? soundId;
+      const url = bundle.assetUrls[assetId];
       if (!url) {
         throw new SoundAssetError(
           "missing",
           soundId,
-          `Sound asset '${soundId}' is not in the project bundle.`,
+          assetId !== soundId
+            ? `Sound '${soundId}' (asset '${assetId}') is not in the project bundle.`
+            : `Sound asset '${soundId}' is not in the project bundle.`,
         );
       }
       return url;

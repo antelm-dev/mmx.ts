@@ -2,6 +2,7 @@ import type { ProjectDocument } from "@mmx/project-schema";
 import { createProjectSoundResolver } from "./SoundAssetResolver.js";
 import type { SoundAssetResolver } from "./SoundAssetResolver.js";
 import { SoundAssetError } from "./SoundAssetResolver.js";
+import { resolveBoundAssetId, type SoundBindingMap } from "./soundBindings.js";
 import { GAMEPLAY_SOUND_IDS } from "./soundIds.js";
 
 export type { SoundId, SoundName } from "./soundIds.js";
@@ -18,6 +19,7 @@ export interface PlayOptions {
 export interface CreateSoundEffectsOptions {
   resolver: SoundAssetResolver;
   soundIds: readonly string[];
+  bindings?: SoundBindingMap | null;
   context?: AudioContext;
   fetchFn?: typeof fetch;
 }
@@ -26,6 +28,7 @@ export class SoundEffects {
   private readonly context: AudioContext;
   private readonly resolver: SoundAssetResolver;
   private readonly soundIds: readonly string[];
+  private readonly bindings: SoundBindingMap | null;
   private readonly fetchFn: typeof fetch;
   private readonly master: GainNode;
   private readonly buffers = new Map<string, AudioBuffer>();
@@ -38,6 +41,7 @@ export class SoundEffects {
     this.context = options.context ?? new AudioContext();
     this.resolver = options.resolver;
     this.soundIds = options.soundIds;
+    this.bindings = options.bindings ?? null;
     this.fetchFn = options.fetchFn ?? fetch.bind(globalThis);
     this.master = this.context.createGain();
     this.master.connect(this.context.destination);
@@ -65,7 +69,8 @@ export class SoundEffects {
   }
 
   play(soundId: string, options: PlayOptions = {}): void {
-    const buffer = this.buffers.get(soundId);
+    const assetId = resolveBoundAssetId(soundId, this.bindings);
+    const buffer = this.buffers.get(assetId);
     if (!buffer) return;
 
     if (options.loop || options.tracked) this.stop(soundId);
