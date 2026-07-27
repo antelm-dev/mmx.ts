@@ -28,16 +28,11 @@ export type StudioGameDataFile = {
   };
 };
 
-function sheetKeyFromPath(assetPath: string): string {
-  const slash = assetPath.lastIndexOf("/");
-  return slash >= 0 ? assetPath.slice(slash + 1) : assetPath;
-}
-
 export function buildSheetImagesFromManifest(manifest: ProjectDocument): Record<string, string> {
   const sheetImages: Record<string, string> = {};
   for (const asset of manifest.assets) {
     if (asset.kind === "image" || asset.kind === "sprite") {
-      sheetImages[sheetKeyFromPath(asset.path)] = asset.id;
+      sheetImages[asset.id] = asset.id;
     }
   }
   return sheetImages;
@@ -99,7 +94,7 @@ export function buildShotAnimsFromStudioBindings(
   const sheetUrls: Record<string, string> = {};
   for (const asset of assets) {
     if (asset.kind === "image" || asset.kind === "sprite") {
-      sheetUrls[sheetKeyFromPath(asset.path)] = resolveUrl(asset);
+      sheetUrls[asset.id] = resolveUrl(asset);
     }
   }
 

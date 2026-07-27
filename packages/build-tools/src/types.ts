@@ -53,7 +53,6 @@ export type BrowserProjectBundle = {
   rendererBindings: RendererAssetBindings | null;
   soundBindings: SoundBindingMap | null;
   soundIds: string[];
-  soundBindings: Record<string, string>;
   assetUrls: Record<string, string>;
 };
 
