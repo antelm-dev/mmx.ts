@@ -86,10 +86,10 @@ function fakeTables(): PreviewTables {
       pickupActors: { small: "anim.pickup.small", ammo: "anim.pickup.ammo" },
       shotAnimations: "anim.player",
       sheetImages: {
-        "x.png": "image.player",
-        "metool.png": "image.enemy",
-        "sheal.png": "image.pickup.small",
-        "ammo.png": "image.pickup.large",
+        "image.player": "image.player",
+        "image.enemy": "image.enemy",
+        "image.pickup.small": "image.pickup.small",
+        "image.pickup.large": "image.pickup.large",
       },
     },
     (asset) => `memory://${asset.path}`,
@@ -198,7 +198,7 @@ test("falls back to first available animation", () => {
     ...t,
     enemyActors: {
       walker: {
-        sheet: "metool.png",
+        sheet: "image.enemy",
         animations: {
           walk: {
             loop: true,
@@ -260,7 +260,7 @@ test("catalog getSpritePreview exposes texture from resolver without sheet names
     validate: () => undefined,
     loadSheets: async () => undefined,
     resolveTexture: (sheet, region) => {
-      assert.equal(sheet, "metool.png");
+      assert.equal(sheet, "image.enemy");
       assert.deepEqual(region, fakeTables().enemyActors.metool.animations.defense.frames[0].region);
       return fake;
     },
