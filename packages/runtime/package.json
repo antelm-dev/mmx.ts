@@ -32,6 +32,11 @@
       "types": "./dist/debug/index.d.ts",
       "import": "./dist/debug/index.js",
       "default": "./dist/debug/index.js"
+    },
+    "./host": {
+      "types": "./dist/host/index.d.ts",
+      "import": "./dist/host/index.js",
+      "default": "./dist/host/index.js"
     }
   },
   "scripts": {
@@ -41,6 +46,7 @@
   },
   "dependencies": {
     "@mmx/browser-input": "workspace:*",
+    "@mmx/client-settings": "workspace:*",
     "@mmx/engine": "workspace:*"
   },
   "devDependencies": {

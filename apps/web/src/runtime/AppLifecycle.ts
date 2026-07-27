@@ -1,4 +1,4 @@
-import type { WindowHost } from "@mmx/runtime-host";
+import type { WindowHost } from "@mmx/runtime/host";
 import type { ScenePresenter } from "../presentation/ScenePresenter.js";
 import type { SettingsModel } from "../settings/SettingsModel.js";
 

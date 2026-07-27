@@ -1,5 +1,5 @@
 import type { DebugSession } from "../debug/DebugSession.js";
-import type { ReplayFileDropHost } from "@mmx/runtime-host";
+import type { ReplayFileDropHost } from "@mmx/runtime/host";
 
 /**
  * Wires the desktop's dropped-replay-file event to {@link DebugSession}.

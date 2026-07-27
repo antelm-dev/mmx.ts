@@ -1,6 +1,6 @@
 export type { ClientSettings, SettingsStorage } from "@mmx/client-settings";
-import type { ReplayFileAccess, ReplayText } from "@mmx/runtime/debug";
-export type { ClipboardAccess, ReplayFileAccess, ReplayText } from "@mmx/runtime/debug";
+import type { ReplayFileAccess, ReplayText } from "../debug/types.js";
+export type { ClipboardAccess, ReplayFileAccess, ReplayText } from "../debug/types.js";
 
 export interface ReplayFileDropHost {
   onReplayDropped?(listener: (file: ReplayText) => void): Promise<() => void> | (() => void) | void;
@@ -26,4 +26,3 @@ export interface ApplicationMetadataHost {
   getAppVersion?(): Promise<string> | string;
   getPlatform?(): Promise<string> | string;
 }
-

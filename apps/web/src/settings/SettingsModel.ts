@@ -10,7 +10,7 @@ import {
   type ClientSettingsStore,
   type KeyBindings,
 } from "@mmx/client-settings";
-import type { SettingsStorage } from "@mmx/runtime-host";
+import type { SettingsStorage } from "@mmx/runtime/host";
 
 export type { KeyBindings };
 export {
