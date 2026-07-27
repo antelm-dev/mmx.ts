@@ -53,9 +53,11 @@ async function installAssetMiddleware(projectDir: string, emitDir: string): Prom
     config: {
       plugins: [plugin],
     },
+    close: async () => {},
     watcher: {
       add() {},
       on() {},
+      off() {},
     },
     middlewares: {
       use(fn: Middleware) {
