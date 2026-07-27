@@ -189,3 +189,232 @@ test("isPortableRelativePath helper matches validation rules", () => {
   assert.equal(isPortableRelativePath("/x.png"), false);
   assert.equal(isPortableRelativePath("C:/x.png"), false);
 });
+
+const validLevel = { id: "intro", path: "levels/intro.json" };
+const validImage = { id: "image.bg", kind: "image", path: "assets/sprites/bg.png" };
+const validAnim = {
+  id: "anim.hero",
+  kind: "animation",
+  path: "assets/anims/hero.json",
+  sheetAssetId: "image.bg",
+  animations: {
+    idle: {
+      loop: true,
+      speed: 1,
+      frames: [{ region: [0, 0, 8, 8], duration: 0.1 }],
+    },
+  },
+};
+
+test("parseProject stays total for malformed levels, assets, and references", () => {
+  const cases: Array<{
+    name: string;
+    overrides: Record<string, unknown>;
+    expectedCodes: string[];
+  }> = [
+    {
+      name: "null asset entry",
+      overrides: { assets: [null] },
+      expectedCodes: ["asset.object"],
+    },
+    {
+      name: "primitive asset entries",
+      overrides: { assets: [42, "image", true] },
+      expectedCodes: ["asset.object", "asset.object", "asset.object"],
+    },
+    {
+      name: "array asset entry",
+      overrides: { assets: [[validImage]] },
+      expectedCodes: ["asset.object"],
+    },
+    {
+      name: "partially shaped asset object",
+      overrides: { assets: [{ kind: "sprite" }] },
+      expectedCodes: ["id.missing", "path.missing"],
+    },
+    {
+      name: "null level entry",
+      overrides: { levels: [null], assets: [] },
+      expectedCodes: ["level.object"],
+    },
+    {
+      name: "primitive and array level entries",
+      overrides: { levels: [1, "intro", [validLevel]], assets: [] },
+      expectedCodes: ["level.object", "level.object", "level.object"],
+    },
+    {
+      name: "partially shaped level object",
+      overrides: { levels: [{ id: "intro" }], assets: [] },
+      expectedCodes: ["path.missing"],
+    },
+    {
+      name: "animation with unknown sheetAssetId",
+      overrides: {
+        assets: [
+          {
+            ...validAnim,
+            sheetAssetId: "missing.sheet",
+          },
+        ],
+      },
+      expectedCodes: ["animation.sheet.unknown"],
+    },
+    {
+      name: "animation with wrong sheet kind",
+      overrides: {
+        assets: [
+          { id: "sfx.jump", kind: "sound", path: "assets/sounds/jump.wav" },
+          { ...validAnim, sheetAssetId: "sfx.jump" },
+        ],
+      },
+      expectedCodes: ["animation.sheet.kind"],
+    },
+    {
+      name: "mixed valid and invalid assets including null",
+      overrides: {
+        assets: [null, validImage, 7, validAnim, { id: "bad", kind: "nope", path: "x.png" }],
+      },
+      expectedCodes: ["asset.object", "asset.object", "asset.kind"],
+    },
+    {
+      name: "null among assets used by sheet lookup",
+      overrides: {
+        assets: [null, validImage, validAnim],
+      },
+      expectedCodes: ["asset.object"],
+    },
+  ];
+
+  for (const { name, overrides, expectedCodes } of cases) {
+    const raw = {
+      ...validProject(),
+      ...overrides,
+    };
+    let parsed: ReturnType<typeof parseProject> | undefined;
+    assert.doesNotThrow(() => {
+      parsed = parseProject(raw);
+    }, name);
+    assert.ok(parsed, name);
+    assert.equal(parsed.ok, false, name);
+    for (const code of expectedCodes) {
+      assert.ok(
+        parsed.issues.some((issue) => issue.code === code),
+        `${name}: expected code ${code}, got ${parsed.issues.map((issue) => issue.code).join(", ")}`,
+      );
+    }
+  }
+});
+
+test("accepts valid core, prerelease, and build metadata versions", () => {
+  const validVersions = [
+    "0.0.0",
+    "1.0.0",
+    "1.2.3",
+    "1.0.0-alpha",
+    "1.0.0-alpha.1",
+    "1.0.0-0.3.7",
+    "1.0.0-x.7.z.92",
+    "1.0.0-alpha+001",
+    "1.0.0+20130313144700",
+    "1.0.0-beta+exp.sha.5114f85",
+    "1.0.0+21AF26D3----117B344092BD",
+  ];
+
+  for (const gameVersion of validVersions) {
+    const result = validateProject(validProject({ gameVersion }));
+    assert.equal(
+      result.issues.some((issue) => issue.path === "/gameVersion"),
+      false,
+      `expected ${gameVersion} to be accepted`,
+    );
+  }
+});
+
+test("rejects invalid core, prerelease, and build metadata versions", () => {
+  const invalidVersions = [
+    "01.0.0",
+    "1.0",
+    "1",
+    "v1.0.0",
+    "1.0.0-",
+    "1.0.0+",
+    "1.0.0-..",
+    "1.0.0-alpha..1",
+    "1.0.0-01",
+    "1.0.0-alpha_beta",
+    "1.0.0+build!",
+  ];
+
+  for (const gameVersion of invalidVersions) {
+    const result = validateProject(validProject({ gameVersion }));
+    assert.ok(
+      result.issues.some(
+        (issue) => issue.code === "version.malformed" && issue.path === "/gameVersion",
+      ),
+      `expected ${gameVersion} to be rejected`,
+    );
+  }
+});
+
+test("rejects numeric prerelease identifiers with leading zeroes", () => {
+  const result = validateProject(
+    validProject({
+      gameVersion: "1.0.0-01",
+      compatibleRuntime: { min: "1.0.0-01.0" },
+    }),
+  );
+  assert.ok(
+    result.issues.some(
+      (issue) => issue.code === "version.malformed" && issue.path === "/gameVersion",
+    ),
+  );
+  assert.ok(
+    result.issues.some(
+      (issue) => issue.code === "version.malformed" && issue.path === "/compatibleRuntime/min",
+    ),
+  );
+});
+
+test("compatibleRuntime compares prerelease precedence and ignores build metadata", () => {
+  const releaseAfterPrerelease = validateProject(
+    validProject({
+      compatibleRuntime: { min: "1.0.0-alpha", max: "1.0.0" },
+    }),
+  );
+  assert.equal(
+    releaseAfterPrerelease.issues.some((issue) => issue.code === "runtime.range"),
+    false,
+  );
+
+  const equalWithBuild = validateProject(
+    validProject({
+      compatibleRuntime: { min: "1.0.0+build.1", max: "1.0.0+build.2" },
+    }),
+  );
+  assert.equal(
+    equalWithBuild.issues.some((issue) => issue.code === "runtime.range"),
+    false,
+  );
+
+  const invertedPrerelease = validateProject(
+    validProject({
+      compatibleRuntime: { min: "1.0.0", max: "1.0.0-alpha" },
+    }),
+  );
+  assert.ok(
+    invertedPrerelease.issues.some(
+      (issue) => issue.code === "runtime.range" && issue.path === "/compatibleRuntime/max",
+    ),
+  );
+
+  const invertedCore = validateProject(
+    validProject({
+      compatibleRuntime: { min: "2.0.0", max: "1.0.0" },
+    }),
+  );
+  assert.ok(
+    invertedCore.issues.some(
+      (issue) => issue.code === "runtime.range" && issue.path === "/compatibleRuntime/max",
+    ),
+  );
+});

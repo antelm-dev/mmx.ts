@@ -5,6 +5,7 @@ import {
   ChargeTier,
   VIEW_WIDTH,
   VIEW_HEIGHT,
+  type AnimationLayer,
   type Camera,
   type ChargeVfx,
   type Player,
@@ -14,13 +15,8 @@ import { DashSmoke } from "../DashSmoke.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";
 import { Trail } from "../Trail.js";
-import {
-  enemyAnims,
-  pickupAnims,
-  PLAYER_SHEETS,
-  SHEET_URLS,
-  validateAnimationAssets,
-} from "./assets.js";
+import type { RendererAssetManifest } from "../assets/manifest.js";
+import { validateRendererAssetManifest } from "../assets/manifest.js";
 import { DecorationView } from "./DecorationView.js";
 import { Hud } from "./Hud.js";
 import { PaletteSwapFilter } from "./PaletteSwapFilter.js";
@@ -66,6 +62,10 @@ const CHARGE_TIER_FX: Record<number, { clip: string; tint: number }> = {
   [ChargeTier.Super]: { clip: "charge_2", tint: 0xffffff }, // x_supercharged_particle.tres
 };
 
+export interface RendererCreateOptions {
+  manifest: RendererAssetManifest;
+}
+
 export class Renderer {
   private readonly viewport = new Container();
   private readonly scene = new Container();
@@ -80,7 +80,7 @@ export class Renderer {
   private readonly smoke = new SpritePool();
   private readonly player = new Sprite();
   private readonly aura = new Sprite();
-  private readonly hud = new Hud();
+  private readonly hud: Hud;
   private readonly paletteSwap = new PaletteSwapFilter();
   private terrain?: TerrainView;
 
@@ -100,7 +100,18 @@ export class Renderer {
   /** Whole device pixels per world pixel. Recomputed by {@link fit}. */
   private scale = 0;
 
-  private constructor(private readonly app: Application) {
+  private constructor(
+    private readonly app: Application,
+    private readonly manifest: RendererAssetManifest,
+  ) {
+    this.hud = new Hud({
+      xBar: manifest.hudSheets.xBar,
+      hpFill: manifest.hudSheets.hpFill,
+      weaponBar: manifest.hudSheets.weaponBar,
+      weaponIcons: {
+        dark_arrow: manifest.hudSheets.weaponIconDarkArrow,
+      },
+    });
     this.player.anchor.set(0.5);
     this.aura.anchor.set(0.5);
     this.player.filters = [this.paletteSwap];
@@ -141,8 +152,13 @@ export class Renderer {
     this.app.stage.addChild(this.viewport, this.hudLayer, this.uiLayer);
   }
 
-  static async create(canvas: HTMLCanvasElement, stage: Stage): Promise<Renderer> {
-    validateAnimationAssets();
+  static async create(
+    canvas: HTMLCanvasElement,
+    stage: Stage,
+    options: RendererCreateOptions,
+  ): Promise<Renderer> {
+    const manifest = options.manifest;
+    validateRendererAssetManifest(manifest);
     const app = new Application();
     try {
       await app.init({
@@ -165,9 +181,9 @@ export class Renderer {
 
       // Before the Renderer is built, not after: the HUD cuts its textures out of the
       // sheets in its constructor.
-      await loadSheets(SHEET_URLS);
+      await loadSheets(manifest.sheetUrls);
 
-      const renderer = new Renderer(app);
+      const renderer = new Renderer(app, manifest);
       // Spector.js can discover the canvas directly; this also exposes Pixi's
       // renderer/backend for targeted GPU inspection from DevTools.
       (window as any).__mmxRenderer = { app, canvas };
@@ -359,7 +375,9 @@ export class Renderer {
       if (!enemy.sprite_visible) continue;
       const region = enemy.currentRegion();
       if (!region) continue;
-      const texture = regionTexture(enemyAnims.actors[enemy.stats.sheet].sheet, region);
+      const actor = this.manifest.enemyActors[enemy.stats.sheet];
+      if (!actor) continue;
+      const texture = regionTexture(actor.sheet, region);
       if (!texture) continue;
 
       const sprite = this.enemies.next();
@@ -388,7 +406,9 @@ export class Renderer {
     for (const pickup of stage.pickups) {
       const region = pickup.currentRegion();
       if (!region) continue;
-      const texture = regionTexture(pickupAnims.actors[pickup.kind].sheet, region);
+      const actor = this.manifest.pickupActors[pickup.kind];
+      if (!actor) continue;
+      const texture = regionTexture(actor.sheet, region);
       if (!texture) continue;
 
       const sprite = this.pickups.next();
@@ -397,7 +417,9 @@ export class Renderer {
     for (const capsule of stage.weaponCapsules) {
       const region = capsule.currentRegion();
       if (!region) continue;
-      const texture = regionTexture(pickupAnims.actors[capsule.sheet].sheet, region);
+      const actor = this.manifest.pickupActors[capsule.sheet];
+      if (!actor) continue;
+      const texture = regionTexture(actor.sheet, region);
       if (!texture) continue;
 
       const sprite = this.pickups.next();
@@ -412,7 +434,10 @@ export class Renderer {
     for (const ghost of trail.ghosts) {
       const opacity = Trail.opacity(ghost);
       if (opacity <= 0) continue;
-      const texture = regionTexture(PLAYER_SHEETS[ghost.layer], ghost.region);
+      const texture = regionTexture(
+        this.manifest.playerSheets[ghost.layer as AnimationLayer],
+        ghost.region,
+      );
       if (!texture) continue;
 
       const sprite = this.ghosts.next();
@@ -433,7 +458,8 @@ export class Renderer {
       return;
     }
     const snap = spriteSnapshot(player);
-    const texture = snap && regionTexture(PLAYER_SHEETS[snap.layer], snap.region);
+    const texture =
+      snap && regionTexture(this.manifest.playerSheets[snap.layer as AnimationLayer], snap.region);
     this.player.visible = !!texture;
     if (!snap || !texture) return;
     place(this.player, texture, snap.x, snap.y, snap.facing);
@@ -449,7 +475,8 @@ export class Renderer {
     const charge = player.get_ability("Charge") as ChargeVfx | undefined;
     const fx = charge && CHARGE_TIER_FX[charge.vfx_tier];
     const snap = fx && spriteSnapshot(player);
-    const texture = fx && snap ? shotTexture(fx.clip, charge!.vfx_frame) : null;
+    const texture =
+      fx && snap ? shotTexture(fx.clip, charge!.vfx_frame, this.manifest.shotAnims) : null;
 
     this.aura.visible = !!texture;
     if (!fx || !snap || !texture) return;
@@ -468,14 +495,14 @@ export class Renderer {
     this.shots.begin();
     for (const p of player.projectiles) {
       if (p.isLive) {
-        const texture = shotTexture(p.kind, p.frame);
+        const texture = shotTexture(p.kind, p.frame, this.manifest.shotAnims);
         if (texture) place(this.shots.next(), texture, p.x, p.y, p.dir);
         continue;
       }
       // A spent shot outlives its burst: once the effect has played out the node
       // is still around but there is nothing left to draw for it.
       if (p.hitParticleFrame < 0) continue;
-      const texture = shotTexture(p.stats.hitFx, p.hitParticleFrame);
+      const texture = shotTexture(p.stats.hitFx, p.hitParticleFrame, this.manifest.shotAnims);
       if (texture) place(this.shots.next(), texture, p.hitX, p.hitY, p.dir, p.hitFlipV);
     }
     this.shots.end();
@@ -488,7 +515,7 @@ export class Renderer {
   private syncExplosion(explosion: EnemyExplosion): void {
     this.explosionPuffs.begin();
     for (const puff of explosion.puffs) {
-      const texture = shotTexture("explosion", EnemyExplosion.frame(puff));
+      const texture = shotTexture("explosion", EnemyExplosion.frame(puff), this.manifest.shotAnims);
       if (texture) place(this.explosionPuffs.next(), texture, puff.x, puff.y, 1);
     }
     this.explosionPuffs.end();
@@ -502,7 +529,7 @@ export class Renderer {
   private syncDebris(debris: EnemyDebris): void {
     this.debris.begin();
     for (const chunk of debris.chunks) {
-      const texture = shotTexture("remains", chunk.frame);
+      const texture = shotTexture("remains", chunk.frame, this.manifest.shotAnims);
       if (!texture) continue;
       const sprite = this.debris.next();
       place(sprite, texture, chunk.x, chunk.y, 1);
@@ -519,7 +546,7 @@ export class Renderer {
   private syncSmoke(smoke: DashSmoke): void {
     this.smoke.begin();
     for (const puff of smoke.puffs) {
-      const texture = shotTexture(puff.clip, DashSmoke.frame(puff));
+      const texture = shotTexture(puff.clip, DashSmoke.frame(puff), this.manifest.shotAnims);
       if (texture) place(this.smoke.next(), texture, puff.x, puff.y, puff.facing);
     }
     this.smoke.end();

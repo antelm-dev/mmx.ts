@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "pnpm run typecheck && vite build",
     "preview": "vite preview",
     "test": "node --import tsx --test tests/*.test.ts"
   },
@@ -13,6 +14,7 @@
     "@mmx/browser-audio": "workspace:*",
     "@mmx/browser-input": "workspace:*",
     "@mmx/client-settings": "workspace:*",
+    "@mmx/content-schema": "workspace:*",
     "@mmx/contracts": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",
@@ -21,6 +23,7 @@
     "pixi.js": "^8.19.0"
   },
   "devDependencies": {
+    "@mmx/build-tools": "workspace:*",
     "@types/node": "^24.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",

@@ -39,6 +39,8 @@ export interface AssetCatalogDeps {
     sheet: string;
   } | null;
   toAnimData: (actor: ClipActor | AnimData, label: string) => AnimData;
+  enemyActorIds?: Record<string, string>;
+  pickupActorIds?: Record<string, string>;
 }
 
 export function createCatalog(deps: AssetCatalogDeps): AssetCatalog {
@@ -82,24 +84,34 @@ export function createCatalog(deps: AssetCatalogDeps): AssetCatalog {
 
     attachEnemyAnimations(enemy) {
       const actor = deps.tables.enemyActors[enemy.stats.sheet];
+      const assetId = deps.enemyActorIds?.[enemy.stats.sheet];
       if (!actor) {
-        throw new Error(`No enemy animations for sheet '${enemy.stats.sheet}'`);
+        const detail = assetId
+          ? `Renderer asset '${assetId}'`
+          : `enemy sheet '${enemy.stats.sheet}'`;
+        throw new Error(`No enemy animations for ${detail}`);
       }
       enemy.loadAnimations(deps.toAnimData(actor, `enemy animations '${enemy.stats.sheet}'`));
     },
 
     attachLifeCapsuleAnimations(pickup) {
       const actor = deps.tables.pickupActors[pickup.kind];
+      const assetId = deps.pickupActorIds?.[pickup.kind];
       if (!actor) {
-        throw new Error(`No pickup animations for kind '${pickup.kind}'`);
+        const detail = assetId ? `Renderer asset '${assetId}'` : `pickup kind '${pickup.kind}'`;
+        throw new Error(`No pickup animations for ${detail}`);
       }
       pickup.loadAnimations(deps.toAnimData(actor, `pickup animations '${pickup.kind}'`));
     },
 
     attachWeaponCapsuleAnimations(capsule) {
       const actor = deps.tables.pickupActors[capsule.sheet];
+      const assetId = deps.pickupActorIds?.[capsule.sheet];
       if (!actor) {
-        throw new Error(`No weapon capsule animations for sheet '${capsule.sheet}'`);
+        const detail = assetId
+          ? `Renderer asset '${assetId}'`
+          : `weapon capsule sheet '${capsule.sheet}'`;
+        throw new Error(`No weapon capsule animations for ${detail}`);
       }
       capsule.loadAnimations(deps.toAnimData(actor, `pickup animations '${capsule.sheet}'`));
     },

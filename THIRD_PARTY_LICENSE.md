@@ -75,17 +75,15 @@ are entitled to license. It does not grant rights in Capcom trademarks or other
 Capcom-owned material. No additional license to that material is claimed or
 granted by this repository.
 
-## Bundled game resources
+## Game assets
 
-Imported or derived resources are stored under `resources/`, including player,
-enemy, effect, pickup, and HUD graphics; animation metadata; and game audio.
-Unless a resource is accompanied by a more specific notice, treat it as subject
-to the upstream terms and any rights held by Capcom or another identified
-creator.
+Bundled Mega Man X gameplay assets (sprites, sounds, fonts, animation metadata) are
+owned by the Studio starter project in `mmx-studio`, not by this repository. See
+`mmx-studio/templates/mmx-starter/ATTRIBUTION.md` for third-party notices.
 
-`resources/fonts/mega-man-x.ttf` has no accompanying license or attribution file
-in this repository. Its provenance and redistribution terms should be verified
-before public distribution. Its presence here must not be interpreted as a
+`assets/fonts/mega-man-x.ttf` in the starter template has no accompanying license or
+attribution file in that repository. Its provenance and redistribution terms should
+be verified before public distribution. Its presence must not be interpreted as a
 license grant.
 
 ## Software dependencies

@@ -17,13 +17,71 @@ The engine is **pure TypeScript** with no runtime dependencies. It runs three wa
 
 ```bash
 pnpm install
+pnpm playwright:install   # Chromium for the required cross-repo browser boot test
 
 pnpm sim          # deterministic headless simulation, prints a state trace
 pnpm test         # unit tests (node:test) for gameplay behaviour
+pnpm build        # compile/typecheck packages (no production web artifact)
 pnpm play         # Vite development server -> http://localhost:5173
 pnpm desktop:dev    # launch the desktop app with Vite hot reload
 pnpm desktop:build  # build the native executable and platform installers
 ```
+
+### Web project contract
+
+Game sprites, sounds, fonts, and levels are **not** shipped inside this
+repository. They come from a Studio project export (for example
+`mmx-studio/templates/mmx-starter`). Core injects them at build time through
+`@mmx/build-tools` when `MMX_PROJECT` points at that export.
+
+| Command                                             | `MMX_PROJECT`                  | Behavior                                                                                                                                          |
+| --------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message.                   |
+| `pnpm build`                                        | not required                   | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`.                                 |
+| `pnpm build:web`                                    | **required**                   | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |
+| `pnpm factory:build -- --project <dir>`             | via `--project`                | Compiles a Studio export to disk (`dist-project` by default); does not replace `build:web`.                                                       |
+
+```bash
+# PowerShell
+$env:MMX_PROJECT = "E:\path\to\studio-export"
+pnpm build:web
+
+# bash
+MMX_PROJECT=/path/to/studio-export pnpm build:web
+```
+
+CI (`pnpm build`) validates libraries without a game project. The `web-dist`
+artifact is uploaded only when `MMX_PROJECT` is set for that workflow run, so a
+knowingly non-bootable bundle is never labeled as a production web build.
+Desktop production builds are gated the same way because they invoke
+`@mmx/web` `vite build` via Tauri's `beforeBuildCommand`.
+
+### Cross-repo browser boot
+
+`pnpm test:cross-repo` builds a Studio starter export and boots it in Chromium.
+It requires a Studio checkout (`MMX_STUDIO_ROOT`, defaulting to
+`../.worktrees/mmx-studio-assets-08`) plus Playwright Chromium from
+`pnpm playwright:install`. Missing Playwright or Chromium fails the run; set
+`MMX_SKIP_BROWSER_E2E=1` only when you intentionally want the optional skip path.
+
+Strict local command:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm playwright:install
+$env:MMX_STUDIO_ROOT = 'E:\Adel\Documents\Orgs\.worktrees\mmx-studio-assets-08'
+pnpm test:cross-repo
+```
+
+CI runs the same strict path in the `Cross-repo browser E2E` job when the
+repository variable `MMX_STUDIO_REPO` is set (for example `org/mmx-studio`).
+Optional companion settings:
+
+- `MMX_STUDIO_REF` — Studio git ref (defaults to the repository default branch)
+- secret `MMX_STUDIO_TOKEN` — checkout token when Studio is private
+
+Without `MMX_STUDIO_REPO`, the cross-repo job is skipped; the required Test &
+build job still runs. When the job does run, missing Playwright/Chromium fails.
 
 ### Versioning
 
@@ -211,7 +269,7 @@ Shooting plays **no clip of its own**. `Shot.gd` swaps the whole SpriteFrames
 resource (`x.res` -> `x_leftarm.res`, "pointing_cannon") while keeping the current
 clip name _and_ frame index, so every state has an arm-out twin and X keeps walking,
 jumping or wall-sliding with the buster raised. The port models this as an animation
-_layer_: [`scripts/build-anims.mjs`](scripts/build-anims.mjs) writes both atlases' regions
+_layer_: the Studio starter template's `build-anims.mjs` writes both atlases' regions
 into `x_anims.json`, and the renderer picks the sheet the layer asks for.
 
 Clip data is optional. The headless sim and tests run without loading it — clips then
@@ -251,14 +309,14 @@ ability answers which event.
 
 ### Enemy sprites
 
-[`scripts/build-enemies.mjs`](scripts/build-enemies.mjs) (`pnpm enemies:import`)
-builds `resources/sprites/enemies/enemy_anims.json` from the Godot project's **Aseprite**
-sidecars, not its `.res` SpriteFrames — the enemies still have their source
-`.json` checked in, and it carries per-frame atlas rects, per-frame durations in
-milliseconds, and `meta.frameTags` naming the clips. The one thing it cannot carry
-is whether a clip loops, which lives in the Godot resource; that is declared in the
-script and is load-bearing rather than cosmetic (a looping `stun` would leave a
-Metool stunned forever, since `EnemyStun` advances on `animation_finished`).
+Enemy animation metadata is generated from the Godot project's **Aseprite** sidecars
+in `mmx-studio/packages/starter-template/scripts/build-enemies.mjs`, not from `.res`
+SpriteFrames — the enemies still have their source `.json` checked in, and it carries
+per-frame atlas rects, per-frame durations in milliseconds, and `meta.frameTags`
+naming the clips. The one thing it cannot carry is whether a clip loops, which lives
+in the Godot resource; that is declared in the script and is load-bearing rather
+than cosmetic (a looping `stun` would leave a Metool stunned forever, since
+`EnemyStun` advances on `animation_finished`).
 
 ### Not ported (extension points)
 
@@ -298,9 +356,13 @@ apps/
   sim/                deterministic headless runner and replay CLI
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
-resources/            Shared sprites, sounds, fonts and animation metadata
-scripts/              asset importers + import-boundary guard tests and fixtures
+scripts/              import-boundary and game-resource guard tests
 ```
+
+Game sprites, sounds, fonts, and animation metadata live in Studio project exports
+(`mmx-studio/templates/mmx-starter`). Set `MMX_PROJECT` to that export directory
+before `pnpm build:web`, or use `pnpm factory:dev -- --project <dir>` for local
+play. See [Web project contract](#web-project-contract).
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
 on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends

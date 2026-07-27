@@ -1,3 +1,5 @@
+import semver from "semver";
+
 import { ASSET_KINDS, PROJECT_SCHEMA_VERSION } from "./types.js";
 import type {
   AnimationClip,
@@ -13,8 +15,6 @@ import type {
 } from "./types.js";
 
 const LOGICAL_ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_.-]*$/;
-const SEMVER_PATTERN =
-  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const ASSET_KIND_SET = new Set<string>(ASSET_KINDS);
 
 type IssueCollector = {
@@ -136,6 +136,13 @@ function validatePortablePath(
   return true;
 }
 
+function isValidSemVerString(value: string): boolean {
+  if (value.startsWith("v") || value.startsWith("V") || value.startsWith("=")) {
+    return false;
+  }
+  return semver.parse(value) !== null;
+}
+
 function validateSemVer(value: unknown, path: string, add: IssueCollector["add"]): value is string {
   if (typeof value !== "string" || value.length === 0) {
     add({
@@ -145,7 +152,7 @@ function validateSemVer(value: unknown, path: string, add: IssueCollector["add"]
     });
     return false;
   }
-  if (!SEMVER_PATTERN.test(value)) {
+  if (!isValidSemVerString(value)) {
     add({
       code: "version.malformed",
       path,
@@ -157,17 +164,7 @@ function validateSemVer(value: unknown, path: string, add: IssueCollector["add"]
 }
 
 function compareSemVer(a: string, b: string): number {
-  const parse = (value: string): number[] => {
-    const core = value.split("-")[0] ?? value;
-    return core.split(".").map((part) => Number(part));
-  };
-  const left = parse(a);
-  const right = parse(b);
-  for (let i = 0; i < 3; i += 1) {
-    const diff = (left[i] ?? 0) - (right[i] ?? 0);
-    if (diff !== 0) return diff < 0 ? -1 : 1;
-  }
-  return 0;
+  return semver.compare(a, b);
 }
 
 function validateRegion(value: unknown, path: string, add: IssueCollector["add"]): value is Region {
@@ -476,23 +473,28 @@ export function validateProject(project: ProjectDocument): ValidationResult {
     });
 
     project.assets.forEach((asset, index) => {
-      if (asset.kind === "animation" && asset.sheetAssetId !== undefined) {
-        if (!assetIds.has(asset.sheetAssetId)) {
+      if (!isRecord(asset)) return;
+      if (asset.kind !== "animation" || asset.sheetAssetId === undefined) return;
+
+      const sheetAssetId = asset.sheetAssetId;
+      if (typeof sheetAssetId !== "string" || !assetIds.has(sheetAssetId)) {
+        if (typeof sheetAssetId === "string") {
           add({
             code: "animation.sheet.unknown",
             path: `/assets/${index}/sheetAssetId`,
-            message: `sheetAssetId '${asset.sheetAssetId}' does not match any asset id.`,
+            message: `sheetAssetId '${sheetAssetId}' does not match any asset id.`,
           });
-        } else {
-          const sheet = project.assets.find((entry) => entry.id === asset.sheetAssetId);
-          if (sheet && sheet.kind !== "image" && sheet.kind !== "sprite") {
-            add({
-              code: "animation.sheet.kind",
-              path: `/assets/${index}/sheetAssetId`,
-              message: `sheetAssetId '${asset.sheetAssetId}' must reference an image or sprite asset.`,
-            });
-          }
         }
+        return;
+      }
+
+      const sheet = project.assets.find((entry) => isRecord(entry) && entry.id === sheetAssetId);
+      if (sheet && sheet.kind !== "image" && sheet.kind !== "sprite") {
+        add({
+          code: "animation.sheet.kind",
+          path: `/assets/${index}/sheetAssetId`,
+          message: `sheetAssetId '${sheetAssetId}' must reference an image or sprite asset.`,
+        });
       }
     });
   }

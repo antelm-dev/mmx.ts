@@ -16,7 +16,7 @@ import type { AnimData } from "@mmx/contracts/animation";
  */
 
 const animData = JSON.parse(
-  readFileSync(new URL("../../../resources/sprites/player/x_anims.json", import.meta.url), "utf8"),
+  readFileSync(new URL("./fixtures/x_anims.json", import.meta.url), "utf8"),
 ) as AnimData;
 
 // A flat 30x12 room with a solid floor and walls on both sides.

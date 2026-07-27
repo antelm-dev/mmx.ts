@@ -1,7 +1,8 @@
 import type { Container } from "pixi.js";
+import type { DecorationInstance } from "@mmx/content-schema";
 import type { GameplaySounds } from "@mmx/browser-audio";
 import type { Enemy, LifeCapsule, Player, Scene, Stage, WeaponCapsule } from "@mmx/engine";
-import { createAssetCatalog } from "@mmx/renderer-pixi";
+import type { AssetCatalog, RendererAssetManifest } from "@mmx/renderer-pixi";
 import { createScenePresentation, type ScenePresentation } from "@mmx/renderer-pixi/presentation";
 import type { DebugRenderOptions } from "@mmx/renderer-pixi/debug";
 
@@ -9,6 +10,9 @@ export interface ScenePresenterOptions {
   sounds: GameplaySounds;
   onPlayerDeath: () => void;
   onWeaponChanged: (weapon: string) => void;
+  assets: AssetCatalog;
+  manifest: RendererAssetManifest;
+  decorations?: readonly DecorationInstance[];
 }
 
 export class ScenePresenter {
@@ -29,7 +33,9 @@ export class ScenePresenter {
     const scene = this.pendingScene;
     if (!scene) throw new Error("ScenePresenter.attach must run before create");
     this.presentation = await createScenePresentation(canvas, scene, {
-      assets: createAssetCatalog(),
+      assets: this.options.assets,
+      manifest: this.options.manifest,
+      decorations: this.options.decorations,
     });
   }
 

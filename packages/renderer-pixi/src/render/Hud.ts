@@ -69,9 +69,6 @@ const TINT_NORMAL = 0xffffff;
 const ICON_X = X + 17;
 const ICON_BOTTOM_OFFSET = -14;
 const ICON_CROP: readonly [number, number, number, number] = [3, 3, 10, 10];
-const WEAPON_ICON_SHEETS: Readonly<Partial<Record<WeaponId, string>>> = {
-  dark_arrow: "weapon_icon_dark_arrow.png",
-};
 
 // BarFader.gd: the bar dims almost instantly when X walks in behind it and eases
 // back up once he is clear, so it never hides him in the corner.
@@ -97,6 +94,7 @@ function barMetrics(max: number): { y: number; h: number } {
 interface EnergyBarOptions {
   x: number;
   frameSheet: string;
+  fillSheet: string;
 }
 
 /**
@@ -109,11 +107,13 @@ class EnergyBar {
   readonly view = new Container();
   private readonly frame: NineSliceSprite;
   private readonly fill = new Sprite();
+  private readonly fillSheet: string;
 
   private lastFilled = -1;
   private lastMax = -1;
 
   constructor(options: EnergyBarOptions) {
+    this.fillSheet = options.fillSheet;
     this.frame = new NineSliceSprite({
       texture: requireHudTexture(options.frameSheet, [0, 0, BAR_W, 22]),
       leftWidth: 0,
@@ -161,20 +161,33 @@ class EnergyBar {
     // inside of the bottom cap. Cropping from the bottom rather than scaling keeps
     // the source's segment ticks fixed to the column instead of sliding with health.
     const { y, h } = barMetrics(this.lastMax);
-    this.fill.texture = requireHudTexture("hp_fill.png", [0, FILL_H - filled, FILL_W, filled]);
+    this.fill.texture = requireHudTexture(this.fillSheet, [0, FILL_H - filled, FILL_W, filled]);
     this.fill.y = y + h - CAP_BOTTOM - filled;
   }
 }
+
+export type HudSheetKeys = {
+  xBar: string;
+  hpFill: string;
+  weaponBar: string;
+  weaponIcons?: Readonly<Partial<Record<WeaponId, string>>>;
+};
 
 export class Hud {
   readonly view = new Container();
   private readonly xBar: EnergyBar;
   private readonly weaponBar: EnergyBar;
   private readonly weaponIcon = new Sprite();
+  private readonly weaponIcons: Readonly<Partial<Record<WeaponId, string>>>;
 
-  constructor() {
-    this.xBar = new EnergyBar({ x: X, frameSheet: "x_bar.png" });
-    this.weaponBar = new EnergyBar({ x: WEAPON_BAR_X, frameSheet: "weapon_bar.png" });
+  constructor(sheets: HudSheetKeys) {
+    this.weaponIcons = sheets.weaponIcons ?? {};
+    this.xBar = new EnergyBar({ x: X, frameSheet: sheets.xBar, fillSheet: sheets.hpFill });
+    this.weaponBar = new EnergyBar({
+      x: WEAPON_BAR_X,
+      frameSheet: sheets.weaponBar,
+      fillSheet: sheets.hpFill,
+    });
     // barMetrics' bottom edge (y + h) is 108 regardless of max — the frame
     // grows upward out of a fixed bottom cap — so the icon's y is fixed too.
     this.weaponIcon.x = ICON_X;
@@ -212,7 +225,7 @@ export class Hud {
     const tint = WEAPON_PALETTE[weapon][1];
     this.weaponBar.sync(player.getWeaponAmmo(weapon), SUB_WEAPON_MAX_AMMO, tint);
 
-    const iconSheet = WEAPON_ICON_SHEETS[weapon];
+    const iconSheet = this.weaponIcons[weapon];
     const texture = iconSheet && regionTexture(iconSheet, ICON_CROP);
     this.weaponIcon.visible = !!texture;
     if (texture) this.weaponIcon.texture = texture;

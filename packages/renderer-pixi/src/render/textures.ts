@@ -1,6 +1,6 @@
 import { Assets, Rectangle, Texture, TextureSource } from "pixi.js";
 import type { Region } from "@mmx/contracts/animation";
-import { shotAnims } from "./assets.js";
+import type { ShotAnimManifest } from "../assets/manifest.js";
 
 /**
  * Sheet loading and the sub-textures cut out of them.
@@ -15,6 +15,7 @@ import { shotAnims } from "./assets.js";
 TextureSource.defaultOptions.scaleMode = "nearest";
 
 const sheets = new Map<string, Texture>();
+const sheetSourceUrls = new Map<string, string>();
 const regions = new Map<string, Texture>();
 
 let loadInflight: Promise<void> | null = null;
@@ -23,8 +24,21 @@ function isTexture(value: unknown): value is Texture {
   return value instanceof Texture;
 }
 
+function assertSheetUrlCompatible(name: string, url: string): void {
+  const existing = sheetSourceUrls.get(name);
+  if (existing !== undefined && existing !== url) {
+    throw new Error(
+      `Renderer sheet key '${name}' is already loaded from '${existing}'; refusing to overwrite with '${url}'.`,
+    );
+  }
+}
+
 /** Load every missing sheet; concurrent callers share one in-flight load. */
 export async function loadSheets(urls: Record<string, string>): Promise<void> {
+  for (const [name, url] of Object.entries(urls)) {
+    assertSheetUrlCompatible(name, url);
+  }
+
   const pending = Object.entries(urls).filter(([name]) => !sheets.has(name));
   if (pending.length === 0) return;
 
@@ -49,12 +63,17 @@ export async function loadSheets(urls: Record<string, string>): Promise<void> {
         if (!isTexture(result)) {
           throw new Error(`Failed to load renderer sheet '${name}' from '${url}'`);
         }
-        return [name, result] as const;
+        return [name, result, url] as const;
       }),
     );
 
-    for (const [name, texture] of loaded) {
+    for (const [name, texture, url] of loaded) {
+      assertSheetUrlCompatible(name, url);
+      if (sheets.has(name)) {
+        throw new Error(`Renderer sheet key '${name}' is already loaded; refusing to overwrite.`);
+      }
       sheets.set(name, texture);
+      sheetSourceUrls.set(name, url);
     }
   })();
 
@@ -67,6 +86,7 @@ export async function loadSheets(urls: Record<string, string>): Promise<void> {
 
 export function resetTextureCacheForTests(): void {
   sheets.clear();
+  sheetSourceUrls.clear();
   regions.clear();
   loadInflight = null;
 }
@@ -102,7 +122,11 @@ export function textureCounts(): { sheets: number; regions: number } {
  * `frame` is clamped rather than wrapped: the engine already wraps looping shot
  * spin, and a finished one-shot hit effect should hold its last frame, not restart.
  */
-export function shotTexture(clipName: string, frame: number): Texture | null {
+export function shotTexture(
+  clipName: string,
+  frame: number,
+  shotAnims: ShotAnimManifest,
+): Texture | null {
   const clip = shotAnims.animations[clipName];
   if (!clip || clip.frames.length === 0) return null;
 

@@ -2,7 +2,7 @@ export * from "./DashSmoke.js";
 export * from "./EnemyDebris.js";
 export * from "./EnemyExplosion.js";
 export * from "./Trail.js";
-export { Renderer } from "./render/Renderer.js";
+export { Renderer, type RendererCreateOptions } from "./render/Renderer.js";
 export { DecorationView } from "./render/DecorationView.js";
 export {
   DECORATION_ASSETS,
@@ -21,11 +21,29 @@ export {
   getDecorationPreview,
   loadEditorAssets,
   getSpritePreview,
+  resolveRendererAssetManifest,
   type AssetCatalog,
   type CreateAssetCatalogOptions,
   type EditorSpriteDefinition,
   type SpritePreview,
 } from "./editor/catalog.js";
+export {
+  adaptLegacyFilenameSheetImages,
+  adaptLegacyFilenameShotSheets,
+  assetPathBasename,
+  buildRendererAssetManifest,
+  buildRendererAssetManifestFromProject,
+  createRendererAssetResolver,
+  manifestToPreviewTables,
+  validateRendererAssetManifest,
+  RendererAssetError,
+  type RendererAssetBindings,
+  type RendererAssetManifest,
+  type RendererAssetResolver,
+  type RendererAssetResolverContext,
+  type RendererAssetUrlResolver,
+  type ShotAnimManifest,
+} from "./assets/index.js";
 export {
   createPlaytestRenderer,
   type CreatePlaytestRendererOptions,
@@ -50,7 +68,4 @@ export {
   type DebugRenderOptions,
 } from "./debug/index.js";
 
-/** @deprecated Prefer createAssetCatalog / ScenePresentation. Kept for transitional consumers. */
-export { animData, enemyAnims, pickupAnims, SHEET_URLS } from "./render/assets.js";
-/** @deprecated Studio/editor-runtime should use loadEditorAssets / getSpritePreview. Kept for apps/web. */
 export { loadSheets, regionTexture } from "./render/textures.js";

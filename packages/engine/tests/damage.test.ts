@@ -16,7 +16,7 @@ import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
 
 const animData = JSON.parse(
-  readFileSync(new URL("../../../resources/sprites/player/x_anims.json", import.meta.url), "utf8"),
+  readFileSync(new URL("./fixtures/x_anims.json", import.meta.url), "utf8"),
 ) as AnimData;
 
 function room(): World {

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 2,
+  "id": "level.main",
+  "name": "Synthetic Level",
+  "gridSize": 16,
+  "cols": 32,
+  "rows": 16,
+  "tiles": [],
+  "objects": [
+    {
+      "id": "spawn.1",
+      "definitionId": "spawn",
+      "x": 32,
+      "y": 128
+    }
+  ],
+  "decorations": [
+    {
+      "id": "deco.bg",
+      "assetId": "sprite.bg",
+      "x": 0,
+      "y": 0,
+      "layer": "background",
+      "parallax": 1,
+      "flipX": false,
+      "flipY": false
+    }
+  ]
+}

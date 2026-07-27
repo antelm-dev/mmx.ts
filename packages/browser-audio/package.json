@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "files": [
-    "dist",
-    "assets"
+    "dist"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -17,13 +16,13 @@
     }
   },
   "scripts": {
-    "sync-assets": "node scripts/sync-assets.mjs",
-    "build": "pnpm run sync-assets && tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "prepack": "pnpm run build",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/engine": "workspace:*"
+    "@mmx/engine": "workspace:*",
+    "@mmx/project-schema": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.7.0",

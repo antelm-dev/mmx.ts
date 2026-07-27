@@ -1,14 +1,25 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
+import {
+  assertWebProductionProjectAvailable,
+  resolveWebProjectPluginMode,
+} from "./src/project/webBuildContract.js";
 
-/**
- * Vite serves the web app (index.html -> src/main.ts) with HMR. It composes the
- * engine and Pixi renderer workspace packages; the same build is wrapped by the
- * desktop app.
- */
 const isTauri = !!process.env.TAURI_ENV_PLATFORM;
+const projectDir = process.env.MMX_PROJECT;
 
-export default defineConfig({
+async function projectPlugins(command: "build" | "serve"): Promise<PluginOption[]> {
+  assertWebProductionProjectAvailable({ command, projectDir });
+  const { createMmxProjectPluginsFromEnv } = await import("@mmx/build-tools/vite");
+  return createMmxProjectPluginsFromEnv();
+}
+
+export default defineConfig(async ({ command }) => ({
   clearScreen: false,
+  plugins: await projectPlugins(command),
+  define:
+    resolveWebProjectPluginMode({ command, projectDir }) === "load-project"
+      ? { "import.meta.env.VITE_MMX_PROJECT": JSON.stringify("1") }
+      : undefined,
   server: {
     port: 5173,
     strictPort: true,
@@ -19,4 +30,4 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2020",
   },
-});
+}));
