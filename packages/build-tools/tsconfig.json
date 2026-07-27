@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../project-schema" },
+    { "path": "../content-schema" },
+    { "path": "../engine" },
+    { "path": "../renderer-pixi" },
+    { "path": "../browser-audio" }
+  ]
+}
