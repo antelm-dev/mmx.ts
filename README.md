@@ -296,7 +296,6 @@ packages/
     tests/            node:test gameplay and determinism tests
   renderer-pixi/      PixiJS game renderer (`@mmx/renderer-pixi` public entry)
   runtime/            Shared simulation runtime (`@mmx/runtime`, `/browser`, `/player`, `/tooling`)
-  browser-runtime/    Deprecated re-export of `@mmx/runtime/browser` (FixedStepLoop)
   browser-input/      Shared keyboard/gamepad action input (`@mmx/browser-input`)
   editor-runtime/     Studio LevelDocument playtest adapter over `@mmx/runtime/tooling`
   content-schema/     authoring document model
