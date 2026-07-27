@@ -15,7 +15,6 @@
     { "path": "../browser-input" },
     { "path": "../runtime" },
     { "path": "../content-schema" },
-    { "path": "../content-engine-adapter" },
     { "path": "../renderer-pixi" }
   ]
 }

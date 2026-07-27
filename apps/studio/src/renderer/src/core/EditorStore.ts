@@ -7,7 +7,7 @@ import {
   type ValidationResult,
   TerrainTile,
 } from "@mmx/content-schema";
-import { validateLevelDocument } from "@mmx/content-engine-adapter";
+import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
 import { knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
 export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile";

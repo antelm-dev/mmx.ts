@@ -10,7 +10,7 @@ engine and Pixi renderer.
 Like the original, it never mutates the generated level modules
 (`packages/engine/src/game/levels/*.ts`). It works on the editor-friendly
 `LevelDocument` and converts to/from the engine's `LevelData` through
-[`@mmx/content-engine-adapter`](../../packages/content-engine-adapter), while the
+[`@mmx/editor-runtime/adapters`](../../packages/editor-runtime), while the
 authoring model itself lives in [`@mmx/content-schema`](../../packages/content-schema).
 Studio must import those packages (and `@mmx/runtime` / `@mmx/editor-runtime` /
 `@mmx/renderer-pixi`) at their public roots — never `@mmx/engine/game/*`,

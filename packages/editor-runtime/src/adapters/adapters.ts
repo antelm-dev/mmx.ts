@@ -42,7 +42,6 @@ function assertTerrainMapsToEngine(): void {
 
 assertTerrainMapsToEngine();
 
-/** Resolve an engine entity id (+ its Kind field) to a catalog definition id. */
 function definitionIdFor(entity: LevelEntity): string {
   const kind = typeof entity.fields.Kind === "string" ? entity.fields.Kind : undefined;
   switch (entity.id) {
@@ -73,7 +72,6 @@ function isResizable(def: GameObjectDefinition | undefined): boolean {
   return def?.editor.resizable === true;
 }
 
-/** Build the editor document for a generated level. */
 export function levelDataToDocument(data: LevelData): LevelDocument {
   const objects: LevelObjectInstance[] = data.entities.map((entity) => {
     const definitionId = definitionIdFor(entity);
@@ -107,7 +105,6 @@ export function levelDataToDocument(data: LevelData): LevelDocument {
   return doc;
 }
 
-/** Convert one instance back to its engine entity. */
 export function instanceToEntity(inst: LevelObjectInstance): LevelEntity {
   const def = requireDefinition(inst.definitionId);
   const { width, height } = instanceSize(inst);
@@ -119,10 +116,6 @@ export function instanceToEntity(inst: LevelObjectInstance): LevelEntity {
   return { id: def.engineId, iid: inst.id, x: inst.x, y: inst.y, w: width, h: height, fields };
 }
 
-/**
- * Expand every Slope object into the terrain the engine actually collides
- * against, mutating `tiles`/`slopes` in place.
- */
 function bakeSlopeObjects(
   doc: LevelDocument,
   tiles: TerrainTile[],
@@ -151,7 +144,6 @@ function bakeSlopeObjects(
   for (const [index, profile] of Object.entries(baked)) slopes[Number(index)] = profile;
 }
 
-/** Build the engine level for Play mode (and export) from an editor document. */
 export function documentToLevelData(doc: LevelDocument): LevelData {
   const tiles = doc.tiles.slice();
   const slopes: Record<number, [number, number]> = doc.slopes ? { ...doc.slopes } : {};

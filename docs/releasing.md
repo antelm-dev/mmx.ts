@@ -16,7 +16,6 @@ version depuis la CI.
 | `@mmx/browser-audio`          | `@mmx/desktop` |
 | `@mmx/browser-input`          | `@mmx/sim`     |
 | `@mmx/content-contracts`      |                |
-| `@mmx/content-engine-adapter` |                |
 | `@mmx/content-schema`         |                |
 | `@mmx/editor-runtime`         |                |
 | `@mmx/engine`                 |                |

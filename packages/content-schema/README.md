@@ -21,7 +21,7 @@ This package is the most stable domain layer in the monorepo. It does **not**
 depend on `@mmx/engine`, `@mmx/ldtk-tools`, the Studio, or any runtime adapter.
 
 Conversion to engine `LevelData` and engine-backed validation live in
-`@mmx/content-engine-adapter`.
+`@mmx/editor-runtime/adapters`.
 
 ## Tests
 

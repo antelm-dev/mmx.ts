@@ -6,7 +6,7 @@ import {
   type LevelDocument,
   type LevelObjectInstance,
 } from "@mmx/content-schema";
-import { engineDiagnostics, validateLevelDocument } from "../src/index.js";
+import { engineDiagnostics, validateLevelDocument } from "../src/adapters/index.js";
 
 function docWith(objects: LevelObjectInstance[]): LevelDocument {
   const doc = createLevelDocument();

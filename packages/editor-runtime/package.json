@@ -12,6 +12,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js",
+      "default": "./dist/adapters/index.js"
     }
   },
   "scripts": {
@@ -21,7 +26,6 @@
   },
   "dependencies": {
     "@mmx/browser-input": "workspace:*",
-    "@mmx/content-engine-adapter": "workspace:*",
     "@mmx/content-schema": "workspace:*",
     "@mmx/engine": "workspace:*",
     "@mmx/renderer-pixi": "workspace:*",

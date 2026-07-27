@@ -1,4 +1,4 @@
-import { documentToLevelData } from "@mmx/content-engine-adapter";
+import { documentToLevelData } from "./adapters/adapters.js";
 import type { LevelDocument } from "@mmx/content-schema";
 import type { Scene } from "@mmx/engine";
 import {

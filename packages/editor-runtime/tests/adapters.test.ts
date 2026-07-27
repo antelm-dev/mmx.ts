@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { stage1, stage2, Tile, type LevelData } from "@mmx/engine";
 import { SCHEMA_VERSION, TerrainTile, type LevelDocument } from "@mmx/content-schema";
-import { documentToLevelData, levelDataToDocument } from "../src/index.js";
+import { documentToLevelData, levelDataToDocument } from "../src/adapters/index.js";
 
 function roundTrip(data: LevelData): void {
   const doc = levelDataToDocument(data);

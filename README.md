@@ -299,7 +299,6 @@ packages/
   browser-input/      Shared keyboard/gamepad action input (`@mmx/browser-input`)
   editor-runtime/     Studio LevelDocument playtest adapter over `@mmx/runtime/tooling`
   content-schema/     authoring document model
-  content-engine-adapter/  LevelDocument ↔ LevelData bridge
   ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools

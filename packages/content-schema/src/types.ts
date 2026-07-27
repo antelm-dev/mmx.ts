@@ -12,7 +12,7 @@
  *   4. Renderer/audio assets live in @mmx/renderer-pixi and apps/web.
  *
  * The document below is the *authoring* shape. Conversion to the engine's
- * LevelData lives in `@mmx/content-engine-adapter` — this package never imports
+ * LevelData lives in `@mmx/editor-runtime/adapters` — this package never imports
  * the engine.
  */
 

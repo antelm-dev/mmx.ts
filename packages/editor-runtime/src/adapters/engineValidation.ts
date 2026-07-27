@@ -15,13 +15,6 @@ function mapDiagnostic(d: EngineDiagnostic): ValidationIssue {
   return issue;
 }
 
-/**
- * Engine-side diagnostics for a document, mapped into authoring issues.
- *
- * Returns an empty list when the document cannot even be converted to
- * LevelData (an unknown definition, invalid slope geometry): that failure has
- * an authoring cause which validateDocument already reports.
- */
 export function engineDiagnostics(doc: LevelDocument): ValidationIssue[] {
   try {
     return compileLevel(documentToLevelData(doc)).diagnostics.map(mapDiagnostic);
@@ -30,7 +23,6 @@ export function engineDiagnostics(doc: LevelDocument): ValidationIssue[] {
   }
 }
 
-/** Keep the first occurrence of each (severity, code, object, field) tuple. */
 function dedupe(issues: ValidationIssue[]): ValidationIssue[] {
   const seen = new Set<string>();
   const out: ValidationIssue[] = [];
@@ -43,10 +35,6 @@ function dedupe(issues: ValidationIssue[]): ValidationIssue[] {
   return out;
 }
 
-/**
- * Full validation for Play mode: authoring checks combined with engine
- * compilation, deduplicated.
- */
 export function validateLevelDocument(
   doc: LevelDocument,
   options?: ValidateDocumentOptions,
