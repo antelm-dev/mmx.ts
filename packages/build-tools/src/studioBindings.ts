@@ -1,3 +1,8 @@
+import {
+  collectBoundAssetIds,
+  GAMEPLAY_SOUND_IDS,
+  type SoundBindingMap,
+} from "@mmx/browser-audio";
 import type { AnimationAsset, ProjectAsset, ProjectDocument } from "@mmx/project-schema";
 import {
   createRendererAssetResolver,
@@ -5,6 +10,7 @@ import {
   type ShotAnimManifest,
 } from "@mmx/renderer-pixi";
 import { ProjectBuildError } from "./errors.js";
+import type { AssetEmissionPlan } from "./types.js";
 
 export const STUDIO_GAME_DATA_FILE = "game/data.json";
 
@@ -118,4 +124,66 @@ export function buildShotAnimsFromStudioBindings(
   }
 
   return { sheets, animations };
+}
+
+function validateSoundBindingTarget(
+  runtimeName: string,
+  assetId: string,
+  manifest: ProjectDocument,
+  emission: AssetEmissionPlan,
+): void {
+  if (!assetId) {
+    throw new ProjectBuildError(
+      "studio.bindings.sounds",
+      `Sound binding '${runtimeName}' → '${assetId}' is empty.`,
+    );
+  }
+
+  const asset = manifest.assets.find((entry) => entry.id === assetId);
+  if (!asset) {
+    throw new ProjectBuildError(
+      "studio.bindings.sounds",
+      `Sound binding '${runtimeName}' → '${assetId}' target asset was not found in the project manifest.`,
+    );
+  }
+  if (asset.kind !== "sound") {
+    throw new ProjectBuildError(
+      "studio.bindings.sounds",
+      `Sound binding '${runtimeName}' → '${assetId}' has kind '${asset.kind}'; expected 'sound'.`,
+    );
+  }
+  if (!emission.byId[assetId]?.publicUrl) {
+    throw new ProjectBuildError(
+      "studio.bindings.sounds",
+      `Sound binding '${runtimeName}' → '${assetId}' has no emitted URL.`,
+    );
+  }
+}
+
+export function compileStudioSoundBindings(
+  studioSounds: Record<string, string>,
+  manifest: ProjectDocument,
+  emission: AssetEmissionPlan,
+): { soundBindings: SoundBindingMap; soundIds: string[] } {
+  for (const runtimeName of GAMEPLAY_SOUND_IDS) {
+    const assetId = studioSounds[runtimeName];
+    if (assetId === undefined) {
+      throw new ProjectBuildError(
+        "studio.bindings.sounds",
+        `Required gameplay sound '${runtimeName}' is missing from studio.bindings.sounds (expected a logical asset ID).`,
+      );
+    }
+    validateSoundBindingTarget(runtimeName, assetId, manifest, emission);
+  }
+
+  for (const [runtimeName, assetId] of Object.entries(studioSounds)) {
+    if ((GAMEPLAY_SOUND_IDS as readonly string[]).includes(runtimeName)) continue;
+    validateSoundBindingTarget(runtimeName, assetId, manifest, emission);
+  }
+
+  const soundBindings: SoundBindingMap = { ...studioSounds };
+  return {
+    soundBindings,
+    soundIds: collectBoundAssetIds(soundBindings),
+  };
 }

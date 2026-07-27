@@ -37,7 +37,15 @@ export type {
   LoadedProject,
   LoadProjectResult,
   ProjectIssue,
+  SoundBindingMap,
 } from "./types.js";
+export {
+  buildShotAnimsFromStudioBindings,
+  compileStudioSoundBindings,
+  STUDIO_GAME_DATA_FILE,
+  studioBindingsToRendererBindings,
+} from "./studioBindings.js";
+export type { StudioGameDataFile } from "./studioBindings.js";
 export {
   MMX_PROJECT_PLUGIN_NAME,
   countMmxProjectPlugins,

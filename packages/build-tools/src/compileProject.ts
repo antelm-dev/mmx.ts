@@ -2,8 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
 import { compileGameData, GAME_DATA, type GameData } from "@mmx/engine/data";
-import { createProjectSoundResolver } from "@mmx/browser-audio";
-import { GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
+import { GAMEPLAY_SOUND_IDS, type SoundBindingMap } from "@mmx/browser-audio";
 import type { ProjectAsset } from "@mmx/project-schema";
 import {
   buildRendererAssetManifestFromProject,
@@ -13,6 +12,7 @@ import {
 import { ASSET_PUBLIC_PREFIX, GAME_DATA_FILE, RENDERER_BINDINGS_FILE } from "./constants.js";
 import {
   buildShotAnimsFromStudioBindings,
+  compileStudioSoundBindings,
   STUDIO_GAME_DATA_FILE,
   studioBindingsToRendererBindings,
   type StudioGameDataFile,
@@ -80,26 +80,29 @@ async function loadGameData(root: string): Promise<GameData> {
 type RendererBindingSource = {
   bindings: RendererAssetBindings;
   studioShotAnimations: Record<string, string> | null;
+  studio: StudioGameDataFile | null;
 };
 
 async function loadRendererBindingSource(
   project: LoadedProject,
 ): Promise<RendererBindingSource | null> {
+  const studio = await readOptionalJson<StudioGameDataFile>(
+    resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
+  );
+
   const canonical = await readOptionalJson<RendererAssetBindings>(
     resolveProjectPath(project.root, RENDERER_BINDINGS_FILE),
   );
   if (canonical) {
-    return { bindings: canonical, studioShotAnimations: null };
+    return { bindings: canonical, studioShotAnimations: null, studio };
   }
 
-  const studio = await readOptionalJson<StudioGameDataFile>(
-    resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
-  );
   if (!studio?.bindings) return null;
 
   return {
     bindings: studioBindingsToRendererBindings(studio, project.manifest),
     studioShotAnimations: studio.bindings.shotAnimations,
+    studio,
   };
 }
 
@@ -115,16 +118,19 @@ function compileAuthoredGameData(data: GameData) {
   return result.value;
 }
 
-function collectSoundIds(
+function compileSoundPlan(
+  studio: StudioGameDataFile | null | undefined,
   manifest: LoadedProject["manifest"],
-  bindings: RendererAssetBindings | null,
-) {
-  if (!bindings) return [...GAMEPLAY_SOUND_IDS];
-  const ids = new Set<string>(GAMEPLAY_SOUND_IDS);
-  for (const asset of manifest.assets) {
-    if (asset.kind === "sound") ids.add(asset.id);
+  emission: AssetEmissionPlan,
+): { soundBindings: SoundBindingMap | null; soundIds: string[] } {
+  const studioSounds = studio?.bindings?.sounds;
+  if (studioSounds) {
+    return compileStudioSoundBindings(studioSounds, manifest, emission);
   }
-  return [...ids].sort((a, b) => a.localeCompare(b));
+  return {
+    soundBindings: null,
+    soundIds: [...GAMEPLAY_SOUND_IDS],
+  };
 }
 
 function buildRendererManifest(
@@ -164,17 +170,16 @@ export async function compileBrowserProjectBundle(
     emission.assets.map((asset) => [asset.assetId, asset.publicUrl]),
   );
 
-  const soundIds = collectSoundIds(project.manifest, bindingSource?.bindings ?? null);
-  if (bindingSource) {
-    const resolver = createProjectSoundResolver(project.manifest, "");
-    for (const soundId of soundIds) {
-      try {
-        resolver.resolveUrl(soundId);
-      } catch {
-        // builtin ids may not exist in minimal fixtures
-      }
-    }
-  }
+  const studioForSounds =
+    bindingSource?.studio ??
+    (await readOptionalJson<StudioGameDataFile>(
+      resolveProjectPath(project.root, STUDIO_GAME_DATA_FILE),
+    ));
+  const { soundBindings, soundIds } = compileSoundPlan(
+    studioForSounds,
+    project.manifest,
+    emission,
+  );
 
   const levels = project.levels.map((level) => ({
     id: level.id,
@@ -194,6 +199,7 @@ export async function compileBrowserProjectBundle(
     compiledGameData,
     rendererManifest,
     rendererBindings: bindingSource?.bindings ?? null,
+    soundBindings,
     soundIds,
     assetUrls,
   };
