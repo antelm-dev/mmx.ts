@@ -11,6 +11,8 @@
     "build": "turbo run build --filter=!@mmx/desktop",
     "build:web": "turbo run build --filter=@mmx/web",
     "preview": "pnpm --filter @mmx/web preview",
+    "factory:build": "pnpm --filter @mmx/build-tools exec mmx-build build",
+    "factory:dev": "pnpm --filter @mmx/build-tools exec mmx-build dev",
     "start": "pnpm preview",
     "desktop:dev": "pnpm --filter @mmx/desktop dev",
     "desktop:build": "turbo run build --filter=@mmx/desktop",

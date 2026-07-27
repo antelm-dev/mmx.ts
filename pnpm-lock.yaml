@@ -60,6 +60,9 @@ importers:
       '@mmx/client-settings':
         specifier: workspace:*
         version: link:../../packages/client-settings
+      '@mmx/content-schema':
+        specifier: workspace:*
+        version: link:../../packages/content-schema
       '@mmx/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -79,6 +82,9 @@ importers:
         specifier: ^8.19.0
         version: 8.19.0
     devDependencies:
+      '@mmx/build-tools':
+        specifier: workspace:*
+        version: link:../../packages/build-tools
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
@@ -123,6 +129,37 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+
+  packages/build-tools:
+    dependencies:
+      '@mmx/browser-audio':
+        specifier: workspace:*
+        version: link:../browser-audio
+      '@mmx/content-schema':
+        specifier: workspace:*
+        version: link:../content-schema
+      '@mmx/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@mmx/project-schema':
+        specifier: workspace:*
+        version: link:../project-schema
+      '@mmx/renderer-pixi':
+        specifier: workspace:*
+        version: link:../renderer-pixi
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.0
+        version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.49.0)
 
   packages/client-settings:
     dependencies:
