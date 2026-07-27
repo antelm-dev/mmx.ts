@@ -9,6 +9,12 @@ import type {
   WeaponCapsule,
 } from "@mmx/engine";
 import { DashSmoke } from "../DashSmoke.js";
+import { DebugOverlay } from "../debug/DebugOverlay.js";
+import {
+  DEBUG_RENDER_OPTIONS_OFF,
+  type DebugGeometryOverlay,
+  type DebugRenderOptions,
+} from "../debug/options.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";
 import { createAssetCatalog, type AssetCatalog } from "../editor/catalog.js";
@@ -25,6 +31,8 @@ export interface ScenePresentation {
   render(scene: Scene): void;
   fit(preferredScale?: number): void;
   setDecorations(decorations: readonly DecorationInstance[]): void;
+  setDebugOptions(options: Partial<DebugRenderOptions>): void;
+  debugOptions(): DebugRenderOptions;
   readonly pixelScale: number;
   stats(): Record<string, string | number>;
   readonly uiLayer: Container;
@@ -35,6 +43,7 @@ export interface ScenePresentation {
 export interface ScenePresentationOptions {
   assets?: AssetCatalog;
   decorations?: readonly DecorationInstance[];
+  debugOptions?: Partial<DebugRenderOptions>;
 }
 
 export interface ScenePresentationHost {
@@ -65,6 +74,7 @@ export interface ScenePresentationEffects {
 
 export interface CreateScenePresentationWithHostOptions extends ScenePresentationOptions {
   effects?: ScenePresentationEffects;
+  debugOverlay?: DebugGeometryOverlay | null;
 }
 
 class ScenePresentationImpl implements ScenePresentation {
@@ -78,16 +88,22 @@ class ScenePresentationImpl implements ScenePresentation {
   private readonly smoke: DashSmoke;
   private readonly explosion: EnemyExplosion;
   private readonly debris: EnemyDebris;
+  private readonly overlay: DebugGeometryOverlay | null;
+  private ownsOverlay: boolean;
 
   constructor(
     private readonly host: ScenePresentationHost,
     private readonly assets: AssetCatalog,
     effects?: ScenePresentationEffects,
+    overlay: DebugGeometryOverlay | null = null,
   ) {
     this.trail = effects?.trail ?? new Trail();
     this.smoke = effects?.smoke ?? new DashSmoke();
     this.explosion = effects?.explosion ?? new EnemyExplosion();
     this.debris = effects?.debris ?? new EnemyDebris();
+    this.overlay = overlay;
+    this.ownsOverlay = overlay !== null;
+    if (overlay) this.mountOverlay(overlay);
   }
 
   get pixelScale(): number {
@@ -113,6 +129,7 @@ class ScenePresentationImpl implements ScenePresentation {
     this.smoke.clear();
     this.explosion.clear();
     this.debris.clear();
+    this.overlay?.reset();
     this.host.setStage(scene.stage);
   }
 
@@ -155,6 +172,7 @@ class ScenePresentationImpl implements ScenePresentation {
 
   render(scene: Scene): void {
     this.assertLive();
+    this.overlay?.update(scene);
     this.host.render(scene.stage, scene.camera, this.trail, this.smoke, this.explosion, this.debris);
   }
 
@@ -166,6 +184,16 @@ class ScenePresentationImpl implements ScenePresentation {
   setDecorations(decorations: readonly DecorationInstance[]): void {
     this.assertLive();
     this.host.setDecorations(decorations);
+  }
+
+  setDebugOptions(options: Partial<DebugRenderOptions>): void {
+    this.assertLive();
+    this.overlay?.setOptions(options);
+  }
+
+  debugOptions(): DebugRenderOptions {
+    this.assertLive();
+    return this.overlay?.options() ?? { ...DEBUG_RENDER_OPTIONS_OFF };
   }
 
   stats(): Record<string, string | number> {
@@ -181,7 +209,16 @@ class ScenePresentationImpl implements ScenePresentation {
     this.smoke.clear();
     this.explosion.clear();
     this.debris.clear();
+    if (this.ownsOverlay) this.overlay?.destroy();
+    else this.overlay?.reset();
     this.host.destroy();
+  }
+
+  private mountOverlay(overlay: DebugGeometryOverlay): void {
+    const parent = this.host.worldOverlay as Container | undefined;
+    if (parent && typeof parent.addChild === "function") {
+      parent.addChild(overlay.view as Container);
+    }
   }
 
   private attachPlayer(player: Scene["player"]): void {
@@ -207,7 +244,10 @@ export function createScenePresentationWithHost(
   options: CreateScenePresentationWithHostOptions = {},
 ): ScenePresentation {
   const assets = options.assets ?? createAssetCatalog();
-  const presentation = new ScenePresentationImpl(host, assets, options.effects);
+  const overlay =
+    options.debugOverlay === undefined ? new DebugOverlay() : options.debugOverlay;
+  const presentation = new ScenePresentationImpl(host, assets, options.effects, overlay);
+  if (options.debugOptions) presentation.setDebugOptions(options.debugOptions);
   if (options.decorations) presentation.setDecorations(options.decorations);
   presentation.bindScene(scene);
   return presentation;
