@@ -2,7 +2,9 @@ import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
 import type { Enemy, LifeCapsule, Scene, WeaponCapsule } from "@mmx/engine";
 import type { DecorationInstance } from "@mmx/content-schema";
 import type { DebugRenderOptions } from "../debug/options.js";
-import { createAssetCatalog, type AssetCatalog } from "./catalog.js";
+import { createAssetCatalog, resolveRendererAssetManifest, type AssetCatalog } from "./catalog.js";
+import type { RendererAssetBindings, RendererAssetManifest } from "../assets/manifest.js";
+import type { RendererAssetResolver } from "../assets/resolver.js";
 import {
   createScenePresentation,
   type ScenePresentation,
@@ -23,6 +25,9 @@ export interface StudioPlaytestRenderer {
 
 export interface CreatePlaytestRendererOptions {
   assets?: AssetCatalog;
+  manifest?: RendererAssetManifest;
+  resolver?: RendererAssetResolver;
+  bindings?: RendererAssetBindings;
   decorations?: readonly DecorationInstance[];
   debugOptions?: Partial<DebugRenderOptions>;
 }
@@ -42,6 +47,7 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
     host: HTMLElement,
     scene: Scene,
     assets: AssetCatalog,
+    manifest: RendererAssetManifest,
     decorations: readonly DecorationInstance[],
     debugOptions?: Partial<DebugRenderOptions>,
   ): Promise<PlaytestRendererImpl> {
@@ -60,6 +66,7 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
     try {
       presentation = await createScenePresentation(canvas, scene, {
         assets,
+        manifest,
         decorations,
         debugOptions,
       });
@@ -132,11 +139,13 @@ export async function createPlaytestRenderer(
   scene: Scene,
   options: CreatePlaytestRendererOptions = {},
 ): Promise<StudioPlaytestRenderer> {
-  const assets = options.assets ?? createAssetCatalog();
+  const manifest = resolveRendererAssetManifest(options);
+  const assets = options.assets ?? createAssetCatalog({ manifest });
   return PlaytestRendererImpl.create(
     host,
     scene,
     assets,
+    manifest,
     options.decorations ?? [],
     options.debugOptions,
   );

@@ -10,7 +10,13 @@ import {
 } from "../debug/options.js";
 import { EnemyDebris } from "../EnemyDebris.js";
 import { EnemyExplosion } from "../EnemyExplosion.js";
-import { createAssetCatalog, type AssetCatalog } from "../editor/catalog.js";
+import {
+  createAssetCatalog,
+  resolveRendererAssetManifest,
+  type AssetCatalog,
+} from "../editor/catalog.js";
+import type { RendererAssetBindings, RendererAssetManifest } from "../assets/manifest.js";
+import type { RendererAssetResolver } from "../assets/resolver.js";
 import { spriteSnapshot } from "../render/sprite.js";
 import { DASH_TRAIL, Trail } from "../Trail.js";
 import { dashSmokeOrigin, selectTrailStyle } from "./cosmetics.js";
@@ -35,6 +41,9 @@ export interface ScenePresentation {
 
 export interface ScenePresentationOptions {
   assets?: AssetCatalog;
+  manifest?: RendererAssetManifest;
+  resolver?: RendererAssetResolver;
+  bindings?: RendererAssetBindings;
   decorations?: readonly DecorationInstance[];
   debugOptions?: Partial<DebugRenderOptions>;
 }
@@ -243,7 +252,8 @@ export function createScenePresentationWithHost(
   scene: Scene,
   options: CreateScenePresentationWithHostOptions = {},
 ): ScenePresentation {
-  const assets = options.assets ?? createAssetCatalog();
+  const manifest = resolveRendererAssetManifest(options);
+  const assets = options.assets ?? createAssetCatalog({ manifest });
   const overlay = options.debugOverlay === undefined ? new DebugOverlay() : options.debugOverlay;
   const presentation = new ScenePresentationImpl(host, assets, options.effects, overlay);
   if (options.debugOptions) presentation.setDebugOptions(options.debugOptions);
@@ -257,10 +267,11 @@ export async function createScenePresentation(
   scene: Scene,
   options: ScenePresentationOptions = {},
 ): Promise<ScenePresentation> {
-  const assets = options.assets ?? createAssetCatalog();
+  const manifest = resolveRendererAssetManifest(options);
+  const assets = options.assets ?? createAssetCatalog({ manifest });
   await assets.load();
   const { Renderer } = await import("../render/Renderer.js");
-  const renderer = await Renderer.create(canvas, scene.stage);
+  const renderer = await Renderer.create(canvas, scene.stage, { manifest });
   try {
     return createScenePresentationWithHost(renderer, scene, { ...options, assets });
   } catch (error) {

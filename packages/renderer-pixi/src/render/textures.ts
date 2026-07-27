@@ -1,6 +1,6 @@
 import { Assets, Rectangle, Texture, TextureSource } from "pixi.js";
 import type { Region } from "@mmx/contracts/animation";
-import { shotAnims } from "./assets.js";
+import type { ShotAnimManifest } from "../assets/manifest.js";
 
 /**
  * Sheet loading and the sub-textures cut out of them.
@@ -102,7 +102,11 @@ export function textureCounts(): { sheets: number; regions: number } {
  * `frame` is clamped rather than wrapped: the engine already wraps looping shot
  * spin, and a finished one-shot hit effect should hold its last frame, not restart.
  */
-export function shotTexture(clipName: string, frame: number): Texture | null {
+export function shotTexture(
+  clipName: string,
+  frame: number,
+  shotAnims: ShotAnimManifest,
+): Texture | null {
   const clip = shotAnims.animations[clipName];
   if (!clip || clip.frames.length === 0) return null;
 

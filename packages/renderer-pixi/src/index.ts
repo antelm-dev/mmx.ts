@@ -2,7 +2,7 @@ export * from "./DashSmoke.js";
 export * from "./EnemyDebris.js";
 export * from "./EnemyExplosion.js";
 export * from "./Trail.js";
-export { Renderer } from "./render/Renderer.js";
+export { Renderer, type RendererCreateOptions } from "./render/Renderer.js";
 export { DecorationView } from "./render/DecorationView.js";
 export {
   DECORATION_ASSETS,
@@ -21,11 +21,28 @@ export {
   getDecorationPreview,
   loadEditorAssets,
   getSpritePreview,
+  resolveRendererAssetManifest,
   type AssetCatalog,
   type CreateAssetCatalogOptions,
   type EditorSpriteDefinition,
   type SpritePreview,
 } from "./editor/catalog.js";
+export {
+  buildRendererAssetManifest,
+  buildRendererAssetManifestFromProject,
+  createRendererAssetResolver,
+  manifestToPreviewTables,
+  validateRendererAssetManifest,
+  RendererAssetError,
+  type RendererAssetBindings,
+  type RendererAssetManifest,
+  type RendererAssetResolver,
+  type RendererAssetResolverContext,
+  type RendererAssetUrlResolver,
+  type ShotAnimManifest,
+} from "./assets/index.js";
+/** @deprecated Remove in prompt 07. Use injected manifests instead. */
+export { createBuiltinRendererAssetManifest } from "./assets/builtinCatalog.js";
 export {
   createPlaytestRenderer,
   type CreatePlaytestRendererOptions,
