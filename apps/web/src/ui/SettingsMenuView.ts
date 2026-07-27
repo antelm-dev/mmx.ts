@@ -1,7 +1,11 @@
 import { Container, Graphics, Text } from "pixi.js";
 import type { Action } from "@mmx/engine";
 import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
-import { BINDABLE_ACTIONS, DEFAULT_WINDOW_SCALE, type DesktopSettings } from "../DesktopBridge.js";
+import {
+  BINDABLE_ACTIONS,
+  DEFAULT_WINDOW_SCALE,
+  type DesktopSettings,
+} from "../settings/SettingsModel.js";
 import { TextLayer } from "./TextLayer.js";
 import {
   COLOR_BG,

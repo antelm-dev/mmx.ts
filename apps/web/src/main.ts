@@ -138,7 +138,11 @@ presenter.attach(debug.scene);
 
 async function main(): Promise<void> {
   await model.load();
-  sounds.setMasterVolume(model.get().masterVolume);
+  const applyVolume = (volume: number): void => {
+    sounds.setMasterVolume(volume);
+  };
+  applyVolume(model.get().masterVolume);
+  model.storeRef.subscribe((settings) => applyVolume(settings.audio.masterVolume));
   await lifecycle.applyInitial();
 
   await new ReplayIntegration(desktop, debug).start();
