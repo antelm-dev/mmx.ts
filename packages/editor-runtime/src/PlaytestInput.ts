@@ -1,8 +1,10 @@
 import {
   BrowserInput,
+  DEFAULT_TOOLING_BINDINGS,
+  isEditableKeyTarget,
+  type BrowserInputOptions,
   type GetGamepads,
-} from "@mmx/runtime/browser";
-import { TOOLING_BINDINGS } from "@mmx/runtime/tooling";
+} from "@mmx/browser-input";
 import type { Action } from "@mmx/engine";
 
 export type PlaytestAction = Action;
@@ -10,10 +12,22 @@ export type PlaytestAction = Action;
 export class PlaytestInput {
   private readonly browser: BrowserInput;
 
-  constructor(options?: { getGamepads?: GetGamepads }) {
+  constructor(
+    options?: {
+      getBindings?: BrowserInputOptions["getBindings"];
+      getGamepads?: GetGamepads;
+      beforeKeyDown?: BrowserInputOptions["beforeKeyDown"];
+      target?: BrowserInputOptions["target"];
+    },
+  ) {
     this.browser = new BrowserInput({
-      getBindings: () => TOOLING_BINDINGS,
+      getBindings: options?.getBindings ?? (() => DEFAULT_TOOLING_BINDINGS),
       getGamepads: options?.getGamepads,
+      target: options?.target,
+      beforeKeyDown: (e) => {
+        if (options?.beforeKeyDown?.(e)) return true;
+        return isEditableKeyTarget(e.target);
+      },
     });
   }
 
@@ -22,7 +36,7 @@ export class PlaytestInput {
   }
 
   clear(): void {
-    this.browser.reset();
+    this.browser.clear();
   }
 
   attach(): void {
@@ -34,11 +48,11 @@ export class PlaytestInput {
   }
 
   poll(dt: number): void {
-    this.browser.poll(dt, false);
+    this.browser.pollGamepads(dt, false);
   }
 
   /** @internal Packed mask for the fixed-step driver. Not part of the public contract. */
   toMask(): number {
-    return this.browser.toMask();
+    return this.browser.packedMask();
   }
 }

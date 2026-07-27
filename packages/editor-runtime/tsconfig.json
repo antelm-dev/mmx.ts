@@ -9,5 +9,13 @@
     "rootDir": "src",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../engine" },
+    { "path": "../browser-input" },
+    { "path": "../runtime" },
+    { "path": "../content-schema" },
+    { "path": "../content-engine-adapter" },
+    { "path": "../renderer-pixi" }
+  ]
 }

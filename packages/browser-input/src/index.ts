@@ -16,3 +16,4 @@ export {
   type NavigationCommand,
 } from "./BrowserInput.js";
 export { GamepadInput, type GetGamepads } from "./GamepadInput.js";
+export { isEditableKeyTarget } from "./editableTarget.js";

@@ -16,6 +16,7 @@ import {
 import {
   BrowserInput,
   DEFAULT_TOOLING_BINDINGS,
+  isEditableKeyTarget,
   type BrowserInputBindings,
   type BrowserInputOptions,
   type GetGamepads,
@@ -113,7 +114,10 @@ class ToolingRuntimeImpl implements ToolingRuntime {
     this.input = new BrowserInput({
       getBindings: options.getBindings ?? (() => TOOLING_BINDINGS),
       getGamepads: options.getGamepads,
-      beforeKeyDown: options.beforeKeyDown,
+      beforeKeyDown: (e) => {
+        if (options.beforeKeyDown?.(e)) return true;
+        return isEditableKeyTarget(e.target);
+      },
     });
   }
 
