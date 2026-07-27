@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import type { DecorationInstance } from "@mmx/content-schema";
 import {
   BODY_HALF_H,
   DASH_FX_OFFSET_X,
@@ -127,6 +128,7 @@ test("attachEnemy is idempotent and a dynamic enemy gets one death burst", () =>
   const presentation = createScenePresentationWithHost(host, live, {
     assets: catalog,
     effects: { trail: new Trail(), smoke: new DashSmoke(), explosion, debris },
+    debugOverlay: null,
   });
 
   const dynamic = spawnEnemy(
@@ -157,7 +159,7 @@ test("bindScene attaches actors already present in the Scene", () => {
 
   const { catalog, attached } = mockCatalog();
   const { host } = mockHost();
-  createScenePresentationWithHost(host, scene, { assets: catalog });
+  createScenePresentationWithHost(host, scene, { assets: catalog, debugOverlay: null });
 
   assert.equal(attached.players.length, 1);
   assert.equal(attached.players[0], scene.player);
@@ -178,6 +180,7 @@ test("rebinding clears every cosmetic effect and calls setStage", () => {
   const presentation = createScenePresentationWithHost(host, first, {
     assets: catalog,
     effects: { trail, smoke, explosion, debris },
+    debugOverlay: null,
   });
 
   smoke.spawn(1, 2, "dash", 1);
@@ -219,6 +222,7 @@ test("events from the old Scene are ignored after rebinding", () => {
   const presentation = createScenePresentationWithHost(host, first, {
     assets: catalog,
     effects: { trail: new Trail(), smoke, explosion, debris },
+    debugOverlay: null,
   });
 
   const oldPlayer = first.player;
@@ -256,6 +260,7 @@ test("stepCosmetics uses its dt argument rather than a hardcoded DT", () => {
   const presentation = createScenePresentationWithHost(host, scene, {
     assets: catalog,
     effects: { trail: new Trail(), smoke, explosion: new EnemyExplosion(), debris: new EnemyDebris() },
+    debugOverlay: null,
   });
 
   presentation.stepCosmetics(scene, 0.05);
@@ -273,8 +278,10 @@ test("destroy releases the host and disables further presentation use", () => {
   const presentation = createScenePresentationWithHost(host, scene, {
     assets: catalog,
     effects: { trail: new Trail(), smoke, explosion: new EnemyExplosion(), debris: new EnemyDebris() },
+    debugOverlay: null,
   });
 
+  presentation.destroy();
   presentation.destroy();
   assert.equal(isDestroyed(), true);
   assert.throws(() => presentation.stepCosmetics(scene, 1 / 60), /destroyed/);
@@ -282,4 +289,49 @@ test("destroy releases the host and disables further presentation use", () => {
 
   scene.player.events.emit("dash_smoke", "dash", 1);
   assert.equal(smoke.puffs.length, 0);
+});
+
+test("player animations attach exactly once across repeated bindScene calls", () => {
+  const scene = Scene.create({ seed: 10 });
+  const { catalog, attached } = mockCatalog();
+  const { host } = mockHost();
+  const presentation = createScenePresentationWithHost(host, scene, {
+    assets: catalog,
+    debugOverlay: null,
+  });
+
+  assert.equal(attached.players.length, 1);
+  presentation.bindScene(scene);
+  presentation.bindScene(scene);
+  assert.equal(attached.players.length, 1);
+  assert.equal(attached.players[0], scene.player);
+
+  presentation.destroy();
+});
+
+test("decorations survive presentation rebinding", () => {
+  const first = Scene.create({ seed: 11 });
+  const second = Scene.create({ seed: 12 });
+  const { catalog } = mockCatalog();
+  const decorations: DecorationInstance[] = [
+    { id: "d1", assetId: "prop.crate", x: 8, y: 8, layer: "world-front" },
+  ];
+  const seen: unknown[] = [];
+  const { host } = mockHost();
+  host.setDecorations = (instances) => {
+    seen.push(instances);
+  };
+
+  const presentation = createScenePresentationWithHost(host, first, {
+    assets: catalog,
+    decorations,
+    debugOverlay: null,
+  });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0], decorations);
+
+  presentation.bindScene(second);
+  assert.equal(seen.length, 1);
+
+  presentation.destroy();
 });
