@@ -18,7 +18,9 @@ export async function loadProjectBundle(): Promise<BrowserProjectBundle | null> 
 export function requireProjectBundle(bundle: BrowserProjectBundle | null): BrowserProjectBundle {
   if (!bundle?.rendererManifest) {
     throw new Error(
-      "MMX web requires a Studio project export. Run factory:dev or set MMX_PROJECT.",
+      "MMX web requires a Studio project export. " +
+        "For local play run `pnpm factory:dev -- --project <dir>`. " +
+        "Production builds require MMX_PROJECT (see README web project contract).",
     );
   }
   return bundle;

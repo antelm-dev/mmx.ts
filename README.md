@@ -20,10 +20,40 @@ pnpm install
 
 pnpm sim          # deterministic headless simulation, prints a state trace
 pnpm test         # unit tests (node:test) for gameplay behaviour
+pnpm build        # compile/typecheck packages (no production web artifact)
 pnpm play         # Vite development server -> http://localhost:5173
 pnpm desktop:dev    # launch the desktop app with Vite hot reload
 pnpm desktop:build  # build the native executable and platform installers
 ```
+
+### Web project contract
+
+Game sprites, sounds, fonts, and levels are **not** shipped inside this
+repository. They come from a Studio project export (for example
+`mmx-studio/templates/mmx-starter`). Core injects them at build time through
+`@mmx/build-tools` when `MMX_PROJECT` points at that export.
+
+| Command | `MMX_PROJECT` | Behavior |
+| ------- | ------------- | -------- |
+| `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message. |
+| `pnpm build` | not required | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`. |
+| `pnpm build:web` | **required** | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |
+| `pnpm factory:build -- --project <dir>` | via `--project` | Compiles a Studio export to disk (`dist-project` by default); does not replace `build:web`. |
+
+```bash
+# PowerShell
+$env:MMX_PROJECT = "E:\path\to\studio-export"
+pnpm build:web
+
+# bash
+MMX_PROJECT=/path/to/studio-export pnpm build:web
+```
+
+CI (`pnpm build`) validates libraries without a game project. The `web-dist`
+artifact is uploaded only when `MMX_PROJECT` is set for that workflow run, so a
+knowingly non-bootable bundle is never labeled as a production web build.
+Desktop production builds are gated the same way because they invoke
+`@mmx/web` `vite build` via Tauri's `beforeBuildCommand`.
 
 ### Versioning
 
@@ -302,8 +332,9 @@ scripts/              import-boundary and game-resource guard tests
 ```
 
 Game sprites, sounds, fonts, and animation metadata live in Studio project exports
-(`mmx-studio/templates/mmx-starter`). Core injects them at build time through
-`@mmx/build-tools` when `MMX_PROJECT` is set.
+(`mmx-studio/templates/mmx-starter`). Set `MMX_PROJECT` to that export directory
+before `pnpm build:web`, or use `pnpm factory:dev -- --project <dir>` for local
+play. See [Web project contract](#web-project-contract).
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
 on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends
