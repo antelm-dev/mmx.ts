@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { decodeReplay, describeInput } from "@mmx/engine";
 import { Recorder } from "@mmx/engine";
 import { Scene } from "@mmx/engine";
+import { loadProjectLevels, requireProjectDirectory } from "./project.js";
 
 /**
  * Replay a recording captured in the browser, headlessly.
  *
- *   pnpm replay <file.replay.json> [--trace] [--expect <digest>]
+ *   pnpm replay <file.replay.json> --project <dir> [--trace] [--expect <digest>]
  *
  * This is the other half of the debug HUD's recorder. A bug that reproduces once
  * in fifty attempts is not something you can iterate against; the same bug as a
@@ -36,7 +37,9 @@ function parseArgs(argv: string[]): Options {
   const args = argv.slice(2);
   const file = args.find((a) => !a.startsWith("--"));
   if (!file) {
-    console.error("usage: pnpm replay <file.replay.json> [--trace] [--expect <digest>]");
+    console.error(
+      "usage: pnpm replay <file.replay.json> --project <dir> [--trace] [--expect <digest>]",
+    );
     process.exit(2);
   }
   const expectIndex = args.indexOf("--expect");
@@ -47,9 +50,14 @@ function parseArgs(argv: string[]): Options {
   };
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const options = parseArgs(process.argv);
   const replay = decodeReplay(readFileSync(options.file, "utf8"));
+  const { levels } = await loadProjectLevels(requireProjectDirectory());
+  const level = levels.find((candidate) => candidate.identifier === replay.level);
+  if (!level) {
+    throw new Error(`Replay level '${replay.level}' is not present in the selected project.`);
+  }
 
   console.log(`replay: ${options.file}`);
   console.log(
@@ -66,7 +74,7 @@ function main(): void {
   if (options.trace) {
     // Stepped by hand rather than through Recorder.replay so the trace can be
     // printed as it goes; the state sequence is identical either way.
-    scene = Scene.create({ seed: replay.seed });
+    scene = Scene.create({ level, seed: replay.seed });
     console.log("frame |    posX |    posY |   velX |   velY | floor | hp | input      | state");
     console.log(
       "------+---------+---------+--------+--------+-------+----+------------+--------------",
@@ -84,7 +92,7 @@ function main(): void {
     }
     console.log("");
   } else {
-    scene = Recorder.replay(replay);
+    scene = Recorder.replay(replay, { level });
   }
 
   const elapsed = performance.now() - started;
@@ -115,4 +123,7 @@ function n(v: number): string {
   return v.toFixed(1).padStart(7);
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

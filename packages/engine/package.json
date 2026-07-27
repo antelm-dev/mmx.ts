@@ -44,7 +44,6 @@
     "@mmx/contracts": "workspace:*"
   },
   "devDependencies": {
-    "@mmx/ldtk-tools": "workspace:*",
     "@types/node": "^24.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"

@@ -21,6 +21,7 @@ import {
 } from "../src/presentation/ScenePresentation.js";
 import { dashSmokeOrigin, selectTrailStyle } from "../src/presentation/cosmetics.js";
 import { DASH_TRAIL, Trail, WALLSLIDE_TRAIL } from "../src/Trail.js";
+import { testLevel } from "./testLevel.js";
 
 function stubPlayer(state: string | null): Player {
   return {
@@ -120,7 +121,7 @@ test("other player states do not sample a sprite trail", () => {
 });
 
 test("attachEnemy is idempotent and a dynamic enemy gets one death burst", () => {
-  const live = Scene.create({ seed: 2 });
+  const live = Scene.create({ level: testLevel(), seed: 2 });
   const { catalog, attached } = mockCatalog();
   const { host } = mockHost();
   const explosion = new EnemyExplosion();
@@ -154,7 +155,7 @@ test("attachEnemy is idempotent and a dynamic enemy gets one death burst", () =>
 });
 
 test("bindScene attaches actors already present in the Scene", () => {
-  const scene = Scene.create({ seed: 3 });
+  const scene = Scene.create({ level: testLevel(), seed: 3 });
   assert.ok(scene.stage.enemies.length > 0);
 
   const { catalog, attached } = mockCatalog();
@@ -169,8 +170,8 @@ test("bindScene attaches actors already present in the Scene", () => {
 });
 
 test("rebinding clears every cosmetic effect and calls setStage", () => {
-  const first = Scene.create({ seed: 4 });
-  const second = Scene.create({ seed: 5 });
+  const first = Scene.create({ level: testLevel(), seed: 4 });
+  const second = Scene.create({ level: testLevel(), seed: 5 });
   const { catalog } = mockCatalog();
   const { host, stages } = mockHost();
   const trail = new Trail();
@@ -216,8 +217,8 @@ test("rebinding clears every cosmetic effect and calls setStage", () => {
 });
 
 test("events from the old Scene are ignored after rebinding", () => {
-  const first = Scene.create({ seed: 6 });
-  const second = Scene.create({ seed: 7 });
+  const first = Scene.create({ level: testLevel(), seed: 6 });
+  const second = Scene.create({ level: testLevel(), seed: 7 });
   const { catalog } = mockCatalog();
   const { host } = mockHost();
   const smoke = new DashSmoke();
@@ -251,7 +252,7 @@ test("events from the old Scene are ignored after rebinding", () => {
 });
 
 test("stepCosmetics uses its dt argument rather than a hardcoded DT", () => {
-  const scene = Scene.create({ seed: 8 });
+  const scene = Scene.create({ level: testLevel(), seed: 8 });
   const { catalog } = mockCatalog();
   const { host } = mockHost();
   const smoke = new DashSmoke();
@@ -280,7 +281,7 @@ test("stepCosmetics uses its dt argument rather than a hardcoded DT", () => {
 });
 
 test("destroy releases the host and disables further presentation use", () => {
-  const scene = Scene.create({ seed: 9 });
+  const scene = Scene.create({ level: testLevel(), seed: 9 });
   const { catalog } = mockCatalog();
   const { host, isDestroyed } = mockHost();
   const smoke = new DashSmoke();
@@ -306,7 +307,7 @@ test("destroy releases the host and disables further presentation use", () => {
 });
 
 test("player animations attach exactly once across repeated bindScene calls", () => {
-  const scene = Scene.create({ seed: 10 });
+  const scene = Scene.create({ level: testLevel(), seed: 10 });
   const { catalog, attached } = mockCatalog();
   const { host } = mockHost();
   const presentation = createScenePresentationWithHost(host, scene, {
@@ -324,8 +325,8 @@ test("player animations attach exactly once across repeated bindScene calls", ()
 });
 
 test("decorations survive presentation rebinding", () => {
-  const first = Scene.create({ seed: 11 });
-  const second = Scene.create({ seed: 12 });
+  const first = Scene.create({ level: testLevel(), seed: 11 });
+  const second = Scene.create({ level: testLevel(), seed: 12 });
   const { catalog } = mockCatalog();
   const decorations: DecorationInstance[] = [
     { id: "d1", assetId: "prop.crate", x: 8, y: 8, layer: "world-front" },

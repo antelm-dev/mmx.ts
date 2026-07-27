@@ -13,6 +13,7 @@ import {
   type ScenePresentationHost,
 } from "../src/presentation/ScenePresentation.js";
 import type { AssetCatalog } from "../src/editor/catalogCore.js";
+import { testLevel } from "./testLevel.js";
 
 function mockCatalog(): AssetCatalog {
   return {
@@ -92,7 +93,7 @@ test("mergeDebugRenderOptions patches independently", () => {
 });
 
 test("setDebugOptions is independent per flag and render updates the overlay", () => {
-  const scene = Scene.create({ seed: 20 });
+  const scene = Scene.create({ level: testLevel(), seed: 20 });
   const stub = stubOverlay();
   const presentation = createScenePresentationWithHost(mockHost(), scene, {
     assets: mockCatalog(),
@@ -119,7 +120,7 @@ test("setDebugOptions is independent per flag and render updates the overlay", (
 });
 
 test("debug overlay update path does not mutate scene digest", () => {
-  const scene = Scene.create({ seed: 21 });
+  const scene = Scene.create({ level: testLevel(), seed: 21 });
   const before = scene.digest();
   const stub = stubOverlay();
   const presentation = createScenePresentationWithHost(mockHost(), scene, {
@@ -142,8 +143,8 @@ test("debug overlay update path does not mutate scene digest", () => {
 });
 
 test("rebinding resets the debug overlay", () => {
-  const first = Scene.create({ seed: 22 });
-  const second = Scene.create({ seed: 23 });
+  const first = Scene.create({ level: testLevel(), seed: 22 });
+  const second = Scene.create({ level: testLevel(), seed: 23 });
   const stub = stubOverlay();
   const presentation = createScenePresentationWithHost(mockHost(), first, {
     assets: mockCatalog(),

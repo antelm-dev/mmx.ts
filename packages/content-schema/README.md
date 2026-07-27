@@ -18,7 +18,7 @@ It defines and validates:
 - **Stable terrain constants** (`TerrainTile`) for serializable document tiles.
 
 This package is the most stable domain layer in the monorepo. It does **not**
-depend on `@mmx/engine`, `@mmx/ldtk-tools`, the Studio, or any runtime adapter.
+depend on `@mmx/engine`, the Studio, or any runtime adapter.
 
 Conversion to engine `LevelData` and engine-backed validation live in
 `@mmx/editor-runtime/adapters`.

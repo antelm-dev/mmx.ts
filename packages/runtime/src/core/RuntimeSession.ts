@@ -15,7 +15,7 @@ export class RuntimeSession {
   private audio: RuntimeAudio | undefined;
   private disposed = false;
 
-  constructor(options: RuntimeSessionOptions = {}) {
+  constructor(options: RuntimeSessionOptions) {
     this.presentation = options.presentation;
     this.audio = options.audio;
     this.tooling = new ToolingSession(this.mergeSceneOptions(options.scene));
@@ -136,7 +136,7 @@ export class RuntimeSession {
     this.presentation?.render?.(this.tooling.scene);
   }
 
-  replaceScene(options: SceneOptions = {}): SimulationSnapshot {
+  replaceScene(options: SceneOptions): SimulationSnapshot {
     this.assertLive();
     this.tooling = new ToolingSession(this.mergeSceneOptions(options));
     this.rebind();
@@ -158,7 +158,7 @@ export class RuntimeSession {
     this.presentation?.render?.(this.tooling.scene);
   }
 
-  private mergeSceneOptions(scene: SceneOptions = {}): SceneOptions {
+  private mergeSceneOptions(scene: SceneOptions): SceneOptions {
     return {
       ...scene,
       onEnemySpawned: (enemy, index) => {

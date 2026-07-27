@@ -30,7 +30,7 @@ export interface PlayerRuntime {
   markTainted(): void;
   toReplay(): Replay;
   loadReplay(replay: Replay): SimulationSnapshot;
-  replaceScene(options?: SceneOptions): SimulationSnapshot;
+  replaceScene(options: SceneOptions): SimulationSnapshot;
   setPresentation(presentation: RuntimePresentation | undefined): void;
   setAudio(audio: RuntimeAudio | undefined): void;
   render(): void;
@@ -38,7 +38,7 @@ export interface PlayerRuntime {
   dispose(): void;
 }
 
-export function createPlayerRuntime(options: CreatePlayerRuntimeOptions = {}): PlayerRuntime {
+export function createPlayerRuntime(options: CreatePlayerRuntimeOptions): PlayerRuntime {
   const session = new RuntimeSession(options);
 
   return {

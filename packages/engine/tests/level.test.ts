@@ -1,39 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { Tile, World } from "../src/game/World.js";
-import { LEVEL } from "../src/game/level.js";
-import { level as STAGE1 } from "../src/game/levels/stage1.js";
-import { applySlopes, slopeRects, TILE } from "@mmx/ldtk-tools";
 import { Camera } from "../src/game/Camera.js";
-import { Player } from "../src/game/Player.js";
 import { Input } from "../src/core/Input.js";
 import { DT, TILE_SIZE } from "../src/core/constants.js";
-import { readFileSync } from "node:fs";
-
-/**
- * The authored text grid the LDtk project was built from. Read from the same file
- * the exporter uses rather than copied here, so there is one authority: this pins
- * the import pipeline (levels/stage1.ascii -> LDtk -> @mmx/ldtk-tools import ->
- * src/game/levels/stage1.ts) to geometry known to exercise every movement state.
- * If a deliberate edit is made in LDtk, update the .ascii alongside it.
- *
- * Parsed here rather than imported from @mmx/ldtk-tools's export CLI: that module
- * writes the .ldtk file and calls process.exit at import time.
- */
-const SOURCE = new URL("../../../levels/stage1.ascii", import.meta.url);
-
-function readFixture(url: URL): { legend: string[]; grid: string[] } {
-  const text = readFileSync(url, "utf8").replaceAll("\r\n", "\n");
-  const blank = text.indexOf("\n\n");
-  const body = blank === -1 ? text : text.slice(blank + 2);
-  return {
-    legend: (blank === -1 ? "" : text.slice(0, blank)).split("\n"),
-    grid: body.split("\n").filter((l) => l.length > 0),
-  };
-}
-
-const { legend: LEGEND, grid: AUTHORED } = readFixture(SOURCE);
+import { Player } from "../src/game/Player.js";
+import { World } from "../src/game/World.js";
+import { stage1 as STAGE1 } from "./fixtures/levels.js";
 
 const stage1Entities = (id: string) => STAGE1.entities.filter((entity) => entity.id === id);
 const stage1World = () => new World(STAGE1.tiles.slice(), STAGE1.cols, STAGE1.rows, STAGE1.slopes);
@@ -49,107 +22,15 @@ const STAGE1_CAMERA_ZONES = stage1Entities("CameraZone").map((e) => ({
   bindY: typeof e.fields.BindY === "boolean" ? e.fields.BindY : true,
 }));
 
-/** 'S' marks the spawn entity and leaves the tile itself empty. */
-const SPAWN_MARK = "S";
-
-const CHAR_TO_NAME: Record<string, string> = {
-  "#": "Solid",
-  "/": "SlopeUpRight",
-  "\\": "SlopeUpLeft",
-};
-
-const NAME_TO_TILE: Record<string, Tile> = {
-  Empty: Tile.Empty,
-  Solid: Tile.Solid,
-  SlopeUpRight: Tile.SlopeUpRight,
-  SlopeUpLeft: Tile.SlopeUpLeft,
-};
-
-/**
- * The Slope boxes the fixture declares in its legend, as `4x2 UpRight at 12,27`.
- *
- * A ramp shallower than 45 degrees has no character that could stand for it in
- * the grid — the whole point of the Slope entity is that steepness is not a
- * property a tile can carry — so the fixture names its boxes in prose instead
- * and this reads them back. Without it the .ascii would stop being the single
- * authority for the level's geometry the moment a ramp stopped being diagonal.
- */
-const DECLARED_SLOPES = LEGEND.flatMap((line) => {
-  const m = /^\s+(\d+)x(\d+)\s+(\w+)\s+at\s+(\d+),(\d+)$/.exec(line);
-  if (!m) return [];
-  const [, run, rise, dir, col, row] = m;
-  return [
-    {
-      x: Number(col) * TILE,
-      y: Number(row) * TILE,
-      w: Number(run) * TILE,
-      h: Number(rise) * TILE,
-      dir,
-    },
-  ];
-});
-
-/**
- * The authored grid with the fixture's Slope boxes baked over it, through the
- * same code the importer uses.
- */
-function authoredWorld(): World {
-  const rows = AUTHORED.map((r) => r.replaceAll(SPAWN_MARK, "."));
-  const cols = Math.max(...rows.map((r) => r.length));
-  const names: string[] = [];
-  for (let y = 0; y < rows.length; y++) {
-    for (let x = 0; x < cols; x++) names.push(CHAR_TO_NAME[rows[y][x]] ?? "Empty");
-  }
-  const slopes = applySlopes(names, cols, DECLARED_SLOPES, "levels/stage1.ascii");
-  return new World(
-    names.map((n) => NAME_TO_TILE[n]),
-    cols,
-    rows.length,
-    slopes,
-  );
-}
-
-test("the level's Slope boxes are the ones the fixture declares", () => {
-  assert.deepEqual(slopeRects(stage1Entities("Slope")), DECLARED_SLOPES);
-});
-
-test("the imported level reproduces the authored geometry tile for tile", () => {
-  const imported = stage1World();
-  const expected = authoredWorld();
-
-  assert.equal(imported.cols, expected.cols);
-  assert.equal(imported.rows, expected.rows);
-
-  for (let y = 0; y < expected.rows; y++) {
-    for (let x = 0; x < expected.cols; x++) {
-      const kind = expected.tileAt(x, y);
-      assert.equal(imported.tileAt(x, y), kind, `tile mismatch at ${x},${y}`);
-      // Two ramp tiles of the same kind can still be different ramps, so the
-      // shape has to be compared too — this is what a mis-baked slope shows up as.
-      assert.deepEqual(
-        imported.slopeProfile(x, y, kind),
-        expected.slopeProfile(x, y, kind),
-        `slope profile mismatch at ${x},${y}`,
-      );
-    }
-  }
-});
-
 test("the grid size the level was authored at matches the engine tile size", () => {
-  assert.equal(LEVEL.gridSize, TILE_SIZE);
+  assert.equal(STAGE1.gridSize, TILE_SIZE);
 });
 
-test("spawn comes from the LDtk Spawn entity and sits in open air above a floor", () => {
+test("spawn comes from the authored Spawn object and sits in open air above a floor", () => {
   assert.deepEqual(
     stage1Entities("Spawn").map((e) => e.id),
     ["Spawn"],
   );
-
-  // Located from the authored marker, so moving the spawn in the .ascii does not
-  // need this expectation restated.
-  const markY = AUTHORED.findIndex((r) => r.includes(SPAWN_MARK));
-  const markX = AUTHORED[markY].indexOf(SPAWN_MARK);
-  assert.deepEqual(STAGE1_SPAWN, { x: markX * TILE_SIZE, y: markY * TILE_SIZE });
 
   // The bug the old hand-counted constant documented: no ceiling directly above.
   const world = stage1World();

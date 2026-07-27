@@ -23,7 +23,7 @@ export class ToolingSession {
   private readonly recorder: Recorder;
   private revision = 0;
 
-  constructor(options: SceneOptions = {}) {
+  constructor(options: SceneOptions) {
     this.recorder = new Recorder(options);
   }
 

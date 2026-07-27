@@ -6,15 +6,17 @@ import { Input } from "../src/core/Input.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { CONVEYORS, HAZARDS, LEVEL, MOVING_PLATFORM_SPAWNS } from "../src/game/level.js";
+import { loadLevel } from "../src/game/level.js";
+import { stage2 } from "./fixtures/levels.js";
 
 test("the mechanics demo is larger than the original and authors every environment type", () => {
-  assert.ok(LEVEL.cols > 100);
-  assert.ok(LEVEL.rows > 32);
-  assert.ok(HAZARDS.length >= 1);
-  assert.ok(CONVEYORS.length >= 2);
-  assert.ok(CONVEYORS.every((belt) => belt.speed !== 0));
-  assert.ok(MOVING_PLATFORM_SPAWNS.length >= 3);
+  const level = loadLevel(stage2);
+  assert.ok(level.data.cols > 100);
+  assert.ok(level.data.rows > 32);
+  assert.ok(level.hazards.length >= 1);
+  assert.ok(level.conveyors.length >= 2);
+  assert.ok(level.conveyors.every((belt) => belt.speed !== 0));
+  assert.ok(level.platforms.length >= 3);
 });
 
 test("hazards bypass damage protection and start death immediately", () => {

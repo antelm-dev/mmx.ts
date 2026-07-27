@@ -1,10 +1,10 @@
 import type { SlopeMap, TerrainTile } from "@mmx/contracts/terrain";
 
-/** An entity placed on an LDtk Entities layer, in world pixels. */
+/** An authored entity placed in a level, in world pixels. */
 export interface LevelEntity {
-  /** The LDtk entity identifier, e.g. 'Spawn'. */
+  /** The engine entity identifier, e.g. 'Spawn'. */
   id: string;
-  /** Stable LDtk instance identifier, unique within the project. */
+  /** Stable authored instance identifier, unique within the project. */
   iid: string;
   x: number;
   y: number;
@@ -15,13 +15,14 @@ export interface LevelEntity {
    */
   w: number;
   h: number;
-  /** Custom LDtk fields, keyed by field identifier. */
+  /** Custom fields, keyed by field identifier. */
   fields: Record<string, unknown>;
 }
 
 /**
- * The engine-facing shape of a level: what survives the LDtk import in
- * @mmx/ldtk-tools. Modules matching this are generated into ./levels/.
+ * The engine-facing shape of a level. Studio project documents are compiled
+ * into this runtime shape by
+ * `@mmx/build-tools`.
  */
 export interface LevelData {
   identifier: string;
@@ -32,7 +33,7 @@ export interface LevelData {
   tiles: TerrainTile[];
   /**
    * Ramp shapes for the slope tiles that are not 45 degrees, baked out of the
-   * level's Slope entities by @mmx/ldtk-tools. Absent when every ramp in
+   * level's Slope objects by the project compiler. Absent when every ramp in
    * the level is a plain diagonal.
    */
   slopes?: SlopeMap;

@@ -76,7 +76,7 @@ export type PropertyType = "number" | "boolean" | "string" | "enum";
  * is decided by {@link PropertyMeta.scope}.
  */
 export interface PropertyMeta {
-  /** Storage key. For overrides this is the LDtk field name, e.g. "FacesRight". */
+  /** Storage key. For overrides this is the engine field name, e.g. "FacesRight". */
   key: string;
   /** Human label shown in the inspector. */
   label: string;
@@ -111,14 +111,14 @@ export interface GameObjectDefinition {
   category: string;
   /** Optional emoji/glyph icon for the palette and viewport label. */
   icon?: string;
-  /** The engine-facing LDtk entity id this definition emits, e.g. "Enemy". */
+  /** The engine-facing entity id this definition emits, e.g. "Enemy". */
   engineId: string;
   /**
    * Registered-behaviour configuration, keyed by component name. Values are
    * validated, editable data — never executable code.
    */
   components: Record<string, unknown>;
-  /** Base LDtk field values written for every instance, before overrides. */
+  /** Base engine field values written for every instance, before overrides. */
   fields: Record<string, unknown>;
   /** Default box size in world pixels for a freshly placed instance. */
   defaultSize: { width: number; height: number };
@@ -133,7 +133,7 @@ export interface GameObjectDefinition {
 }
 
 /**
- * One placed object in a level. `id` is the stable LDtk instance id (iid), which
+ * One placed object in a level. `id` is the stable authored instance id, which
  * is what makes a round-trip through {@link LevelData} idempotent.
  */
 export interface LevelObjectInstance {
@@ -150,7 +150,7 @@ export interface LevelObjectInstance {
 
 /**
  * A whole authored level. `tiles`/`slopes` carry the baked terrain unchanged
- * from the LDtk import so Play mode can hand them straight to the engine, while
+ * from project compilation so Play mode can hand them straight to the engine, while
  * `objects` are the editor-authored entities and `decorations` are presentation-
  * only sprites that never enter the engine.
  */

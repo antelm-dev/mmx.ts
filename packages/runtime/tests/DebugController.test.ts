@@ -2,9 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Recorder } from "@mmx/engine";
 import { createRecorderDebugHost, DebugController, TIME_SCALES } from "../src/debug/index.js";
+import { testLevel } from "./testLevel.js";
 
 test("debug controller pause, step queue, and time scale", () => {
-  const recorder = new Recorder({ seed: 7 });
+  const recorder = new Recorder({ level: testLevel(), seed: 7 });
   const debug = new DebugController({
     host: createRecorderDebugHost(recorder),
     now: () => 0,
@@ -30,7 +31,7 @@ test("debug controller pause, step queue, and time scale", () => {
 });
 
 test("debug controller checkpoint, seek, and invulnerability taint", () => {
-  const recorder = new Recorder({ seed: 11 });
+  const recorder = new Recorder({ level: testLevel(), seed: 11 });
   const debug = new DebugController({
     host: createRecorderDebugHost(recorder),
     now: () => 1000,
@@ -62,7 +63,7 @@ test("debug controller checkpoint, seek, and invulnerability taint", () => {
 });
 
 test("debug controller diagnostics include simulation and replay sections", () => {
-  const recorder = new Recorder({ seed: 3 });
+  const recorder = new Recorder({ level: testLevel(), seed: 3 });
   recorder.step(0);
   const debug = new DebugController({
     host: createRecorderDebugHost(recorder),

@@ -134,8 +134,9 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const projectDir = path.resolve(parsed.project);
-  const outDir = path.resolve(parsed.out ?? "dist-project");
+  const invocationRoot = process.env.INIT_CWD ?? process.cwd();
+  const projectDir = path.resolve(invocationRoot, parsed.project);
+  const outDir = path.resolve(invocationRoot, parsed.out ?? "dist-project");
   if (parsed.command === "dev") {
     await runDev(projectDir, parsed.port);
     return;

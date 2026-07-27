@@ -117,7 +117,7 @@ test("a ramp does not disturb a body standing well clear of it", () => {
 const RAMP_FOOT = 4;
 
 /**
- * A one-tile climb spread over `k` columns, built the way @mmx/ldtk-tools
+ * A one-tile climb spread over `k` columns, built the way the project compiler
  * bakes a Slope box: a run of ramp tiles whose profiles chain from one to the
  * next. Row 5 is the floor and the ramp climbs to a plateau at row 4.
  *

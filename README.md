@@ -7,7 +7,7 @@ dash-jump), hurt/knockback, plus buster shooting and charge shots.
 
 The engine is **pure TypeScript** with no runtime dependencies. It runs two ways:
 
-- **Headless** in Node (deterministic, scripted input) — `pnpm sim`
+- **Headless** in Node (deterministic, scripted input) — `pnpm sim -- --project <dir>`
 - **In the browser** on a canvas with real keyboard input — `pnpm play`
 
 ---
@@ -18,21 +18,22 @@ The engine is **pure TypeScript** with no runtime dependencies. It runs two ways
 pnpm install
 pnpm playwright:install   # Chromium for the required cross-repo browser boot test
 
-pnpm sim          # deterministic headless simulation, prints a state trace
+pnpm demo         # run the sibling Studio demo project in the browser
+pnpm sim -- --project ../mmx-studio/templates/mmx-demo
 pnpm test         # unit tests (node:test) for gameplay behaviour
 pnpm build        # compile/typecheck packages (no production web artifact)
-pnpm play         # Vite development server -> http://localhost:5173
 ```
 
 ### Web project contract
 
 Game sprites, sounds, fonts, and levels are **not** shipped inside this
 repository. They come from a Studio project export (for example
-`mmx-studio/templates/mmx-starter`). Core injects them at build time through
+`mmx-studio/templates/mmx-demo`). Core injects them at build time through
 `@mmx/build-tools` when `MMX_PROJECT` points at that export.
 
 | Command                                             | `MMX_PROJECT`                  | Behavior                                                                                                                                          |
 | --------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm demo`                                         | set by command                 | Runs the sibling `mmx-studio/templates/mmx-demo` project with both converted levels.                                                              |
 | `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message.                   |
 | `pnpm build`                                        | not required                   | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`.                                 |
 | `pnpm build:web`                                    | **required**                   | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |
@@ -197,9 +198,9 @@ tuning constant are ported line-for-line so the _feel_ matches.
   wall/reach queries become edge samples. Ramps are supported up to 45 degrees:
   a slope tile carries a linear surface between its two edge heights, and
   shallower ramps are a run of tiles whose surfaces chain. Level designers draw
-  them as resizable `Slope` boxes in LDtk — width is the run, height the rise —
-  which `@mmx/ldtk-tools` expands into those tiles at import.
-- **Interactive terrain** is authored as LDtk entities. `Conveyor` strips add
+  them as resizable `Slope` objects in Studio — width is the run, height the rise —
+  which the project compiler expands into those tiles.
+- **Interactive terrain** is authored as Studio objects. `Conveyor` strips add
   signed ground velocity, `MovingPlatform` boxes patrol horizontally as one-way
   floors and carry their riders, and `Hazard` boxes bypass ordinary damage
   protection to start the death/restart sequence immediately.
@@ -294,12 +295,12 @@ subclasses exactly as the original does.
 
 ## Project layout
 
-The active `MechanicsDemo` level is authored in `levels/stage2.ldtk`. At 160x48
-tiles it combines the complete movement kit with three moving bridges, conveyor
-runs, a lethal spike pit, several ramp gradients, wall-jump shafts, upper
-air-dash routes, camera zones, and both enemy types. Run `pnpm level:import` after
-editing an LDtk project to regenerate the engine level modules. The original
-`Stage1` remains as the compact movement regression level.
+The sibling `mmx-studio/templates/mmx-demo` project contains the active
+`MechanicsDemo` and compact `Stage1` regression levels. The 160x48 mechanics
+demo combines the complete movement kit with moving bridges, conveyor runs, a
+lethal spike pit, ramp gradients, wall-jump shafts, upper air-dash routes,
+camera zones, and both enemy types. Studio owns and exports those level
+documents; core only compiles their portable project representation.
 
 ```
 packages/
@@ -315,16 +316,14 @@ packages/
   contracts/          Serialized animation and terrain contracts (`@mmx/contracts/animation`, `/terrain`)
   content-schema/     authoring document model (`@mmx/content-schema`, `/slopes`)
   project-schema/     portable Studio export contract (`@mmx/project-schema`)
-  ldtk-tools/         LDtk project import/export used to author levels/
 apps/
   web/                browser composition, input, audio, UI and debug tools
   sim/                deterministic headless runner and replay CLI
-levels/               LDtk and authored level sources
 scripts/              import-boundary and game-resource guard tests
 ```
 
 Game sprites, sounds, fonts, and animation metadata live in Studio project exports
-(`mmx-studio/templates/mmx-starter`). Set `MMX_PROJECT` to that export directory
+(`mmx-studio/templates/mmx-demo`). Set `MMX_PROJECT` to that export directory
 before `pnpm build:web`, or use `pnpm factory:dev -- --project <dir>` for local
 play. See [Web project contract](#web-project-contract).
 
@@ -332,7 +331,8 @@ The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
 on `@mmx/engine`, while `@mmx/web` composes both packages. The simulator depends
 only on the engine, and the engine has no browser or rendering
 dependency. Run commands from the repository root so pnpm can select the correct
-workspace project.
+workspace project. The simulator also uses `@mmx/build-tools` to load an
+explicit Studio project; it does not rely on a built-in engine level.
 
 ## Package import boundaries
 

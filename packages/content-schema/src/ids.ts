@@ -1,7 +1,6 @@
 /**
- * Stable instance-id generation. Mirrors the LDtk `iid` shape (a UUID) so an
- * editor-created object round-trips through {@link import("./types.js").LevelDocument}
- * and the engine exactly like an LDtk-authored one.
+ * Stable instance-id generation. Uses UUIDs so editor-created objects round-trip
+ * through {@link import("./types.js").LevelDocument} and the engine unchanged.
  */
 
 let counter = 0;

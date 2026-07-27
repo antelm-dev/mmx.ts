@@ -53,6 +53,7 @@ async function bootstrap(): Promise<void> {
   const lifecycle = new AppLifecycle(desktop, model, presenter, (message) => debug.notify(message));
 
   debug = new DebugSession({
+    level: entryLevel(projectBundle),
     onEnemySpawned: (enemy) => presenter.attachEnemy(enemy),
     onPickupSpawned: (pickup) => presenter.attachPickup(pickup),
     onWeaponCapsuleSpawned: (capsule) => presenter.attachWeaponCapsule(capsule),
@@ -137,8 +138,6 @@ async function bootstrap(): Promise<void> {
   presenter.attach(debug.scene);
 
   await model.load();
-  debug.loadLevel(entryLevel(projectBundle));
-
   const applyVolume = (volume: number): void => {
     sounds.setMasterVolume(volume);
   };

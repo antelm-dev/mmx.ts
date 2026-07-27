@@ -9,6 +9,7 @@
     "replay": "tsx src/replay.ts"
   },
   "dependencies": {
+    "@mmx/build-tools": "workspace:*",
     "@mmx/engine": "workspace:*"
   },
   "devDependencies": {

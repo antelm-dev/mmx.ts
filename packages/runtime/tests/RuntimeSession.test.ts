@@ -5,12 +5,13 @@ import { createToolingRuntime } from "../src/tooling/createToolingRuntime.js";
 import { RuntimeSession } from "../src/core/RuntimeSession.js";
 import type { RuntimePresentation } from "../src/core/types.js";
 import type { Scene } from "@mmx/engine";
+import { testLevel } from "./testLevel.js";
 
 const SEED = 42;
 
 test("player and tooling facades match for the same seed and masks", () => {
-  const player = createPlayerRuntime({ scene: { seed: SEED } });
-  const tooling = createToolingRuntime({ scene: { seed: SEED } });
+  const player = createPlayerRuntime({ scene: { level: testLevel(), seed: SEED } });
+  const tooling = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
   const masks = [0, 1 << 1, 1 << 4, (1 << 1) | (1 << 4), 0, 1 << 5];
 
   for (const mask of masks) {
@@ -26,7 +27,7 @@ test("player and tooling facades match for the same seed and masks", () => {
 });
 
 test("pause blocks automatic stepping while manual step remains deterministic", async () => {
-  const tooling = createToolingRuntime({ scene: { seed: SEED } });
+  const tooling = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
   tooling.step(0);
   tooling.step(0);
   assert.equal(tooling.inspect().frame, 2);
@@ -86,7 +87,7 @@ test("scene replacement rebinds presentation and audio", () => {
     },
   };
   const session = new RuntimeSession({
-    scene: { seed: SEED },
+    scene: { level: testLevel(), seed: SEED },
     presentation,
     audio: {
       attachScene: (scene) => {
@@ -112,8 +113,8 @@ test("scene replacement rebinds presentation and audio", () => {
 });
 
 test("checkpoint restart restores deterministic state", () => {
-  const a = createToolingRuntime({ scene: { seed: SEED } });
-  const b = createToolingRuntime({ scene: { seed: SEED } });
+  const a = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
+  const b = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
 
   for (let i = 0; i < 5; i++) {
     a.step(1 << 1);
@@ -138,7 +139,7 @@ test("headless createPlayerRuntime does not need DOM globals", () => {
   if (hadWindow) Reflect.deleteProperty(globalThis, "window");
   if (hadRaf) Reflect.deleteProperty(globalThis, "requestAnimationFrame");
 
-  const runtime = createPlayerRuntime({ scene: { seed: SEED } });
+  const runtime = createPlayerRuntime({ scene: { level: testLevel(), seed: SEED } });
   runtime.step(0);
   assert.equal(runtime.inspect().frame, 1);
   runtime.dispose();

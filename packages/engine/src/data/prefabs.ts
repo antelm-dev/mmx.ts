@@ -4,7 +4,7 @@ import type { PrefabDefinition } from "./types.js";
  * Level-facing prefabs — the stable spawnables a {@link LevelEntity.prefabId}
  * references. Each resolves to a runtime spawner (by `runtime` id) and to one of
  * the definition categories, and declares the typed override fields it exposes to
- * a level author. The legacy LDtk-name mapping (Enemy+Kind=metool → enemy.metool
+ * a level author. The engine-name mapping (Enemy+Kind=metool → enemy.metool
  * and friends) lives at the level-compiler boundary, not here.
  */
 export const prefabs = {

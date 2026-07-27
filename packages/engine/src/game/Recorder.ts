@@ -34,7 +34,7 @@ export class Recorder {
   /** Set once a debug cheat perturbs the run; travels into the saved file. */
   private tainted = false;
 
-  constructor(private readonly options: SceneOptions = {}) {
+  constructor(private readonly options: SceneOptions) {
     this.scene = Scene.create(options);
   }
 
@@ -152,7 +152,7 @@ export class Recorder {
    * Replay a recording without a live scene — the headless path used by the sim
    * runner and the regression tests.
    */
-  static replay(replay: Replay, options: SceneOptions = {}): Scene {
+  static replay(replay: Replay, options: SceneOptions): Scene {
     const scene = Scene.create({ ...options, seed: replay.seed });
     if (replay.level !== scene.levelId) {
       throw new Error(

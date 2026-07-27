@@ -17,7 +17,6 @@ version depuis la CI.
 | `@mmx/browser-input`  |                |
 | `@mmx/content-schema` |                |
 | `@mmx/engine`         |                |
-| `@mmx/ldtk-tools`     |                |
 | `@mmx/renderer-pixi`  |                |
 | `@mmx/runtime`        |                |
 

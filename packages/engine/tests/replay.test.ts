@@ -13,6 +13,7 @@ import {
 } from "../src/core/Replay.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Scene } from "../src/game/Scene.js";
+import { stage2 } from "./fixtures/levels.js";
 
 /**
  * The replay system's whole value is one claim: seed plus per-tick input is
@@ -64,7 +65,7 @@ test("input masks round-trip through pack/apply", () => {
 test("the same seed and inputs produce an identical run", () => {
   const masks = script(240);
   const run = (): string => {
-    const scene = Scene.create({ seed: 1234 });
+    const scene = Scene.create({ level: stage2, seed: 1234 });
     for (const mask of masks) scene.step(mask);
     return scene.digest();
   };
@@ -75,7 +76,7 @@ test("the same seed and inputs produce an identical run", () => {
 test("a different seed produces a different run", () => {
   const masks = script(240);
   const digest = (seed: number): string => {
-    const scene = Scene.create({ seed });
+    const scene = Scene.create({ level: stage2, seed });
     for (const mask of masks) scene.step(mask);
     return scene.digest();
   };
@@ -87,17 +88,17 @@ test("a different seed produces a different run", () => {
 });
 
 test("a recorded run replays to the same state", () => {
-  const recorder = new Recorder({ seed: 0xc0ffee });
+  const recorder = new Recorder({ level: stage2, seed: 0xc0ffee });
   for (const mask of script(300)) recorder.step(mask);
 
   const live = recorder.scene.digest();
-  const replayed = Recorder.replay(recorder.toReplay()).digest();
+  const replayed = Recorder.replay(recorder.toReplay(), { level: stage2 }).digest();
 
   assert.equal(replayed, live, "replaying a recording must reproduce the run it captured");
 });
 
 test("a replay survives serialization", () => {
-  const recorder = new Recorder({ seed: 0xc0ffee });
+  const recorder = new Recorder({ level: stage2, seed: 0xc0ffee });
   for (const mask of script(300)) recorder.step(mask);
 
   const original = recorder.toReplay();
@@ -106,11 +107,11 @@ test("a replay survives serialization", () => {
   assert.deepEqual(decoded.frames, original.frames, "run-length encoding must be lossless");
   assert.equal(decoded.seed, original.seed);
   assert.equal(decoded.level, original.level);
-  assert.equal(Recorder.replay(decoded).digest(), recorder.scene.digest());
+  assert.equal(Recorder.replay(decoded, { level: stage2 }).digest(), recorder.scene.digest());
 });
 
 test("run-length encoding actually compresses held inputs", () => {
-  const recorder = new Recorder({ seed: 1 });
+  const recorder = new Recorder({ level: stage2, seed: 1 });
   for (const mask of script(600)) recorder.step(mask);
 
   const runs = (JSON.parse(encodeReplay(recorder.toReplay())) as { runs: unknown[] }).runs;
@@ -121,7 +122,7 @@ test("run-length encoding actually compresses held inputs", () => {
 
 test("rewinding reaches the state that frame originally had", () => {
   const masks = script(300);
-  const recorder = new Recorder({ seed: 42 });
+  const recorder = new Recorder({ level: stage2, seed: 42 });
 
   const checkpoints = new Map<number, string>();
   for (const [i, mask] of masks.entries()) {
@@ -139,7 +140,7 @@ test("rewinding reaches the state that frame originally had", () => {
 });
 
 test("input recorded after a rewind replaces the discarded future", () => {
-  const recorder = new Recorder({ seed: 7 });
+  const recorder = new Recorder({ level: stage2, seed: 7 });
   for (const mask of script(200)) recorder.step(mask);
 
   recorder.rewindTo(100);
@@ -149,14 +150,14 @@ test("input recorded after a rewind replaces the discarded future", () => {
   const replay = recorder.toReplay();
   assert.equal(replay.frames.length, 150, "the abandoned tail must not be saved");
   assert.equal(
-    Recorder.replay(replay).digest(),
+    Recorder.replay(replay, { level: stage2 }).digest(),
     recorder.scene.digest(),
     "the new branch must be what replays",
   );
 });
 
 test("a replay records the level and version it was made against", () => {
-  const recorder = new Recorder({ seed: 1 });
+  const recorder = new Recorder({ level: stage2, seed: 1 });
   recorder.step(0);
   const replay = recorder.toReplay();
 
@@ -166,7 +167,7 @@ test("a replay records the level and version it was made against", () => {
   // Loading a recording made elsewhere must fail rather than silently run the
   // same inputs against different geometry.
   assert.throws(
-    () => Recorder.replay({ ...replay, level: "some-other-level" }),
+    () => Recorder.replay({ ...replay, level: "some-other-level" }, { level: stage2 }),
     /recorded on level/,
   );
   assert.throws(
@@ -176,7 +177,7 @@ test("a replay records the level and version it was made against", () => {
 });
 
 test("cheats mark a recording as tainted", () => {
-  const recorder = new Recorder({ seed: 1 });
+  const recorder = new Recorder({ level: stage2, seed: 1 });
   recorder.step(0);
   assert.equal(recorder.toReplay().tainted, false);
 

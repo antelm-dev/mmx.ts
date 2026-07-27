@@ -1,8 +1,4 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [
-    "**/dist/**",
-    "**/public/**",
-    "packages/engine/src/game/levels/**"
-  ]
+  "ignorePatterns": ["**/dist/**", "**/public/**"]
 }

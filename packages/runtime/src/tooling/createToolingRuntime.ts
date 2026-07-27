@@ -64,7 +64,7 @@ export interface ToolingRuntime {
   nudgeTimeScale(delta: number): void;
   copyDiagnostics(): Promise<void>;
   diagnostics(): string;
-  replaceScene(options?: SceneOptions): SimulationSnapshot;
+  replaceScene(options: SceneOptions): SimulationSnapshot;
   setPresentation(presentation: RuntimePresentation | undefined): void;
   setAudio(audio: RuntimeAudio | undefined): void;
   render(): void;
@@ -80,7 +80,7 @@ export interface ToolingRuntime {
   dispose(): void;
 }
 
-export function createToolingRuntime(options: CreateToolingRuntimeOptions = {}): ToolingRuntime {
+export function createToolingRuntime(options: CreateToolingRuntimeOptions): ToolingRuntime {
   return new ToolingRuntimeImpl(options);
 }
 
@@ -232,7 +232,7 @@ class ToolingRuntimeImpl implements ToolingRuntime {
     return this.debug.diagnostics();
   }
 
-  replaceScene(options: SceneOptions = {}): SimulationSnapshot {
+  replaceScene(options: SceneOptions): SimulationSnapshot {
     return this.session.replaceScene(options);
   }
 

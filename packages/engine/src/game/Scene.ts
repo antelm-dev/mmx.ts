@@ -4,7 +4,7 @@ import { applyInput } from "../core/Replay.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
-import { LEVEL, loadLevel } from "./level.js";
+import { loadLevel } from "./level.js";
 import type { LevelData } from "./LevelData.js";
 import type { LifeCapsule, WeaponCapsule } from "./Pickup.js";
 import { Player } from "./Player.js";
@@ -31,8 +31,8 @@ export const DEFAULT_SEED = 0x9e3779b9;
 
 export interface SceneOptions {
   seed?: number;
-  /** Authored level to instantiate. Defaults to the mechanics demo. */
-  level?: LevelData;
+  /** Authored level to instantiate. Core does not ship a built-in game level. */
+  level: LevelData;
   /**
    * Called for each enemy as it spawns, before the first tick. The browser uses
    * it to attach clip data and audio; the headless sim passes nothing and the
@@ -62,7 +62,7 @@ export class Scene {
 
   private constructor(seed: number, options: SceneOptions) {
     this.seed = seed;
-    const level = loadLevel(options.level ?? LEVEL);
+    const level = loadLevel(options.level);
     this.level = level.data;
     this.input = new Input();
     this.world = level.world;
@@ -112,7 +112,7 @@ export class Scene {
     this.player.beginIntro();
   }
 
-  static create(options: SceneOptions = {}): Scene {
+  static create(options: SceneOptions): Scene {
     return new Scene(options.seed ?? DEFAULT_SEED, options);
   }
 

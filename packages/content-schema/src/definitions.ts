@@ -9,7 +9,7 @@ import type { GameObjectDefinition, LevelObjectInstance } from "./types.js";
  * exactly what the engine's `loadLevel` validates the `Kind` field against. The
  * remaining `properties` are the per-instance overrides the inspector edits.
  *
- * `engineId` is the LDtk entity id the adapter emits, so these stay in lockstep
+ * `engineId` is the engine entity id the adapter emits, so these stay in lockstep
  * with what `packages/engine/src/game/level.ts` reads.
  */
 

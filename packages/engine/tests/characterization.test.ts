@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { Tile } from "../src/game/World.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
-import { LEVEL_CATALOG } from "../src/game/level.js";
+import { levelCatalog } from "./fixtures/levels.js";
 import { makeBat, makeMetool } from "../src/game/enemies/index.js";
 import { World } from "../src/game/World.js";
 import {
@@ -309,7 +309,7 @@ test("a moving platform oscillates within its authored travel range", () => {
 // ---------------------------------------------------------------------------
 
 test("every catalog level loads into a scene", () => {
-  for (const level of LEVEL_CATALOG) {
+  for (const level of levelCatalog) {
     const scene = Scene.create({ level });
     assert.ok(scene.player, `${level.identifier} produced a player`);
     // One tick must not throw on any shipped level.

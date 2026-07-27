@@ -18,7 +18,7 @@ export interface RuntimeAudio {
 }
 
 export interface RuntimeSessionOptions {
-  scene?: SceneOptions;
+  scene: SceneOptions;
   presentation?: RuntimePresentation;
   audio?: RuntimeAudio;
 }

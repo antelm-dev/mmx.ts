@@ -60,7 +60,7 @@ export class World {
 
   /**
    * Takes an already-decoded row-major grid. Parsing lives outside so that a
-   * level format (see the LDtk import in @mmx/ldtk-tools) can produce tiles
+   * authored level format can produce tiles
    * directly instead of round-tripping through the ASCII characters below.
    *
    * `slopes` is sparse and keyed the same way as `tiles`: the overwhelming
