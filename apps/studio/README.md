@@ -27,7 +27,7 @@ Studio must import those packages (and `@mmx/runtime` / `@mmx/editor-runtime` /
 | Docking / tabs / floating panels                        | **Dockview** (`dockview-react`)                                                                                        |
 | Menus, tooltips, selects, checkboxes                    | **Radix UI** primitives + custom CSS variables                                                                         |
 | Ephemeral UI state (tabs, search, toasts, context menu) | **Zustand**                                                                                                            |
-| Editing viewport & Play mode                            | **Pixi.js** via `@mmx/renderer-pixi` + playtest via `@mmx/editor-runtime` → `@mmx/runtime/tooling` |
+| Editing viewport & Play mode                            | **Pixi.js** via `@mmx/renderer-pixi` + playtest via `@mmx/editor-runtime` → `@mmx/runtime/tooling`                     |
 | Document JSON editing                                   | **Monaco Editor** (self-hosted, no CDN)                                                                                |
 | Large scene tree & palette                              | **TanStack Virtual**                                                                                                   |
 | Problems panel                                          | **TanStack Table**                                                                                                     |

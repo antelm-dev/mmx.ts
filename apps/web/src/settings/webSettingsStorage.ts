@@ -1,8 +1,4 @@
-import {
-  parseSettings,
-  type ClientSettings,
-  type SettingsStorage,
-} from "@mmx/client-settings";
+import { parseSettings, type ClientSettings, type SettingsStorage } from "@mmx/client-settings";
 
 export const WEB_SETTINGS_STORAGE_KEY = "mmx.desktop-settings.v1";
 
@@ -34,7 +30,10 @@ export function readBrowserSettingsRaw(storage: Storage = localStorage): unknown
   return JSON.parse(text) as unknown;
 }
 
-export function writeBrowserSettings(settings: ClientSettings, storage: Storage = localStorage): void {
+export function writeBrowserSettings(
+  settings: ClientSettings,
+  storage: Storage = localStorage,
+): void {
   storage.setItem(WEB_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 }
 

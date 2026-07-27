@@ -2,10 +2,7 @@ import type { Container } from "pixi.js";
 import type { GameplaySounds } from "@mmx/browser-audio";
 import type { Enemy, LifeCapsule, Player, Scene, Stage, WeaponCapsule } from "@mmx/engine";
 import { createAssetCatalog } from "@mmx/renderer-pixi";
-import {
-  createScenePresentation,
-  type ScenePresentation,
-} from "@mmx/renderer-pixi/presentation";
+import { createScenePresentation, type ScenePresentation } from "@mmx/renderer-pixi/presentation";
 import type { DebugRenderOptions } from "@mmx/renderer-pixi/debug";
 
 export interface ScenePresenterOptions {

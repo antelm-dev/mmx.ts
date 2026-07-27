@@ -10,17 +10,17 @@ version depuis la CI.
 
 ## Packages concernés
 
-| Inclus (versionnés)           | Ignorés (apps) |
-| ----------------------------- | -------------- |
-| `@mmx/contracts`              | `@mmx/web`     |
-| `@mmx/browser-audio`          | `@mmx/desktop` |
-| `@mmx/browser-input`          | `@mmx/sim`     |
-| `@mmx/content-schema`         |                |
-| `@mmx/editor-runtime`         |                |
-| `@mmx/engine`                 |                |
-| `@mmx/ldtk-tools`             |                |
-| `@mmx/renderer-pixi`          |                |
-| `@mmx/runtime`                |                |
+| Inclus (versionnés)   | Ignorés (apps) |
+| --------------------- | -------------- |
+| `@mmx/contracts`      | `@mmx/web`     |
+| `@mmx/browser-audio`  | `@mmx/desktop` |
+| `@mmx/browser-input`  | `@mmx/sim`     |
+| `@mmx/content-schema` |                |
+| `@mmx/editor-runtime` |                |
+| `@mmx/engine`         |                |
+| `@mmx/ldtk-tools`     |                |
+| `@mmx/renderer-pixi`  |                |
+| `@mmx/runtime`        |                |
 
 Les packages restent `private: true`. Changesets les versionne quand même grâce
 à `privatePackages.version` dans `.changeset/config.json`.

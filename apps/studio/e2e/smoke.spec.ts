@@ -64,7 +64,9 @@ test("boots into the editor shell with the toolbar and default level", async () 
 });
 
 test("renders non-empty palette sprite previews", async () => {
-  const previews = page.locator('[title="spawn"] img, [title="enemy.metool"] img, [title="enemy.bat"] img');
+  const previews = page.locator(
+    '[title="spawn"] img, [title="enemy.metool"] img, [title="enemy.bat"] img',
+  );
   await expect(previews.first()).toBeVisible({ timeout: 15_000 });
 
   const count = await previews.count();
@@ -100,17 +102,14 @@ test("enters and exits Play mode without asset URL failures", async () => {
   await expect(page.getByText(/Could not start Play/)).toHaveCount(0);
 
   await expect
-    .poll(async () =>
-      playCanvas.evaluate((el: HTMLCanvasElement) => el.width * el.height),
-    )
+    .poll(async () => playCanvas.evaluate((el: HTMLCanvasElement) => el.width * el.height))
     .toBeGreaterThan(0);
 
   expect(undefinedAssetUrls, `undefined asset URLs: ${undefinedAssetUrls.join("\n")}`).toEqual([]);
   expect(pageErrors, `page errors: ${pageErrors.join("\n")}`).toEqual([]);
 
-  const relevantConsole = consoleErrors.filter(
-    (line) =>
-      /undefined|Failed to load|net::ERR_FILE_NOT_FOUND|Could not load sound/i.test(line),
+  const relevantConsole = consoleErrors.filter((line) =>
+    /undefined|Failed to load|net::ERR_FILE_NOT_FOUND|Could not load sound/i.test(line),
   );
   expect(relevantConsole, `console errors: ${relevantConsole.join("\n")}`).toEqual([]);
 

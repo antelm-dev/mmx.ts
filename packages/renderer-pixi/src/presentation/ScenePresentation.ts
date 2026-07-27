@@ -1,13 +1,6 @@
 import type { Container } from "pixi.js";
 import type { DecorationInstance } from "@mmx/content-schema";
-import type {
-  Camera,
-  Enemy,
-  LifeCapsule,
-  Scene,
-  Stage,
-  WeaponCapsule,
-} from "@mmx/engine";
+import type { Camera, Enemy, LifeCapsule, Scene, Stage, WeaponCapsule } from "@mmx/engine";
 import { DashSmoke } from "../DashSmoke.js";
 import { DebugOverlay } from "../debug/DebugOverlay.js";
 import {
@@ -173,7 +166,14 @@ class ScenePresentationImpl implements ScenePresentation {
   render(scene: Scene): void {
     this.assertLive();
     this.overlay?.update(scene);
-    this.host.render(scene.stage, scene.camera, this.trail, this.smoke, this.explosion, this.debris);
+    this.host.render(
+      scene.stage,
+      scene.camera,
+      this.trail,
+      this.smoke,
+      this.explosion,
+      this.debris,
+    );
   }
 
   fit(preferredScale?: number): void {
@@ -244,8 +244,7 @@ export function createScenePresentationWithHost(
   options: CreateScenePresentationWithHostOptions = {},
 ): ScenePresentation {
   const assets = options.assets ?? createAssetCatalog();
-  const overlay =
-    options.debugOverlay === undefined ? new DebugOverlay() : options.debugOverlay;
+  const overlay = options.debugOverlay === undefined ? new DebugOverlay() : options.debugOverlay;
   const presentation = new ScenePresentationImpl(host, assets, options.effects, overlay);
   if (options.debugOptions) presentation.setDebugOptions(options.debugOptions);
   if (options.decorations) presentation.setDecorations(options.decorations);

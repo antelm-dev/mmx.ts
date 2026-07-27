@@ -3,10 +3,7 @@ import { test } from "node:test";
 import { Texture } from "pixi.js";
 import { SHEET_URLS } from "../src/render/assets.js";
 import { Hud } from "../src/render/Hud.js";
-import {
-  loadSheets,
-  resetTextureCacheForTests,
-} from "../src/render/textures.js";
+import { loadSheets, resetTextureCacheForTests } from "../src/render/textures.js";
 
 const EXPECTED_SHEETS = {
   "x.png": "/sprites/player/x.png",

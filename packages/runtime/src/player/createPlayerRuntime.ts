@@ -7,18 +7,14 @@ import {
   type RuntimePresentation,
   type RuntimeSessionOptions,
 } from "../core/index.js";
-import {
-  FixedStepLoop,
-  type FixedStepLoopOptions,
-} from "../browser/FixedStepLoop.js";
+import { FixedStepLoop, type FixedStepLoopOptions } from "../browser/FixedStepLoop.js";
 
 export interface CreatePlayerRuntimeOptions extends RuntimeSessionOptions {}
 
-export interface PlayerLoopHooks
-  extends Pick<
-    FixedStepLoopOptions,
-    "onStep" | "onRender" | "onFrameStart" | "onFrameStats" | "onError"
-  > {
+export interface PlayerLoopHooks extends Pick<
+  FixedStepLoopOptions,
+  "onStep" | "onRender" | "onFrameStart" | "onFrameStats" | "onError"
+> {
   maxFrameSeconds?: number;
 }
 
@@ -42,9 +38,7 @@ export interface PlayerRuntime {
   dispose(): void;
 }
 
-export function createPlayerRuntime(
-  options: CreatePlayerRuntimeOptions = {},
-): PlayerRuntime {
+export function createPlayerRuntime(options: CreatePlayerRuntimeOptions = {}): PlayerRuntime {
   const session = new RuntimeSession(options);
 
   return {

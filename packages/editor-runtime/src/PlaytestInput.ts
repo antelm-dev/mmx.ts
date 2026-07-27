@@ -12,14 +12,12 @@ export type PlaytestAction = Action;
 export class PlaytestInput {
   private readonly browser: BrowserInput;
 
-  constructor(
-    options?: {
-      getBindings?: BrowserInputOptions["getBindings"];
-      getGamepads?: GetGamepads;
-      beforeKeyDown?: BrowserInputOptions["beforeKeyDown"];
-      target?: BrowserInputOptions["target"];
-    },
-  ) {
+  constructor(options?: {
+    getBindings?: BrowserInputOptions["getBindings"];
+    getGamepads?: GetGamepads;
+    beforeKeyDown?: BrowserInputOptions["beforeKeyDown"];
+    target?: BrowserInputOptions["target"];
+  }) {
     this.browser = new BrowserInput({
       getBindings: options?.getBindings ?? (() => DEFAULT_TOOLING_BINDINGS),
       getGamepads: options?.getGamepads,

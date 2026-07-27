@@ -1,10 +1,4 @@
-import type {
-  Enemy,
-  LifeCapsule,
-  Scene,
-  SceneOptions,
-  WeaponCapsule,
-} from "@mmx/engine";
+import type { Enemy, LifeCapsule, Scene, SceneOptions, WeaponCapsule } from "@mmx/engine";
 import type { SimulationSnapshot } from "@mmx/engine/tooling";
 
 export interface RuntimePresentation {

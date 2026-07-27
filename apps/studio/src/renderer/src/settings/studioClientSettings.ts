@@ -42,7 +42,9 @@ export function createStudioClientSettingsStore(
   return createClientSettingsStore({
     storage: createStudioSettingsStorage(),
     onSaveError: (error) => {
-      onSaveError?.(`settings save failed: ${error instanceof Error ? error.message : String(error)}`);
+      onSaveError?.(
+        `settings save failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     },
   });
 }

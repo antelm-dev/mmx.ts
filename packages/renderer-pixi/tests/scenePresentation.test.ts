@@ -186,13 +186,17 @@ test("rebinding clears every cosmetic effect and calls setStage", () => {
   smoke.spawn(1, 2, "dash", 1);
   explosion.spawn(3, 4);
   debris.spawn(5, 6);
-  trail.sample(1 / 30, {
-    x: 0,
-    y: 0,
-    region: { x: 0, y: 0, w: 1, h: 1 },
-    facing: 1,
-    layer: "normal",
-  }, DASH_TRAIL);
+  trail.sample(
+    1 / 30,
+    {
+      x: 0,
+      y: 0,
+      region: { x: 0, y: 0, w: 1, h: 1 },
+      facing: 1,
+      layer: "normal",
+    },
+    DASH_TRAIL,
+  );
   assert.ok(smoke.puffs.length > 0);
   assert.ok(explosion.puffs.length > 0);
   assert.ok(debris.chunks.length > 0);
@@ -259,7 +263,12 @@ test("stepCosmetics uses its dt argument rather than a hardcoded DT", () => {
   };
   const presentation = createScenePresentationWithHost(host, scene, {
     assets: catalog,
-    effects: { trail: new Trail(), smoke, explosion: new EnemyExplosion(), debris: new EnemyDebris() },
+    effects: {
+      trail: new Trail(),
+      smoke,
+      explosion: new EnemyExplosion(),
+      debris: new EnemyDebris(),
+    },
     debugOverlay: null,
   });
 
@@ -277,7 +286,12 @@ test("destroy releases the host and disables further presentation use", () => {
   const smoke = new DashSmoke();
   const presentation = createScenePresentationWithHost(host, scene, {
     assets: catalog,
-    effects: { trail: new Trail(), smoke, explosion: new EnemyExplosion(), debris: new EnemyDebris() },
+    effects: {
+      trail: new Trail(),
+      smoke,
+      explosion: new EnemyExplosion(),
+      debris: new EnemyDebris(),
+    },
     debugOverlay: null,
   });
 

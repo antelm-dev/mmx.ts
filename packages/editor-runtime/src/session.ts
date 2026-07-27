@@ -1,10 +1,7 @@
 import { documentToLevelData } from "./adapters/adapters.js";
 import type { LevelDocument } from "@mmx/content-schema";
 import type { Scene } from "@mmx/engine";
-import {
-  createToolingRuntime,
-  type ToolingRuntime,
-} from "@mmx/runtime/tooling";
+import { createToolingRuntime, type ToolingRuntime } from "@mmx/runtime/tooling";
 import type { RuntimePresentation } from "@mmx/runtime";
 import type { AssetCatalog, StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";
@@ -123,9 +120,7 @@ class PlaytestSession implements EditorPlaytestSession {
       runtime: mapSimulationSnapshot(inspect.simulation),
       selectedRuntimeId: this.selectedRuntimeId,
       sceneRevision: inspect.sceneRevision,
-      frameStats: this.browser
-        ? this.runtime.frameStats.toSnapshot()
-        : STOPPED_PLAYTEST.frameStats,
+      frameStats: this.browser ? this.runtime.frameStats.toSnapshot() : STOPPED_PLAYTEST.frameStats,
       debug: {
         timeScale: debug.timeScale,
         invulnerable: debug.invulnerable,

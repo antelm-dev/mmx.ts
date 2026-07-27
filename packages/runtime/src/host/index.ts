@@ -13,7 +13,9 @@ export interface WindowHost {
   setFullscreen(fullscreen: boolean): Promise<void>;
   applyIntegerScale?(scale: number): Promise<void>;
   maxIntegerScale?(): Promise<number>;
-  onFullscreenChanged?(listener: (value: boolean) => void): Promise<() => void> | (() => void) | void;
+  onFullscreenChanged?(
+    listener: (value: boolean) => void,
+  ): Promise<() => void> | (() => void) | void;
   onFocusChanged?(listener: (focused: boolean) => void): Promise<() => void> | (() => void) | void;
 }
 

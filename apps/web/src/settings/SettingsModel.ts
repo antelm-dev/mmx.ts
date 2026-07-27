@@ -93,8 +93,10 @@ export class SettingsModel {
 
   patch(partial: Partial<DesktopSettings>): void {
     this.store.patch({
-      audio: partial.masterVolume !== undefined ? { masterVolume: partial.masterVolume } : undefined,
-      gameplay: partial.pauseOnBlur !== undefined ? { pauseOnBlur: partial.pauseOnBlur } : undefined,
+      audio:
+        partial.masterVolume !== undefined ? { masterVolume: partial.masterVolume } : undefined,
+      gameplay:
+        partial.pauseOnBlur !== undefined ? { pauseOnBlur: partial.pauseOnBlur } : undefined,
       window: {
         fullscreen: partial.fullscreen,
         integerScale: partial.scale,

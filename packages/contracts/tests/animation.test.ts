@@ -1,7 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { assertAnimData, assertRegion, type AnimData, type Region } from "../src/animation/index.js";
+import {
+  assertAnimData,
+  assertRegion,
+  type AnimData,
+  type Region,
+} from "../src/animation/index.js";
 
 test("assertRegion accepts a valid atlas rectangle", () => {
   const region: Region = [8, 16, 24, 32];

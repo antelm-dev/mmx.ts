@@ -2,7 +2,13 @@
   "name": "@mmx/renderer-pixi",
   "version": "1.0.0",
   "private": true,
+  "files": [
+    "dist",
+    "assets"
+  ],
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,12 +26,6 @@
       "default": "./dist/debug/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "assets"
-  ],
   "scripts": {
     "sync-assets": "node scripts/sync-assets.mjs",
     "build": "pnpm run sync-assets && tsc -p tsconfig.json",
@@ -33,17 +33,17 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/contracts": "workspace:*",
     "@mmx/content-schema": "workspace:*",
+    "@mmx/contracts": "workspace:*",
     "@mmx/engine": "workspace:*"
-  },
-  "peerDependencies": {
-    "pixi.js": "^8.19.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "pixi.js": "^8.19.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
+  },
+  "peerDependencies": {
+    "pixi.js": "^8.19.0"
   }
 }

@@ -310,8 +310,7 @@ apps/
   desktop/            Tauri shell around the web app
 levels/               LDtk and authored level sources
 resources/            Shared sprites, sounds, fonts and animation metadata
-scripts/              asset importers + import-boundary guard tests
-fixtures/             lint fixtures (including import-boundaries)
+scripts/              asset importers + import-boundary guard tests and fixtures
 ```
 
 The workspace dependency is intentionally one-way: `@mmx/renderer-pixi` depends
@@ -367,6 +366,6 @@ policy, Studio canvas/`ResizeObserver`/decorations).
 2. Keep `package.json` `exports` limited to those entry points.
 3. Migrate callers to the public path; do not work around the rule with relative
    imports that cross package roots.
-4. Extend `fixtures/import-boundaries` only when adding a new _forbidden_
+4. Extend `scripts/__fixtures__/import-boundaries` only when adding a new _forbidden_
    pattern or a new _allowed_ public package entry that the guard should
    document.

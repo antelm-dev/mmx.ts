@@ -132,11 +132,15 @@ test("overlapping saves keep newest snapshot", async () => {
   await first.catch(() => undefined);
 
   assert.equal(storage.saves.at(-1)?.audio.masterVolume, 0.9);
-  assert.ok(storage.saves.every((save, index, all) => {
-    if (index === 0) return true;
-    return save.audio.masterVolume >= (all[index - 1]?.audio.masterVolume ?? 0) ||
-      save.audio.masterVolume === 0.9;
-  }));
+  assert.ok(
+    storage.saves.every((save, index, all) => {
+      if (index === 0) return true;
+      return (
+        save.audio.masterVolume >= (all[index - 1]?.audio.masterVolume ?? 0) ||
+        save.audio.masterVolume === 0.9
+      );
+    }),
+  );
 });
 
 test("observer subscribe and unsubscribe", async () => {

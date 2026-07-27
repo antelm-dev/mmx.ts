@@ -1,10 +1,4 @@
-import {
-  DT,
-  type Action,
-  type LevelData,
-  type Replay,
-  type SceneOptions,
-} from "@mmx/engine";
+import { DT, type Action, type LevelData, type Replay, type SceneOptions } from "@mmx/engine";
 import type { SimulationSnapshot } from "@mmx/engine/tooling";
 import {
   RuntimeSession,
@@ -21,10 +15,7 @@ import {
   type BrowserInputOptions,
   type GetGamepads,
 } from "@mmx/browser-input";
-import {
-  FixedStepLoop,
-  type FixedStepFrameStats,
-} from "../browser/FixedStepLoop.js";
+import { FixedStepLoop, type FixedStepFrameStats } from "../browser/FixedStepLoop.js";
 import {
   createRuntimeDebugHost,
   DebugController,
@@ -89,9 +80,7 @@ export interface ToolingRuntime {
   dispose(): void;
 }
 
-export function createToolingRuntime(
-  options: CreateToolingRuntimeOptions = {},
-): ToolingRuntime {
+export function createToolingRuntime(options: CreateToolingRuntimeOptions = {}): ToolingRuntime {
   return new ToolingRuntimeImpl(options);
 }
 
@@ -207,9 +196,7 @@ class ToolingRuntimeImpl implements ToolingRuntime {
   loadReplay(replay: Replay): SimulationSnapshot {
     this.session.loadReplay(replay);
     this.debug.setPaused(true);
-    this.debug.notify(
-      `loaded ${replay.frames.length} frames — paused at the end`,
-    );
+    this.debug.notify(`loaded ${replay.frames.length} frames — paused at the end`);
     return this.session.inspect().simulation;
   }
 

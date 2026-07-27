@@ -223,22 +223,8 @@ export class DebugOverlay {
     const { player } = scene;
     const { hw, hh, pos } = player;
 
-    strokeProbe(
-      g,
-      pos.x,
-      pos.y + hh + 1,
-      hw - 1,
-      1,
-      player.is_on_floor(),
-    );
-    strokeProbe(
-      g,
-      pos.x,
-      pos.y - hh - 1,
-      hw - 1,
-      1,
-      player.is_on_ceiling(),
-    );
+    strokeProbe(g, pos.x, pos.y + hh + 1, hw - 1, 1, player.is_on_floor());
+    strokeProbe(g, pos.x, pos.y - hh - 1, hw - 1, 1, player.is_on_ceiling());
 
     const wallTop = -hh + 2;
     const wallBottom = hh - 2;

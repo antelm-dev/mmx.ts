@@ -7,8 +7,9 @@ import { fileURLToPath } from "node:url";
 
 import { FORBIDDEN_SPECIFIERS, findForbiddenImports } from "./check-forbidden-imports.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const fixtures = path.join(root, "fixtures", "import-boundaries");
+const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(scriptsDir, "..");
+const fixtures = path.join(scriptsDir, "__fixtures__", "import-boundaries");
 
 function oxlint(files) {
   return spawnSync("pnpm", ["exec", "oxlint", "--deny-warnings", ...files], {

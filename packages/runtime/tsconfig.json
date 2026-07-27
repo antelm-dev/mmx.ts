@@ -10,5 +10,9 @@
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../engine" }, { "path": "../browser-input" }, { "path": "../client-settings" }]
+  "references": [
+    { "path": "../engine" },
+    { "path": "../browser-input" },
+    { "path": "../client-settings" }
+  ]
 }

@@ -2,10 +2,7 @@ import type { LevelDocument } from "@mmx/content-schema";
 import type { PlaytestAudio } from "./PlaytestAudio.js";
 import type { PlaytestInput } from "./PlaytestInput.js";
 import type { PlaytestSnapshot } from "./snapshots.js";
-import type {
-  ClipboardAccess,
-  ReplayFileAccess,
-} from "@mmx/runtime/debug";
+import type { ClipboardAccess, ReplayFileAccess } from "@mmx/runtime/debug";
 import type { BrowserInputBindings } from "@mmx/runtime/browser";
 
 export interface CreatePlaytestOptions {

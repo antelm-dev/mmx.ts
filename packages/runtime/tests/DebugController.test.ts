@@ -1,11 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Recorder } from "@mmx/engine";
-import {
-  createRecorderDebugHost,
-  DebugController,
-  TIME_SCALES,
-} from "../src/debug/index.js";
+import { createRecorderDebugHost, DebugController, TIME_SCALES } from "../src/debug/index.js";
 
 test("debug controller pause, step queue, and time scale", () => {
   const recorder = new Recorder({ seed: 7 });

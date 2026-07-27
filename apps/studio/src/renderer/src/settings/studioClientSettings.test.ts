@@ -4,10 +4,7 @@ import {
   DEFAULT_BINDINGS,
   SETTINGS_VERSION,
 } from "@mmx/client-settings";
-import {
-  createStudioSettingsStorage,
-  STUDIO_CLIENT_SETTINGS_KEY,
-} from "./studioClientSettings.js";
+import { createStudioSettingsStorage, STUDIO_CLIENT_SETTINGS_KEY } from "./studioClientSettings.js";
 
 describe("studio settings storage", () => {
   it("persists structured settings under the studio key", async () => {

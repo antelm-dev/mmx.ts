@@ -19,10 +19,7 @@ test("player and tooling facades match for the same seed and masks", () => {
   }
 
   assert.equal(player.inspect().frame, tooling.inspect().frame);
-  assert.equal(
-    player.inspect().simulation.digest,
-    tooling.inspect().simulation.digest,
-  );
+  assert.equal(player.inspect().simulation.digest, tooling.inspect().simulation.digest);
 
   player.dispose();
   tooling.dispose();

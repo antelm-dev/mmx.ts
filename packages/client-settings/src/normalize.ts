@@ -1,9 +1,5 @@
 import type { ClientSettings, KeyBindings } from "./types.js";
-import {
-  DEFAULT_WINDOW_SCALE,
-  MAX_WINDOW_SCALE,
-  SETTINGS_VERSION,
-} from "./types.js";
+import { DEFAULT_WINDOW_SCALE, MAX_WINDOW_SCALE, SETTINGS_VERSION } from "./types.js";
 import {
   BINDABLE_ACTIONS,
   cloneBindings,
@@ -67,7 +63,10 @@ export function isClientSettings(value: unknown): value is ClientSettings {
   );
 }
 
-export function normalizeSettings(settings: ClientSettings, maxScale = MAX_WINDOW_SCALE): ClientSettings {
+export function normalizeSettings(
+  settings: ClientSettings,
+  maxScale = MAX_WINDOW_SCALE,
+): ClientSettings {
   const next = cloneSettings(settings);
   next.audio.masterVolume = clampVolume(next.audio.masterVolume);
   next.window.integerScale = clampScale(next.window.integerScale, maxScale);
@@ -84,7 +83,9 @@ type FlatLegacy = {
   bindings: unknown;
 };
 
-function isFlatLegacy(value: Record<string, unknown>): value is FlatLegacy & Record<string, unknown> {
+function isFlatLegacy(
+  value: Record<string, unknown>,
+): value is FlatLegacy & Record<string, unknown> {
   return (
     typeof value.masterVolume === "number" &&
     typeof value.fullscreen === "boolean" &&
@@ -121,7 +122,9 @@ const MIGRATIONS: Record<number, Migration> = {
   }),
   3: (settings) => {
     if (!isFlatLegacy(settings)) {
-      throw new Error("client-settings: version 3 document is not a recognized flat settings shape");
+      throw new Error(
+        "client-settings: version 3 document is not a recognized flat settings shape",
+      );
     }
     return flatToStructured(settings) as unknown as Record<string, unknown>;
   },

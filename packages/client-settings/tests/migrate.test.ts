@@ -93,14 +93,18 @@ test("migration v3 flat becomes structured v4", () => {
 });
 
 test("malformed values fall back to defaults via parseSettings", () => {
-  assert.deepEqual(parseSettings({ version: 3, masterVolume: "loud" }).audio, DEFAULT_SETTINGS.audio);
+  assert.deepEqual(
+    parseSettings({ version: 3, masterVolume: "loud" }).audio,
+    DEFAULT_SETTINGS.audio,
+  );
   assert.equal(parseSettings("nope").version, SETTINGS_VERSION);
 });
 
 test("future versions fail safely", () => {
   assert.throws(
     () => migrateSettings({ version: 99, audio: { masterVolume: 1 } }),
-    (error: unknown) => error instanceof SettingsParseError && /newer than supported/.test(error.message),
+    (error: unknown) =>
+      error instanceof SettingsParseError && /newer than supported/.test(error.message),
   );
   assert.throws(() => parseSettings({ version: SETTINGS_VERSION + 1 }), SettingsParseError);
 });
