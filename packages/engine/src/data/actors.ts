@@ -11,6 +11,12 @@ export const actors = {
     body: { hw: 6, hh: 14 }, // BODY_HALF_W / BODY_HALF_H
     maxHealth: 32.0, // Actor.gd:6 MAX_HEALTH
   },
+  // Zero (MMZ1 GBA) — zero-x-mashup game/sheets/zero_moves.json.
+  "player.zero": {
+    id: "player.zero",
+    body: { hw: 7, hh: 15 }, // physics.hitbox_w 14 / hitbox_h 30, halved
+    maxHealth: 16, // life.max
+  },
   "enemy.metool": {
     id: "enemy.metool",
     body: { hw: 12, hh: 10 }, // Metool.tscn body extents

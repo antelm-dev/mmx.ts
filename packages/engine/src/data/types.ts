@@ -108,8 +108,8 @@ export interface LoadoutDefinition {
   slots: LoadoutSlot[];
   /** Weapon ids the actor may cycle through; first-class ordering. */
   weapons: string[];
-  /** Which weapon is equipped at spawn; must be one of {@link weapons}. */
-  initialWeapon: string;
+  /** Which weapon is equipped at spawn; must be one of {@link weapons}. Omitted only when unarmed. */
+  initialWeapon?: string;
 }
 
 /**
@@ -305,7 +305,7 @@ export interface CompiledLoadout {
   /** Resolved, config-merged ability slots in composition order. */
   abilities: CompiledAbility[];
   weapons: string[];
-  initialWeapon: string;
+  initialWeapon?: string;
 }
 
 /** A compiled enemy, with its reaction table pre-flattened for fast lookup. */

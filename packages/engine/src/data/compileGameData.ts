@@ -168,7 +168,11 @@ export function compileGameData(
         });
       }
     }
-    if (!l.weapons.includes(l.initialWeapon)) {
+    // An unarmed loadout (no weapons) omits initialWeapon; otherwise it must be listed.
+    if (
+      (l.weapons.length > 0 || l.initialWeapon !== undefined) &&
+      !l.weapons.includes(l.initialWeapon ?? "")
+    ) {
       error({
         code: "reference.invalid",
         definitionId: l.id,
