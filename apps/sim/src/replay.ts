@@ -53,7 +53,8 @@ function parseArgs(argv: string[]): Options {
 async function main(): Promise<void> {
   const options = parseArgs(process.argv);
   const replay = decodeReplay(readFileSync(options.file, "utf8"));
-  const { levels } = await loadProjectLevels(requireProjectDirectory());
+  const { project, levels } = await loadProjectLevels(requireProjectDirectory());
+  const loadoutId = project.manifest.player?.loadout;
   const level = levels.find((candidate) => candidate.identifier === replay.level);
   if (!level) {
     throw new Error(`Replay level '${replay.level}' is not present in the selected project.`);
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
   if (options.trace) {
     // Stepped by hand rather than through Recorder.replay so the trace can be
     // printed as it goes; the state sequence is identical either way.
-    scene = Scene.create({ level, seed: replay.seed });
+    scene = Scene.create({ level, loadoutId, seed: replay.seed });
     console.log("frame |    posX |    posY |   velX |   velY | floor | hp | input      | state");
     console.log(
       "------+---------+---------+--------+--------+-------+----+------------+--------------",
@@ -92,7 +93,7 @@ async function main(): Promise<void> {
     }
     console.log("");
   } else {
-    scene = Recorder.replay(replay, { level });
+    scene = Recorder.replay(replay, { level, loadoutId });
   }
 
   const elapsed = performance.now() - started;

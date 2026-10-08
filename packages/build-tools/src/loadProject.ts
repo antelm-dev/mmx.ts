@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { migrateDocument } from "@mmx/content-schema";
+import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import { parseProject } from "@mmx/project-schema";
 import { PROJECT_MANIFEST } from "./constants.js";
 import { validateLevelObjects } from "./compileLevel.js";
@@ -75,7 +76,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
     };
   }
 
-  const parsed = parseProject(raw);
+  const parsed = parseProject(raw, { loadoutIds: COMPILED_GAME_DATA.loadouts.keys() });
   if (!parsed.ok || !parsed.project) {
     return { ok: false, issues: toIssues(parsed.issues) };
   }

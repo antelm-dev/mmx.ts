@@ -14,11 +14,11 @@ import { loadEntryLevel, requireProjectDirectory } from "./project.js";
  */
 
 async function main(): Promise<void> {
-  const authoredLevel = await loadEntryLevel(requireProjectDirectory());
-  const level = loadLevel(authoredLevel);
+  const entry = await loadEntryLevel(requireProjectDirectory());
+  const level = loadLevel(entry.level);
   const input = new Input();
   const world = level.world;
-  const player = new Player(world, level.spawn.x, level.spawn.y, input);
+  const player = new Player(world, level.spawn.x, level.spawn.y, input, undefined, entry.loadoutId);
   const stage = new Stage(world, player);
   for (const [i, spawn] of level.enemies.entries()) {
     stage.add(spawnEnemy(spawn.kind, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i));

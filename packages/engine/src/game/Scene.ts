@@ -33,6 +33,8 @@ export interface SceneOptions {
   seed?: number;
   /** Authored level to instantiate. Core does not ship a built-in game level. */
   level: LevelData;
+  /** Compiled player loadout id (a project's `player.loadout`); the Player default when omitted. */
+  loadoutId?: string;
   /**
    * Called for each enemy as it spawns, before the first tick. The browser uses
    * it to attach clip data and audio; the headless sim passes nothing and the
@@ -66,7 +68,14 @@ export class Scene {
     this.level = level.data;
     this.input = new Input();
     this.world = level.world;
-    this.player = new Player(this.world, level.spawn.x, level.spawn.y, this.input, seed);
+    this.player = new Player(
+      this.world,
+      level.spawn.x,
+      level.spawn.y,
+      this.input,
+      seed,
+      options.loadoutId,
+    );
     this.camera = new Camera(this.world.widthPx, this.world.heightPx);
     this.camera.setZones(level.cameraZones);
     this.camera.snapTo(this.player.pos.x, this.player.pos.y);

@@ -36,6 +36,8 @@ export type BrowserProjectMeta = {
   name: string;
   gameVersion: string;
   entryLevelId: string;
+  /** project.json `player.loadout`; absent means the engine default loadout. */
+  playerLoadout?: string;
 };
 
 export type BrowserLevelBundle = {

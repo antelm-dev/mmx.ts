@@ -28,12 +28,14 @@ export async function loadProjectLevels(projectDir: string): Promise<{
   };
 }
 
-export async function loadEntryLevel(projectDir: string): Promise<LevelData> {
+export async function loadEntryLevel(
+  projectDir: string,
+): Promise<{ level: LevelData; loadoutId?: string }> {
   const { project, levels } = await loadProjectLevels(projectDir);
   const index = project.levels.findIndex((entry) => entry.id === project.manifest.entryLevelId);
   const level = levels[index];
   if (!level) {
     throw new Error(`Entry level '${project.manifest.entryLevelId}' is missing.`);
   }
-  return level;
+  return { level, loadoutId: project.manifest.player?.loadout };
 }
