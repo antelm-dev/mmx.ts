@@ -22,7 +22,7 @@ export const SPRITE_OFFSET_Y = -4;
  * The sprite as it stands right now, in draw-space coordinates.
  *
  * Anchored off the FEET, not pos.y: Actor.reduce_hitbox shrinks the dash hitbox from
- * the top, which slides the body center down 4px while the feet stay planted. In
+ * the top, which slides the body center down (4px for X) while the feet stay planted. In
  * Godot the sprite is a sibling of the CollisionShape2D so resizing it moved nothing;
  * here pos.y is the center, so anchoring to it would drop the whole sprite on dash.
  */

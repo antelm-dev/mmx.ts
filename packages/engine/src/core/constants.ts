@@ -518,3 +518,5 @@ export const VIEW_HEIGHT = 224;
 // (set from its loadout's actor), never these.
 export const BODY_HALF_W = _D.actors.get("player.x")!.body.hw;
 export const BODY_HALF_H = _D.actors.get("player.x")!.body.hh;
+/** X's dash crouch (Player.reduce_hitbox), for actors whose body does not set one. */
+export const DEFAULT_DASH_CROUCH = 4;

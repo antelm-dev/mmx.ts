@@ -4,6 +4,7 @@ import { World } from "./World.js";
 import {
   BODY_HALF_H,
   BODY_HALF_W,
+  DEFAULT_DASH_CROUCH,
   FLOOR_SNAP_LENGTH,
   GRAVITY,
   MAX_FALL_VELOCITY,
@@ -35,6 +36,8 @@ export class Actor {
   hh = BODY_HALF_H;
   /** Standing half-height — what increase_hitbox restores after a dash. */
   body_hh = BODY_HALF_H;
+  /** Pixels reduce_hitbox takes off the top while dashing (actor data). */
+  dash_crouch = DEFAULT_DASH_CROUCH;
 
   // facing / input direction
   direction = new Vec2(0, 0);
@@ -193,13 +196,13 @@ export class Actor {
   // sensor stays valid while dashing.
   reduce_hitbox(): void {
     if (this.hh === this.body_hh) {
-      this.pos.y += 4;
-      this.hh = this.body_hh - 4;
+      this.pos.y += this.dash_crouch;
+      this.hh = this.body_hh - this.dash_crouch;
     }
   }
   increase_hitbox(): void {
     if (this.hh !== this.body_hh) {
-      this.pos.y -= 4;
+      this.pos.y -= this.body_hh - this.hh;
       this.hh = this.body_hh;
     }
   }

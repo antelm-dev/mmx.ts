@@ -115,6 +115,21 @@ test("each loadout's actor sets the runtime body and health", () => {
   );
 });
 
+test("only X crouches while dashing: Zero keeps its full body", () => {
+  const dashHh = (loadout?: string): [number, number] => {
+    const input = new Input();
+    const p = new Player(room(), 80, 176 - 15, input, 1, loadout);
+    for (let i = 0; i < 30; i++) p.tick(DT);
+    const standing = p.hh;
+    input.setDown("dash", true);
+    for (let i = 0; i < 3; i++) p.tick(DT);
+    assert.ok(p.is_executing("Dash"), p.stateString());
+    return [standing, p.hh];
+  };
+  assert.deepEqual(dashHh(), [14, 10]);
+  assert.deepEqual(dashHh("player.zero"), [15, 15]);
+});
+
 test("X and Zero bodies collide differently under a low ceiling", () => {
   // Floor top at y=176 and a solid ceiling row whose underside is y=144: a 32px gap.
   const lowRoom = (): World => {

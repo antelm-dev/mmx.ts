@@ -14,7 +14,8 @@ export const actors = {
   // Zero (MMZ1 GBA) — zero-x-mashup game/sheets/zero_moves.json.
   "player.zero": {
     id: "player.zero",
-    body: { hw: 7, hh: 15 }, // physics.hitbox_w 14 / hitbox_h 30, halved
+    // physics.hitbox_w 14 / hitbox_h 30, halved; the sheet has no dash crouch.
+    body: { hw: 7, hh: 15, dashCrouch: 0 },
     maxHealth: 16, // life.max
   },
   "enemy.metool": {
