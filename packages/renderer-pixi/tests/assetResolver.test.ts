@@ -187,6 +187,45 @@ test("buildRendererAssetManifest resolves logical ids into preview tables", () =
   assert.equal(crop.imageUrl, "memory://sprites/enemies/metool.png");
 });
 
+const lemonShotAnims = {
+  sheets: { lemon: "image.player" },
+  animations: {
+    lemon: { loop: true, speed: 1, frames: [{ region: [0, 0, 16, 16] as const, duration: 1 }] },
+  },
+};
+
+test("buildRendererAssetManifest without a pointing sheet draws the arm layer from the normal sheet", () => {
+  const resolver = createRendererAssetResolver({
+    assets: fakeProject().assets,
+    resolveUrl: (asset) => `memory://${asset.path}`,
+  });
+  const { playerSheetPointing: _arm, ...noArm } = bindings;
+
+  const manifest = buildRendererAssetManifest(resolver, noArm, { shotAnims: lemonShotAnims });
+
+  assert.deepEqual(manifest.playerSheets, {
+    normal: "image.player",
+    pointing_cannon: "image.player",
+  });
+});
+
+test("buildRendererAssetManifest rejects armRegion frames when no pointing sheet is bound", () => {
+  const project = fakeProject();
+  const player = project.assets.find((asset) => asset.id === "anim.player");
+  assert.ok(player?.kind === "animation");
+  player.animations.idle.frames[0].armRegion = [0, 0, 8, 8];
+  const resolver = createRendererAssetResolver({
+    assets: project.assets,
+    resolveUrl: (asset) => `memory://${asset.path}`,
+  });
+  const { playerSheetPointing: _arm, ...noArm } = bindings;
+
+  assert.throws(
+    () => buildRendererAssetManifest(resolver, noArm, { shotAnims: lemonShotAnims }),
+    /armRegion/,
+  );
+});
+
 test("buildRendererAssetManifestFromProject wires project assets end-to-end", () => {
   const manifest = buildRendererAssetManifestFromProject(
     fakeProject(),

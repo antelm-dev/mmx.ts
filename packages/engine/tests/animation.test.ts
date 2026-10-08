@@ -162,6 +162,28 @@ test("shooting swaps the arm-pointing layer instead of changing the clip", () =>
   assert.equal(player.get_animation_layer(), "normal");
 });
 
+test("without armRegion frames the shot layer keeps drawing the normal frame", () => {
+  // A character with no detached arm sheet (Zero): same clips, no armRegion.
+  const noArm: AnimData = {
+    animations: Object.fromEntries(
+      Object.entries(animData.animations).map(([name, clip]) => [
+        name,
+        { ...clip, frames: clip.frames.map(({ armRegion: _arm, ...frame }) => frame) },
+      ]),
+    ),
+  };
+  const input = new Input();
+  const player = new Player(flatRoom(), 5 * 16, 10 * 16, input);
+  player.loadAnimations(noArm);
+  run(player, 5);
+
+  hold(input, "fire", true);
+  player.tick(DT);
+  hold(input, "fire", false);
+  assert.equal(player.get_animation_layer(), "pointing_cannon");
+  assert.deepEqual(player.currentRegion(), player.anim.currentFrame()?.region);
+});
+
 test("the arm-pointing atlas has a region for every frame of every clip", () => {
   for (const [name, clip] of Object.entries(animData.animations)) {
     for (const [i, frame] of clip.frames.entries()) {
