@@ -14,6 +14,7 @@ import { hashContent } from "../src/contentHash.js";
 import { levelDocumentToLevelData } from "../src/compileLevel.js";
 import { requireProject } from "../src/loadProject.js";
 import { planAssetEmission } from "../src/compileProject.js";
+import { createStudioShapedFixture } from "./helpers/createStudioShapedFixture.js";
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 const syntheticProject = path.join(fixturesDir, "synthetic-project");
@@ -103,5 +104,42 @@ test("repeated disk builds are deterministic for synthetic fixture", async () =>
   } finally {
     await fs.rm(outA, { recursive: true, force: true });
     await fs.rm(outB, { recursive: true, force: true });
+  }
+});
+
+test("browser bundle carries level image layers, backdrop and their resolved sheet URLs", async () => {
+  const fixture = await createStudioShapedFixture("mmx-image-layers-");
+  try {
+    const manifestPath = path.join(fixture.root, "project.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    manifest.assets.push({ id: "image.stage", kind: "image", path: "assets/stage.png" });
+    await fs.writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+    await fs.copyFile(
+      path.join(fixture.root, "assets/sprites/hud.png"),
+      path.join(fixture.root, "assets/stage.png"),
+    );
+    const levelPath = path.join(fixture.root, "levels/level.fixture.json");
+    const level = JSON.parse(await fs.readFile(levelPath, "utf8"));
+    const imageLayers = [
+      { id: "img.stage", assetId: "image.stage", x: 0, y: 0, parallax: 1, layer: "world-back" },
+    ];
+    await fs.writeFile(
+      levelPath,
+      JSON.stringify({ ...level, imageLayers, backdrop: "#3a1c5c" }),
+      "utf8",
+    );
+
+    const project = await requireProject(fixture.root);
+    const emission = await planAssetEmission(project);
+    const bundle = await compileBrowserProjectBundle(project, emission);
+
+    assert.deepEqual(bundle.levels[0]?.imageLayers, imageLayers);
+    assert.equal(bundle.levels[0]?.backdrop, "#3a1c5c");
+    assert.equal(
+      bundle.rendererManifest?.sheetUrls["image.stage"],
+      emission.byId["image.stage"]?.publicUrl,
+    );
+  } finally {
+    await fixture.dispose();
   }
 });

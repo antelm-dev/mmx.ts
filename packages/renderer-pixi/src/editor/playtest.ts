@@ -1,6 +1,6 @@
 import { DT, VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
 import type { Enemy, LifeCapsule, Scene, WeaponCapsule } from "@mmx/engine";
-import type { DecorationInstance } from "@mmx/content-schema";
+import type { DecorationInstance, LevelArt } from "@mmx/content-schema";
 import type { DebugRenderOptions } from "../debug/options.js";
 import { createAssetCatalog, resolveRendererAssetManifest, type AssetCatalog } from "./catalog.js";
 import type { RendererAssetBindings, RendererAssetManifest } from "../assets/manifest.js";
@@ -17,7 +17,7 @@ export interface StudioPlaytestRenderer {
   attachWeaponCapsule(capsule: WeaponCapsule): void;
   sampleCosmetics(scene: Scene): void;
   render(scene: Scene): void;
-  setDecorations(decorations: readonly DecorationInstance[]): void;
+  setDecorations(decorations: readonly DecorationInstance[], art?: LevelArt): void;
   setDebugOptions(options: Partial<DebugRenderOptions>): void;
   debugOptions(): DebugRenderOptions;
   destroy(): void;
@@ -29,6 +29,7 @@ export interface CreatePlaytestRendererOptions {
   resolver?: RendererAssetResolver;
   bindings?: RendererAssetBindings;
   decorations?: readonly DecorationInstance[];
+  levelArt?: LevelArt;
   debugOptions?: Partial<DebugRenderOptions>;
 }
 
@@ -49,6 +50,7 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
     assets: AssetCatalog,
     manifest: RendererAssetManifest,
     decorations: readonly DecorationInstance[],
+    levelArt: LevelArt | undefined,
     debugOptions?: Partial<DebugRenderOptions>,
   ): Promise<PlaytestRendererImpl> {
     const canvas = document.createElement("canvas");
@@ -68,6 +70,7 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
         assets,
         manifest,
         decorations,
+        levelArt,
         debugOptions,
       });
     } catch (error) {
@@ -81,8 +84,8 @@ class PlaytestRendererImpl implements StudioPlaytestRenderer {
     return instance;
   }
 
-  setDecorations(decorations: readonly DecorationInstance[]): void {
-    this.presentation.setDecorations(decorations);
+  setDecorations(decorations: readonly DecorationInstance[], art?: LevelArt): void {
+    this.presentation.setDecorations(decorations, art);
   }
 
   setDebugOptions(options: Partial<DebugRenderOptions>): void {
@@ -147,6 +150,7 @@ export async function createPlaytestRenderer(
     assets,
     manifest,
     options.decorations ?? [],
+    options.levelArt,
     options.debugOptions,
   );
 }

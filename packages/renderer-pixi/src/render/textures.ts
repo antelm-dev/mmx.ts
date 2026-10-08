@@ -111,6 +111,11 @@ export function regionTexture(sheet: string, region: Region): Texture | null {
   return texture;
 }
 
+/** A whole loaded sheet, e.g. a project stage image drawn uncut. */
+export function sheetTexture(sheet: string): Texture | null {
+  return sheets.get(sheet) ?? null;
+}
+
 /** How many sheets are loaded and how many sub-textures have been cut from them. */
 export function textureCounts(): { sheets: number; regions: number } {
   return { sheets: sheets.size, regions: regions.size };
