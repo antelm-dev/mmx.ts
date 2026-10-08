@@ -7,12 +7,26 @@ import {
   type WeaponCapsuleSpawn,
 } from "./Pickup.js";
 import type { World } from "./World.js";
+import { HIT_FX_FPS, HIT_FX_FRAME_COUNT } from "../core/constants.js";
 import {
   MovingPlatform,
   type Conveyor,
   type Hazard,
   type MovingPlatformSpawn,
 } from "./Environment.js";
+
+/**
+ * A melee impact burst. Same clip timing as a spent shot's hit particle
+ * (SpriteEffect, 4 frames at 32 fps); the renderer only reads `frame`.
+ */
+export interface HitSpark {
+  clip: string;
+  x: number;
+  y: number;
+  dir: number;
+  age: number;
+  frame: number;
+}
 
 export interface StageEnvironment {
   hazards?: readonly Hazard[];
@@ -43,6 +57,7 @@ export class Stage {
   readonly platforms: MovingPlatform[];
   readonly pickups: LifeCapsule[];
   readonly weaponCapsules: WeaponCapsule[];
+  readonly sparks: HitSpark[] = [];
 
   constructor(
     readonly world: World,
@@ -115,6 +130,7 @@ export class Stage {
       enemy.tick(dt);
     }
 
+    this.ageSparks(dt);
     this.resolveShots();
     this.resolveMelee();
     this.resolveContact();
@@ -238,7 +254,25 @@ export class Stage {
       if (!enemy.has_health() || swing.hit.has(enemy)) continue;
       if (!rectsOverlap(box, enemy.hurtbox)) continue;
       // ponytail: the saber never breaks guards; add a spec flag if one should.
-      if (strike(enemy, swing.damage, false)) swing.hit.add(enemy);
+      if (!strike(enemy, swing.damage, false)) continue;
+      swing.hit.add(enemy);
+      const hurt = enemy.hurtbox;
+      if (swing.hitFx) {
+        // Centre of the blade/hurtbox overlap, at the enemy's centre height.
+        const x = (Math.max(box.left, hurt.left) + Math.min(box.right, hurt.right)) / 2;
+        const dir = this.player.get_facing_direction();
+        this.sparks.push({ clip: swing.hitFx, x, y: enemy.pos.y, dir, age: 0, frame: 0 });
+      }
+    }
+  }
+
+  private ageSparks(dt: number): void {
+    for (const spark of this.sparks) {
+      spark.age += dt;
+      spark.frame = Math.floor(spark.age * HIT_FX_FPS);
+    }
+    for (let i = this.sparks.length - 1; i >= 0; i--) {
+      if (this.sparks[i].frame >= HIT_FX_FRAME_COUNT) this.sparks.splice(i, 1);
     }
   }
 

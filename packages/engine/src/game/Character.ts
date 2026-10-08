@@ -22,6 +22,8 @@ export interface MeleeSpec {
   damage: number;
   /** Ticks the box stays live, counting the tick it starts on. */
   activeFrames: number;
+  /** Effect clip played where the box lands (a projectile's `hitFx`); none when absent. */
+  hitFx?: string;
 }
 
 /** The swing in progress: its spec, ticks left, and who it has already hit. */

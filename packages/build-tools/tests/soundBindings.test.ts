@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
-import { GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
+import { GAMEPLAY_SOUND_IDS, OPTIONAL_GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
 import {
   compileBrowserProjectBundle,
   compileStudioSoundBindings,
@@ -67,6 +67,21 @@ test("compileStudioSoundBindings accepts complete required mappings", () => {
   assert.ok(result.soundIds.includes("sfx.jump"));
   assert.equal(result.soundIds.includes("jump"), false);
   assert.equal(result.soundIds.length, new Set(ids).size);
+});
+
+test("an optional gameplay sound is bound when present and never required", () => {
+  for (const runtimeName of OPTIONAL_GAMEPLAY_SOUND_IDS) {
+    assert.equal((GAMEPLAY_SOUND_IDS as readonly string[]).includes(runtimeName), false);
+  }
+  const sounds = completeStudioSounds({ slash: "sfx.slash" });
+  const ids = Object.values(sounds);
+  const result = compileStudioSoundBindings(
+    sounds,
+    manifestWithSounds(ids.map((id) => ({ id }))),
+    emissionFor(ids),
+  );
+  assert.equal(result.soundBindings.slash, "sfx.slash");
+  assert.ok(result.soundIds.includes("sfx.slash"));
 });
 
 test("compileStudioSoundBindings rejects missing required runtime mapping", () => {

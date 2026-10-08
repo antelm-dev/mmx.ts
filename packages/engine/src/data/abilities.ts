@@ -282,6 +282,9 @@ export const abilities = {
         damage: 2,
         chainWindow: 0,
       },
+      // The MMZ spark (object bank 1, script 2) is not in the project yet; the
+      // buster's Basic Hit burst ships with every template project.
+      hitFx: "lemon_hit",
     },
   },
 } satisfies Record<string, AbilityDefinition>;

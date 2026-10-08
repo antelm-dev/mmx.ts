@@ -318,7 +318,7 @@ export class Renderer {
     this.syncGhosts(trail);
     this.syncPlayer(player);
     this.syncAura(player);
-    this.syncShots(player);
+    this.syncShots(stage);
     this.syncExplosion(explosion);
     this.syncDebris(debris);
     this.syncSmoke(smoke);
@@ -493,9 +493,9 @@ export class Renderer {
    * hit particle, pinned to where the impact happened rather than where the shot
    * would have drifted to. Both come out of the engine's own frame counters.
    */
-  private syncShots(player: Player): void {
+  private syncShots(stage: Stage): void {
     this.shots.begin();
-    for (const p of player.projectiles) {
+    for (const p of stage.player.projectiles) {
       if (p.isLive) {
         const texture = shotTexture(p.kind, p.frame, this.manifest.shotAnims);
         if (texture) place(this.shots.next(), texture, p.x, p.y, p.dir);
@@ -506,6 +506,11 @@ export class Renderer {
       if (p.hitParticleFrame < 0) continue;
       const texture = shotTexture(p.stats.hitFx, p.hitParticleFrame, this.manifest.shotAnims);
       if (texture) place(this.shots.next(), texture, p.hitX, p.hitY, p.dir, p.hitFlipV);
+    }
+    // Melee impacts reuse the same burst clips, so they share the shots layer.
+    for (const spark of stage.sparks) {
+      const texture = shotTexture(spark.clip, spark.frame, this.manifest.shotAnims);
+      if (texture) place(this.shots.next(), texture, spark.x, spark.y, spark.dir);
     }
     this.shots.end();
   }

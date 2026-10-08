@@ -51,6 +51,7 @@ const ABILITY_SCHEMAS: Readonly<Record<string, Schema>> = {
     dashSlash: "slashStep",
     jumpSlash: "slashStep",
     wallSlash: "slashStep",
+    hitFx: "string",
   },
 };
 

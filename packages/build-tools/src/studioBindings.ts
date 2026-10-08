@@ -182,6 +182,7 @@ export function compileStudioSoundBindings(
     validateSoundBindingTarget(runtimeName, assetId, manifest, emission);
   }
 
+  // Everything else, OPTIONAL_GAMEPLAY_SOUND_IDS included, is validated only when bound.
   for (const [runtimeName, assetId] of Object.entries(studioSounds)) {
     if ((GAMEPLAY_SOUND_IDS as readonly string[]).includes(runtimeName)) continue;
     validateSoundBindingTarget(runtimeName, assetId, manifest, emission);
