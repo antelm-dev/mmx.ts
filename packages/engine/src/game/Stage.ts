@@ -6,7 +6,6 @@ import {
   type LifeCapsuleSpawn,
   type WeaponCapsuleSpawn,
 } from "./Pickup.js";
-import type { Projectile } from "./Projectile.js";
 import type { World } from "./World.js";
 import {
   MovingPlatform,
@@ -117,6 +116,7 @@ export class Stage {
     }
 
     this.resolveShots();
+    this.resolveMelee();
     this.resolveContact();
 
     // EnemyDeath frees the node at the end of its sequence.
@@ -215,20 +215,30 @@ export class Stage {
       if (!shot.isLive) continue;
       for (const enemy of this.enemies) {
         if (!enemy.has_health()) continue;
-        if (!overlaps(shot, enemy)) continue;
-
-        if (enemy.has_shield()) {
-          // Only the charged buster carries `break_guards` in the original.
-          enemy.hit_shield(shot.charge >= 2);
-        } else if (enemy.can_be_damaged()) {
-          enemy.damage(shot.damage);
-        } else {
-          continue; // invulnerable right now: the shot passes through
-        }
+        if (!rectsOverlap(shot.bounds, enemy.hurtbox)) continue;
+        // Only the charged buster carries `break_guards` in the original.
+        if (!strike(enemy, shot.damage, shot.charge >= 2)) continue; // passes through
 
         shot.hit(shot.x, shot.y);
         break;
       }
+    }
+  }
+
+  /**
+   * The player's melee box against enemy hurtboxes, through the same reaction
+   * as a shot. A swing is not spent on its first enemy: it can cut several, but
+   * each one only once, including a raised shield it bounced off.
+   */
+  private resolveMelee(): void {
+    const swing = this.player.melee;
+    const box = this.player.meleeBounds;
+    if (!swing || !box) return;
+    for (const enemy of this.enemies) {
+      if (!enemy.has_health() || swing.hit.has(enemy)) continue;
+      if (!rectsOverlap(box, enemy.hurtbox)) continue;
+      // ponytail: the saber never breaks guards; add a spec flag if one should.
+      if (strike(enemy, swing.damage, false)) swing.hit.add(enemy);
     }
   }
 
@@ -254,11 +264,22 @@ export class Stage {
   }
 }
 
-/** Projectile damage box against an enemy hurtbox. */
-function overlaps(shot: Projectile, enemy: Enemy): boolean {
-  const a = shot.bounds;
-  const b = enemy.hurtbox;
+type Rect = { left: number; right: number; top: number; bottom: number };
+
+/** A damage box (shot or melee) against an enemy hurtbox. */
+function rectsOverlap(a: Rect, b: Rect): boolean {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+/**
+ * EnemyShield/EnemyDamage reaction to one player hit. Returns false when the
+ * enemy is invulnerable right now, so the hit should pass through.
+ */
+function strike(enemy: Enemy, damage: number, breaksGuard: boolean): boolean {
+  if (enemy.has_shield()) enemy.hit_shield(breaksGuard);
+  else if (enemy.can_be_damaged()) enemy.damage(damage);
+  else return false;
+  return true;
 }
 
 /** Enemy body against the player body — both are centre + half-extents. */
