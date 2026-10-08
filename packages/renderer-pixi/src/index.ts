@@ -68,4 +68,4 @@ export {
   type DebugRenderOptions,
 } from "./debug/index.js";
 
-export { loadSheets, regionTexture } from "./render/textures.js";
+export { loadSheets, regionTexture, resetSheetCache } from "./render/textures.js";

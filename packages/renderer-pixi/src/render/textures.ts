@@ -84,6 +84,22 @@ export async function loadSheets(urls: Record<string, string>): Promise<void> {
   }
 }
 
+/**
+ * Forget every loaded sheet so the same keys can be loaded again from new URLs,
+ * e.g. when an editor opens another project. Pixi's own `Assets` cache is
+ * unloaded too, which destroys the old GPU textures: call this only once no
+ * renderer still draws them.
+ */
+export async function resetSheetCache(): Promise<void> {
+  // A load in flight would otherwise repopulate the maps after the clear.
+  await loadInflight?.catch(() => undefined);
+  const urls = [...new Set(sheetSourceUrls.values())];
+  sheets.clear();
+  sheetSourceUrls.clear();
+  regions.clear();
+  if (urls.length > 0) await Assets.unload(urls);
+}
+
 export function resetTextureCacheForTests(): void {
   sheets.clear();
   sheetSourceUrls.clear();
