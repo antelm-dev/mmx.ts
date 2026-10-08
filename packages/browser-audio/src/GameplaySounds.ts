@@ -2,6 +2,7 @@ import type { Enemy } from "@mmx/engine";
 import type { Player } from "@mmx/engine";
 import type { Scene } from "@mmx/engine";
 import type { SoundEffects } from "./SoundEffects.js";
+import { STAGE_MUSIC_ID } from "./soundIds.js";
 
 const CHARGE_LOOP: [number, number] = [51645 / 32000, 56497 / 32000];
 
@@ -35,6 +36,12 @@ export class GameplaySounds {
   attachScene(scene: Scene): void {
     this.stopSustained();
     this.attachPlayer(scene.player);
+    // A new scene is a level start or restart; play() is a no-op when the music is unbound.
+    this.effects.play(STAGE_MUSIC_ID, { loop: true });
+  }
+
+  stopMusic(): void {
+    this.effects.stop(STAGE_MUSIC_ID);
   }
 
   attachPlayer(player: Player): void {
@@ -48,6 +55,7 @@ export class GameplaySounds {
       } else if (name === "Damage") {
         this.effects.play("damage", { rate: [1, 1.1] });
       } else if (name === "Death") {
+        this.stopMusic();
         this.effects.play("playerDeath");
       } else if (name === "Intro") {
         this.effects.play("introAppear", { db: -14 });

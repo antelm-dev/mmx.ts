@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
-import { GAMEPLAY_SOUND_IDS, OPTIONAL_GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
+import {
+  GAMEPLAY_SOUND_IDS,
+  OPTIONAL_GAMEPLAY_SOUND_IDS,
+  STAGE_MUSIC_ID,
+} from "@mmx/browser-audio";
 import {
   compileBrowserProjectBundle,
   compileStudioSoundBindings,
@@ -82,6 +86,47 @@ test("an optional gameplay sound is bound when present and never required", () =
   );
   assert.equal(result.soundBindings.slash, "sfx.slash");
   assert.ok(result.soundIds.includes("sfx.slash"));
+});
+
+test("stage music is optional and carried into the sound bindings when bound", () => {
+  const sounds = completeStudioSounds();
+  const ids = Object.values(sounds);
+  const absent = compileStudioSoundBindings(
+    sounds,
+    manifestWithSounds(ids.map((id) => ({ id }))),
+    emissionFor(ids),
+  );
+  assert.equal(absent.soundBindings[STAGE_MUSIC_ID], undefined);
+
+  const withMusic = [...ids, "music.stage"];
+  const bound = compileStudioSoundBindings(
+    sounds,
+    manifestWithSounds(withMusic.map((id) => ({ id }))),
+    emissionFor(withMusic),
+    { stage: "music.stage" },
+  );
+  assert.equal(bound.soundBindings[STAGE_MUSIC_ID], "music.stage");
+  assert.ok(bound.soundIds.includes("music.stage"));
+});
+
+test("stage music bound to a missing asset fails the build", () => {
+  const sounds = completeStudioSounds();
+  const ids = Object.values(sounds);
+  assert.throws(
+    () =>
+      compileStudioSoundBindings(
+        sounds,
+        manifestWithSounds(ids.map((id) => ({ id }))),
+        emissionFor(ids),
+        { stage: "music.missing" },
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof ProjectBuildError);
+      assert.match(error.message, /music\.stage/);
+      assert.match(error.message, /music\.missing/);
+      return true;
+    },
+  );
 });
 
 test("compileStudioSoundBindings rejects missing required runtime mapping", () => {

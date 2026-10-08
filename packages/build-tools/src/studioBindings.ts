@@ -1,4 +1,9 @@
-import { collectBoundAssetIds, GAMEPLAY_SOUND_IDS, type SoundBindingMap } from "@mmx/browser-audio";
+import {
+  collectBoundAssetIds,
+  GAMEPLAY_SOUND_IDS,
+  STAGE_MUSIC_ID,
+  type SoundBindingMap,
+} from "@mmx/browser-audio";
 import type { AnimationAsset, ProjectAsset, ProjectDocument } from "@mmx/project-schema";
 import {
   createRendererAssetResolver,
@@ -18,6 +23,8 @@ export type StudioGameDataFile = {
     playerPointingSheet?: string;
     fontUi?: string;
     sounds: Record<string, string>;
+    /** Optional level background music (sound asset ids), looped while a level plays. */
+    music?: { stage?: string };
     enemyAnimations: Record<string, string>;
     pickupAnimations: Record<string, string>;
     shotAnimations: Record<string, string>;
@@ -170,6 +177,7 @@ export function compileStudioSoundBindings(
   studioSounds: Record<string, string>,
   manifest: ProjectDocument,
   emission: AssetEmissionPlan,
+  studioMusic?: { stage?: string },
 ): { soundBindings: SoundBindingMap; soundIds: string[] } {
   for (const runtimeName of GAMEPLAY_SOUND_IDS) {
     const assetId = studioSounds[runtimeName];
@@ -188,7 +196,11 @@ export function compileStudioSoundBindings(
     validateSoundBindingTarget(runtimeName, assetId, manifest, emission);
   }
 
-  const soundBindings: SoundBindingMap = { ...studioSounds };
+  const soundBindings: Record<string, string> = { ...studioSounds };
+  if (studioMusic?.stage !== undefined) {
+    validateSoundBindingTarget("music.stage", studioMusic.stage, manifest, emission);
+    soundBindings[STAGE_MUSIC_ID] = studioMusic.stage;
+  }
   return {
     soundBindings,
     soundIds: collectBoundAssetIds(soundBindings),
