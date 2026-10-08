@@ -29,6 +29,9 @@ import type { World } from "./World.js";
 
 export const DEFAULT_SEED = 0x9e3779b9;
 
+/** How far below the bottom of the view the player may fall before a pit kills. */
+const PIT_MARGIN = 32;
+
 export interface SceneOptions {
   seed?: number;
   /** Authored level to instantiate. Core does not ship a built-in game level. */
@@ -157,6 +160,11 @@ export class Scene {
         DT,
       );
     }
+    // MMX pit rule (zero-x-mashup Stage::in_pit): falling 32px past the bottom of
+    // the screen in the current camera section is death. The reference measures
+    // from the section's camera top (max_y + 224 + 32); a CameraZone bounds the
+    // view itself, so its bottom is already max_y + 224.
+    if (this.player.pos.y > this.camera.bottomLimit + PIT_MARGIN) this.player.kill();
     this.frame++;
   }
 
