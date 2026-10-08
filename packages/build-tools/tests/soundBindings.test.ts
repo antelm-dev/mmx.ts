@@ -166,6 +166,30 @@ test("studio-shaped bindings resolve every gameplay sound without legacy runtime
   }
 });
 
+test("studio-shaped project without playerPointingSheet compiles", async () => {
+  const fixture = await createStudioShapedFixture("mmx-no-arm-sheet-");
+  try {
+    const dataPath = path.join(fixture.root, "game/data.json");
+    const data = JSON.parse(await fs.readFile(dataPath, "utf8")) as {
+      bindings: { playerPointingSheet?: string };
+    };
+    delete data.bindings.playerPointingSheet;
+    await fs.writeFile(dataPath, JSON.stringify(data), "utf8");
+
+    const project = await requireProject(fixture.root);
+    const emission = await planAssetEmission(project);
+    const bundle = await compileBrowserProjectBundle(project, emission);
+
+    assert.equal(bundle.rendererBindings?.playerSheetPointing, undefined);
+    assert.deepEqual(bundle.rendererManifest?.playerSheets, {
+      normal: "sprite.fixture.player",
+      pointing_cannon: "sprite.fixture.player",
+    });
+  } finally {
+    await fixture.dispose();
+  }
+});
+
 test("incomplete studio-shaped sound map fails before browser bootstrap", async () => {
   const fixture = await createStudioShapedFixture("mmx-sound-bindings-");
   try {
