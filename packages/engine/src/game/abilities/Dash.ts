@@ -48,7 +48,7 @@ export class Dash extends Movement {
   }
 
   override _StartCondition(): boolean {
-    if (this.facing_a_wall()) return false;
+    if (this.facing_a_wall() || this.character.movement_locked) return false;
     return this.should_dash();
   }
 

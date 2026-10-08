@@ -52,6 +52,7 @@ test("a Player composes from the Zero loadout headlessly", () => {
       "DashWallJump",
       "Damage",
       "Death",
+      "Slash",
     ],
   );
 });

@@ -38,7 +38,10 @@ export class Shot extends Ability {
   /** Weapon.gd:can_shoot, dispatched onto whichever weapon is active — infinite
    *  ammo and capped on shots in flight for the buster; ammo-gated for a sub-weapon. */
   override _StartCondition(): boolean {
-    return !this.character.is_executing("Damage") && this.character.canFireActiveWeapon(0);
+    return (
+      !this.character.is_executing_either(["Damage", "Slash"]) &&
+      this.character.canFireActiveWeapon(0)
+    );
   }
 
   /** Shot.gd:play_animation_on_initialize — raise the buster, don't change clip. */
