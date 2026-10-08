@@ -123,4 +123,88 @@ export const abilities = {
     // CHARGE_MIN_TIME / CHARGE_LEVEL_3 / CHARGE_LEVEL_4 / CHARGE_MAX_TIME
     config: { minTime: 0.5, level3: 1.75, level4: 2.75, maxTime: 5.0 },
   },
+  // --- Zero (MMZ1 GBA) -------------------------------------------------------
+  // Same behaviours, layers and priorities as X; configs converted from
+  // zero-x-mashup game/sheets/zero_moves.json (px/frame and frames at 60 Hz):
+  // px/s = px/f x 60, s = frames / 60. "X's" marks a value the sheet lacks.
+  "zero.idle": {
+    id: "zero.idle",
+    behavior: "player.idle",
+    layer: "locomotion",
+    priority: 0,
+  },
+  "zero.walk": {
+    id: "zero.walk",
+    behavior: "player.walk",
+    layer: "locomotion",
+    priority: 1,
+    config: { speed: 90 }, // run_speed 1.5 px/f
+  },
+  "zero.fall": {
+    id: "zero.fall",
+    behavior: "player.fall",
+    layer: "locomotion",
+    priority: 1,
+    config: { dashFallSpeed: 210 }, // dash_speed 3.5 px/f (air control after a dash jump)
+  },
+  "zero.wall-slide": {
+    id: "zero.wall-slide",
+    behavior: "player.wall-slide",
+    layer: "locomotion",
+    priority: 3,
+    config: { speed: 90, startDelay: 0 }, // wall_slide_speed 1.5 px/f; slides on contact
+  },
+  "zero.dash": {
+    id: "zero.dash",
+    behavior: "player.dash",
+    layer: "locomotion",
+    priority: 4,
+    config: { speed: 210, duration: 0.5, leeway: 0.1 }, // dash_speed 3.5 px/f / dash_frames 30 / X's
+  },
+  "zero.jump": {
+    id: "zero.jump",
+    behavior: "player.jump",
+    layer: "locomotion",
+    priority: 5,
+    // jump_velocity 5.0 px/f. Zero's jump is an impulse then gravity: maxTime just
+    // under one tick at full proportion holds the rise for a single tick. Leeway X's.
+    config: { velocity: 300, maxTime: 0.016, leeway: 0.1, fullspeedProportion: 1 },
+  },
+  "zero.dash-jump": {
+    id: "zero.dash-jump",
+    behavior: "player.dash-jump",
+    layer: "locomotion",
+    priority: 6,
+    config: { speed: 210, dashDuration: 0.5 }, // dash_speed 3.5 px/f / dash_frames 30
+  },
+  "zero.wall-jump": {
+    id: "zero.wall-jump",
+    behavior: "player.wall-jump",
+    layer: "locomotion",
+    priority: 7,
+    // kicks immediately / wall_kick_frames 8 / pushed off at run_speed 1.5 px/f
+    config: { startDelay: 0, moveawayDuration: 8 / 60, moveawaySpeed: 90 },
+  },
+  "zero.dash-wall-jump": {
+    id: "zero.dash-wall-jump",
+    behavior: "player.dash-wall-jump",
+    layer: "locomotion",
+    priority: 7,
+  },
+  "zero.damage": {
+    id: "zero.damage",
+    behavior: "player.damage",
+    layer: "reaction",
+    priority: 100,
+    // life.hurt_frames 24 / invulnerable_frames 60 / knockback_speed 1.0 px/f;
+    // no knockback hop (the sheet keeps vertical speed). Hurt anim = streamed anim 49.
+    config: { duration: 0.4, invulnerability: 1.0, knockbackSpeed: 60, knockbackJumpVelocity: 0 },
+  },
+  "zero.death": {
+    id: "zero.death",
+    behavior: "player.death",
+    layer: "reaction",
+    priority: 200,
+    config: { restartDelay: 3.8 }, // X's (the sheet has no death sequence yet)
+  },
 } satisfies Record<string, AbilityDefinition>;

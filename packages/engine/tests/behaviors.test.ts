@@ -92,9 +92,9 @@ test("buildCompileRegistries covers every behaviour the default data references"
   }
 });
 
-test("the ability registry knows every player ability id", () => {
-  for (const id of Object.keys(GAME_DATA.abilities)) {
-    assert.equal(abilityRegistry.has(id), true, `missing ${id}`);
+test("the ability registry knows every player ability's behaviour", () => {
+  for (const { id, behavior } of Object.values(GAME_DATA.abilities)) {
+    assert.equal(abilityRegistry.has(behavior), true, `missing ${behavior} (${id})`);
   }
 });
 
