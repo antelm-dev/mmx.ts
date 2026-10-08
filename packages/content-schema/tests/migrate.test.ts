@@ -6,6 +6,7 @@ import {
   TerrainTile,
   createLevelDocument,
   migrateDocument,
+  validateImageLayers,
   validateDocument,
   type DecorationInstance,
   type LevelDocument,
@@ -118,4 +119,67 @@ test("known decoration assets validate clean", () => {
   };
   const result = validateDocument(doc, { knownDecorationAssetIds: new Set(["prop.crate"]) });
   assert.equal(result.ok, true, JSON.stringify(result.issues));
+});
+
+const stageImage = {
+  id: "img.stage",
+  assetId: "image.stage",
+  x: 0,
+  y: 0,
+  parallax: 1,
+  layer: "world-back" as const,
+};
+
+test("v2 documents without image layers stay valid and load unchanged", () => {
+  const doc = createLevelDocument();
+  const back = migrateDocument(JSON.parse(JSON.stringify(doc)));
+  assert.equal(back.imageLayers, undefined);
+  assert.equal(back.backdrop, undefined);
+  assert.equal(validateDocument(back, { imageAssetIds: [] }).ok, true);
+});
+
+test("serialize/parse round-trip keeps image layers and backdrop", () => {
+  const doc: LevelDocument = {
+    ...createLevelDocument(),
+    imageLayers: [stageImage, { ...stageImage, id: "img.bg", parallax: 0.5, layer: "background" }],
+    backdrop: "#3a1c5c",
+  };
+  const back = migrateDocument(JSON.parse(JSON.stringify(doc)));
+  assert.deepEqual(back.imageLayers, doc.imageLayers);
+  assert.equal(back.backdrop, "#3a1c5c");
+  assert.equal(validateDocument(back, { imageAssetIds: ["image.stage"] }).ok, true);
+});
+
+test("image layer validation covers id, asset, layer, transform, parallax, backdrop", () => {
+  const doc: LevelDocument = {
+    ...createLevelDocument(),
+    imageLayers: [
+      stageImage,
+      { ...stageImage }, // duplicate id
+      { ...stageImage, id: "bad-asset", assetId: "sprite.bg" },
+      { ...stageImage, id: "bad-layer", layer: "nope" as DecorationInstance["layer"] },
+      { ...stageImage, id: "bad-x", x: Number.POSITIVE_INFINITY },
+      { ...stageImage, id: "bad-parallax", parallax: -0.5 },
+    ],
+    backdrop: "purple",
+  };
+  const result = validateDocument(doc, { imageAssetIds: new Set(["image.stage"]) });
+  const codes = result.issues.map((i) => `${i.objectId ?? ""}:${i.code}`);
+  for (const expected of [
+    "img.stage:imageLayer.id",
+    "bad-asset:imageLayer.asset.unknown",
+    "bad-layer:imageLayer.layer",
+    "bad-x:imageLayer.transform",
+    "bad-parallax:imageLayer.parallax",
+    ":backdrop.color",
+  ]) {
+    assert.ok(codes.includes(expected), `${expected} missing from ${codes.join(", ")}`);
+  }
+  assert.equal(result.errorCount, 6);
+});
+
+test("image layer ids may not collide with object ids", () => {
+  const doc = createLevelDocument();
+  doc.imageLayers = [{ ...stageImage, id: doc.objects[0]!.id }];
+  assert.ok(validateImageLayers(doc).some((i) => i.code === "imageLayer.id"));
 });

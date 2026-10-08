@@ -59,6 +59,23 @@ export interface DecorationInstance {
   tint?: number;
 }
 
+/**
+ * One project-supplied stage image (e.g. a whole 8192×1024 stage painting).
+ * Presentation-only like decorations, but its `assetId` names a project asset of
+ * kind `image` rather than a renderer catalog entry.
+ */
+export interface ImageLayer {
+  id: string;
+  /** Project asset id; must reference an asset of kind `image`. */
+  assetId: string;
+  /** Top-left corner in world pixels. */
+  x: number;
+  y: number;
+  /** Scroll factor relative to the camera: 1 = world-locked, 0.5 = half speed, 0 = fixed. */
+  parallax: number;
+  layer: DecorationLayer;
+}
+
 /** How a definition is placed in the viewport. */
 export type Placement = "point" | "rectangle" | "path";
 
@@ -167,6 +184,10 @@ export interface LevelDocument {
   slopes?: SlopeMap;
   objects: LevelObjectInstance[];
   decorations: DecorationInstance[];
+  /** Project stage images, drawn among decoration layers. Never compiled into LevelData. */
+  imageLayers?: ImageLayer[];
+  /** Solid colour behind everything, as CSS hex `#rrggbb`. */
+  backdrop?: string;
 }
 
 /** A project groups levels and pins the schema version they were authored at. */

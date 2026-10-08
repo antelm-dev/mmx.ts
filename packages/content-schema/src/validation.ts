@@ -3,6 +3,7 @@ import { DECORATION_LAYERS } from "./types.js";
 import type {
   DecorationInstance,
   DecorationLayer,
+  ImageLayer,
   LevelDocument,
   LevelObjectInstance,
   ValidationIssue,
@@ -26,7 +27,11 @@ const LAYER_SET = new Set<string>(DECORATION_LAYERS);
 export interface ValidateDocumentOptions {
   /** When set, decoration `assetId`s not in this set are errors. */
   knownDecorationAssetIds?: ReadonlySet<string> | readonly string[];
+  /** When set, image layer `assetId`s not in this set (the project's `image` assets) are errors. */
+  imageAssetIds?: ReadonlySet<string> | readonly string[];
 }
+
+const BACKDROP_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 function boxOf(inst: LevelObjectInstance): { x: number; y: number; w: number; h: number } {
   const { width, height } = instanceSize(inst);
@@ -135,6 +140,115 @@ function validateDecoration(
       message: `Decoration '${deco.id}': flipY must be a boolean.`,
     });
   }
+}
+
+/**
+ * Checks `imageLayers` and `backdrop`. Exported separately so project loading can
+ * cross-check image asset ids without running the whole editor validation.
+ */
+export function validateImageLayers(
+  doc: LevelDocument,
+  imageAssetIds?: ReadonlySet<string> | readonly string[],
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const add = (issue: ValidationIssue): void => {
+    issues.push(issue);
+  };
+  const known =
+    imageAssetIds === undefined
+      ? undefined
+      : imageAssetIds instanceof Set
+        ? imageAssetIds
+        : new Set(imageAssetIds);
+
+  if (doc.backdrop !== undefined && !BACKDROP_PATTERN.test(String(doc.backdrop))) {
+    add({
+      severity: "error",
+      code: "backdrop.color",
+      field: "backdrop",
+      message: `backdrop '${String(doc.backdrop)}' must be a #rrggbb colour.`,
+    });
+  }
+
+  if (doc.imageLayers === undefined) return issues;
+  if (!Array.isArray(doc.imageLayers)) {
+    add({ severity: "error", code: "imageLayers.array", message: "imageLayers must be an array." });
+    return issues;
+  }
+
+  // Ids share the selection namespace with objects and decorations.
+  const seen = new Set<string>([
+    ...(doc.objects ?? []).map((o) => o.id),
+    ...(doc.decorations ?? []).map((d) => d.id),
+  ]);
+  for (const layer of doc.imageLayers as ImageLayer[]) {
+    const id = String(layer?.id);
+    if (!layer?.id || typeof layer.id !== "string" || seen.has(layer.id)) {
+      add({
+        severity: "error",
+        code: "imageLayer.id",
+        objectId: id,
+        field: "id",
+        message: `Image layer '${id}': id must be a non-empty string unique across the level.`,
+      });
+    }
+    seen.add(id);
+
+    if (!layer?.assetId || typeof layer.assetId !== "string") {
+      add({
+        severity: "error",
+        code: "imageLayer.asset",
+        objectId: id,
+        field: "assetId",
+        message: `Image layer '${id}': assetId is required.`,
+      });
+    } else if (known && !known.has(layer.assetId)) {
+      add({
+        severity: "error",
+        code: "imageLayer.asset.unknown",
+        objectId: id,
+        field: "assetId",
+        message: `Image layer '${id}': '${layer.assetId}' is not a project asset of kind 'image'.`,
+      });
+    }
+
+    if (!LAYER_SET.has(layer?.layer)) {
+      add({
+        severity: "error",
+        code: "imageLayer.layer",
+        objectId: id,
+        field: "layer",
+        message: `Image layer '${id}': layer '${String(layer?.layer)}' is invalid.`,
+      });
+    }
+
+    for (const key of ["x", "y"] as const) {
+      if (typeof layer?.[key] !== "number" || !Number.isFinite(layer[key])) {
+        add({
+          severity: "error",
+          code: "imageLayer.transform",
+          objectId: id,
+          field: key,
+          message: `Image layer '${id}': ${key} must be a finite number.`,
+        });
+      }
+    }
+
+    if (
+      typeof layer?.parallax !== "number" ||
+      !Number.isFinite(layer.parallax) ||
+      layer.parallax < 0
+    ) {
+      add({
+        severity: "error",
+        code: "imageLayer.parallax",
+        objectId: id,
+        field: "parallax",
+        message: `Image layer '${id}': parallax must be a finite number ≥ 0.`,
+      });
+    }
+  }
+  return issues;
 }
 
 /** Validate a whole document, returning every issue found. */
@@ -346,6 +460,8 @@ export function validateDocument(
       });
     }
   }
+
+  issues.push(...validateImageLayers(doc, options?.imageAssetIds));
 
   const errorCount = issues.filter((i) => i.severity === "error").length;
   const warningCount = issues.length - errorCount;
