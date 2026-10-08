@@ -2,6 +2,7 @@ import { Container, Graphics } from "pixi.js";
 import { TILE_SIZE } from "@mmx/engine";
 import { Tile, World } from "@mmx/engine";
 import type { Stage } from "@mmx/engine";
+import type { LevelArt } from "@mmx/content-schema";
 
 /**
  * The level's backdrop and collision geometry, built once.
@@ -152,11 +153,25 @@ function buildTiles(world: World): Graphics {
 /** Static terrain plus the authored mechanics that live in world space. */
 export class TerrainView {
   readonly view = new Container();
+  /** The collision tile fill and edges; hidden when the level art paints the world. */
+  readonly tiles: Graphics;
   private readonly moving = new Graphics();
 
   constructor(stage: Stage) {
-    this.view.addChild(buildTiles(stage.world), this.buildFeatures(stage), this.moving);
+    this.tiles = buildTiles(stage.world);
+    this.view.addChild(this.tiles, this.buildFeatures(stage), this.moving);
     this.sync(stage);
+  }
+
+  /**
+   * A world-back/world-front image layer is the level's painted terrain, so the
+   * collision blocks would only cover it: hide them, as the original game does.
+   * The debug overlay still draws collision geometry on demand.
+   */
+  setArt(art: LevelArt | undefined): void {
+    this.tiles.visible = !(art?.imageLayers ?? []).some(
+      (layer) => layer.layer === "world-back" || layer.layer === "world-front",
+    );
   }
 
   sync(stage: Stage): void {

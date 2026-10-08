@@ -84,6 +84,7 @@ export class Renderer {
   private readonly hud: Hud;
   private readonly paletteSwap = new PaletteSwapFilter();
   private terrain?: TerrainView;
+  private art?: LevelArt;
 
   /**
    * Where the debug overlay draws. Inside the scrolling scene and above every
@@ -207,12 +208,15 @@ export class Renderer {
       this.terrain.view.destroy({ children: true });
     }
     this.terrain = buildTerrain(stage);
+    this.terrain.setArt(this.art);
     this.scene.addChildAt(this.terrain.view, 1);
   }
 
   /** Rebuild static decorations for the current authored level (presentation-only). */
   setDecorations(instances: readonly DecorationInstance[], art?: LevelArt): void {
     this.decorations.setDecorations(instances, art);
+    this.art = art;
+    this.terrain?.setArt(art);
   }
 
   /**
