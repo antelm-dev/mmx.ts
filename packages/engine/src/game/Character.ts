@@ -13,6 +13,22 @@ import {
   WEAPON_ORDER,
   type WeaponId,
 } from "../core/constants.js";
+import type { Hitbox } from "../data/types.js";
+
+/** A strike volume to start with {@link Character.startMelee}. */
+export interface MeleeSpec {
+  /** Box relative to the body centre, authored facing right; mirrored by facing. */
+  box: Hitbox;
+  damage: number;
+  /** Ticks the box stays live, counting the tick it starts on. */
+  activeFrames: number;
+}
+
+/** The swing in progress: its spec, ticks left, and who it has already hit. */
+export interface MeleeSwing extends MeleeSpec {
+  framesLeft: number;
+  readonly hit: Set<object>;
+}
 
 /**
  * Input + high-level player API — port of Character.gd (and the input-facing parts
@@ -29,6 +45,8 @@ export class Character extends AbilityUser {
   block_charging = false;
 
   projectiles: Projectile[] = [];
+  /** Live strike volume, resolved against enemy hurtboxes by Stage like a projectile. */
+  melee: MeleeSwing | null = null;
 
   /**
    * Monotonic counter behind each projectile's {@link Projectile.runtimeId}.
@@ -120,6 +138,20 @@ export class Character extends AbilityUser {
     const dir = this.get_facing_direction();
     this.trackProjectile(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
     this.events.emit("shot_fired", charge);
+  }
+
+  /** Start a swing; a new one replaces the current, so each swing gets a fresh hit list. */
+  startMelee(spec: MeleeSpec): void {
+    this.melee = { ...spec, framesLeft: spec.activeFrames, hit: new Set() };
+  }
+
+  /** World-space AABB of the live melee box, or null when no swing is active. */
+  get meleeBounds(): { left: number; right: number; top: number; bottom: number } | null {
+    if (!this.melee) return null;
+    const { hw, hh, ox = 0, oy = 0 } = this.melee.box;
+    const cx = this.pos.x + ox * this.get_facing_direction();
+    const cy = this.pos.y + oy;
+    return { left: cx - hw, right: cx + hw, top: cy - hh, bottom: cy + hh };
   }
 
   /**
@@ -286,6 +318,9 @@ export class Character extends AbilityUser {
       this.events.emit("input_dash");
     }
     this.updateWeaponSwitch();
+    // Counted down before abilities run, so a swing started this tick is live
+    // for this tick's Stage resolve and exactly activeFrames - 1 more.
+    if (this.melee && --this.melee.framesLeft <= 0) this.melee = null;
 
     this.stepAbilities(dt);
     this.physicsStep(dt);
