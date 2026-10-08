@@ -1,11 +1,13 @@
 import { Enemy, type EnemyKind } from "../Enemy.js";
 import type { World } from "../World.js";
+import { PANTHEON_SHOT } from "../../core/constants.js";
 import { Death } from "../enemy/Death.js";
 import { Hide } from "../enemy/Hide.js";
 import { Hover } from "../enemy/Hover.js";
 import { Patrol } from "../enemy/Patrol.js";
 import { Pursuit } from "../enemy/Pursuit.js";
 import { Recoil } from "../enemy/Recoil.js";
+import { Shoot } from "../enemy/Shoot.js";
 import { Stun } from "../enemy/Stun.js";
 
 /**
@@ -84,9 +86,49 @@ export function makeBat(world: World, x: number, y: number, facing = -1, seed?: 
   return enemy;
 }
 
+/**
+ * Pantheon Hunter (MMZ1 object 25) — zero-x-mashup enemy.rs / enemies.json.
+ *
+ *   AI.on_idle        = [Patrol]
+ *   AI.on_see_player  = [Shoot]   (off cooldown, player within 140 x 48 px)
+ *   AI.on_get_hit     = [Stun]    (the 12-frame flinch, on its "hit" clip)
+ *
+ * ponytail: the reference walks toward the player down to keep_distance 64
+ * between shots; this one keeps patrolling. Add a Pursuit-style leg if it matters.
+ */
+export function makePantheon(
+  world: World,
+  x: number,
+  y: number,
+  facing = -1,
+  seed?: number,
+): Enemy {
+  const enemy = new Enemy("pantheon", world, x, y, facing, seed);
+
+  const patrol = new Patrol(enemy);
+  patrol.travel_speed = 30; // walk_speed 0.5 px/frame
+  patrol.conflicts = ["Shoot", "Stun"];
+  const stun = new Stun(enemy);
+  stun.animation = "hit";
+  stun.stun_duration = 12 / 60; // flinch
+  enemy.add(patrol);
+  enemy.add(new Shoot(enemy, PANTHEON_SHOT));
+  enemy.add(stun);
+  enemy.add(new Death(enemy));
+
+  enemy.play_animation("idle");
+  enemy.ai.configure({
+    on_idle: ["Patrol"],
+    on_see_player: ["Shoot"],
+    on_get_hit: ["Stun"],
+  });
+  return enemy;
+}
+
 const FACTORIES: Record<EnemyKind, typeof makeMetool> = {
   metool: makeMetool,
   bat: makeBat,
+  pantheon: makePantheon,
 };
 
 /** Build an enemy by kind — used by the level loader. */

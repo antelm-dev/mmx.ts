@@ -495,7 +495,9 @@ export class Renderer {
    */
   private syncShots(stage: Stage): void {
     this.shots.begin();
-    for (const p of stage.player.projectiles) {
+    // Enemy shots (the Pantheon's) draw through the same clip table as the player's.
+    const shots = [stage.player.projectiles, ...stage.enemies.map((e) => e.projectiles)].flat();
+    for (const p of shots) {
       if (p.isLive) {
         const texture = shotTexture(p.kind, p.frame, this.manifest.shotAnims);
         if (texture) place(this.shots.next(), texture, p.x, p.y, p.dir);

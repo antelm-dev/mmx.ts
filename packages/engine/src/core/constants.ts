@@ -317,7 +317,7 @@ export const MAX_HEALTH = _D.actors.get("player.x")!.maxHealth; // Actor.gd:6
  */
 export interface EnemyStats {
   /** Key into enemy_anims.json's `actors` table. */
-  sheet: "metool" | "bat";
+  sheet: EnemyId;
   max_health: number;
   /** DamageOnTouch.damage — dealt to the player on contact. */
   touch_damage: number;
@@ -336,7 +336,9 @@ export interface EnemyStats {
 }
 
 /** Rebuild the legacy {@link EnemyStats} shape from a compiled enemy definition. */
-function _enemyStats(id: "metool" | "bat"): EnemyStats {
+type EnemyId = "metool" | "bat" | "pantheon";
+
+function _enemyStats(id: EnemyId): EnemyStats {
   const e = _D.enemies.get(id);
   if (!e) throw new Error(`constants: unknown enemy '${id}'`);
   return {
@@ -355,10 +357,14 @@ function _enemyStats(id: "metool" | "bat"): EnemyStats {
 }
 
 // Metool.tscn / SmallBat.tscn — see data/enemies.ts + data/actors.ts.
-export const ENEMY_STATS: Readonly<Record<"metool" | "bat", EnemyStats>> = {
+export const ENEMY_STATS: Readonly<Record<EnemyId, EnemyStats>> = {
   metool: _enemyStats("metool"),
   bat: _enemyStats("bat"),
+  pantheon: _enemyStats("pantheon"),
 };
+
+/** The Pantheon Hunter's shot — see data/projectiles.ts. */
+export const PANTHEON_SHOT: ShotStats = _shotStats("pantheon_shot");
 
 /** EnemyDamage.max_flash_time — how long the white hit flash stays on. */
 export const ENEMY_FLASH_TIME = 0.035;

@@ -70,6 +70,18 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     properties: [{ key: "FacesRight", label: "Faces Right", type: "boolean", default: false }],
   },
   {
+    id: "enemy.pantheon",
+    name: "Pantheon Hunter",
+    category: "enemy",
+    icon: "◆",
+    engineId: "Enemy",
+    components: { enemy: { kind: "pantheon" } },
+    fields: { Kind: "pantheon", FacesRight: false },
+    defaultSize: { width: 16, height: 32 },
+    editor: { placement: "point", color: COLORS.enemy },
+    properties: [{ key: "FacesRight", label: "Faces Right", type: "boolean", default: false }],
+  },
+  {
     id: "pickup.life.small",
     name: "Life Capsule (Small)",
     category: "pickup",

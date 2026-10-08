@@ -134,6 +134,7 @@ export class Stage {
     this.resolveShots();
     this.resolveMelee();
     this.resolveContact();
+    this.resolveEnemyShots();
 
     // EnemyDeath frees the node at the end of its sequence.
     for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -294,6 +295,28 @@ export class Stage {
         this.player.damage(enemy.stats.touch_damage, enemy);
       }
       enemy.ai.onTouchedPlayer();
+    }
+  }
+
+  /**
+   * Enemy shots against the player's body. A shot is spent only when it lands;
+   * during invulnerability it flies on through, as in the original.
+   */
+  private resolveEnemyShots(): void {
+    if (!this.player.has_health() || !this.player.collisions_enabled) return;
+    const p = this.player;
+    const body = {
+      left: p.pos.x - p.hw,
+      right: p.pos.x + p.hw,
+      top: p.pos.y - p.hh,
+      bottom: p.pos.y + p.hh,
+    };
+    for (const enemy of this.enemies) {
+      for (const shot of enemy.projectiles) {
+        if (!shot.isLive || p.is_invulnerable() || !rectsOverlap(shot.bounds, body)) continue;
+        p.damage(shot.damage, enemy);
+        shot.hit(shot.x, shot.y);
+      }
     }
   }
 }

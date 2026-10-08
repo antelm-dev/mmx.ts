@@ -27,4 +27,9 @@ export const actors = {
     body: { hw: 13.5, hh: 15.5 }, // SmallBat.tscn body extents
     maxHealth: 1, // SmallBat.tscn max_health
   },
+  "enemy.pantheon": {
+    id: "enemy.pantheon",
+    body: { hw: 8, hh: 15 }, // enemies.json hurtbox [16, 30] doubles as the body
+    maxHealth: 4, // hp
+  },
 } satisfies Record<string, ActorDefinition>;

@@ -4,9 +4,10 @@ import { World } from "./World.js";
 import { Rng } from "../core/Rng.js";
 import { EnemyAI } from "./EnemyAI.js";
 import type { EnemyAbility } from "./enemy/EnemyAbility.js";
+import type { Projectile } from "./Projectile.js";
 import { ENEMY_FLASH_TIME, ENEMY_STATS, type EnemyStats } from "../core/constants.js";
 
-export type EnemyKind = "metool" | "bat";
+export type EnemyKind = "metool" | "bat" | "pantheon";
 
 /**
  * Enemy actor — port of Enemy.gd plus the per-enemy modules its scenes hang off
@@ -63,6 +64,9 @@ export class Enemy extends AbilityUser {
    * only feedback that a hit registered on an enemy that survives it.
    */
   flash = 0;
+
+  /** Shots this enemy fired (see Shoot); the stage tests them against the player. */
+  projectiles: Projectile[] = [];
 
   constructor(
     readonly kind: EnemyKind,
@@ -246,6 +250,9 @@ export class Enemy extends AbilityUser {
     } else {
       this.physicsStep(dt);
     }
+
+    for (const shot of this.projectiles) shot.update(dt, this.world);
+    this.projectiles = this.projectiles.filter((shot) => shot.alive);
 
     this.stepAnimation(dt);
   }
