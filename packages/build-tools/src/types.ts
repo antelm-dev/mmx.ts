@@ -1,5 +1,5 @@
 import type { SoundBindingMap } from "@mmx/browser-audio";
-import type { DecorationInstance, LevelDocument } from "@mmx/content-schema";
+import type { DecorationInstance, ImageLayer, LevelDocument } from "@mmx/content-schema";
 import type { LevelData } from "@mmx/engine";
 import type { CompiledGameData } from "@mmx/engine/data";
 import type { ProjectDocument } from "@mmx/project-schema";
@@ -45,6 +45,9 @@ export type BrowserLevelBundle = {
   name: string;
   data: LevelData;
   decorations: DecorationInstance[];
+  /** Image layer textures resolve through `rendererManifest.sheetUrls[assetId]`. */
+  imageLayers?: ImageLayer[];
+  backdrop?: string;
 };
 
 export type BrowserProjectBundle = {

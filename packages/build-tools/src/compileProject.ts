@@ -158,9 +158,16 @@ function buildRendererManifest(
       )
     : undefined;
 
+  // Image layer assets load as whole sheets keyed by their asset id, like any bound sheet.
+  const sheetImages = { ...bindingSource.bindings.sheetImages };
+  for (const level of project.levels) {
+    for (const layer of level.document.imageLayers ?? [])
+      sheetImages[layer.assetId] = layer.assetId;
+  }
+
   return buildRendererAssetManifestFromProject(
     project.manifest,
-    bindingSource.bindings,
+    { ...bindingSource.bindings, sheetImages },
     resolveUrl,
     shotAnims ? { shotAnims } : undefined,
   );
@@ -189,6 +196,8 @@ export async function compileBrowserProjectBundle(
     name: level.document.name,
     data: levelDocumentToLevelData(level.document),
     decorations: level.document.decorations.slice(),
+    ...(level.document.imageLayers ? { imageLayers: level.document.imageLayers.slice() } : {}),
+    ...(level.document.backdrop ? { backdrop: level.document.backdrop } : {}),
   }));
 
   return {

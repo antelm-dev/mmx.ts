@@ -1,5 +1,5 @@
 import type { Container } from "pixi.js";
-import type { DecorationInstance } from "@mmx/content-schema";
+import type { DecorationInstance, LevelArt } from "@mmx/content-schema";
 import type { Camera, Enemy, LifeCapsule, Scene, Stage, WeaponCapsule } from "@mmx/engine";
 import { DashSmoke } from "../DashSmoke.js";
 import { DebugOverlay } from "../debug/DebugOverlay.js";
@@ -29,7 +29,7 @@ export interface ScenePresentation {
   stepCosmetics(scene: Scene, dt: number): void;
   render(scene: Scene): void;
   fit(preferredScale?: number): void;
-  setDecorations(decorations: readonly DecorationInstance[]): void;
+  setDecorations(decorations: readonly DecorationInstance[], art?: LevelArt): void;
   setDebugOptions(options: Partial<DebugRenderOptions>): void;
   debugOptions(): DebugRenderOptions;
   readonly pixelScale: number;
@@ -45,6 +45,8 @@ export interface ScenePresentationOptions {
   resolver?: RendererAssetResolver;
   bindings?: RendererAssetBindings;
   decorations?: readonly DecorationInstance[];
+  /** Image layers and backdrop of the level being shown. */
+  levelArt?: LevelArt;
   debugOptions?: Partial<DebugRenderOptions>;
 }
 
@@ -60,7 +62,7 @@ export interface ScenePresentationHost {
   ): void;
   destroy(): void;
   fit(preferredScale?: number): void;
-  setDecorations(instances: readonly DecorationInstance[]): void;
+  setDecorations(instances: readonly DecorationInstance[], art?: LevelArt): void;
   readonly pixelScale: number;
   stats(): Record<string, string | number>;
   readonly uiLayer: Container;
@@ -190,9 +192,9 @@ class ScenePresentationImpl implements ScenePresentation {
     this.host.fit(preferredScale);
   }
 
-  setDecorations(decorations: readonly DecorationInstance[]): void {
+  setDecorations(decorations: readonly DecorationInstance[], art?: LevelArt): void {
     this.assertLive();
-    this.host.setDecorations(decorations);
+    this.host.setDecorations(decorations, art);
   }
 
   setDebugOptions(options: Partial<DebugRenderOptions>): void {
@@ -256,7 +258,9 @@ export function createScenePresentationWithHost(
   const overlay = options.debugOverlay === undefined ? new DebugOverlay() : options.debugOverlay;
   const presentation = new ScenePresentationImpl(host, assets, options.effects, overlay);
   if (options.debugOptions) presentation.setDebugOptions(options.debugOptions);
-  if (options.decorations) presentation.setDecorations(options.decorations);
+  if (options.decorations || options.levelArt) {
+    presentation.setDecorations(options.decorations ?? [], options.levelArt);
+  }
   presentation.bindScene(scene);
   return presentation;
 }

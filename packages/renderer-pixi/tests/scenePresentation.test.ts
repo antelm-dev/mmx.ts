@@ -350,3 +350,33 @@ test("decorations survive presentation rebinding", () => {
 
   presentation.destroy();
 });
+
+test("level art reaches the host with the decorations", () => {
+  const { catalog } = mockCatalog();
+  const levelArt = {
+    imageLayers: [
+      {
+        id: "img",
+        assetId: "image.stage",
+        x: 0,
+        y: 0,
+        parallax: 1,
+        layer: "world-back" as const,
+      },
+    ],
+    backdrop: "#3a1c5c",
+  };
+  const seen: unknown[][] = [];
+  const { host } = mockHost();
+  host.setDecorations = (...args) => {
+    seen.push(args);
+  };
+
+  const presentation = createScenePresentationWithHost(
+    host,
+    Scene.create({ level: testLevel(), seed: 13 }),
+    { assets: catalog, levelArt, debugOverlay: null },
+  );
+  assert.deepEqual(seen, [[[], levelArt]]);
+  presentation.destroy();
+});

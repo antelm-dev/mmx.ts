@@ -1,18 +1,27 @@
-import { Container, Sprite } from "pixi.js";
-import type { DecorationInstance, DecorationLayer } from "@mmx/content-schema";
+import { Container, Sprite, Texture } from "pixi.js";
+import type {
+  DecorationInstance,
+  DecorationLayer,
+  ImageLayer,
+  LevelArt,
+} from "@mmx/content-schema";
+import { VIEW_HEIGHT, VIEW_WIDTH } from "@mmx/engine";
 import {
   DEFAULT_LAYER_PARALLAX,
   effectiveDecorationParallax,
   getDecorationAsset,
 } from "./decorations.js";
-import { regionTexture } from "./textures.js";
+import { regionTexture, sheetTexture } from "./textures.js";
 
 /**
  * Static decoration scene graph. Built once per loaded level; camera parallax is
  * applied each frame without recreating sprites.
  *
  * Layer order (parented by {@link Renderer}):
- *   far-background → background → world { world-back → terrain → actors → world-front } → foreground
+ *   backdrop → far-background → background → world { world-back → terrain → actors → world-front } → foreground
+ *
+ * Project image layers go first in their layer container, so they sit behind
+ * the catalog decorations of the same layer.
  */
 
 type Placed = {
@@ -24,6 +33,8 @@ type Placed = {
 };
 
 export class DecorationView {
+  /** Full-view solid colour behind everything; hidden when the level sets no backdrop. */
+  readonly backdrop = new Sprite(Texture.WHITE);
   readonly farBackground = new Container();
   readonly background = new Container();
   readonly worldBack = new Container();
@@ -32,6 +43,12 @@ export class DecorationView {
 
   private placed: Placed[] = [];
   private signature = "";
+
+  constructor() {
+    this.backdrop.width = VIEW_WIDTH;
+    this.backdrop.height = VIEW_HEIGHT;
+    this.backdrop.visible = false;
+  }
 
   private layerContainer(layer: DecorationLayer): Container {
     switch (layer) {
@@ -52,11 +69,34 @@ export class DecorationView {
    * Rebuild sprites when the authored set changes. Identity is keyed on a
    * compact signature so restarting the same level is a no-op.
    */
-  setDecorations(instances: readonly DecorationInstance[]): void {
-    const next = signatureOf(instances);
+  setDecorations(instances: readonly DecorationInstance[], art: LevelArt = {}): void {
+    this.backdrop.visible = art.backdrop !== undefined;
+    if (art.backdrop !== undefined) this.backdrop.tint = art.backdrop;
+
+    const imageLayers = art.imageLayers ?? [];
+    const next = `${imageSignatureOf(imageLayers)}#${signatureOf(instances)}`;
     if (next === this.signature) return;
     this.clear();
     this.signature = next;
+
+    for (const layer of imageLayers) {
+      // Sheets are keyed by asset id; build-tools adds every image layer asset to the manifest.
+      const texture = sheetTexture(layer.assetId);
+      if (!texture) continue;
+      // Whole world pixels, so the 3× viewport zoom never lands an edge between device pixels.
+      const x = Math.round(layer.x);
+      const y = Math.round(layer.y);
+      const sprite = new Sprite(texture);
+      sprite.position.set(x, y);
+      this.layerContainer(layer.layer).addChild(sprite);
+      this.placed.push({
+        sprite,
+        layer: layer.layer,
+        parallax: layer.parallax,
+        worldX: x,
+        worldY: y,
+      });
+    }
 
     for (const inst of instances) {
       const asset = getDecorationAsset(inst.assetId);
@@ -138,12 +178,17 @@ export class DecorationView {
 
   destroy(): void {
     this.clear();
+    this.backdrop.destroy();
     this.farBackground.destroy({ children: true });
     this.background.destroy({ children: true });
     this.worldBack.destroy({ children: true });
     this.worldFront.destroy({ children: true });
     this.foreground.destroy({ children: true });
   }
+}
+
+function imageSignatureOf(layers: readonly ImageLayer[]): string {
+  return layers.map((l) => `${l.id}|${l.assetId}|${l.x}|${l.y}|${l.parallax}|${l.layer}`).join(";");
 }
 
 function signatureOf(instances: readonly DecorationInstance[]): string {

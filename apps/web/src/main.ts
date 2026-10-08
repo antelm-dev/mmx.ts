@@ -48,6 +48,7 @@ async function bootstrap(): Promise<void> {
     assets: createProjectAssetCatalog(projectBundle),
     manifest: projectBundle.rendererManifest!,
     decorations: decorationsForLevel(projectBundle, projectBundle.meta.entryLevelId),
+    levelArt: projectBundle.levels.find((level) => level.id === projectBundle.meta.entryLevelId),
   });
 
   const lifecycle = new AppLifecycle(desktop, model, presenter, (message) => debug.notify(message));

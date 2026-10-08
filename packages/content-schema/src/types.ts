@@ -190,6 +190,9 @@ export interface LevelDocument {
   backdrop?: string;
 }
 
+/** The presentation-only level art a renderer needs beyond decorations. */
+export type LevelArt = Pick<LevelDocument, "imageLayers" | "backdrop">;
+
 /** A project groups levels and pins the schema version they were authored at. */
 export interface GameProject {
   schemaVersion: number;

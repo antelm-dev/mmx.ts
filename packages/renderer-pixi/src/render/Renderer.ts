@@ -1,5 +1,5 @@
 import { Application, Container, Sprite } from "pixi.js";
-import type { DecorationInstance } from "@mmx/content-schema";
+import type { DecorationInstance, LevelArt } from "@mmx/content-schema";
 import {
   CHARGE_FX_OFFSET_Y,
   ChargeTier,
@@ -42,6 +42,7 @@ import { loadSheets, regionTexture, shotTexture, textureCounts } from "./texture
  *
  *   stage
  *    +- viewport   (integer zoom)
+ *    |   +- backdrop                   (level colour, no scroll)
  *    |   +- far-background / background  (parallax decorations)
  *    |   +- world  (camera scroll)
  *    |       +- world-back decorations, terrain, actors/FX, world-front decorations
@@ -143,6 +144,7 @@ export class Renderer {
       this.worldOverlay,
     );
     this.viewport.addChild(
+      this.decorations.backdrop,
       this.decorations.farBackground,
       this.decorations.background,
       this.scene,
@@ -209,8 +211,8 @@ export class Renderer {
   }
 
   /** Rebuild static decorations for the current authored level (presentation-only). */
-  setDecorations(instances: readonly DecorationInstance[]): void {
-    this.decorations.setDecorations(instances);
+  setDecorations(instances: readonly DecorationInstance[], art?: LevelArt): void {
+    this.decorations.setDecorations(instances, art);
   }
 
   /**

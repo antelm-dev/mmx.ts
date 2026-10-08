@@ -1,5 +1,5 @@
 import type { Container } from "pixi.js";
-import type { DecorationInstance } from "@mmx/content-schema";
+import type { DecorationInstance, LevelArt } from "@mmx/content-schema";
 import type { GameplaySounds } from "@mmx/browser-audio";
 import type { Enemy, LifeCapsule, Player, Scene, Stage, WeaponCapsule } from "@mmx/engine";
 import type { AssetCatalog, RendererAssetManifest } from "@mmx/renderer-pixi";
@@ -13,6 +13,7 @@ export interface ScenePresenterOptions {
   assets: AssetCatalog;
   manifest: RendererAssetManifest;
   decorations?: readonly DecorationInstance[];
+  levelArt?: LevelArt;
 }
 
 export class ScenePresenter {
@@ -36,6 +37,7 @@ export class ScenePresenter {
       assets: this.options.assets,
       manifest: this.options.manifest,
       decorations: this.options.decorations,
+      levelArt: this.options.levelArt,
     });
   }
 
