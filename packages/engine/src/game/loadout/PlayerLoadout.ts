@@ -34,6 +34,13 @@ import { Charge, type ChargeConfig } from "../abilities/Charge.js";
  * values as those constants, so the default X moveset is unchanged.
  */
 
+/** Jump subclasses that inherit the loadout's `player.jump` config under their own. */
+const INHERITS_JUMP: ReadonlySet<string> = new Set([
+  "player.dash-jump",
+  "player.wall-jump",
+  "player.dash-wall-jump",
+]);
+
 type Ctor = (owner: Character, config: AbilityConfig, ctx: RuntimeContext) => BaseAbility;
 
 const FACTORIES: Readonly<Record<string, Ctor>> = {
@@ -75,10 +82,15 @@ export function buildPlayerLoadout(
   gameData: CompiledGameData,
 ): void {
   const ctx: RuntimeContext = { gameData };
+  // Merged after validation, so each schema keeps its exact keys.
+  const jump = loadout.abilities.find((a) => a.behavior === "player.jump")?.config;
   for (const ability of loadout.abilities) {
+    const config = INHERITS_JUMP.has(ability.behavior)
+      ? { ...jump, ...ability.config }
+      : ability.config;
     const instance = abilityRegistry
       .get(ability.behavior)
-      .create(player, ability.config, ctx) as BaseAbility;
+      .create(player, config, ctx) as BaseAbility;
     instance.priority = ability.priority;
     instance.independent = ability.layer === "action";
     player.add(instance);
