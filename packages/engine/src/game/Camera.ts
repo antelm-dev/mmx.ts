@@ -217,6 +217,14 @@ export class Camera {
     return this.current;
   }
 
+  /**
+   * The lowest the bottom edge of the view can go under the active zone — the
+   * world floor outside every zone. Read by the pit rule in {@link Scene}.
+   */
+  get bottomLimit(): number {
+    return this.confine(this.centerX, Number.POSITIVE_INFINITY)[1] + this.viewH / 2;
+  }
+
   /** Every installed zone — read by the debug overlay to draw the level's framing. */
   get allZones(): readonly CameraZone[] {
     return this.zones;
