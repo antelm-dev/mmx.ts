@@ -2,6 +2,12 @@ import { Jump } from "./Jump.js";
 import type { Character } from "../Character.js";
 import { DASH_DURATION, DASHJUMP_SPEED } from "../../core/constants.js";
 
+/** Typed tuning for {@link DashJump}, supplied by the loadout. */
+export interface DashJumpConfig {
+  speed?: number;
+  dashDuration?: number;
+}
+
 /**
  * Port of DashJump.gd — a jump performed while dashing (dash held + pressed
  * recently). Retains dash-level horizontal air control for a long jump arc.
@@ -12,11 +18,12 @@ export class DashJump extends Jump {
   // Player.tscn gives DashJump animation = "jump" — it reuses the jump pose, there
   // is no separate dash-jump clip.
 
-  private dash_leeway_time = DASH_DURATION;
+  private dash_leeway_time: number;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: DashJumpConfig = {}) {
     super(character);
-    this.horizontal_velocity = DASHJUMP_SPEED;
+    this.horizontal_velocity = config.speed ?? DASHJUMP_SPEED;
+    this.dash_leeway_time = config.dashDuration ?? DASH_DURATION;
     character.events.on("input_dash", () => this.on_dash_press());
   }
 

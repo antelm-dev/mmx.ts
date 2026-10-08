@@ -1,5 +1,4 @@
 import { Sprite, Texture } from "pixi.js";
-import { BODY_HALF_H } from "@mmx/engine";
 import type { Player } from "@mmx/engine";
 import type { GhostSource } from "../Trail.js";
 
@@ -32,7 +31,7 @@ export function spriteSnapshot(player: Player): GhostSource | null {
   if (!region) return null;
   return {
     x: player.pos.x + SPRITE_OFFSET_X,
-    y: player.pos.y + player.hh - BODY_HALF_H + SPRITE_OFFSET_Y,
+    y: player.pos.y + player.hh - player.body_hh + SPRITE_OFFSET_Y,
     region,
     facing: player.get_facing_direction(),
     layer: player.get_animation_layer(),

@@ -30,8 +30,11 @@ export class Actor {
   bonus_velocity = new Vec2(0, 0);
   final_velocity = new Vec2(0, 0);
 
+  // Bare-Actor defaults (X's body); Player and Enemy overwrite them from their data.
   hw = BODY_HALF_W;
   hh = BODY_HALF_H;
+  /** Standing half-height — what increase_hitbox restores after a dash. */
+  body_hh = BODY_HALF_H;
 
   // facing / input direction
   direction = new Vec2(0, 0);
@@ -189,15 +192,15 @@ export class Actor {
   // Shrink from the top only: keep the feet (bottom edge) planted so the floor
   // sensor stays valid while dashing.
   reduce_hitbox(): void {
-    if (this.hh === BODY_HALF_H) {
+    if (this.hh === this.body_hh) {
       this.pos.y += 4;
-      this.hh = BODY_HALF_H - 4;
+      this.hh = this.body_hh - 4;
     }
   }
   increase_hitbox(): void {
-    if (this.hh !== BODY_HALF_H) {
+    if (this.hh !== this.body_hh) {
       this.pos.y -= 4;
-      this.hh = BODY_HALF_H;
+      this.hh = this.body_hh;
     }
   }
 

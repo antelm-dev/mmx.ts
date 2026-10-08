@@ -1,11 +1,23 @@
 import { Movement } from "../ability/Movement.js";
+import type { Character } from "../Character.js";
 import { DASHFALL_SPEED } from "../../core/constants.js";
+
+/** Typed tuning for {@link Fall}, supplied by the loadout. */
+export interface FallConfig {
+  dashFallSpeed?: number;
+}
 
 /** Port of Fall.gd — airborne, gravity + air control. */
 export class Fall extends Movement {
   readonly name: string = "Fall";
   priority = 1;
   override animation = "fall"; // Fall.tscn
+  dashfall_speed: number;
+
+  constructor(character: Character, config: FallConfig = {}) {
+    super(character);
+    this.dashfall_speed = config.dashFallSpeed ?? DASHFALL_SPEED;
+  }
 
   override _StartCondition(): boolean {
     return !this.character.is_on_floor();
@@ -31,7 +43,7 @@ export class Fall extends Movement {
     this.change_animation_if_falling("fall");
     this.zero_bonus_horizontal_speed();
     if (this.character.dashfall) {
-      this.set_movement_and_direction(DASHFALL_SPEED);
+      this.set_movement_and_direction(this.dashfall_speed);
     } else {
       this.set_movement_and_direction(this.horizontal_velocity);
     }

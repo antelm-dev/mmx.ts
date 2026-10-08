@@ -1,6 +1,11 @@
 import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
 
+/** Typed tuning for {@link Walk}, supplied by the loadout. */
+export interface WalkConfig {
+  speed?: number;
+}
+
 /**
  * Port of Walk.gd — grounded locomotion with a short slow-start from Idle.
  *
@@ -15,8 +20,9 @@ export class Walk extends Movement {
   private minimum_time = 0.02;
   private starting_from_stop = false;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: WalkConfig = {}) {
     super(character);
+    if (config.speed !== undefined) this.horizontal_velocity = config.speed;
     character.events.on("animation_finished", () => this.onAnimationFinished());
   }
 

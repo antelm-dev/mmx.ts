@@ -103,3 +103,60 @@ test("a scripted Zero replay (run, jump, dash, wall jump) is deterministic", () 
     assert.ok(a.states.has(s), `script should reach ${s}; saw ${[...a.states].join(",")}`);
   }
 });
+
+test("each loadout's actor sets the runtime body and health", () => {
+  const x = new Player(room(), 80, 160, new Input(), 1);
+  const zero = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  assert.deepEqual([x.hw, x.hh, x.body_hh, x.max_health, x.current_health], [6, 14, 14, 32, 32]);
+  assert.deepEqual(
+    [zero.hw, zero.hh, zero.body_hh, zero.max_health, zero.current_health],
+    [7, 15, 15, 16, 16],
+  );
+});
+
+test("X and Zero bodies collide differently under a low ceiling", () => {
+  // Floor top at y=176 and a solid ceiling row whose underside is y=144: a 32px gap.
+  const lowRoom = (): World => {
+    const rows: string[] = [];
+    for (let y = 0; y < 11; y++) rows.push("#" + (y === 8 ? "#" : ".").repeat(28) + "#");
+    rows.push("#".repeat(30));
+    return World.fromRows(rows);
+  };
+  const jumpTop = (loadout: string): number => {
+    const input = new Input();
+    const p = new Player(lowRoom(), 80, 160, input, 1, loadout);
+    for (let i = 0; i < 10; i++) p.tick(DT);
+    input.setDown("jump", true);
+    let top = p.pos.y;
+    for (let i = 0; i < 30; i++) {
+      p.tick(DT);
+      top = Math.min(top, p.pos.y);
+    }
+    return top;
+  };
+  // The head bumps the ceiling when the centre is exactly one half-height below it.
+  assert.equal(jumpTop("player.x"), 144 + 14);
+  assert.equal(jumpTop("player.zero"), 144 + 15);
+});
+
+test("Zero's abilities run on Zero's configs, not X's", () => {
+  // X and Zero share walk speed (90), so check values that differ.
+  const knockback = (loadout: string): number => {
+    const p = new Player(room(), 80, 160, new Input(), 1, loadout);
+    for (let i = 0; i < 10; i++) p.tick(DT);
+    p.damage(1);
+    p.tick(DT);
+    return Math.abs(p.velocity.x);
+  };
+  assert.equal(knockback("player.x"), 45);
+  assert.equal(knockback("player.zero"), 60);
+
+  const zero = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  const ability = (name: string) => zero.get_ability(name) as unknown as Record<string, number>;
+  assert.equal(ability("DashJump").horizontal_velocity, 210);
+  assert.equal(ability("DashWallJump").horizontal_velocity, 210);
+  assert.equal(ability("WallJump").move_away_speed, 90);
+  assert.equal(ability("WallJump").start_delay, 0);
+  assert.equal(ability("Damage").invulnerability_time, 1);
+  assert.equal(ability("Damage").duration_time, 0.4);
+});

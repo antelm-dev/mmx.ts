@@ -81,6 +81,7 @@ export const abilities = {
     behavior: "player.dash-wall-jump",
     layer: "locomotion",
     priority: 7,
+    config: { speed: 200 }, // DASHJUMP_SPEED (kick-off + air control)
   },
   "player.intro": {
     id: "player.intro",
@@ -190,6 +191,7 @@ export const abilities = {
     behavior: "player.dash-wall-jump",
     layer: "locomotion",
     priority: 7,
+    config: { speed: 210 }, // dash_speed 3.5 px/f
   },
   "zero.damage": {
     id: "zero.damage",

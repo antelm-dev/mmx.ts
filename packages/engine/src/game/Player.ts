@@ -34,6 +34,10 @@ export class Player extends Character {
 
     const loadout = COMPILED_GAME_DATA.loadouts.get(loadoutId);
     if (!loadout) throw new Error(`Player: unknown loadout '${loadoutId}'.`);
+    const { body, maxHealth } = loadout.actor;
+    this.hw = body.hw;
+    this.hh = this.body_hh = body.hh;
+    this.max_health = this.current_health = maxHealth;
     buildPlayerLoadout(this, loadout, COMPILED_GAME_DATA);
   }
 

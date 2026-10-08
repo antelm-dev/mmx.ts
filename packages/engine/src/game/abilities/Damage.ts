@@ -8,6 +8,14 @@ import {
   PLAYER_KNOCKBACK_SPEED,
 } from "../../core/constants.js";
 
+/** Typed tuning for {@link Damage}, supplied by the loadout. */
+export interface DamageConfig {
+  duration?: number;
+  invulnerability?: number;
+  knockbackSpeed?: number;
+  knockbackJumpVelocity?: number;
+}
+
 /**
  * Player hurt/knockback — port of Damage.gd and Player.tscn's Damage node.
  *
@@ -20,18 +28,20 @@ export class Damage extends Movement {
   priority = 100;
   override animation = "damage";
 
-  duration_time = PLAYER_DAMAGE_DURATION;
-  invulnerability_time = PLAYER_DAMAGE_INVULNERABILITY;
+  duration_time: number;
+  invulnerability_time: number;
   damage_reduction = 0;
   death_protection = 1;
 
   damage_taken = 0;
   damage_direction = -1;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: DamageConfig = {}) {
     super(character);
-    this.horizontal_velocity = PLAYER_KNOCKBACK_SPEED;
-    this.jump_velocity = PLAYER_KNOCKBACK_JUMP_VELOCITY;
+    this.duration_time = config.duration ?? PLAYER_DAMAGE_DURATION;
+    this.invulnerability_time = config.invulnerability ?? PLAYER_DAMAGE_INVULNERABILITY;
+    this.horizontal_velocity = config.knockbackSpeed ?? PLAYER_KNOCKBACK_SPEED;
+    this.jump_velocity = config.knockbackJumpVelocity ?? PLAYER_KNOCKBACK_JUMP_VELOCITY;
   }
 
   /** Damage is event-driven; the regular per-frame ability poll must never start it. */

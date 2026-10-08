@@ -2,6 +2,11 @@ import { WallJump } from "./WallJump.js";
 import type { Character } from "../Character.js";
 import { DASHJUMP_SPEED } from "../../core/constants.js";
 
+/** Typed tuning for {@link DashWallJump}, supplied by the loadout. */
+export interface DashWallJumpConfig {
+  speed?: number;
+}
+
 /**
  * Port of DashWallJump.gd — a wall-kick performed while holding dash (extends
  * WallJump). Kicks off with dash-level horizontal speed for a long diagonal jump.
@@ -12,9 +17,9 @@ export class DashWallJump extends WallJump {
   readonly name: string = "DashWallJump";
   override_timer = 0;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: DashWallJumpConfig = {}) {
     super(character);
-    this.horizontal_velocity = DASHJUMP_SPEED; // dash-speed air control + kick-off
+    this.horizontal_velocity = config.speed ?? DASHJUMP_SPEED; // dash-speed air control + kick-off
     character.events.on("input_dash", () => this.on_dash_press());
   }
 
