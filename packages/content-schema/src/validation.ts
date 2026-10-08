@@ -20,7 +20,7 @@ import type {
  * editor surfaces them at authoring time instead of as a thrown error on Play.
  */
 
-const SUPPORTED_ENEMY_KINDS = new Set(["metool", "bat"]);
+const SUPPORTED_ENEMY_KINDS = new Set(["metool", "bat", "pantheon"]);
 const SUPPORTED_PICKUP_KINDS = new Set(["small", "large"]);
 const LAYER_SET = new Set<string>(DECORATION_LAYERS);
 

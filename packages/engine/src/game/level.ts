@@ -347,4 +347,4 @@ export interface EnemySpawn {
   facing: number;
 }
 
-const ENEMY_KINDS: readonly EnemyKind[] = ["metool", "bat"];
+const ENEMY_KINDS: readonly EnemyKind[] = ["metool", "bat", "pantheon"];

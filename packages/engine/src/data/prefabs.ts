@@ -26,6 +26,12 @@ export const prefabs = {
     source: { kind: "enemy", ref: "bat" },
     fields: [{ name: "FacesRight", type: "boolean", default: false }],
   },
+  "enemy.pantheon": {
+    id: "enemy.pantheon",
+    runtime: "enemy",
+    source: { kind: "enemy", ref: "pantheon" },
+    fields: [{ name: "FacesRight", type: "boolean", default: false }],
+  },
   "pickup.life.small": {
     id: "pickup.life.small",
     runtime: "pickup",

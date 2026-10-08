@@ -20,6 +20,7 @@ const ENEMY_BEHAVIOR_IDS = [
   "Hover",
   "Pursuit",
   "Recoil",
+  "Shoot",
 ] as const;
 
 export const enemyBehaviorRegistry = new Registry<EnemyBehaviorFactory>();

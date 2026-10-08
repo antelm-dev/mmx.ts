@@ -73,6 +73,8 @@ export class Projectile {
     rng: Rng = new Rng(),
     /** Which weapon fired this shot — see {@link WEAPON_SHOTS}. Defaults to the buster. */
     weapon: WeaponId = "buster",
+    /** An enemy's shot, which belongs to no player weapon; overrides `weapon`/`charge`. */
+    stats?: ShotStats,
   ) {
     // Weapon.gd:clamp_to_max_charge — a weapon's `shots` array clamps the charge
     // level onto whatever projectiles it actually has (the buster carries three;
@@ -80,8 +82,12 @@ export class Projectile {
     const shots = WEAPON_SHOTS[weapon];
     const level = Math.max(0, Math.min(charge, shots.length - 1));
     this.weapon = weapon;
-    this.stats = shots[level];
-    this.shotAnimation.play(SHOT_ANIMATIONS[weapon][level]);
+    this.stats = stats ?? shots[level];
+    this.shotAnimation.play(
+      stats
+        ? uniformClip(stats.frameCount ?? SHOT_FRAME_COUNT, 1000 / stats.frameMs, true)
+        : SHOT_ANIMATIONS[weapon][level],
+    );
     this.hitAnimation.play(HIT_ANIMATION);
 
     this.x += this.stats.spawnX * dir;

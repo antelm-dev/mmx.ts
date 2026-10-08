@@ -62,4 +62,19 @@ export const projectiles = {
     animation: { kind: "dark_arrow", frameMs: 1000, frameCount: 1, randomStartFrame: false },
     verticalRange: 0,
   },
+  // Pantheon Hunter's shot: MMZ1 object 1 script 4 (looping yellow ball).
+  pantheon_shot: {
+    id: "pantheon_shot",
+    behavior: "projectile.straight",
+    damage: 2, // bullet_damage
+    speed: 120, // bullet_speed 2 px/frame at 60 Hz
+    hitbox: { hw: 4, hh: 4 }, // ponytail: not in enemies.json; read it off the sheet
+    // shot_from [18, -19] is from the feet; the engine origin is the body centre (hh 15).
+    spawnOffset: { x: 18, y: -4 },
+    lifetime: 0.2,
+    breaksGuard: false,
+    hitFx: "lemon_hit", // no bespoke impact ported; reuses the buster's
+    animation: { kind: "pantheon_shot", frameMs: 67, frameCount: 4, randomStartFrame: false },
+    verticalRange: 0,
+  },
 } satisfies Record<string, ProjectileDefinition>;

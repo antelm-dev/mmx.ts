@@ -46,4 +46,22 @@ export const enemies = {
     hooks: [{ on: "ability_end", ability: "Recoil", effect: "enemy.reanchor-hover" }],
     initialAnimation: "idle",
   },
+  // Pantheon Hunter (MMZ1 object 25) — zero-x-mashup game/sheets/enemies.json.
+  pantheon: {
+    id: "pantheon",
+    sheet: "pantheon",
+    actor: "enemy.pantheon",
+    hurtbox: { hw: 8, hh: 15 }, // hurtbox [16, 30], halved
+    touchDamage: 2, // contact_damage
+    movement: "ground",
+    // sight 140 px; enemy.rs only aims while |dy| < 48.
+    perception: { hw: 140, hh: 48, oy: 0 },
+    abilities: ["Patrol", "Shoot", "Stun", "Death"],
+    reactions: {
+      idle: ["Patrol"],
+      see_player: ["Shoot"],
+      get_hit: ["Stun"], // flinch: 12 frames standing still
+    },
+    initialAnimation: "idle",
+  },
 } satisfies Record<string, EnemyDefinition>;
