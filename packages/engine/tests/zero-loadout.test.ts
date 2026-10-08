@@ -160,3 +160,40 @@ test("Zero's abilities run on Zero's configs, not X's", () => {
   assert.equal(ability("Damage").invulnerability_time, 1);
   assert.equal(ability("Damage").duration_time, 0.4);
 });
+
+test("Zero's wall and dash jumps inherit zero.jump's rise, not X's", () => {
+  const zero = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  const rise = (name: string) => {
+    const a = zero.get_ability(name) as unknown as Record<string, number>;
+    return [a.jump_velocity, a.max_jump_time, a.leeway_time, a.fullspeed_proportion];
+  };
+  assert.deepEqual(rise("Jump"), [300, 0.016, 0.1, 1]);
+  for (const name of ["DashJump", "WallJump", "DashWallJump"]) {
+    assert.deepEqual(rise(name), rise("Jump"), name);
+  }
+
+  // Jump at the right wall, then wall-kick off it; measure the kick's rise.
+  const wallKickRise = (loadout: string): number => {
+    const input = new Input();
+    const p = new Player(room(), 440, 160, input, 1, loadout);
+    input.setDown("move_right", true);
+    for (let i = 0; i < 10; i++) p.tick(DT);
+    input.setDown("jump", true);
+    for (let i = 0; i < 12; i++) p.tick(DT);
+    input.setDown("jump", false);
+    p.tick(DT);
+    input.setDown("jump", true);
+    p.tick(DT);
+    assert.ok(p.is_executing("WallJump"), `${loadout}: ${p.stateString()}`);
+    const start = p.pos.y;
+    let apex = start;
+    for (let i = 0; i < 60; i++) {
+      p.tick(DT);
+      apex = Math.min(apex, p.pos.y);
+    }
+    return start - apex;
+  };
+  const x = wallKickRise("player.x");
+  const z = wallKickRise("player.zero");
+  assert.ok(x > 0 && z > 0 && Math.abs(x - z) > 1, `X ${x} vs Zero ${z}`);
+});

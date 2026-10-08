@@ -1,4 +1,4 @@
-import { Jump } from "./Jump.js";
+import { Jump, type JumpConfig } from "./Jump.js";
 import type { DashWallJump } from "./DashWallJump.js";
 import type { Character } from "../Character.js";
 import {
@@ -7,8 +7,8 @@ import {
   WALLJUMP_START_DELAY,
 } from "../../core/constants.js";
 
-/** Typed tuning for {@link WallJump}, supplied by the loadout. */
-export interface WallJumpConfig {
+/** Typed tuning for {@link WallJump}; the Jump keys come from the loadout's jump slot. */
+export interface WallJumpConfig extends JumpConfig {
   startDelay?: number;
   moveawayDuration?: number;
   moveawaySpeed?: number;
@@ -34,7 +34,7 @@ export class WallJump extends Jump {
   private emitted_jump_signal = false;
 
   constructor(character: Character, config: WallJumpConfig = {}) {
-    super(character);
+    super(character, config);
     this.start_delay = config.startDelay ?? WALLJUMP_START_DELAY;
     this.move_away_duration = config.moveawayDuration ?? WALLJUMP_MOVEAWAY_DURATION;
     this.move_away_speed = config.moveawaySpeed ?? WALLJUMP_MOVEAWAY_SPEED;
