@@ -80,3 +80,26 @@ test("invalid clips fail before playback", () => {
     /region/,
   );
 });
+
+test("looping clip wraps to loopStart, skipping its wind-up frames", () => {
+  const cursor = new AnimationCursor();
+  cursor.play({ ...uniformClip(4, 10, true), loopStart: 2 });
+  const seen = [cursor.frame];
+  for (let i = 0; i < 7; i++) {
+    cursor.advance(0.1);
+    seen.push(cursor.frame);
+  }
+  assert.deepEqual(seen, [0, 1, 2, 3, 2, 3, 2, 3]);
+});
+
+test("loopStart is ignored by one-shots and validated against the frame count", () => {
+  const cursor = new AnimationCursor();
+  cursor.play({ ...uniformClip(3, 10, false), loopStart: 1 });
+  assert.equal(cursor.advance(0.3), true);
+  assert.equal(cursor.frame, 2);
+
+  for (const loopStart of [-1, 3, 1.5]) {
+    assert.throws(() => assertTimedClip({ ...uniformClip(3, 10, true), loopStart }), /loopStart/);
+  }
+  assert.doesNotThrow(() => assertTimedClip({ ...uniformClip(3, 10, true), loopStart: 2 }));
+});

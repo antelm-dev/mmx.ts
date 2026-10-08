@@ -6,6 +6,8 @@ export interface TimedFrame {
 /** Renderer-independent playback data. Frames may carry any additional metadata. */
 export interface TimedClip<TFrame extends TimedFrame = TimedFrame> {
   loop: boolean;
+  /** Frame a looping clip wraps back to (default 0); ignored when not looping. */
+  loopStart?: number;
   speed: number;
   frames: readonly TFrame[];
 }
@@ -70,7 +72,7 @@ export class AnimationCursor<TFrame extends TimedFrame = TimedFrame> {
       if (this.frameIndex < this.clip.frames.length - 1) {
         this.frameIndex++;
       } else if (this.shouldLoop()) {
-        this.frameIndex = 0;
+        this.frameIndex = this.clip.loopStart ?? 0;
       } else {
         this.elapsed = 0;
         this.complete = true;
@@ -108,6 +110,13 @@ export function assertTimedClip(clip: TimedClip, label = "animation clip"): void
   }
   if (!Array.isArray(clip.frames) || clip.frames.length === 0) {
     throw new Error(`${label}: must contain at least one frame`);
+  }
+  const { loopStart } = clip;
+  if (
+    loopStart !== undefined &&
+    (!Number.isInteger(loopStart) || loopStart < 0 || loopStart >= clip.frames.length)
+  ) {
+    throw new Error(`${label}: loopStart must be an integer frame index`);
   }
   clip.frames.forEach((frame, index) => {
     if (!Number.isFinite(frame.duration) || frame.duration <= 0) {

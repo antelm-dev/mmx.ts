@@ -44,3 +44,21 @@ test("assertAnimData rejects malformed frames and empty tables", () => {
     /region/,
   );
 });
+
+test("assertAnimData bounds loopStart to the clip's frames", () => {
+  const data = (loopStart: number): unknown => ({
+    animations: {
+      run: {
+        loop: true,
+        loopStart,
+        speed: 10,
+        frames: [
+          { region: [0, 0, 16, 16], duration: 1 },
+          { region: [16, 0, 16, 16], duration: 1 },
+        ],
+      },
+    },
+  });
+  assert.doesNotThrow(() => assertAnimData(data(1)));
+  for (const bad of [-1, 2, 0.5]) assert.throws(() => assertAnimData(data(bad)), /loopStart/);
+});

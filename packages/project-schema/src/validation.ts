@@ -260,6 +260,20 @@ function validateAnimationClip(
   value.frames.forEach((frame, index) => {
     if (!validateAnimationFrame(frame, `${path}/frames/${index}`, add)) ok = false;
   });
+  if (
+    value.loopStart !== undefined &&
+    (typeof value.loopStart !== "number" ||
+      !Number.isInteger(value.loopStart) ||
+      value.loopStart < 0 ||
+      value.loopStart >= value.frames.length)
+  ) {
+    add({
+      code: "animation.loopStart",
+      path: `${path}/loopStart`,
+      message: "Animation clip loopStart must be an integer frame index within the clip.",
+    });
+    ok = false;
+  }
   return ok;
 }
 
