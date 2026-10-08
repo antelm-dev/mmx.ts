@@ -87,6 +87,7 @@ export function normalizeProject(project: ProjectDocument): ProjectDocument {
     entryLevelId: project.entryLevelId,
     levels,
     assets,
+    ...(project.player !== undefined ? { player: { loadout: project.player.loadout } } : {}),
   };
 }
 

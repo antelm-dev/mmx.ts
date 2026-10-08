@@ -12,12 +12,14 @@ export {
   type ParseProjectResult,
   type ProjectAsset,
   type ProjectDocument,
+  type ProjectPlayer,
   type Region,
   type Severity,
   type SoundAsset,
   type SpriteAsset,
   type ValidationIssue,
   type ValidationResult,
+  type ValidateProjectOptions,
 } from "./types.js";
 export { migrateProject } from "./migrate.js";
 export { parseProject } from "./parse.js";

@@ -48,6 +48,18 @@ test("compileBrowserProjectBundle injects engine data without absolute paths", a
   assert.equal(bundle.assetUrls["sprite.bg"], emission.byId["sprite.bg"]?.publicUrl);
 });
 
+test("compileBrowserProjectBundle carries project.json player.loadout into meta", async () => {
+  const project = await requireProject(syntheticProject);
+  const emission = await planAssetEmission(project);
+  assert.equal(
+    (await compileBrowserProjectBundle(project, emission)).meta.playerLoadout,
+    undefined,
+  );
+  project.manifest.player = { loadout: "player.zero" };
+  const bundle = await compileBrowserProjectBundle(project, emission);
+  assert.equal(bundle.meta.playerLoadout, "player.zero");
+});
+
 test("levelDocumentToLevelData maps spawn definition to engine entity", async () => {
   const project = await requireProject(syntheticProject);
   const level = levelDocumentToLevelData(project.levels[0]!.document);

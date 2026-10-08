@@ -60,6 +60,11 @@ export type FontAsset = AssetFields & {
 
 export type ProjectAsset = ImageAsset | SpriteAsset | AnimationAsset | SoundAsset | FontAsset;
 
+/** Which compiled player loadout the project plays as; absent means the engine default (`player.x`). */
+export type ProjectPlayer = {
+  loadout: string;
+};
+
 export type ProjectDocument = {
   schemaVersion: number;
   id: string;
@@ -69,6 +74,12 @@ export type ProjectDocument = {
   entryLevelId: string;
   levels: LevelDocumentRef[];
   assets: ProjectAsset[];
+  player?: ProjectPlayer;
+};
+
+export type ValidateProjectOptions = {
+  /** Known compiled loadout ids; when given, `player.loadout` must be one of them. */
+  loadoutIds?: Iterable<string>;
 };
 
 export type Severity = "error" | "warning";

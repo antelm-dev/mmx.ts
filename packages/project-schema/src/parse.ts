@@ -1,8 +1,8 @@
 import { migrateProject } from "./migrate.js";
-import type { ParseProjectResult, ProjectDocument } from "./types.js";
+import type { ParseProjectResult, ProjectDocument, ValidateProjectOptions } from "./types.js";
 import { validateProject } from "./validation.js";
 
-export function parseProject(raw: unknown): ParseProjectResult {
+export function parseProject(raw: unknown, options?: ValidateProjectOptions): ParseProjectResult {
   let project: ProjectDocument;
   try {
     project = migrateProject(raw);
@@ -23,7 +23,7 @@ export function parseProject(raw: unknown): ParseProjectResult {
     };
   }
 
-  const result = validateProject(project);
+  const result = validateProject(project, options);
   if (!result.ok) {
     return {
       ok: false,

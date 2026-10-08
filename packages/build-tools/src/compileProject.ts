@@ -197,6 +197,7 @@ export async function compileBrowserProjectBundle(
       name: project.manifest.name,
       gameVersion: project.manifest.gameVersion,
       entryLevelId: project.manifest.entryLevelId,
+      ...(project.manifest.player ? { playerLoadout: project.manifest.player.loadout } : {}),
     },
     levels,
     compiledGameData,

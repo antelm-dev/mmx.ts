@@ -11,6 +11,7 @@ import type {
   ProjectDocument,
   Region,
   ValidationIssue,
+  ValidateProjectOptions,
   ValidationResult,
 } from "./types.js";
 
@@ -421,7 +422,30 @@ function validateCompatibleRuntime(
   return minOk && maxOk;
 }
 
-export function validateProject(project: ProjectDocument): ValidationResult {
+function validatePlayer(
+  value: unknown,
+  add: IssueCollector["add"],
+  loadoutIds: Iterable<string> | undefined,
+): void {
+  if (!isRecord(value)) {
+    add({ code: "player.object", path: "/player", message: "player must be an object." });
+    return;
+  }
+  if (!validateLogicalId(value.loadout, "/player/loadout", add) || !loadoutIds) return;
+  const known = [...loadoutIds];
+  if (!known.includes(value.loadout)) {
+    add({
+      code: "reference.invalid",
+      path: "/player/loadout",
+      message: `player.loadout '${value.loadout}' is not a compiled loadout; expected one of: ${known.join(", ")}.`,
+    });
+  }
+}
+
+export function validateProject(
+  project: ProjectDocument,
+  options: ValidateProjectOptions = {},
+): ValidationResult {
   const { issues, add } = collector();
 
   if (project.schemaVersion !== PROJECT_SCHEMA_VERSION) {
@@ -512,6 +536,8 @@ export function validateProject(project: ProjectDocument): ValidationResult {
       }
     });
   }
+
+  if (project.player !== undefined) validatePlayer(project.player, add, options.loadoutIds);
 
   return resultOf(issues);
 }

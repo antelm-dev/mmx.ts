@@ -458,3 +458,42 @@ test("animation loopStart is validated and survives serialization", () => {
   assert.ok(anim && anim.kind === "animation");
   assert.equal(anim.animations.run?.loopStart, 2);
 });
+
+test("player.loadout is optional, validated against known loadouts, and serialized", () => {
+  const loadoutIds = ["player.x", "player.zero"];
+  assert.equal(parseProject(validProject(), { loadoutIds }).ok, true);
+  assert.equal(serializeProject(validProject()).includes('"player"'), false);
+
+  const zero = validProject({ player: { loadout: "player.zero" } });
+  const parsed = parseProject(JSON.parse(serializeProject(zero)), { loadoutIds });
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.project?.player, { loadout: "player.zero" });
+
+  const unknown = parseProject(validProject({ player: { loadout: "player.vile" } }), {
+    loadoutIds,
+  });
+  assert.equal(unknown.ok, false);
+  assert.deepEqual(
+    unknown.issues.map((issue) => [issue.code, issue.path]),
+    [["reference.invalid", "/player/loadout"]],
+  );
+  assert.match(unknown.issues[0]!.message, /'player\.vile'.*player\.x, player\.zero/);
+
+  // Without known ids only the shape is checked.
+  assert.equal(validateProject(validProject({ player: { loadout: "player.vile" } })).ok, true);
+  const malformed = validateProject({
+    ...validProject(),
+    player: { loadout: "" },
+  });
+  assert.deepEqual(
+    malformed.issues.map((issue) => issue.code),
+    ["id.missing"],
+  );
+  assert.deepEqual(
+    validateProject({
+      ...validProject(),
+      player: "player.zero",
+    } as unknown as ProjectDocument).issues.map((issue) => issue.code),
+    ["player.object"],
+  );
+});

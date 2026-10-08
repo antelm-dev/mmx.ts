@@ -54,6 +54,7 @@ async function bootstrap(): Promise<void> {
 
   debug = new DebugSession({
     level: entryLevel(projectBundle),
+    loadoutId: projectBundle.meta.playerLoadout,
     onEnemySpawned: (enemy) => presenter.attachEnemy(enemy),
     onPickupSpawned: (pickup) => presenter.attachPickup(pickup),
     onWeaponCapsuleSpawned: (capsule) => presenter.attachWeaponCapsule(capsule),
