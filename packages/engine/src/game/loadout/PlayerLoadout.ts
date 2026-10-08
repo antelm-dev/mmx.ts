@@ -4,18 +4,18 @@ import type { CompiledGameData, CompiledLoadout } from "../../data/types.js";
 import { abilityRegistry, type AbilityConfig, type RuntimeContext } from "../../behaviors/index.js";
 
 import { Idle } from "../abilities/Idle.js";
-import { Walk } from "../abilities/Walk.js";
-import { Fall } from "../abilities/Fall.js";
+import { Walk, type WalkConfig } from "../abilities/Walk.js";
+import { Fall, type FallConfig } from "../abilities/Fall.js";
 import { WallSlide, type WallSlideConfig } from "../abilities/WallSlide.js";
 import { Dash, type DashConfig } from "../abilities/Dash.js";
 import { AirDash, type AirDashConfig } from "../abilities/AirDash.js";
 import { Jump, type JumpConfig } from "../abilities/Jump.js";
-import { DashJump } from "../abilities/DashJump.js";
-import { WallJump } from "../abilities/WallJump.js";
-import { DashWallJump } from "../abilities/DashWallJump.js";
+import { DashJump, type DashJumpConfig } from "../abilities/DashJump.js";
+import { WallJump, type WallJumpConfig } from "../abilities/WallJump.js";
+import { DashWallJump, type DashWallJumpConfig } from "../abilities/DashWallJump.js";
 import { Intro } from "../abilities/Intro.js";
-import { Damage } from "../abilities/Damage.js";
-import { Death } from "../abilities/Death.js";
+import { Damage, type DamageConfig } from "../abilities/Damage.js";
+import { Death, type DeathConfig } from "../abilities/Death.js";
 import { Shot, type ShotConfig } from "../abilities/Shot.js";
 import { Charge, type ChargeConfig } from "../abilities/Charge.js";
 
@@ -29,28 +29,27 @@ import { Charge, type ChargeConfig } from "../abilities/Charge.js";
  * that would create), while still resolving a `behavior` id to executable code
  * through the one registry.
  *
- * The five spec-named abilities (Dash, Jump, WallSlide, Charge, Shot) plus
- * AirDash consume typed config from the loadout; the rest read their tuning from
- * the compat constants, which already read from the same compiled data — so the
- * default X loadout is byte-identical to the old hand-built moveset.
+ * Every configurable ability consumes its typed config from the loadout; only
+ * Idle and Intro still read the compat constants. X's configs hold the same
+ * values as those constants, so the default X moveset is unchanged.
  */
 
 type Ctor = (owner: Character, config: AbilityConfig, ctx: RuntimeContext) => BaseAbility;
 
 const FACTORIES: Readonly<Record<string, Ctor>> = {
   "player.idle": (o) => new Idle(o),
-  "player.walk": (o) => new Walk(o),
-  "player.fall": (o) => new Fall(o),
+  "player.walk": (o, c) => new Walk(o, c as unknown as WalkConfig),
+  "player.fall": (o, c) => new Fall(o, c as unknown as FallConfig),
   "player.wall-slide": (o, c) => new WallSlide(o, c as unknown as WallSlideConfig),
   "player.dash": (o, c) => new Dash(o, c as unknown as DashConfig),
   "player.air-dash": (o, c) => new AirDash(o, c as unknown as AirDashConfig),
   "player.jump": (o, c) => new Jump(o, c as unknown as JumpConfig),
-  "player.dash-jump": (o) => new DashJump(o),
-  "player.wall-jump": (o) => new WallJump(o),
-  "player.dash-wall-jump": (o) => new DashWallJump(o),
+  "player.dash-jump": (o, c) => new DashJump(o, c as unknown as DashJumpConfig),
+  "player.wall-jump": (o, c) => new WallJump(o, c as unknown as WallJumpConfig),
+  "player.dash-wall-jump": (o, c) => new DashWallJump(o, c as unknown as DashWallJumpConfig),
   "player.intro": (o) => new Intro(o),
-  "player.damage": (o) => new Damage(o),
-  "player.death": (o) => new Death(o),
+  "player.damage": (o, c) => new Damage(o, c as unknown as DamageConfig),
+  "player.death": (o, c) => new Death(o, c as unknown as DeathConfig),
   "player.shot": (o, c) => new Shot(o, c as unknown as ShotConfig),
   "player.charge": (o, c) => new Charge(o, c as unknown as ChargeConfig),
 };

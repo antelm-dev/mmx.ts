@@ -33,7 +33,7 @@ const ABILITY_SCHEMAS: Readonly<Record<string, Schema>> = {
   },
   "player.dash-jump": { speed: "number", dashDuration: "number" },
   "player.wall-jump": { startDelay: "number", moveawayDuration: "number", moveawaySpeed: "number" },
-  "player.dash-wall-jump": {},
+  "player.dash-wall-jump": { speed: "number" },
   "player.intro": { dropHeight: "number", beamSpeed: "number", thunderWindow: "tuple2" },
   "player.damage": {
     duration: "number",

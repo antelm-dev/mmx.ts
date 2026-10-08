@@ -86,8 +86,8 @@ function mockHost() {
 }
 
 test("dash smoke origin uses engine offsets and stable feet with reduced hitbox", () => {
-  const full = { pos: { x: 100, y: 200 }, hh: BODY_HALF_H };
-  const reduced = { pos: { x: 100, y: 204 }, hh: BODY_HALF_H - 4 };
+  const full = { pos: { x: 100, y: 200 }, hh: BODY_HALF_H, body_hh: BODY_HALF_H };
+  const reduced = { pos: { x: 100, y: 204 }, hh: BODY_HALF_H - 4, body_hh: BODY_HALF_H };
   const dir = 1;
 
   assert.deepEqual(dashSmokeOrigin(full, dir), {

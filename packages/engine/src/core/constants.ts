@@ -299,6 +299,8 @@ export const WEAPON_PALETTE: Readonly<Record<WeaponId, Palette6>> = {
 };
 
 // --- Actor.gd (→ data/actors.ts) ---
+// X's authored default, only for a bare Actor. Player code must read
+// `player.max_health` (set from its loadout's actor), never this.
 export const MAX_HEALTH = _D.actors.get("player.x")!.maxHealth; // Actor.gd:6
 
 // ---------------------------------------------------------------------------
@@ -505,6 +507,8 @@ export const TILE_SIZE = 16;
 export const VIEW_WIDTH = 398;
 export const VIEW_HEIGHT = 224;
 
-// Player AABB half-extents (approx of Player.tscn collision shape → data/actors.ts)
+// X's authored body (Player.tscn collision shape → data/actors.ts), only as the
+// bare-Actor default. Player code must read `player.hw` / `hh` / `body_hh`
+// (set from its loadout's actor), never these.
 export const BODY_HALF_W = _D.actors.get("player.x")!.body.hw;
 export const BODY_HALF_H = _D.actors.get("player.x")!.body.hh;

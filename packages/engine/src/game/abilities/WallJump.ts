@@ -1,10 +1,18 @@
 import { Jump } from "./Jump.js";
 import type { DashWallJump } from "./DashWallJump.js";
+import type { Character } from "../Character.js";
 import {
   WALLJUMP_MOVEAWAY_DURATION,
   WALLJUMP_MOVEAWAY_SPEED,
   WALLJUMP_START_DELAY,
 } from "../../core/constants.js";
+
+/** Typed tuning for {@link WallJump}, supplied by the loadout. */
+export interface WallJumpConfig {
+  startDelay?: number;
+  moveawayDuration?: number;
+  moveawaySpeed?: number;
+}
 
 /**
  * Port of Walljump.gd — kick off a wall (extends Jump). A start_delay freezes X
@@ -18,12 +26,19 @@ export class WallJump extends Jump {
   priority = 7;
   override animation = "walljump"; // Player.tscn (DashWallJump inherits it)
 
-  start_delay = WALLJUMP_START_DELAY;
-  move_away_duration = WALLJUMP_MOVEAWAY_DURATION;
-  move_away_speed = WALLJUMP_MOVEAWAY_SPEED;
+  start_delay: number;
+  move_away_duration: number;
+  move_away_speed: number;
   private walljump_direction = 0;
   private headbumped = false;
   private emitted_jump_signal = false;
+
+  constructor(character: Character, config: WallJumpConfig = {}) {
+    super(character);
+    this.start_delay = config.startDelay ?? WALLJUMP_START_DELAY;
+    this.move_away_duration = config.moveawayDuration ?? WALLJUMP_MOVEAWAY_DURATION;
+    this.move_away_speed = config.moveawaySpeed ?? WALLJUMP_MOVEAWAY_SPEED;
+  }
 
   override _StartCondition(): boolean {
     const c = this.character;

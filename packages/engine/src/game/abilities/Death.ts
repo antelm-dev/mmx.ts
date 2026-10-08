@@ -2,6 +2,11 @@ import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
 import { PLAYER_DEATH_RESTART_DELAY } from "../../core/constants.js";
 
+/** Typed tuning for {@link Death}, supplied by the loadout. */
+export interface DeathConfig {
+  restartDelay?: number;
+}
+
 /**
  * X's death sequence — port of PlayerDeath.gd, trimmed to what this port's Stage
  * and Scene actually need: freeze in place, hide the sprite, let the death sound
@@ -20,10 +25,11 @@ export class Death extends Movement {
   readonly name = "Death";
   priority = 200;
 
-  restart_delay = PLAYER_DEATH_RESTART_DELAY;
+  restart_delay: number;
 
-  constructor(character: Character) {
+  constructor(character: Character, config: DeathConfig = {}) {
     super(character);
+    this.restart_delay = config.restartDelay ?? PLAYER_DEATH_RESTART_DELAY;
     character.events.on("zero_health", () => {
       if (!this.executing) this.startDeath();
     });
