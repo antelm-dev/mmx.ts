@@ -134,7 +134,7 @@ function compileSoundPlan(
 ): { soundBindings: SoundBindingMap | null; soundIds: string[] } {
   const studioSounds = studio?.bindings?.sounds;
   if (studioSounds) {
-    return compileStudioSoundBindings(studioSounds, manifest, emission);
+    return compileStudioSoundBindings(studioSounds, manifest, emission, studio.bindings.music);
   }
   return {
     soundBindings: null,

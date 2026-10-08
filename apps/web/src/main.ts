@@ -101,6 +101,7 @@ async function bootstrap(): Promise<void> {
       settingsFromHome = false;
       menu.close();
       input.releaseAll();
+      gameplaySounds.stopMusic();
       home.open();
     },
     onVisibilityChange: (visible) => {

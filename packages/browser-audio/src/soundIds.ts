@@ -29,6 +29,12 @@ export type SoundName = SoundId;
  */
 export const OPTIONAL_GAMEPLAY_SOUND_IDS = ["slash"] as const;
 
+/**
+ * Runtime id of the level background music (`bindings.music.stage` in
+ * game/data.json). Optional: an unbound project plays no music.
+ */
+export const STAGE_MUSIC_ID = "musicStage";
+
 export const GAMEPLAY_SOUND_IDS = [
   "jump",
   "land",
