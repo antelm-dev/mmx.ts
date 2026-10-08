@@ -66,6 +66,19 @@ test("levelDocumentToLevelData maps spawn definition to engine entity", async ()
   assert.equal(level.entities[0]?.id, "Spawn");
 });
 
+test("levelDocumentToLevelData ignores presentation-only image layers and backdrop", async () => {
+  const project = await requireProject(syntheticProject);
+  const document = project.levels[0]!.document;
+  const withLayers = {
+    ...document,
+    imageLayers: [
+      { id: "img", assetId: "image.stage", x: 0, y: 0, parallax: 1, layer: "world-back" as const },
+    ],
+    backdrop: "#3a1c5c",
+  };
+  assert.deepEqual(levelDocumentToLevelData(withLayers), levelDocumentToLevelData(document));
+});
+
 test("repeated disk builds are deterministic for synthetic fixture", async () => {
   const outA = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-build-a-"));
   const outB = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-build-b-"));

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { migrateDocument } from "@mmx/content-schema";
+import { migrateDocument, validateImageLayers } from "@mmx/content-schema";
 import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import { parseProject } from "@mmx/project-schema";
 import { PROJECT_MANIFEST } from "./constants.js";
@@ -84,6 +84,9 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   const manifest = parsed.project;
   const issues: ProjectIssue[] = toIssues(parsed.issues);
   const levels: LoadedProject["levels"] = [];
+  const imageAssetIds = new Set(
+    manifest.assets.filter((asset) => asset.kind === "image").map((asset) => asset.id),
+  );
 
   for (const ref of manifest.levels) {
     let contained;
@@ -128,6 +131,15 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
       continue;
     }
 
+    const layerIssues = validateImageLayers(document, imageAssetIds);
+    for (const issue of layerIssues) {
+      issues.push({
+        severity: issue.severity,
+        code: issue.code,
+        path: ref.path,
+        message: `Level '${ref.id}': ${issue.message}`,
+      });
+    }
     levels.push({ id: ref.id, path: ref.path, document });
   }
 

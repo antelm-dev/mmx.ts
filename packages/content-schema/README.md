@@ -17,6 +17,7 @@ The main model includes:
   `LevelObjectInstance`
 - property metadata used to build inspector controls
 - presentation-only decoration instances
+- presentation-only image layers (project `image` assets) and a backdrop colour
 - `validateDocument` and structured validation issues
 - `SCHEMA_VERSION` and `migrateDocument`
 - `History`, `EditorCommand`, and pure command creators

@@ -88,3 +88,54 @@ test("loadProject rejects invalid asset kind at schema validation", async () => 
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+async function writeImageLayerProject(dir: string, imageLayers: unknown[]): Promise<void> {
+  const project = await requireProject(syntheticProject);
+  const manifest = structuredClone(project.manifest);
+  manifest.assets = [
+    ...manifest.assets,
+    { id: "image.stage", kind: "image", path: "assets/sprites/bg.png" },
+  ];
+  await fs.mkdir(path.join(dir, "levels"), { recursive: true });
+  await fs.cp(path.join(syntheticProject, "assets"), path.join(dir, "assets"), { recursive: true });
+  await fs.writeFile(path.join(dir, "project.json"), JSON.stringify(manifest), "utf8");
+  await fs.writeFile(
+    path.join(dir, "levels/level.main.json"),
+    JSON.stringify({ ...project.levels[0]!.document, imageLayers, backdrop: "#3a1c5c" }),
+    "utf8",
+  );
+}
+
+const stageLayer = { id: "img.stage", x: 0, y: 0, parallax: 1, layer: "world-back" };
+
+test("loadProject accepts image layers that reference image assets", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
+  try {
+    await writeImageLayerProject(dir, [{ ...stageLayer, assetId: "image.stage" }]);
+    const result = await loadProject(dir);
+    assert.equal(result.ok, true, JSON.stringify(result.issues));
+    if (!result.ok) return;
+    const document = result.value.levels[0]!.document;
+    assert.equal(document.imageLayers?.[0]?.assetId, "image.stage");
+    assert.equal(document.backdrop, "#3a1c5c");
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("loadProject rejects image layers whose asset is not of kind image", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
+  try {
+    await writeImageLayerProject(dir, [
+      { ...stageLayer, assetId: "sprite.bg" },
+      { ...stageLayer, id: "img.missing", assetId: "image.nope" },
+    ]);
+    const result = await loadProject(dir);
+    assert.equal(result.ok, false);
+    const unknown = result.issues.filter((issue) => issue.code === "imageLayer.asset.unknown");
+    assert.equal(unknown.length, 2);
+    assert.equal(unknown[0]?.path, "levels/level.main.json");
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
