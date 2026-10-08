@@ -33,7 +33,7 @@ export function spriteSnapshot(player: Player): GhostSource | null {
     x: player.pos.x + SPRITE_OFFSET_X,
     y: player.pos.y + player.hh - player.body_hh + SPRITE_OFFSET_Y,
     region,
-    facing: player.get_facing_direction(),
+    facing: player.get_sprite_facing(),
     layer: player.get_animation_layer(),
   };
 }

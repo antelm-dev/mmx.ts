@@ -72,6 +72,11 @@ export class Character extends AbilityUser {
 
   /** Death hides the sprite once the sequence starts (mirrors Enemy.sprite_visible). */
   sprite_visible = true;
+  /**
+   * Draw the sprite mirrored against the facing, without touching the facing
+   * itself (wall kicks and melee boxes read it). Set by Slash for a wall slash.
+   */
+  sprite_flipped = false;
   /** Set once zero health is reached, so the death hand-off only fires once. */
   private zero_health_emitted = false;
 
@@ -99,6 +104,11 @@ export class Character extends AbilityUser {
    * cannon is not in a fixed spot: dashing pushes it forward and down, falling
    * pulls it up, so the shot leaves from wherever the pose actually puts it.
    */
+  /** The direction the sprite is drawn in: the facing, unless {@link sprite_flipped}. */
+  get_sprite_facing(): number {
+    return this.sprite_flipped ? -this.get_facing_direction() : this.get_facing_direction();
+  }
+
   get_shot_position(): { x: number; y: number } {
     let ox = SHOT_POSITION.x;
     let oy = SHOT_POSITION.y;
