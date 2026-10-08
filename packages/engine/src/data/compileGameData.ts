@@ -112,6 +112,9 @@ export function compileGameData(
   for (const actor of Object.values(data.actors)) {
     hitbox(actor.body, `actors.${actor.id}.body`, actor.id);
     num(actor.maxHealth, `actors.${actor.id}.maxHealth`, actor.id, { gt: 0 });
+    if (actor.body.dashCrouch !== undefined) {
+      num(actor.body.dashCrouch, `actors.${actor.id}.body.dashCrouch`, actor.id, { min: 0 });
+    }
   }
 
   // --- abilities -------------------------------------------------------------

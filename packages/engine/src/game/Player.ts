@@ -7,6 +7,7 @@ import { Intro } from "./abilities/Intro.js";
 import type { Actor } from "./Actor.js";
 import { COMPILED_GAME_DATA } from "../data/index.js";
 import { buildPlayerLoadout } from "./loadout/PlayerLoadout.js";
+import { DEFAULT_DASH_CROUCH } from "../core/constants.js";
 
 /** The loadout the default player is composed from — Player.tscn's ability list, as data. */
 export const DEFAULT_PLAYER_LOADOUT = "player.x";
@@ -37,6 +38,7 @@ export class Player extends Character {
     const { body, maxHealth } = loadout.actor;
     this.hw = body.hw;
     this.hh = this.body_hh = body.hh;
+    this.dash_crouch = body.dashCrouch ?? DEFAULT_DASH_CROUCH;
     this.max_health = this.current_health = maxHealth;
     buildPlayerLoadout(this, loadout, COMPILED_GAME_DATA);
   }

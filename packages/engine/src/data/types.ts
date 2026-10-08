@@ -86,7 +86,11 @@ export interface PhysicsDefinition {
 /** A body: what collides with terrain, plus how much health it starts with. */
 export interface ActorDefinition {
   id: string;
-  body: Hitbox;
+  /**
+   * `dashCrouch`: pixels the body loses off its top while dashing (X's crouched
+   * dash pose). Defaults to X's 4 (`DEFAULT_DASH_CROUCH`); 0 keeps the full body.
+   */
+  body: Hitbox & { dashCrouch?: number };
   maxHealth: number;
 }
 
