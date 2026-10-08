@@ -112,6 +112,20 @@ test("a press during a wall slide gives wall_slash with the box away from the wa
   const box = player.meleeBounds;
   assert.ok(box, "the blade is live");
   assert.ok(box.right < player.pos.x, "the blade swings away from the wall on the right");
+  assert.equal(player.get_facing_direction(), -1, "the facing itself is untouched");
+  assert.equal(player.get_sprite_facing(), 1, "the clip is drawn toward the box, not the wall");
+
+  // The kick off the wall still goes left, away from it, and ends the flip.
+  const wallX = player.pos.x;
+  input.setDown("jump", true);
+  ticks(player, 5);
+  assert.ok(player.is_executing("WallJump"), player.stateString());
+  assert.ok(player.pos.x < wallX, "the kick moved away from the wall");
+  assert.equal(
+    player.get_sprite_facing(),
+    player.get_facing_direction(),
+    "the flip ends with the swing",
+  );
 });
 
 test("a swing damages a Metool once", () => {
