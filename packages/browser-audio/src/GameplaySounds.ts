@@ -74,6 +74,8 @@ export class GameplaySounds {
       this.effects.play("charge", { db: -13.5, loop: true, loopSeconds: CHARGE_LOOP });
     });
     player.events.on("charge_stopped", () => this.effects.stop("charge"));
+    // Optional id (OPTIONAL_GAMEPLAY_SOUND_IDS): play() is a no-op when unbound.
+    player.events.on("slash", () => this.effects.play("slash", { rate: [1, 1.1] }));
   }
 
   attachEnemy(enemy: Enemy): void {

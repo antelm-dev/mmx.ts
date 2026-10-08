@@ -101,3 +101,27 @@ test("a hidden Metool's shield takes the swing without damage", () => {
   assert.equal(metool.current_health, health);
   assert.equal(metool.has_shield(), true, "the saber does not break the guard");
 });
+
+test("an impact leaves a hit spark that plays out its 4 frames, and none without hitFx", () => {
+  const { world, player, stage } = makeStage();
+  const bat = stage.add(pinnedBat(world, player, 24));
+  const { x, y } = bat.pos;
+
+  player.startMelee({ ...SWING, hitFx: "lemon_hit" });
+  tickPinned(stage, bat, x, y, 1);
+  assert.equal(stage.sparks.length, 1);
+  const spark = stage.sparks[0];
+  assert.deepEqual([spark.clip, spark.frame, spark.dir, spark.y], ["lemon_hit", 0, 1, bat.pos.y]);
+  const hurt = bat.hurtbox;
+  const blade = player.meleeBounds!;
+  assert.equal(spark.x, (Math.max(blade.left, hurt.left) + Math.min(blade.right, hurt.right)) / 2);
+
+  tickPinned(stage, bat, x, y, 7); // 4 frames at 32 fps = 0.125 s, just under 8 ticks
+  assert.equal(stage.sparks[0]?.frame, 3);
+  tickPinned(stage, bat, x, y, 1);
+  assert.equal(stage.sparks.length, 0, "gone once the clip has played");
+
+  player.startMelee(SWING);
+  tickPinned(stage, bat, x, y, 1);
+  assert.equal(stage.sparks.length, 0);
+});

@@ -56,6 +56,17 @@ test("presses inside the chain window run the combo to slash_3", () => {
   assert.equal(player.get_animation(), "slash_3", "slash_3 does not chain or restart");
 });
 
+test("every swing, chained or not, announces itself once for the swing sound", () => {
+  const { input, player } = zero();
+  const swings: string[] = [];
+  player.events.on("slash", (step: string) => swings.push(step));
+  tap(input, player);
+  ticks(player, 5);
+  tap(input, player);
+  ticks(player, 30);
+  assert.deepEqual(swings, ["slash1", "slash2"]);
+});
+
 test("a press after the swing has ended restarts at slash_1", () => {
   const { input, player } = zero();
   tap(input, player);

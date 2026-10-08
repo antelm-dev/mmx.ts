@@ -10,9 +10,11 @@ export interface SlashConfig {
   dashSlash: SlashStep;
   jumpSlash: SlashStep;
   wallSlash: SlashStep;
+  /** Effect clip for the impact spark (see {@link MeleeSpec.hitFx}). */
+  hitFx: string;
 }
 
-type StepKey = keyof SlashConfig;
+type StepKey = Exclude<keyof SlashConfig, "hitFx">;
 
 /** Ground swings hold the player in place; air and wall swings keep locomotion. */
 const GROUNDED: ReadonlySet<StepKey> = new Set(["slash1", "slash2", "slash3", "dashSlash"]);
@@ -75,6 +77,7 @@ export class Slash extends Ability {
         box: { hw: w / 2, hh: h / 2, ox: side * (x + w / 2), oy: y + h / 2 + c.hh },
         damage: step.damage,
         activeFrames: step.activeTo - step.activeFrom + 1,
+        hitFx: this.config.hitFx,
       });
     }
     if (GROUNDED.has(this.step)) c.set_horizontal_speed(0);
@@ -129,5 +132,6 @@ export class Slash extends Ability {
       c.set_horizontal_speed(0);
     }
     c.play_animation(this.current.animation);
+    c.events.emit("slash", step); // one per swing, chained or not: the swing sound
   }
 }
