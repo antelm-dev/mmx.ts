@@ -209,4 +209,79 @@ export const abilities = {
     priority: 200,
     config: { restartDelay: 3.8 }, // X's (the sheet has no death sequence yet)
   },
+  // zero_moves.json `attacks` (box, damage, active_steps) and the MMZ1 anim scripts
+  // in game/cache/zero.json. A script step lasts its duration in frames; the
+  // reference checks the blade after the tick's anim update, so active steps
+  // [a, b] are live on swing frames [start(a) - 1, end(b) - 2]. duration = the
+  // script's frames up to HOLD. chainWindow = combo_window 12 x 3 = 36 f, capped by
+  // the swing (the reference only chains while the anim is not done).
+  "zero.slash": {
+    id: "zero.slash",
+    behavior: "player.slash",
+    layer: "action",
+    config: {
+      // anim 8: steps 2,1,1,2,2,2,4,2,2; active steps 1-2 (reach 22 px)
+      slash1: {
+        animation: "slash_1",
+        duration: 18,
+        activeFrom: 1,
+        activeTo: 2,
+        hitbox: { x: 0, y: -36, w: 24, h: 34 },
+        damage: 2,
+        chainWindow: 18,
+      },
+      // anim 10: steps 2,2,2,2,1,1,2,2,4,4,4,4,4; active steps 4-6 (reach 29/23 px)
+      slash2: {
+        animation: "slash_2",
+        duration: 34,
+        activeFrom: 7,
+        activeTo: 10,
+        hitbox: { x: 0, y: -40, w: 30, h: 38 },
+        damage: 2,
+        chainWindow: 34,
+      },
+      // anim 11: steps 2,4,2,2,2,2,2,2,2,2,2,2; active steps 2-4 (reach 29/23-24 px)
+      slash3: {
+        animation: "slash_3",
+        duration: 26,
+        activeFrom: 5,
+        activeTo: 10,
+        hitbox: { x: 0, y: -44, w: 30, h: 44 },
+        damage: 4,
+        chainWindow: 0,
+      },
+      // anim 14: steps 2,1,1,2,2,4,2,2,4; active steps 1-2 (reach 26/20 px)
+      dashSlash: {
+        animation: "dash_slash",
+        duration: 20,
+        activeFrom: 1,
+        activeTo: 2,
+        hitbox: { x: 0, y: -30, w: 27, h: 28 },
+        damage: 3,
+        chainWindow: 0,
+      },
+      // anim 16 script 0: steps 2,1,1,2,2,2,2,4,4,4,4 then loops 7-10 until landing;
+      // the swing ends after the unlooped 28 f. Active steps 1-3 (reach 24/19 px)
+      jumpSlash: {
+        animation: "jump_slash",
+        duration: 28,
+        activeFrom: 1,
+        activeTo: 4,
+        hitbox: { x: -8, y: -44, w: 33, h: 48 },
+        damage: 2,
+        chainWindow: 0,
+      },
+      // anim 17: steps 2,1,1,2,2,2,4,4,6; active steps 1-5. The box sits behind the
+      // slide pose (Zero faces the wall), 18-22 px out.
+      wallSlash: {
+        animation: "wall_slash",
+        duration: 24,
+        activeFrom: 1,
+        activeTo: 8,
+        hitbox: { x: -31, y: -38, w: 30, h: 36 },
+        damage: 2,
+        chainWindow: 0,
+      },
+    },
+  },
 } satisfies Record<string, AbilityDefinition>;

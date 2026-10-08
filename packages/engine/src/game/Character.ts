@@ -47,6 +47,8 @@ export class Character extends AbilityUser {
   projectiles: Projectile[] = [];
   /** Live strike volume, resolved against enemy hurtboxes by Stage like a projectile. */
   melee: MeleeSwing | null = null;
+  /** Set by a grounded Slash: no walking, turning or dashing until the swing ends. */
+  movement_locked = false;
 
   /**
    * Monotonic counter behind each projectile's {@link Projectile.runtimeId}.
@@ -83,6 +85,10 @@ export class Character extends AbilityUser {
     this.input = input;
     this.rng = new Rng(seed);
     this.events.on("land", () => this.on_land());
+    // Getting hit or dying ends any swing in progress, whoever started it.
+    this.events.on("ability_started", (name: string) => {
+      if (name === "Damage" || name === "Death") this.melee = null;
+    });
   }
 
   /**
@@ -263,7 +269,7 @@ export class Character extends AbilityUser {
     return this.listening_to_inputs && this.input.justReleased(a);
   }
   get_pressed_axis(): number {
-    if (!this.listening_to_inputs) return 0;
+    if (!this.listening_to_inputs || this.movement_locked) return 0;
     return this.input.axis();
   }
   has_just_pressed_left(): boolean {

@@ -18,6 +18,7 @@ import { Damage, type DamageConfig } from "../abilities/Damage.js";
 import { Death, type DeathConfig } from "../abilities/Death.js";
 import { Shot, type ShotConfig } from "../abilities/Shot.js";
 import { Charge, type ChargeConfig } from "../abilities/Charge.js";
+import { Slash, type SlashConfig } from "../abilities/Slash.js";
 
 /**
  * Player-ability runtime wiring (Part 5).
@@ -59,6 +60,7 @@ const FACTORIES: Readonly<Record<string, Ctor>> = {
   "player.death": (o, c) => new Death(o, c as unknown as DeathConfig),
   "player.shot": (o, c) => new Shot(o, c as unknown as ShotConfig),
   "player.charge": (o, c) => new Charge(o, c as unknown as ChargeConfig),
+  "player.slash": (o, c) => new Slash(o, c as unknown as SlashConfig),
 };
 
 // Attach each real create to the registry entry registered in Part 4.

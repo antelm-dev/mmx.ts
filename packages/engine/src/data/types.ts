@@ -31,6 +31,24 @@ export interface Offset {
   y: number;
 }
 
+/**
+ * One saber swing in a `player.slash` config. Frames count from the swing's
+ * first tick at 60 Hz; `hitbox` is measured from the feet, facing right, y down
+ * (the zero_moves.json `attacks` convention).
+ */
+export interface SlashStep {
+  animation: string;
+  /** Frames until the swing ends. */
+  duration: number;
+  /** First and last frame the blade is live. */
+  activeFrom: number;
+  activeTo: number;
+  hitbox: { x: number; y: number; w: number; h: number };
+  damage: number;
+  /** A press before this frame chains into the next combo step; 0 = no chain. */
+  chainWindow: number;
+}
+
 /** Which arbitration layer an ability lives on (see AbilityUser). */
 export type AbilityLayer = "locomotion" | "action" | "reaction";
 
@@ -86,7 +104,7 @@ export interface AbilityDefinition {
   layer: AbilityLayer;
   /** Locomotion arbitration priority; higher wins. Ignored for non-locomotion. */
   priority?: number;
-  config?: Record<string, number | string | boolean | Offset | Hitbox | number[]>;
+  config?: Record<string, number | string | boolean | Offset | Hitbox | number[] | SlashStep>;
 }
 
 /** One slot in a loadout: an ability, with optional per-loadout overrides. */
@@ -96,7 +114,7 @@ export interface LoadoutSlot {
   /** Overrides the ability's default arbitration priority in this loadout. */
   priority?: number;
   /** Shallow-merged over the ability's default config for this loadout. */
-  config?: Record<string, number | string | boolean | Offset | Hitbox | number[]>;
+  config?: Record<string, number | string | boolean | Offset | Hitbox | number[] | SlashStep>;
 }
 
 /** A composed actor: its body, its ordered ability slots, and its arsenal. */

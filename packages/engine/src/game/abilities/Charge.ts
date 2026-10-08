@@ -66,7 +66,7 @@ export class Charge extends Ability {
   /** Buster-only: no ported sub-weapon has a charged tier (see WEAPON_SHOTS). */
   override _StartCondition(): boolean {
     return (
-      !this.character.is_executing("Damage") &&
+      !this.character.is_executing_either(["Damage", "Slash"]) &&
       this.character.get_action_pressed("fire") &&
       !this.character.block_charging &&
       this.character.activeWeapon === "buster"

@@ -44,6 +44,14 @@ const ABILITY_SCHEMAS: Readonly<Record<string, Schema>> = {
   "player.death": { restartDelay: "number" },
   "player.shot": { armPointDuration: "number" },
   "player.charge": { minTime: "number", level3: "number", level4: "number", maxTime: "number" },
+  "player.slash": {
+    slash1: "slashStep",
+    slash2: "slashStep",
+    slash3: "slashStep",
+    dashSlash: "slashStep",
+    jumpSlash: "slashStep",
+    wallSlash: "slashStep",
+  },
 };
 
 export const abilityRegistry = new Registry<AbilityFactory>();

@@ -46,6 +46,7 @@ export const loadouts = {
       { ability: "zero.dash-wall-jump" },
       { ability: "zero.damage" },
       { ability: "zero.death" },
+      { ability: "zero.slash" },
     ],
     weapons: [],
   },
