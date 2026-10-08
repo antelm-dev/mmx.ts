@@ -418,3 +418,43 @@ test("compatibleRuntime compares prerelease precedence and ignores build metadat
     ),
   );
 });
+
+test("animation loopStart is validated and survives serialization", () => {
+  const withLoopStart = (loopStart: number): ProjectDocument =>
+    validProject({
+      assets: [
+        {
+          id: "anim.hero",
+          kind: "animation",
+          path: "assets/anims/hero.json",
+          animations: {
+            run: {
+              loop: true,
+              loopStart,
+              speed: 1,
+              frames: [
+                { region: [0, 0, 8, 8], duration: 0.1 },
+                { region: [8, 0, 8, 8], duration: 0.1 },
+                { region: [16, 0, 8, 8], duration: 0.1 },
+              ],
+            },
+          },
+        },
+      ],
+    });
+
+  for (const bad of [-1, 3, 1.5]) {
+    const issues = validateProject(withLoopStart(bad)).issues;
+    assert.ok(
+      issues.some((issue) => issue.code === "animation.loopStart"),
+      `loopStart ${bad}`,
+    );
+  }
+
+  const good = withLoopStart(2);
+  assert.ok(!validateProject(good).issues.some((issue) => issue.code === "animation.loopStart"));
+  const reparsed = JSON.parse(serializeProject(good)) as ProjectDocument;
+  const anim = reparsed.assets.find((asset) => asset.id === "anim.hero");
+  assert.ok(anim && anim.kind === "animation");
+  assert.equal(anim.animations.run?.loopStart, 2);
+});

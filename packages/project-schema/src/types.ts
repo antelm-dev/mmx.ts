@@ -23,6 +23,8 @@ export type AnimationFrame = {
 
 export type AnimationClip = {
   loop: boolean;
+  /** Frame a looping clip wraps back to (default 0); ignored when not looping. */
+  loopStart?: number;
   speed: number;
   frames: AnimationFrame[];
 };

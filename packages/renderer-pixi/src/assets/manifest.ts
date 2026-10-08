@@ -9,7 +9,12 @@ export interface ShotAnimManifest {
   sheets: Record<string, string>;
   animations: Record<
     string,
-    { loop: boolean; speed: number; frames: { region: Region; duration: number }[] }
+    {
+      loop: boolean;
+      loopStart?: number;
+      speed: number;
+      frames: { region: Region; duration: number }[];
+    }
   >;
 }
 

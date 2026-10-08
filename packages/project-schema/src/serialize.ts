@@ -27,11 +27,13 @@ function cloneFrame(frame: AnimationFrame): AnimationFrame {
 }
 
 function cloneClip(clip: AnimationClip): AnimationClip {
-  return {
+  const next: AnimationClip = {
     loop: clip.loop,
     speed: clip.speed,
     frames: clip.frames.map(cloneFrame),
   };
+  if (clip.loopStart !== undefined) next.loopStart = clip.loopStart;
+  return next;
 }
 
 function normalizeAsset(asset: ProjectAsset): ProjectAsset {

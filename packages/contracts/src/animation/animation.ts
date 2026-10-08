@@ -8,6 +8,8 @@ export interface FrameData {
 
 export interface ClipData {
   loop: boolean;
+  /** Frame a looping clip wraps back to (default 0); ignored when not looping. */
+  loopStart?: number;
   speed: number;
   frames: FrameData[];
 }
@@ -47,6 +49,14 @@ export function assertAnimData(data: unknown, label = "animation data"): asserts
     }
     if (value.frames.length === 0) {
       throw new Error(`${clipLabel}: must contain at least one frame`);
+    }
+    if (
+      value.loopStart !== undefined &&
+      (!Number.isInteger(value.loopStart) ||
+        Number(value.loopStart) < 0 ||
+        Number(value.loopStart) >= value.frames.length)
+    ) {
+      throw new Error(`${clipLabel}: loopStart must be an integer frame index`);
     }
     value.frames.forEach((frame, index) => {
       if (!isRecord(frame)) {
