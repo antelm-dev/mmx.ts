@@ -101,6 +101,7 @@ export class Slash extends Ability {
     const c = this.character;
     c.melee = null;
     c.movement_locked = false;
+    c.sprite_flipped = false;
     // Hand the sprite back to whatever locomotion is running now.
     const loco = c.currentLocomotion();
     if (loco instanceof Ability) loco.play_animation_on_initialize();
@@ -126,6 +127,10 @@ export class Slash extends Ability {
     this.clipFrame = 0;
     c.melee = null;
     c.movement_locked = GROUNDED.has(step);
+    // The box flips for a wall slash (see _Update), so the clip must too or the
+    // arc is drawn into the wall. Which way Zero faces while sliding is still the
+    // MODLOG's open question; only the swing is mirrored, not the facing.
+    c.sprite_flipped = step === "wallSlash";
     if (c.movement_locked) {
       // A dash slash replaces the dash outright, as in the reference.
       c.get_executing_ability("Dash")?.EndAbility();
