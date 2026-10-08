@@ -14,7 +14,8 @@ export type StudioGameDataFile = {
   schemaVersion?: number;
   bindings: {
     playerAnimation: string;
-    playerPointingSheet: string;
+    /** Detached arm-pointing atlas (X's buster arm); characters without one omit it. */
+    playerPointingSheet?: string;
     fontUi?: string;
     sounds: Record<string, string>;
     enemyAnimations: Record<string, string>;

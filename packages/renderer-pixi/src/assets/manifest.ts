@@ -34,7 +34,7 @@ export interface RendererAssetManifest {
 export interface RendererAssetBindings {
   playerAnimation: string;
   playerSheetNormal: string;
-  playerSheetPointing: string;
+  playerSheetPointing?: string;
   enemyActors: Record<string, string>;
   pickupActors: Record<string, string>;
   shotAnimations: string;
@@ -135,6 +135,40 @@ function buildShotAnims(
   return { sheets, animations };
 }
 
+/**
+ * The arm-pointing atlas is optional (Zero has no detached arm). Without it the
+ * `pointing_cannon` layer draws from the normal sheet: Animation.currentRegion
+ * falls back to `frame.region` when a frame has no `armRegion`, so that is the
+ * only region the layer can ask for.
+ */
+function resolvePointingSheet(
+  resolver: RendererAssetResolver,
+  bindings: RendererAssetBindings,
+  playerAnims: AnimData,
+  sheetUrls: Record<string, string>,
+): string {
+  const playerSheet = resolver.sheetKey(bindings.playerSheetNormal);
+  if (bindings.playerSheetPointing === undefined) {
+    for (const [name, clip] of Object.entries(playerAnims.animations)) {
+      if (clip.frames.some((frame) => frame.armRegion !== undefined)) {
+        throw invalidAssetError(
+          bindings.playerAnimation,
+          `clip '${name}' has armRegion frames but no player pointing sheet is bound.`,
+        );
+      }
+    }
+    return playerSheet;
+  }
+  const pointingSheet = resolver.sheetKey(bindings.playerSheetPointing);
+  if (!sheetUrls[pointingSheet]) {
+    throw invalidAssetError(
+      bindings.playerSheetPointing,
+      `player pointing sheet '${pointingSheet}' is not listed in sheetImages.`,
+    );
+  }
+  return pointingSheet;
+}
+
 export function buildRendererAssetManifest(
   resolver: RendererAssetResolver,
   bindings: RendererAssetBindings,
@@ -145,19 +179,13 @@ export function buildRendererAssetManifest(
   const playerAsset = resolver.requireKind(bindings.playerAnimation, ["animation"]);
   const playerAnims = animationToAnimData(playerAsset, `animation '${bindings.playerAnimation}'`);
   const playerSheet = resolver.sheetKey(bindings.playerSheetNormal);
-  const pointingSheet = resolver.sheetKey(bindings.playerSheetPointing);
   if (!sheetUrls[playerSheet]) {
     throw invalidAssetError(
       bindings.playerSheetNormal,
       `player sheet '${playerSheet}' is not listed in sheetImages.`,
     );
   }
-  if (!sheetUrls[pointingSheet]) {
-    throw invalidAssetError(
-      bindings.playerSheetPointing,
-      `player pointing sheet '${pointingSheet}' is not listed in sheetImages.`,
-    );
-  }
+  const pointingSheet = resolvePointingSheet(resolver, bindings, playerAnims, sheetUrls);
 
   const enemyActors: Record<string, ClipActor> = {};
   const enemyActorIds: Record<string, string> = {};
