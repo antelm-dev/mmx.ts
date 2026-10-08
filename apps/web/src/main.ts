@@ -115,6 +115,7 @@ async function bootstrap(): Promise<void> {
   });
 
   home = new HomeScreen({
+    title: projectBundle.meta.name,
     levels: levelCatalog,
     onPlay: (level) => {
       debug.loadLevel(level);

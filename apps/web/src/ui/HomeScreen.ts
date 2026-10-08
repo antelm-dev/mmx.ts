@@ -22,7 +22,14 @@ function centerX(text: string): number {
   return Math.round((VIEW_WIDTH - text.length * UI_CHAR_W) / 2);
 }
 
+/** The title line: the project's name in the UI face's capitals, the template's when unnamed. */
+export function homeTitle(projectName: string | undefined): string {
+  return projectName?.trim().toUpperCase() || "MEGA MAN X";
+}
+
 export interface HomeScreenOptions {
+  /** The project's `meta.name`. */
+  title: string;
   levels: readonly LevelData[];
   onPlay: (level: LevelData) => void;
   onSettings: () => void;
@@ -50,7 +57,8 @@ export class HomeScreen {
     this.paint();
     this.view.addChild(this.art, this.highlight);
 
-    this.labels.add("MEGA MAN X", centerX("MEGA MAN X"), 52, COLOR_TEXT);
+    const title = homeTitle(options.title);
+    this.labels.add(title, centerX(title), 52, COLOR_TEXT);
 
     const labels = ["START", "LEVEL", "SETTINGS"];
     labels.forEach((label, index) => {
