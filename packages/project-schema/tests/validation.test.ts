@@ -540,6 +540,48 @@ test("player.loadout is optional, validated against known loadouts, and serializ
   );
 });
 
+test("tileset assets validate tileSize, columns, collision and slopes, and serialize sorted", () => {
+  const tileset = {
+    id: "tiles.stage",
+    kind: "tileset" as const,
+    path: "assets/tiles/stage.png",
+    tileSize: 16,
+    columns: 4,
+    collision: { 3: 2, 0: 1 },
+    slopes: { 3: [0, 8] as const },
+  };
+  const ok = parseProject(validProject({ assets: [tileset] }), { terrainTiles: [0, 1, 2, 3] });
+  assert.equal(ok.ok, true);
+  const out = JSON.parse(serializeProject(validProject({ assets: [tileset] })));
+  assert.deepEqual(Object.keys(out.assets[0].collision), ["0", "3"]);
+  assert.equal(out.assets[0].columns, 4);
+
+  const bad = validateProject(
+    validProject({
+      assets: [
+        {
+          ...tileset,
+          tileSize: 0,
+          columns: 1.5,
+          collision: { "-1": 1, 2: 9, x: 1 },
+          slopes: { 1: [0] },
+        } as never,
+      ],
+    }),
+    { terrainTiles: [0, 1, 2, 3] },
+  );
+  const codes = bad.issues.map((issue) => issue.code);
+  assert.ok(codes.includes("tileset.tileSize"));
+  assert.ok(codes.includes("tileset.columns"));
+  assert.equal(codes.filter((code) => code === "tileset.collision").length, 3);
+  assert.ok(codes.includes("tileset.slopes"));
+  // Without the TerrainTile list only the shape is checked.
+  assert.equal(
+    validateProject(validProject({ assets: [{ ...tileset, collision: { 0: 9 } }] })).ok,
+    true,
+  );
+});
+
 test("sprite regions round-trip, are validated, and stay absent when unset", () => {
   assert.equal(serializeProject(validProject()).includes('"regions"'), false);
 

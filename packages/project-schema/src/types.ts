@@ -1,6 +1,6 @@
 export const PROJECT_SCHEMA_VERSION = 1;
 
-export const ASSET_KINDS = ["image", "sprite", "animation", "sound", "font"] as const;
+export const ASSET_KINDS = ["image", "sprite", "animation", "sound", "font", "tileset"] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
 
 export type Region = readonly [x: number, y: number, width: number, height: number];
@@ -62,7 +62,25 @@ export type FontAsset = AssetFields & {
   kind: "font";
 };
 
-export type ProjectAsset = ImageAsset | SpriteAsset | AnimationAsset | SoundAsset | FontAsset;
+/** A grid of `tileSize` squares cut row-major from one image; indices count from 0. */
+export type TilesetAsset = AssetFields & {
+  kind: "tileset";
+  tileSize: number;
+  /** Tiles per row; defaults to the image width divided by `tileSize`. */
+  columns?: number;
+  /** Collision type per tile index; values are `TerrainTile` numbers from `@mmx/contracts/terrain`. */
+  collision: Record<number, number>;
+  /** Slope profile per tile index, as [left, right] filled pixels from the tile's base. */
+  slopes?: Record<number, readonly [l: number, r: number]>;
+};
+
+export type ProjectAsset =
+  | ImageAsset
+  | SpriteAsset
+  | AnimationAsset
+  | SoundAsset
+  | FontAsset
+  | TilesetAsset;
 
 /** Which compiled player loadout the project plays as; absent means the engine default (`player.x`). */
 export type ProjectPlayer = {
@@ -84,6 +102,8 @@ export type ProjectDocument = {
 export type ValidateProjectOptions = {
   /** Known compiled loadout ids; when given, `player.loadout` must be one of them. */
   loadoutIds?: Iterable<string>;
+  /** Known `TerrainTile` values; when given, tileset `collision` values must be one of them. */
+  terrainTiles?: Iterable<number>;
 };
 
 export type Severity = "error" | "warning";

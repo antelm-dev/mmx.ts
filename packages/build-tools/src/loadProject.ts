@@ -1,8 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { migrateDocument, validateImageLayers } from "@mmx/content-schema";
+import {
+  migrateDocument,
+  TerrainTile,
+  validateImageLayers,
+  validateTileLayers,
+} from "@mmx/content-schema";
 import { COMPILED_GAME_DATA } from "@mmx/engine/data";
-import { parseProject } from "@mmx/project-schema";
+import { parseProject, type TilesetAsset } from "@mmx/project-schema";
 import { PROJECT_MANIFEST } from "./constants.js";
 import { validateLevelObjects } from "./compileLevel.js";
 import { ProjectLoadError } from "./errors.js";
@@ -18,6 +23,54 @@ function toIssues(
     message: issue.message,
     path: issue.path,
   }));
+}
+
+/** Width and height from a PNG's IHDR chunk; undefined for anything else. */
+function pngSize(bytes: Uint8Array): { width: number; height: number } | undefined {
+  const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (bytes.length < 24 || signature.some((byte, i) => bytes[i] !== byte)) return undefined;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+/**
+ * Tiles the tileset image holds, or undefined when its size cannot be read; an
+ * unreadable or non-PNG image is reported to `issues` instead of thrown.
+ */
+async function tilesetTileCount(
+  root: string,
+  asset: TilesetAsset,
+  issues: ProjectIssue[],
+): Promise<number | undefined> {
+  let bytes: Uint8Array;
+  try {
+    const contained = await resolveContainedProjectPath(root, asset.path);
+    if (!contained.exists) return undefined; // reported by the asset file check below
+    bytes = await fs.readFile(contained.absolutePath);
+  } catch (error) {
+    if (error instanceof ProjectLoadError) return undefined; // reported by the asset file check below
+    const message = error instanceof Error ? error.message : String(error);
+    issues.push({
+      severity: "error",
+      code: "asset.unreadable",
+      path: asset.path,
+      message: `Tileset '${asset.id}' file '${asset.path}' could not be read: ${message}`,
+    });
+    return undefined;
+  }
+  const size = pngSize(bytes);
+  if (!size) {
+    issues.push({
+      severity: "warning",
+      code: "tileset.size.unknown",
+      path: asset.path,
+      message: `Tileset '${asset.id}': tileset image size unknown; tile indices not checked.`,
+    });
+    return undefined;
+  }
+  // Same cap as the renderer: a `columns` wider than the image cannot add tiles.
+  const fit = Math.floor(size.width / asset.tileSize);
+  return Math.min(asset.columns ?? fit, fit) * Math.floor(size.height / asset.tileSize);
 }
 
 export async function loadProject(root: string): Promise<LoadProjectResult> {
@@ -76,7 +129,10 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
     };
   }
 
-  const parsed = parseProject(raw, { loadoutIds: COMPILED_GAME_DATA.loadouts.keys() });
+  const parsed = parseProject(raw, {
+    loadoutIds: COMPILED_GAME_DATA.loadouts.keys(),
+    terrainTiles: Object.values(TerrainTile),
+  });
   if (!parsed.ok || !parsed.project) {
     return { ok: false, issues: toIssues(parsed.issues) };
   }
@@ -87,6 +143,12 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   const imageAssetIds = new Set(
     manifest.assets.filter((asset) => asset.kind === "image").map((asset) => asset.id),
   );
+  const tilesets = new Map<string, number | undefined>();
+  for (const asset of manifest.assets) {
+    if (asset.kind === "tileset") {
+      tilesets.set(asset.id, await tilesetTileCount(rootResolved, asset, issues));
+    }
+  }
 
   for (const ref of manifest.levels) {
     let contained;
@@ -131,7 +193,10 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
       continue;
     }
 
-    const layerIssues = validateImageLayers(document, imageAssetIds);
+    const layerIssues = [
+      ...validateImageLayers(document, imageAssetIds),
+      ...validateTileLayers(document, tilesets),
+    ];
     for (const issue of layerIssues) {
       issues.push({
         severity: issue.severity,

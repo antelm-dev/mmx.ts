@@ -67,13 +67,22 @@ test("levelDocumentToLevelData maps spawn definition to engine entity", async ()
   assert.equal(level.entities[0]?.id, "Spawn");
 });
 
-test("levelDocumentToLevelData ignores presentation-only image layers and backdrop", async () => {
+test("levelDocumentToLevelData ignores presentation-only image layers, tile layers and backdrop", async () => {
   const project = await requireProject(syntheticProject);
   const document = project.levels[0]!.document;
   const withLayers = {
     ...document,
     imageLayers: [
       { id: "img", assetId: "image.stage", x: 0, y: 0, parallax: 1, layer: "world-back" as const },
+    ],
+    tileLayers: [
+      {
+        id: "tiles",
+        tilesetId: "tiles.stage",
+        layer: "world-back" as const,
+        parallax: 1,
+        cells: new Array<number>(document.cols * document.rows).fill(0),
+      },
     ],
     backdrop: "#3a1c5c",
   };
@@ -138,6 +147,49 @@ test("browser bundle carries level image layers, backdrop and their resolved she
     assert.equal(
       bundle.rendererManifest?.sheetUrls["image.stage"],
       emission.byId["image.stage"]?.publicUrl,
+    );
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+test("browser bundle carries tile layers, tileset geometry and the tileset sheet URL", async () => {
+  const fixture = await createStudioShapedFixture("mmx-tile-layers-");
+  try {
+    const manifestPath = path.join(fixture.root, "project.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    manifest.assets.push(
+      { id: "tiles.stage", kind: "tileset", path: "assets/tiles.png", tileSize: 16, collision: {} },
+      { id: "tiles.unused", kind: "tileset", path: "assets/tiles.png", tileSize: 8, collision: {} },
+    );
+    await fs.writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+    await fs.copyFile(
+      path.join(fixture.root, "assets/sprites/hud.png"),
+      path.join(fixture.root, "assets/tiles.png"),
+    );
+    const levelPath = path.join(fixture.root, "levels/level.fixture.json");
+    const level = JSON.parse(await fs.readFile(levelPath, "utf8"));
+    const tileLayers = [
+      {
+        id: "tiles.ground",
+        tilesetId: "tiles.stage",
+        layer: "world-back",
+        parallax: 1,
+        cells: new Array<number>(level.cols * level.rows).fill(-1),
+      },
+    ];
+    await fs.writeFile(levelPath, JSON.stringify({ ...level, tileLayers }), "utf8");
+
+    const project = await requireProject(fixture.root);
+    const emission = await planAssetEmission(project);
+    const bundle = await compileBrowserProjectBundle(project, emission);
+
+    assert.deepEqual(bundle.levels[0]?.tileLayers, tileLayers);
+    assert.equal(bundle.levels[0]?.cols, level.cols);
+    assert.deepEqual(bundle.levels[0]?.tilesets, { "tiles.stage": { tileSize: 16 } });
+    assert.equal(
+      bundle.rendererManifest?.sheetUrls["tiles.stage"],
+      emission.byId["tiles.stage"]?.publicUrl,
     );
   } finally {
     await fixture.dispose();

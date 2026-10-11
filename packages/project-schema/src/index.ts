@@ -17,6 +17,7 @@ export {
   type Severity,
   type SoundAsset,
   type SpriteAsset,
+  type TilesetAsset,
   type ValidationIssue,
   type ValidationResult,
   type ValidateProjectOptions,

@@ -5,6 +5,7 @@ import type {
   ProjectDocument,
   Region,
   SpriteAsset,
+  TilesetAsset,
 } from "./types.js";
 
 function compareId(a: string, b: string): number {
@@ -36,6 +37,14 @@ function cloneClip(clip: AnimationClip): AnimationClip {
     frames: clip.frames.map(cloneFrame),
   };
   if (clip.loopStart !== undefined) next.loopStart = clip.loopStart;
+  return next;
+}
+
+function sortedByIndex<T>(record: Record<number, T>, clone: (value: T) => T): Record<number, T> {
+  const next: Record<number, T> = {};
+  for (const index of Object.keys(record).sort((a, b) => Number(a) - Number(b))) {
+    next[Number(index)] = clone(record[Number(index)]!);
+  }
   return next;
 }
 
@@ -71,6 +80,18 @@ function normalizeAsset(asset: ProjectAsset): ProjectAsset {
         ...(asset.sheetAssetId !== undefined ? { sheetAssetId: asset.sheetAssetId } : {}),
         animations,
       };
+    }
+    case "tileset": {
+      const next: TilesetAsset = {
+        id: asset.id,
+        kind: "tileset",
+        path: asset.path,
+        tileSize: asset.tileSize,
+        ...(asset.columns !== undefined ? { columns: asset.columns } : {}),
+        collision: sortedByIndex(asset.collision, (tile) => tile),
+      };
+      if (asset.slopes !== undefined) next.slopes = sortedByIndex(asset.slopes, ([l, r]) => [l, r]);
+      return next;
     }
   }
 }

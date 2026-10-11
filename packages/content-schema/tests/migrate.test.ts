@@ -7,6 +7,7 @@ import {
   createLevelDocument,
   migrateDocument,
   validateImageLayers,
+  validateTileLayers,
   validateDocument,
   type DecorationInstance,
   type LevelDocument,
@@ -182,4 +183,52 @@ test("image layer ids may not collide with object ids", () => {
   const doc = createLevelDocument();
   doc.imageLayers = [{ ...stageImage, id: doc.objects[0]!.id }];
   assert.ok(validateImageLayers(doc).some((i) => i.code === "imageLayer.id"));
+});
+
+test("tile layers round-trip and validate size, tileset, index, layer, parallax and ids", () => {
+  const base = createLevelDocument({ cols: 2, rows: 2 });
+  const ground = {
+    id: "tiles.ground",
+    tilesetId: "tiles.stage",
+    layer: "world-back" as const,
+    parallax: 1,
+    cells: [-1, 0, 7, 3],
+  };
+  const doc: LevelDocument = { ...base, tileLayers: [ground] };
+  const back = migrateDocument(JSON.parse(JSON.stringify(doc)));
+  assert.equal(back.schemaVersion, SCHEMA_VERSION);
+  assert.deepEqual(back.tileLayers, doc.tileLayers);
+  const tilesets = new Map<string, number | undefined>([["tiles.stage", 8]]);
+  assert.equal(validateDocument(back, { tilesets }).ok, true);
+
+  doc.tileLayers = [
+    { ...ground, id: doc.objects[0]!.id },
+    { ...ground, id: "short", cells: [0, 0, 0] },
+    { ...ground, id: "out", cells: [0, 0, 0, 8] },
+    { ...ground, id: "frac", cells: [0, 0, 0.5, -2] },
+    { ...ground, id: "unknown", tilesetId: "image.stage" },
+    { ...ground, id: "bad-layer", layer: "nope" as DecorationInstance["layer"] },
+    { ...ground, id: "bad-parallax", parallax: -1 },
+    { ...ground, id: "out" },
+  ];
+  const codes = validateDocument(doc, { tilesets }).issues.map(
+    (i) => `${i.objectId ?? ""}:${i.code}`,
+  );
+  for (const expected of [
+    `${doc.objects[0]!.id}:tileLayer.id`,
+    "short:tileLayer.cells.length",
+    "out:tileLayer.cells.index",
+    "frac:tileLayer.cells.index",
+    "unknown:tileLayer.tileset.unknown",
+    "bad-layer:tileLayer.layer",
+    "bad-parallax:tileLayer.parallax",
+    "out:tileLayer.id",
+  ]) {
+    assert.ok(codes.includes(expected), `${expected} missing from ${codes.join(", ")}`);
+  }
+  // Unknown tile count (no image size): only the -1/integer rule applies.
+  assert.deepEqual(
+    validateTileLayers({ ...base, tileLayers: [{ ...ground, cells: [0, 0, 0, 99] }] }),
+    [],
+  );
 });

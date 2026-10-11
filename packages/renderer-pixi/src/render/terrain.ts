@@ -170,12 +170,12 @@ export class TerrainView {
   }
 
   /**
-   * A world-back/world-front image layer is the level's painted terrain, so the
-   * collision blocks would only cover it: hide them, as the original game does.
+   * A world-back/world-front image or tile layer is the level's painted terrain, so
+   * the collision blocks would only cover it: hide them, as the original game does.
    * The debug overlay still draws collision geometry on demand.
    */
   setArt(art: LevelArt | undefined): void {
-    this.tiles.visible = !(art?.imageLayers ?? []).some(
+    this.tiles.visible = ![...(art?.imageLayers ?? []), ...(art?.tileLayers ?? [])].some(
       (layer) => layer.layer === "world-back" || layer.layer === "world-front",
     );
   }
