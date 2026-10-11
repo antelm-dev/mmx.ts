@@ -112,6 +112,12 @@ function traceExposedEdges(g: Graphics, world: World, kind: Tile, tx: number, ty
   const x = tx * TILE_SIZE;
   const y = ty * TILE_SIZE;
 
+  // A OneWay tile only blocks from above: its top edge is all there is to show.
+  if (kind === Tile.OneWay) {
+    traceSide(g, "top", x, y);
+    return;
+  }
+
   // A ramp's surface is always exposed — nothing sits flush against it.
   if (kind === Tile.SlopeUpRight || kind === Tile.SlopeUpLeft) {
     const { l, r } = world.slopeProfile(tx, ty, kind);
@@ -134,7 +140,7 @@ function buildTiles(world: World): Graphics {
   for (let ty = 0; ty < world.rows; ty++) {
     for (let tx = 0; tx < world.cols; tx++) {
       const kind = world.tileAt(tx, ty);
-      if (kind === Tile.Empty) continue;
+      if (kind === Tile.Empty || kind === Tile.OneWay) continue;
       fillTile(g, world, kind, tx, ty);
     }
   }

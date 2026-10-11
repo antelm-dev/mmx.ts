@@ -7,6 +7,8 @@ export const TerrainTile = {
   Solid: 1,
   SlopeUpRight: 2,
   SlopeUpLeft: 3,
+  /** Solid from above only: bodies jump up through it and land on its top edge. */
+  OneWay: 4,
 } as const;
 
 export type TerrainTile = (typeof TerrainTile)[keyof typeof TerrainTile];
