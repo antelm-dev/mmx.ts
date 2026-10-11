@@ -188,6 +188,19 @@ function validateRegion(value: unknown, path: string, add: IssueCollector["add"]
   return true;
 }
 
+/** `[x, y]` integers with 0 <= x <= width and 0 <= y <= height of `region`. */
+function isAnchorIn(value: unknown, region: Region): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((part) => Number.isInteger(part)) &&
+    value[0] >= 0 &&
+    value[0] <= region[2] &&
+    value[1] >= 0 &&
+    value[1] <= region[3]
+  );
+}
+
 function validateAnimationFrame(
   value: unknown,
   path: string,
@@ -202,6 +215,14 @@ function validateAnimationFrame(
     return false;
   }
   let ok = validateRegion(value.region, `${path}/region`, add);
+  if (value.anchor !== undefined && !(ok && isAnchorIn(value.anchor, value.region as Region))) {
+    add({
+      code: "animation.anchor",
+      path: `${path}/anchor`,
+      message: "Frame anchor must be [x, y] integers inside the frame region.",
+    });
+    ok = false;
+  }
   if (
     typeof value.duration !== "number" ||
     !Number.isFinite(value.duration) ||

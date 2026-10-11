@@ -253,7 +253,9 @@ export class DebugOverlay {
     const snap = spriteSnapshot(scene.player);
     if (!snap) return;
     const [, , w, h] = snap.region;
-    g.rect(snap.x - w / 2, snap.y - h / 2, w, h).stroke({
+    const [ax, ay] = snap.anchor ?? [w / 2, h / 2];
+    const left = snap.facing < 0 ? snap.x - (w - ax) : snap.x - ax;
+    g.rect(left, snap.y - ay, w, h).stroke({
       width: 1,
       color: COLORS.sprite,
     });

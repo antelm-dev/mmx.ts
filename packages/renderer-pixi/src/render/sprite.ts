@@ -29,12 +29,22 @@ export const SPRITE_OFFSET_Y = -4;
 export function spriteSnapshot(player: Player): GhostSource | null {
   const region = player.currentRegion();
   if (!region) return null;
+  const anchor = player.anim.currentFrame()?.anchor;
   return {
-    x: player.pos.x + SPRITE_OFFSET_X,
-    y: player.pos.y + player.hh - player.body_hh + SPRITE_OFFSET_Y,
+    // An anchored frame (C-ANCHOR) carries its own registration: its anchor pixel
+    // sits on the feet, centred on pos.x, instead of the fixed cell.
+    ...(anchor ? { x: player.pos.x, y: player.pos.y + player.hh, anchor } : spriteCell(player)),
     region,
     facing: player.get_sprite_facing(),
     layer: player.get_animation_layer(),
+  };
+}
+
+/** Centre of the fixed cell an unanchored frame is drawn in; effects ride it too. */
+export function spriteCell(player: Player): { x: number; y: number } {
+  return {
+    x: player.pos.x + SPRITE_OFFSET_X,
+    y: player.pos.y + player.hh - player.body_hh + SPRITE_OFFSET_Y,
   };
 }
 
@@ -51,6 +61,8 @@ export function spriteSnapshot(player: Player): GhostSource | null {
  *
  * Flipping is a negative scale about the sprite's centre anchor, which is the same
  * mirror the Canvas 2D path did with ctx.scale — and what Godot does with scale.x.
+ * With a pixel `anchor` (C-ANCHOR) that pixel lands on (cx, cy) instead of the
+ * centre, and the mirror turns about it.
  */
 export function place(
   sprite: Sprite,
@@ -59,8 +71,11 @@ export function place(
   cy: number,
   facing: number,
   flipV = false,
+  anchor?: readonly [number, number],
 ): void {
   sprite.texture = texture;
+  if (anchor) sprite.anchor.set(anchor[0] / texture.width, anchor[1] / texture.height);
+  else sprite.anchor.set(0.5);
   sprite.position.set(Math.round(cx), Math.round(cy));
   sprite.scale.set(facing, flipV ? -1 : 1);
   sprite.visible = true;

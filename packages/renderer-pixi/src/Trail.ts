@@ -28,6 +28,8 @@ export interface Ghost {
   region: Region;
   facing: number;
   layer: AnimationLayer;
+  /** Frame anchor in pixels; x/y is then where it sits rather than the centre. */
+  anchor?: readonly [number, number];
   /** Seconds since emission; the ghost is dropped once this passes `life`. */
   age: number;
   life: number;
@@ -42,6 +44,7 @@ export interface GhostSource {
   region: Region;
   facing: number;
   layer: AnimationLayer;
+  anchor?: readonly [number, number];
 }
 
 /** Per-emitter tuning — the `@export`s on the Godot SpriteEffect node. */
@@ -111,6 +114,7 @@ export class Trail {
       region: source.region,
       facing: source.facing,
       layer: source.layer,
+      anchor: source.anchor,
       age: 0,
       life: style.life,
       alpha: style.alpha,
