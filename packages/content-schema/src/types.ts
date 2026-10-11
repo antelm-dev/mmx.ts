@@ -76,6 +76,28 @@ export interface ImageLayer {
   layer: DecorationLayer;
 }
 
+/**
+ * One grid of tiles painted from a project `tileset` asset, aligned with the
+ * level's cells. Presentation-only: collision stays in {@link LevelDocument.tiles}.
+ */
+export interface TileLayer {
+  id: string;
+  /** Project asset id; must reference an asset of kind `tileset`. */
+  tilesetId: string;
+  layer: DecorationLayer;
+  /** Scroll factor relative to the camera, as for {@link ImageLayer.parallax}. */
+  parallax: number;
+  /** Row-major tile indices, length cols * rows; -1 is an empty cell. */
+  cells: number[];
+}
+
+/** Tileset geometry a renderer needs to cut tiles, from the project's `tileset` asset. */
+export interface TilesetArt {
+  tileSize: number;
+  /** Tiles per row; defaults to the image width divided by `tileSize`. */
+  columns?: number;
+}
+
 /** How a definition is placed in the viewport. */
 export type Placement = "point" | "rectangle" | "path";
 
@@ -186,12 +208,19 @@ export interface LevelDocument {
   decorations: DecorationInstance[];
   /** Project stage images, drawn among decoration layers. Never compiled into LevelData. */
   imageLayers?: ImageLayer[];
+  /** Project tile layers, drawn among decoration layers. Never compiled into LevelData. */
+  tileLayers?: TileLayer[];
   /** Solid colour behind everything, as CSS hex `#rrggbb`. */
   backdrop?: string;
 }
 
 /** The presentation-only level art a renderer needs beyond decorations. */
-export type LevelArt = Pick<LevelDocument, "imageLayers" | "backdrop">;
+export type LevelArt = Pick<LevelDocument, "imageLayers" | "backdrop" | "tileLayers"> & {
+  /** Level width in cells, which places `tileLayers` cells. */
+  cols?: number;
+  /** Geometry of each tileset `tileLayers` reference, keyed by asset id. */
+  tilesets?: Record<string, TilesetArt>;
+};
 
 /** A project groups levels and pins the schema version they were authored at. */
 export interface GameProject {

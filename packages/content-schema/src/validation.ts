@@ -5,6 +5,7 @@ import type {
   DecorationLayer,
   ImageLayer,
   LevelDocument,
+  TileLayer,
   LevelObjectInstance,
   ValidationIssue,
   ValidationResult,
@@ -29,6 +30,11 @@ export interface ValidateDocumentOptions {
   knownDecorationAssetIds?: ReadonlySet<string> | readonly string[];
   /** When set, image layer `assetId`s not in this set (the project's `image` assets) are errors. */
   imageAssetIds?: ReadonlySet<string> | readonly string[];
+  /**
+   * When set, tile layer `tilesetId`s not in this map (the project's `tileset` assets) are
+   * errors. Values are the tileset's tile count, or undefined when the image size is unknown.
+   */
+  tilesets?: ReadonlyMap<string, number | undefined>;
 }
 
 const BACKDROP_PATTERN = /^#[0-9a-fA-F]{6}$/;
@@ -251,6 +257,98 @@ export function validateImageLayers(
   return issues;
 }
 
+/**
+ * Checks `tileLayers`. Exported separately so project loading can cross-check
+ * tileset ids and tile counts without running the whole editor validation.
+ */
+export function validateTileLayers(
+  doc: LevelDocument,
+  tilesets?: ReadonlyMap<string, number | undefined>,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  if (doc.tileLayers === undefined) return issues;
+  if (!Array.isArray(doc.tileLayers)) {
+    issues.push({
+      severity: "error",
+      code: "tileLayers.array",
+      message: "tileLayers must be an array.",
+    });
+    return issues;
+  }
+  const add = (layer: TileLayer, code: string, field: string, message: string): void => {
+    const id = String(layer?.id);
+    issues.push({
+      severity: "error",
+      code,
+      objectId: id,
+      field,
+      message: `Tile layer '${id}': ${message}`,
+    });
+  };
+
+  // Ids share the selection namespace with objects, decorations and image layers.
+  const seen = new Set<string>([
+    ...(doc.objects ?? []).map((o) => o.id),
+    ...(doc.decorations ?? []).map((d) => d.id),
+    ...(Array.isArray(doc.imageLayers) ? doc.imageLayers.map((l) => l?.id) : []),
+  ]);
+  for (const layer of doc.tileLayers as TileLayer[]) {
+    if (!layer?.id || typeof layer.id !== "string" || seen.has(layer.id)) {
+      add(layer, "tileLayer.id", "id", "id must be a non-empty string unique across the level.");
+    }
+    seen.add(String(layer?.id));
+
+    let tileCount: number | undefined;
+    if (!layer?.tilesetId || typeof layer.tilesetId !== "string") {
+      add(layer, "tileLayer.tileset", "tilesetId", "tilesetId is required.");
+    } else if (tilesets && !tilesets.has(layer.tilesetId)) {
+      add(
+        layer,
+        "tileLayer.tileset.unknown",
+        "tilesetId",
+        `'${layer.tilesetId}' is not a project asset of kind 'tileset'.`,
+      );
+    } else {
+      tileCount = tilesets?.get(layer.tilesetId);
+    }
+
+    if (!LAYER_SET.has(layer?.layer)) {
+      add(layer, "tileLayer.layer", "layer", `layer '${String(layer?.layer)}' is invalid.`);
+    }
+
+    if (
+      typeof layer?.parallax !== "number" ||
+      !Number.isFinite(layer.parallax) ||
+      layer.parallax < 0
+    ) {
+      add(layer, "tileLayer.parallax", "parallax", "parallax must be a finite number ≥ 0.");
+    }
+
+    if (!Array.isArray(layer?.cells) || layer.cells.length !== doc.cols * doc.rows) {
+      add(
+        layer,
+        "tileLayer.cells.length",
+        "cells",
+        `cells must hold cols*rows = ${doc.cols * doc.rows} entries.`,
+      );
+      continue;
+    }
+    const bad = layer.cells.findIndex(
+      (cell) =>
+        !Number.isInteger(cell) || cell < -1 || (tileCount !== undefined && cell >= tileCount),
+    );
+    if (bad !== -1) {
+      add(
+        layer,
+        "tileLayer.cells.index",
+        "cells",
+        `cell ${bad} holds '${String(layer.cells[bad])}', expected -1 or a tile index below ${tileCount ?? "the tile count"}.`,
+      );
+    }
+  }
+  return issues;
+}
+
 /** Validate a whole document, returning every issue found. */
 export function validateDocument(
   doc: LevelDocument,
@@ -462,6 +560,7 @@ export function validateDocument(
   }
 
   issues.push(...validateImageLayers(doc, options?.imageAssetIds));
+  issues.push(...validateTileLayers(doc, options?.tilesets));
 
   const errorCount = issues.filter((i) => i.severity === "error").length;
   const warningCount = issues.length - errorCount;

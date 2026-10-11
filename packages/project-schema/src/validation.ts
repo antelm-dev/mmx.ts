@@ -278,11 +278,87 @@ function validateAnimationClip(
   return ok;
 }
 
+const TILE_INDEX_PATTERN = /^(0|[1-9][0-9]*)$/;
+
+function validateTileset(
+  value: Record<string, unknown>,
+  path: string,
+  add: IssueCollector["add"],
+  terrainTiles: ReadonlySet<number> | undefined,
+): void {
+  const tileSizeOk = Number.isInteger(value.tileSize) && (value.tileSize as number) > 0;
+  if (!tileSizeOk) {
+    add({
+      code: "tileset.tileSize",
+      path: `${path}/tileSize`,
+      message: "Tileset tileSize must be an integer greater than zero.",
+    });
+  }
+  if (
+    value.columns !== undefined &&
+    !(Number.isInteger(value.columns) && (value.columns as number) > 0)
+  ) {
+    add({
+      code: "tileset.columns",
+      path: `${path}/columns`,
+      message: "Tileset columns must be an integer greater than zero.",
+    });
+  }
+  if (!isRecord(value.collision)) {
+    add({
+      code: "tileset.collision",
+      path: `${path}/collision`,
+      message: "Tileset collision must be an object keyed by tile index.",
+    });
+  } else {
+    for (const [index, tile] of Object.entries(value.collision)) {
+      const known = terrainTiles ? terrainTiles.has(tile as number) : true;
+      if (
+        !TILE_INDEX_PATTERN.test(index) ||
+        !Number.isInteger(tile) ||
+        (tile as number) < 0 ||
+        !known
+      ) {
+        add({
+          code: "tileset.collision",
+          path: `${path}/collision/${index}`,
+          message: `Tileset collision '${index}' must map a tile index to a TerrainTile value.`,
+        });
+      }
+    }
+  }
+  if (value.slopes === undefined) return;
+  if (!isRecord(value.slopes)) {
+    add({
+      code: "tileset.slopes",
+      path: `${path}/slopes`,
+      message: "Tileset slopes must be an object keyed by tile index.",
+    });
+    return;
+  }
+  const maxFill = tileSizeOk ? (value.tileSize as number) : Infinity;
+  for (const [index, profile] of Object.entries(value.slopes)) {
+    if (
+      !TILE_INDEX_PATTERN.test(index) ||
+      !Array.isArray(profile) ||
+      profile.length !== 2 ||
+      !profile.every((part) => Number.isInteger(part) && part >= 0 && part <= maxFill)
+    ) {
+      add({
+        code: "tileset.slopes",
+        path: `${path}/slopes/${index}`,
+        message: `Tileset slope '${index}' must be [left, right] integers within 0..tileSize.`,
+      });
+    }
+  }
+}
+
 function validateAsset(
   value: unknown,
   path: string,
   add: IssueCollector["add"],
   assetIds: Set<string>,
+  terrainTiles: ReadonlySet<number> | undefined,
 ): value is ProjectAsset {
   if (!isRecord(value)) {
     add({
@@ -358,6 +434,8 @@ function validateAsset(
       }
     }
   }
+
+  if (kind === "tileset") validateTileset(value, path, add, terrainTiles);
 
   return idOk && pathOk && typeof value.kind === "string" && ASSET_KIND_SET.has(value.kind);
 }
@@ -506,8 +584,9 @@ export function validateProject(
       message: "assets must be an array.",
     });
   } else {
+    const terrainTiles = options.terrainTiles ? new Set(options.terrainTiles) : undefined;
     project.assets.forEach((asset, index) => {
-      validateAsset(asset, `/assets/${index}`, add, assetIds);
+      validateAsset(asset, `/assets/${index}`, add, assetIds, terrainTiles);
     });
 
     project.assets.forEach((asset, index) => {
