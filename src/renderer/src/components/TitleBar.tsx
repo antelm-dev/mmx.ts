@@ -26,8 +26,16 @@ import {
   X,
   ZoomIn,
   ZoomOut,
+  Scissors,
 } from "lucide-react";
-import { PANELS, resetLayout, togglePanel, useOpenPanelIds } from "../app/dock.js";
+import {
+  openPanel,
+  PANELS,
+  resetLayout,
+  SLICER_PANEL,
+  togglePanel,
+  useOpenPanelIds,
+} from "../app/dock.js";
 import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import type { ThemePreference } from "../app/theme.js";
 import { useUiStore } from "../store/uiStore.js";
@@ -168,6 +176,13 @@ function FileMenu() {
           onSelect={() => void editor.exportProject()}
         >
           <Share2 size={13} /> Export Project…
+        </MenuItem>
+        <MenuItem
+          value="slice-sheet"
+          disabled={!project.open}
+          onSelect={() => openPanel(SLICER_PANEL)}
+        >
+          <Scissors size={13} /> Slice Sheet…
         </MenuItem>
       </MenuGroup>
       <MenuSeparator />

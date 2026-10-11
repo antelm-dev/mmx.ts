@@ -18,6 +18,7 @@ import {
   removeImageLayer,
   reorderImageLayer,
   setBackdrop,
+  setSpriteRegions,
   setTileAt,
   updateImageLayer,
 } from "./actions.js";
@@ -270,5 +271,29 @@ describe("image layer actions", () => {
     expect(store.validate(["sprite.bg"]).issues.map((i) => i.code)).not.toContain(
       "imageLayer.asset.unknown",
     );
+  });
+});
+
+describe("setSpriteRegions", () => {
+  it("writes the regions through the session and undoes/redoes them", () => {
+    const store = freshStore();
+    const saved: Record<string, { id: string; region: [number, number, number, number] }[]> = {
+      "sprite.sheet": [{ id: "frame.0", region: [0, 0, 8, 8] }],
+    };
+    const session = {
+      spriteRegions: (id: string) => saved[id] ?? [],
+      setSpriteRegions: (id: string, regions: (typeof saved)[string]) => void (saved[id] = regions),
+    };
+    const next = [
+      { id: "frame.0", region: [0, 0, 32, 32] as [number, number, number, number] },
+      { id: "frame.1", region: [32, 0, 32, 32] as [number, number, number, number] },
+    ];
+    setSpriteRegions(store, session, "sprite.sheet", next);
+    expect(saved["sprite.sheet"]).toEqual(next);
+    expect(store.undoLabel).toBe("Set sprite regions");
+    store.undo();
+    expect(saved["sprite.sheet"]).toEqual([{ id: "frame.0", region: [0, 0, 8, 8] }]);
+    store.redo();
+    expect(saved["sprite.sheet"]).toEqual(next);
   });
 });

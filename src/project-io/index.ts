@@ -50,3 +50,13 @@ export {
   type ExportProjectInput,
   type ExportProjectResult,
 } from "./export.js";
+export {
+  mergeRects,
+  sliceAuto,
+  sliceGrid,
+  splitRect,
+  toRegions,
+  type Rect,
+  type SliceBackground,
+  type SpriteRegion,
+} from "./import/slice.js";

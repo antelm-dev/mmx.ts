@@ -1,5 +1,5 @@
 import { validateProject, type ValidationIssue } from "@mmx/project-schema";
-import type { StudioProject, ProjectIssue } from "@mmx/project-io";
+import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io";
 import { PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
@@ -154,12 +154,46 @@ export class ProjectSession {
     });
   }
 
+  /** A sprite asset's saved `regions` (contract C-REGIONS); [] when absent. */
+  spriteRegions(assetId: string): SpriteRegion[] {
+    const asset = this.state.project?.manifest.assets.find((entry) => entry.id === assetId);
+    return asset?.kind === "sprite" ? [...(asset.regions ?? [])] : [];
+  }
+
+  /** Set (or with [] drop) a sprite asset's `regions` in the manifest; saved with the project. */
+  setSpriteRegions(assetId: string, regions: SpriteRegion[]): void {
+    const project = this.state.project;
+    if (!project) return;
+    const assets = project.manifest.assets.map((asset) => {
+      if (asset.id !== assetId || asset.kind !== "sprite") return asset;
+      const { regions: _old, ...rest } = asset;
+      return regions.length > 0 ? { ...rest, regions } : rest;
+    });
+    const nextProject = { ...project, manifest: { ...project.manifest, assets } };
+    this.setState({
+      ...this.state,
+      project: nextProject,
+      dirty: true,
+      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
+    });
+  }
+
+  /** One image/sprite asset of the open project as a data URL, or null when unreadable. */
+  async readAssetUrl(assetId: string): Promise<string | null> {
+    const bridge = window.studio?.project;
+    const { rootPath, project } = this.state;
+    const asset = project?.manifest.assets.find((entry) => entry.id === assetId);
+    if (!bridge || !rootPath || !asset) return null;
+    const result = await bridge.readPlayAssets(rootPath, [asset]);
+    return result.ok ? (result.value.urls[assetId] ?? null) : null;
+  }
+
   /**
-   * Pick a PNG, copy it into the project as an `image` asset and reload the
-   * assets. Returns the new asset id, or null when cancelled; throws when the
-   * import fails. The manifest change is saved with the project.
+   * Pick a PNG, copy it into the project as an `image` (or `sprite` sheet) asset
+   * and reload the assets. Returns the new asset id, or null when cancelled;
+   * throws when the import fails. The manifest change is saved with the project.
    */
-  async importImage(): Promise<string | null> {
+  async importImage(kind: "image" | "sprite" = "image"): Promise<string | null> {
     const bridge = window.studio?.project;
     const { rootPath, project } = this.state;
     if (!bridge || !rootPath || !project) return null;
@@ -167,7 +201,7 @@ export class ProjectSession {
     if (!file) return null;
     const result = await bridge.importAsset(rootPath, project, {
       sourcePath: file.path,
-      kind: "image",
+      kind,
     });
     if (!result.ok) throw new Error(result.issues[0]?.message ?? "Import failed.");
     this.switchProject({

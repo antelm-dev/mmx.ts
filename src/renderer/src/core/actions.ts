@@ -19,7 +19,9 @@ import {
   type TileEdit,
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
+import type { SpriteRegion } from "@mmx/project-io";
 import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
+import type { ProjectSession } from "./projectSession.js";
 
 /**
  * Intent → undoable command. Everything the toolbar, palette, viewport and
@@ -258,4 +260,29 @@ export function setBackdrop(store: EditorStore, backdrop: string | undefined): v
   store.execute(
     setLevelArt(doc, { imageLayers: doc.imageLayers, backdrop }, backdrop ? "Set backdrop" : "Clear backdrop"),
   );
+}
+
+/**
+ * Save a sprite sheet's sliced `regions` as one undoable step. The regions live in
+ * the project manifest, not the level, so the command leaves the document as is and
+ * writes through the project session (which marks the project dirty).
+ */
+export function setSpriteRegions(
+  store: EditorStore,
+  session: Pick<ProjectSession, "spriteRegions" | "setSpriteRegions">,
+  assetId: string,
+  regions: SpriteRegion[],
+): void {
+  const before = session.spriteRegions(assetId);
+  store.execute({
+    label: "Set sprite regions",
+    execute: (doc) => {
+      session.setSpriteRegions(assetId, regions);
+      return doc;
+    },
+    undo: (doc) => {
+      session.setSpriteRegions(assetId, before);
+      return doc;
+    },
+  });
 }

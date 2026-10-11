@@ -119,6 +119,17 @@ export function focusPanel(id: string): void {
   api?.getPanel(id)?.api.setActive();
 }
 
+/** Tool panel opened from File → Slice Sheet…; not listed under View → Panels. */
+export const SLICER_PANEL: PanelSpec = {
+  id: "slicer",
+  title: "Sheet Slicer",
+  component: "slicer",
+  ref: "viewport",
+  // Beside the level view, not over it: Play draws into the viewport panel.
+  dir: "right",
+  fallbackDir: "right",
+};
+
 /** Open the panel if closed, or close it if open (the View-menu checkbox action). */
 export function togglePanel(id: string): void {
   if (!api) return;
@@ -128,7 +139,17 @@ export function togglePanel(id: string): void {
     return;
   }
   const spec = PANELS.find((p) => p.id === id);
-  if (!spec) return;
+  if (spec) openPanel(spec);
+}
+
+/** Surface a panel, docking it next to its preferred neighbour first if it is closed. */
+export function openPanel(spec: PanelSpec): void {
+  if (!api) return;
+  const existing = api.getPanel(spec.id);
+  if (existing) {
+    existing.api.setActive();
+    return;
+  }
   const preferred = api.getPanel(spec.ref);
   const target = preferred ?? api.getPanel("viewport");
   api.addPanel({

@@ -14,6 +14,7 @@ import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ProblemsPanel } from "./components/ProblemsPanel.js";
 import { SelectionPanel } from "./components/SelectionPanel.js";
 import { JsonPanel } from "./components/JsonPanel.js";
+import { SheetSlicerPanel } from "./components/SheetSlicerPanel.js";
 import { Toasts } from "./components/Toasts.js";
 import { useUiStore } from "./store/uiStore.js";
 
@@ -33,6 +34,7 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   problems: (props) => <ProblemsPanel api={props.api} />,
   selection: () => <SelectionPanel />,
   json: () => <JsonPanel />,
+  slicer: () => <SheetSlicerPanel />,
 };
 
 /** Root layout: a fixed command toolbar above a user-configurable Dockview workspace. */
