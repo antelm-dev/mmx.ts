@@ -62,3 +62,20 @@ test("assertAnimData bounds loopStart to the clip's frames", () => {
   assert.doesNotThrow(() => assertAnimData(data(1)));
   for (const bad of [-1, 2, 0.5]) assert.throws(() => assertAnimData(data(bad)), /loopStart/);
 });
+
+test("assertAnimData keeps a frame anchor inside its region", () => {
+  const data = (anchor: unknown): unknown => ({
+    animations: {
+      idle: { loop: true, speed: 60, frames: [{ region: [0, 0, 34, 39], duration: 6, anchor }] },
+    },
+  });
+  for (const ok of [
+    [19, 35],
+    [0, 0],
+    [34, 39],
+  ])
+    assert.doesNotThrow(() => assertAnimData(data(ok)));
+  for (const bad of [[-1, 0], [35, 0], [0, 40], [1.5, 2], [1], "19,35"]) {
+    assert.throws(() => assertAnimData(data(bad)), /anchor/);
+  }
+});

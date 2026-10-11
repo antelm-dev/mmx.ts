@@ -24,6 +24,9 @@ function cloneFrame(frame: AnimationFrame): AnimationFrame {
   if (frame.armRegion !== undefined) {
     next.armRegion = cloneRegion(frame.armRegion);
   }
+  if (frame.anchor !== undefined) {
+    next.anchor = [frame.anchor[0], frame.anchor[1]];
+  }
   return next;
 }
 
