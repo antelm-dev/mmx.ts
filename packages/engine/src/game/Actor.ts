@@ -9,6 +9,7 @@ import {
   GRAVITY,
   MAX_FALL_VELOCITY,
   MAX_HEALTH,
+  ONE_WAY_DROP_TICKS,
 } from "../core/constants.js";
 import type { MovingPlatform } from "./Environment.js";
 
@@ -51,6 +52,8 @@ export class Actor {
   private _reachDir = 0; // is_in_reach_for_walljump()
 
   private _wasOnFloor = false;
+  /** Ticks left during which OneWay tiles are ignored (see {@link drop_through_one_way}). */
+  private oneWayDropTicks = 0;
 
   floor_snap_enabled = true;
   collisions_enabled = true;
@@ -211,6 +214,19 @@ export class Actor {
     this.floor_snap_enabled = true;
   }
 
+  /** Standing on a OneWay tile with no solid ground under the feet ("down + jump" can drop). */
+  is_on_one_way_floor(): boolean {
+    if (!this._onFloor) return false;
+    const feet = this.pos.y + this.hh;
+    if (this.world.overlaps(this.pos.x, feet + 1, this.hw, 1)) return false;
+    return this.world.oneWayTopY(this.pos.x, this.hw, feet - 0.001, feet + 2) !== null;
+  }
+
+  /** Fall through the OneWay floor underfoot: OneWay tiles are ignored for {@link ONE_WAY_DROP_TICKS}. */
+  drop_through_one_way(): void {
+    this.oneWayDropTicks = ONE_WAY_DROP_TICKS;
+  }
+
   // ---------------------------------------------------------------------------
   // Physics integration (replaces Actor.process_movement + move_and_slide)
   // ---------------------------------------------------------------------------
@@ -219,6 +235,7 @@ export class Actor {
       this.velocity.x + this.bonus_velocity.x,
       this.velocity.y + this.bonus_velocity.y,
     );
+    if (this.oneWayDropTicks > 0) this.oneWayDropTicks--;
 
     if (!this.collisions_enabled) {
       this.pos.x += this.final_velocity.x * dt;
@@ -250,7 +267,7 @@ export class Actor {
     if (this.resolveSlope()) {
       this.ridingPlatform = null;
     } else if (!this.resolvePlatformFloor(oldFeet)) {
-      this.applyFloorSnap();
+      if (!this.resolveOneWay(oldFeet)) this.applyFloorSnap();
       this.ridingPlatform = null;
     }
 
@@ -337,6 +354,27 @@ export class Actor {
     }
   }
 
+  /**
+   * Land on a OneWay tile only when the feet were at or above its top edge
+   * before this step and the body is not moving up — the same rule the moving
+   * platforms below use. Floor snap obeys it too: a grounded body walking along
+   * a OneWay floor is held on it, within the usual snap reach.
+   */
+  private resolveOneWay(oldFeet: number): boolean {
+    if (this.oneWayDropTicks > 0 || this.final_velocity.y < 0) return false;
+    const feet = this.pos.y + this.hh;
+    const reach = this.floor_snap_enabled && this._wasOnFloor ? FLOOR_SNAP_LENGTH : 0;
+    const top = this.world.oneWayTopY(this.pos.x, this.hw, oldFeet - 0.001, feet + reach);
+    if (top === null) return false;
+    // A snap down must not pass through a solid tile sitting above the OneWay edge.
+    if (top > feet && this.world.sweepY(this.pos.x, this.pos.y, this.hw, this.hh, top - feet).hit) {
+      return false;
+    }
+    this.pos.y = top - this.hh;
+    if (this.velocity.y > 0) this.velocity.y = 0;
+    return true;
+  }
+
   /** Land on a one-way platform only when crossing its top while moving down. */
   private resolvePlatformFloor(oldFeet: number): boolean {
     if (this.final_velocity.y < 0) return false;
@@ -368,6 +406,13 @@ export class Actor {
     const half = probe / 2;
     if (this.world.overlaps(this.pos.x, this.pos.y + this.hh + half, this.hw, half)) return true;
     const feet = this.pos.y + this.hh;
+    if (
+      this.oneWayDropTicks === 0 &&
+      this.final_velocity.y >= 0 &&
+      this.world.oneWayTopY(this.pos.x, this.hw, feet - 0.001, feet + probe) !== null
+    ) {
+      return true;
+    }
     return this.platforms.some(
       (platform) =>
         this.overlapsPlatformX(platform) &&

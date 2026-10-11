@@ -53,6 +53,17 @@ export class Jump extends Fall {
     return this.character.is_on_floor() && this.character.get_last_used_ability() !== "DashJump";
   }
 
+  /** "Down + jump" on a OneWay floor drops through it instead of jumping. */
+  override wantsToStart(): boolean {
+    if (!super.wantsToStart()) return false;
+    if (!this.character.get_action_pressed("move_down") || !this.character.is_on_one_way_floor()) {
+      return true;
+    }
+    this.consumeBuffer();
+    this.character.drop_through_one_way();
+    return false;
+  }
+
   override _Setup(): void {
     this.character.events.emit("jump");
     this.fullspeed_time = 0;
