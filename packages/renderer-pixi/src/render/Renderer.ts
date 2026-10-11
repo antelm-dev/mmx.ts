@@ -20,7 +20,7 @@ import { validateRendererAssetManifest } from "../assets/manifest.js";
 import { DecorationView } from "./DecorationView.js";
 import { Hud } from "./Hud.js";
 import { PaletteSwapFilter } from "./PaletteSwapFilter.js";
-import { place, spriteSnapshot } from "./sprite.js";
+import { place, spriteCell, spriteSnapshot } from "./sprite.js";
 import { SpritePool } from "./SpritePool.js";
 import { buildTerrain, COLOR_BG, type TerrainView } from "./terrain.js";
 import { loadSheets, regionTexture, shotTexture, textureCounts } from "./textures.js";
@@ -389,7 +389,9 @@ export class Renderer {
       const sprite = this.enemies.next();
       // Both sheets are authored facing right but the scenes set `flip_h = true`,
       // so the mirror is inverted relative to the player's.
-      place(sprite, texture, enemy.pos.x, enemy.pos.y, -enemy.get_facing_direction());
+      const anchor = enemy.anim.currentFrame()?.anchor;
+      const y = anchor ? enemy.pos.y + enemy.hh : enemy.pos.y;
+      place(sprite, texture, enemy.pos.x, y, -enemy.get_facing_direction(), false, anchor);
       sprite.alpha = enemy.flash > 0 ? 0.5 : 1;
     }
     this.enemies.end();
@@ -447,7 +449,7 @@ export class Renderer {
       if (!texture) continue;
 
       const sprite = this.ghosts.next();
-      place(sprite, texture, ghost.x, ghost.y, ghost.facing);
+      place(sprite, texture, ghost.x, ghost.y, ghost.facing, false, ghost.anchor);
       sprite.alpha = opacity;
     }
     this.ghosts.end();
@@ -468,7 +470,7 @@ export class Renderer {
       snap && regionTexture(this.manifest.playerSheets[snap.layer as AnimationLayer], snap.region);
     this.player.visible = !!texture;
     if (!snap || !texture) return;
-    place(this.player, texture, snap.x, snap.y, snap.facing);
+    place(this.player, texture, snap.x, snap.y, snap.facing, false, snap.anchor);
     // Character.apply_invulnerability_shader sets Alpha to 0.5 after the hurt
     // animation ends; Damage._Setup keeps full alpha during the actual tumble.
     this.player.alpha = player.is_invulnerable() && !player.is_executing("Damage") ? 0.5 : 1;
@@ -480,15 +482,17 @@ export class Renderer {
   private syncAura(player: Player): void {
     const charge = player.get_ability("Charge") as ChargeVfx | undefined;
     const fx = charge && CHARGE_TIER_FX[charge.vfx_tier];
-    const snap = fx && spriteSnapshot(player);
     const texture =
-      fx && snap ? shotTexture(fx.clip, charge!.vfx_frame, this.manifest.shotAnims) : null;
+      fx && player.currentRegion()
+        ? shotTexture(fx.clip, charge!.vfx_frame, this.manifest.shotAnims)
+        : null;
 
     this.aura.visible = !!texture;
-    if (!fx || !snap || !texture) return;
+    if (!fx || !texture) return;
 
     // The emitter is a child of animatedSprite at (0, 3.99), so it rides the sprite.
-    place(this.aura, texture, snap.x, snap.y + CHARGE_FX_OFFSET_Y, 1);
+    const cell = spriteCell(player);
+    place(this.aura, texture, cell.x, cell.y + CHARGE_FX_OFFSET_Y, 1);
     this.aura.tint = fx.tint;
   }
 

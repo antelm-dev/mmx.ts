@@ -4,6 +4,11 @@ export interface FrameData {
   region: Region;
   armRegion?: Region;
   duration: number;
+  /**
+   * Pixel in `region` (from its top-left) drawn on the body's feet, centred on pos.x.
+   * Absent: the frame sits in the renderer's fixed cell. Shared by `armRegion`.
+   */
+  anchor?: readonly [x: number, y: number];
 }
 
 export interface ClipData {
@@ -69,8 +74,24 @@ export function assertAnimData(data: unknown, label = "animation data"): asserts
       if (frame.armRegion !== undefined) {
         assertRegion(frame.armRegion, `${label}: animation '${name}' frame ${index} armRegion`);
       }
+      if (frame.anchor !== undefined && !isAnchorIn(frame.anchor, frame.region as Region)) {
+        throw new Error(`${clipLabel}: frame ${index} anchor must be integers inside its region`);
+      }
     });
   }
+}
+
+/** `[x, y]` integers with 0 <= x <= width and 0 <= y <= height of `region`. */
+function isAnchorIn(value: unknown, region: Region): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((part) => Number.isInteger(part)) &&
+    value[0] >= 0 &&
+    value[0] <= region[2] &&
+    value[1] >= 0 &&
+    value[1] <= region[3]
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
