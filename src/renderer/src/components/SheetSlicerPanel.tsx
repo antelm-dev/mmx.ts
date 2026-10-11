@@ -24,10 +24,10 @@ const Grid2 = chakra("div", {
   base: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2", py: "3px", px: "3.5" },
 });
 
-type Sheet = { url: string; width: number; height: number; px: Uint8ClampedArray };
+export type Sheet = { url: string; width: number; height: number; px: Uint8ClampedArray };
 
 /** Decode a data URL to RGBA through a canvas (any PNG the browser reads, not only 8-bit RGBA). */
-async function loadSheet(url: string): Promise<Sheet> {
+export async function loadSheet(url: string): Promise<Sheet> {
   const img = new Image();
   img.src = url;
   await img.decode();

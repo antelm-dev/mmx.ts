@@ -20,6 +20,7 @@ import {
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { SpriteRegion } from "@mmx/project-io";
+import type { AnimationAsset } from "@mmx/project-schema";
 import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
 import type { ProjectSession } from "./projectSession.js";
 
@@ -282,6 +283,53 @@ export function setSpriteRegions(
     },
     undo: (doc) => {
       session.setSpriteRegions(assetId, before);
+      return doc;
+    },
+  });
+}
+
+/**
+ * Replace (or with null remove) an `animation` asset as one undoable step: every
+ * clip edit (contract C-CLIP) goes through here. Like the sprite regions, the asset
+ * lives in the project manifest, so the level document is left as is.
+ */
+export function setAnimationAsset(
+  store: EditorStore,
+  session: Pick<ProjectSession, "animationAsset" | "setAnimationAsset">,
+  assetId: string,
+  next: AnimationAsset | null,
+  label: string,
+): void {
+  const before = session.animationAsset(assetId);
+  store.execute({
+    label,
+    execute: (doc) => {
+      session.setAnimationAsset(assetId, next);
+      return doc;
+    },
+    undo: (doc) => {
+      session.setAnimationAsset(assetId, before);
+      return doc;
+    },
+  });
+}
+
+/** Bind the player's animation (`game/data.json` bindings.playerAnimation) as one undoable step. */
+export function setPlayerAnimation(
+  store: EditorStore,
+  session: Pick<ProjectSession, "playerAnimation" | "setPlayerAnimation">,
+  assetId: string,
+): void {
+  const before = session.playerAnimation();
+  if (before === assetId) return;
+  store.execute({
+    label: "Use as player animation",
+    execute: (doc) => {
+      session.setPlayerAnimation(assetId);
+      return doc;
+    },
+    undo: (doc) => {
+      if (before) session.setPlayerAnimation(before);
       return doc;
     },
   });

@@ -19,8 +19,8 @@ vi.mock("../assets/studioAssets.js", () => {
       calls.push("build:starter");
       return fakeAssets("starter");
     },
-    buildStudioAssets: () => {
-      calls.push("build:project");
+    buildStudioAssets: (_project: unknown, gameData: { bindings?: { playerAnimation?: string } }) => {
+      calls.push(`build:project${gameData.bindings?.playerAnimation ? `:${gameData.bindings.playerAnimation}` : ""}`);
       return fakeAssets("project");
     },
   };
@@ -68,5 +68,42 @@ describe("ProjectSession asset switch", () => {
     session.close();
     await session.getAssets();
     expect(calls).toEqual(["release", "reset", "build:starter", "load:starter"]);
+  });
+});
+
+describe("ProjectSession player animation binding", () => {
+  it("plays the unsaved binding without reading the disk again, and writes it after the manifest on save", async () => {
+    const writes: string[] = [];
+    const withData = {
+      ...bridge,
+      readPlayAssets: async () => {
+        calls.push("read");
+        return { ok: true, issues: [], value: { gameData: { bindings: { playerAnimation: "anim.a" } }, urls: {} } };
+      },
+      save: async () => {
+        writes.push("save");
+        return { ok: true, issues: [], value: { rootPath: "/projects/b", project } };
+      },
+      writePlayerAnimation: async (_root: string, id: string) => {
+        writes.push(`data.json:${id}`);
+        return { ok: true, issues: [], value: null };
+      },
+    };
+    vi.stubGlobal("window", { studio: { project: withData } });
+    const session = new ProjectSession();
+    await session.openProject();
+    await session.getAssets();
+    expect(session.playerAnimation()).toBe("anim.a");
+    calls.length = 0;
+
+    session.setPlayerAnimation("anim.b");
+    await session.getAssets();
+    expect(calls).toEqual(["build:project:anim.b", "load:project"]);
+    expect(session.getSnapshot().dirty).toBe(true);
+
+    await session.saveProject();
+    expect(writes).toEqual(["save", "data.json:anim.b"]);
+    expect(session.getSnapshot().playerAnimation).toBeUndefined();
+    expect(session.playerAnimation()).toBe("anim.b");
   });
 });

@@ -27,8 +27,10 @@ import {
   ZoomIn,
   ZoomOut,
   Scissors,
+  Film,
 } from "lucide-react";
 import {
+  CLIP_PANEL,
   openPanel,
   PANELS,
   resetLayout,
@@ -183,6 +185,9 @@ function FileMenu() {
           onSelect={() => openPanel(SLICER_PANEL)}
         >
           <Scissors size={13} /> Slice Sheet…
+        </MenuItem>
+        <MenuItem value="clip-editor" disabled={!project.open} onSelect={() => openPanel(CLIP_PANEL)}>
+          <Film size={13} /> Clip Editor…
         </MenuItem>
       </MenuGroup>
       <MenuSeparator />

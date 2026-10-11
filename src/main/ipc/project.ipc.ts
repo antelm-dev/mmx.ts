@@ -177,6 +177,21 @@ export function createProjectIpc() {
       },
     ),
 
+    /** Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key. */
+    "write-player-animation": handle(
+      async (_event, rootPath: string, animationId: string): Promise<ProjectResult<null>> => {
+        const fs = createNodeFileSystem(rootPath);
+        try {
+          const data = JSON.parse(await fs.readText(GAME_DATA_FILE));
+          data.bindings = { ...data.bindings, playerAnimation: animationId };
+          await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);
+          return { ok: true, value: null, issues: [] };
+        } catch (error) {
+          return { ok: false, issues: [issue("game-data.write", errorMessage(error), `/${GAME_DATA_FILE}`)] };
+        }
+      },
+    ),
+
     export: handle(
       async (
         _event,

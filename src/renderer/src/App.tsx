@@ -15,6 +15,7 @@ import { ProblemsPanel } from "./components/ProblemsPanel.js";
 import { SelectionPanel } from "./components/SelectionPanel.js";
 import { JsonPanel } from "./components/JsonPanel.js";
 import { SheetSlicerPanel } from "./components/SheetSlicerPanel.js";
+import { ClipEditorPanel } from "./components/ClipEditorPanel.js";
 import { Toasts } from "./components/Toasts.js";
 import { useUiStore } from "./store/uiStore.js";
 
@@ -35,6 +36,7 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   selection: () => <SelectionPanel />,
   json: () => <JsonPanel />,
   slicer: () => <SheetSlicerPanel />,
+  clips: () => <ClipEditorPanel />,
 };
 
 /** Root layout: a fixed command toolbar above a user-configurable Dockview workspace. */

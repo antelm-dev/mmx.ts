@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
+import type { AnimationAsset } from "@mmx/project-schema";
 import {
   EditorStore,
   selectedDecorationIds,
@@ -17,7 +18,9 @@ import {
   placeDecorationAt,
   removeImageLayer,
   reorderImageLayer,
+  setAnimationAsset,
   setBackdrop,
+  setPlayerAnimation,
   setSpriteRegions,
   setTileAt,
   updateImageLayer,
@@ -295,5 +298,66 @@ describe("setSpriteRegions", () => {
     expect(saved["sprite.sheet"]).toEqual([{ id: "frame.0", region: [0, 0, 8, 8] }]);
     store.redo();
     expect(saved["sprite.sheet"]).toEqual(next);
+  });
+});
+
+describe("clip commands", () => {
+  const frame = (x: number) => ({ region: [x, 0, 32, 32] as const, duration: 4 });
+  const fakeSession = (initial: AnimationAsset[]) => {
+    const assets = new Map(initial.map((asset) => [asset.id, asset]));
+    let player: string | null = "anim.old";
+    return {
+      assets,
+      animationAsset: (id: string) => assets.get(id) ?? null,
+      setAnimationAsset: (id: string, next: AnimationAsset | null) => void (next ? assets.set(id, next) : assets.delete(id)),
+      playerAnimation: () => player,
+      setPlayerAnimation: (id: string) => void (player = id),
+    };
+  };
+  const asset = (animations: AnimationAsset["animations"]): AnimationAsset => ({
+    id: "anim.sheet",
+    kind: "animation",
+    path: "assets/sheet.png",
+    sheetAssetId: "sprite.sheet",
+    animations,
+  });
+
+  it("creates a clip (and its asset), edits frames, and undoes/redoes each step", () => {
+    const store = freshStore();
+    const session = fakeSession([]);
+    const idle = { loop: true, speed: 60, frames: [frame(0)] };
+    setAnimationAsset(store, session, "anim.sheet", asset({ idle }), "Create clip");
+    expect(session.assets.get("anim.sheet")?.animations.idle).toEqual(idle);
+
+    const walk = { loop: true, speed: 60, frames: [frame(0), frame(32), frame(64), frame(96)] };
+    setAnimationAsset(store, session, "anim.sheet", asset({ idle, walk }), "Create clip");
+    // Reorder, durations, loop start and anchor are each one replacement of the asset.
+    const edited = { ...walk, loopStart: 1, frames: [walk.frames[1]!, walk.frames[0]!, ...walk.frames.slice(2)].map((f) => ({ ...f, duration: 6, anchor: [16, 32] as const })) };
+    setAnimationAsset(store, session, "anim.sheet", asset({ idle, walk: edited }), "Set frame duration");
+    expect(store.undoLabel).toBe("Set frame duration");
+
+    store.undo();
+    expect(session.assets.get("anim.sheet")?.animations.walk).toEqual(walk);
+    store.undo();
+    expect(Object.keys(session.assets.get("anim.sheet")!.animations)).toEqual(["idle"]);
+    store.undo();
+    expect(session.assets.has("anim.sheet")).toBe(false);
+    store.redo();
+    store.redo();
+    store.redo();
+    expect(session.assets.get("anim.sheet")?.animations.walk).toEqual(edited);
+    // The untouched clip keeps its frames as they were: no anchor added.
+    expect(session.assets.get("anim.sheet")?.animations.idle.frames[0]).not.toHaveProperty("anchor");
+  });
+
+  it("binds the player animation and restores the previous binding on undo", () => {
+    const store = freshStore();
+    const session = fakeSession([]);
+    setPlayerAnimation(store, session, "anim.sheet");
+    expect(session.playerAnimation()).toBe("anim.sheet");
+    store.undo();
+    expect(session.playerAnimation()).toBe("anim.old");
+    store.redo();
+    expect(session.playerAnimation()).toBe("anim.sheet");
   });
 });

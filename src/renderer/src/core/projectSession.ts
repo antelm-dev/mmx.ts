@@ -1,4 +1,4 @@
-import { validateProject, type ValidationIssue } from "@mmx/project-schema";
+import { validateProject, type AnimationAsset, type ValidationIssue } from "@mmx/project-schema";
 import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io";
 import { PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
@@ -9,6 +9,7 @@ import {
   type StudioAssets,
   type StudioGameData,
 } from "../assets/studioAssets.js";
+import { requiredPlayerClips } from "./clips.js";
 
 export type ProjectSessionState = {
   open: boolean;
@@ -17,6 +18,8 @@ export type ProjectSessionState = {
   issues: ProjectIssue[];
   /** Manifest edits (outside the level document) not yet saved. */
   dirty?: boolean;
+  /** Unsaved `bindings.playerAnimation` for `game/data.json`, written on save. */
+  playerAnimation?: string;
 };
 
 const EMPTY: ProjectSessionState = {
@@ -39,12 +42,25 @@ function validateOpenProject(project: StudioProject): ProjectIssue[] {
   return mapSchemaIssues(validateProject(project.manifest, PROJECT_VALIDATION).issues);
 }
 
-const isPlayAssetIssue = (issue: ProjectIssue): boolean => issue.code.startsWith("play-assets.");
+// `player.clips` is derived from the Play bindings too, so it is rebuilt with them.
+const isPlayAssetIssue = (issue: ProjectIssue): boolean =>
+  issue.code.startsWith("play-assets.") || issue.code === "player.clips";
+
+const bindingIssue = (error: unknown): ProjectIssue => ({
+  severity: "warning",
+  code: "play-assets.bindings",
+  path: "/game/data.json",
+  message: error instanceof Error ? error.message : String(error),
+});
+
+type PlayData = { gameData: StudioGameData; urls: Record<string, string> };
 
 export class ProjectSession {
   private state: ProjectSessionState = { ...EMPTY };
   private assets: Promise<StudioAssets | null> = Promise.resolve(starterAssets);
   private readonly listeners = new Set<() => void>();
+  /** The open project's `game/data.json` and asset data URLs, as last read from disk. */
+  private playData: PlayData | null = null;
   /** Stops Play and drops viewport sprites; runs before old sheet textures are destroyed. */
   beforeSheetReset: () => void = () => {};
 
@@ -87,6 +103,7 @@ export class ProjectSession {
     // Nothing may draw the previous project's sheets once the reset destroys them.
     this.beforeSheetReset();
     await resetSheetCache();
+    this.playData = null;
     if (!bridge || !rootPath || !project) {
       const assets = buildStarterAssets();
       await assets.catalog.load();
@@ -94,26 +111,50 @@ export class ProjectSession {
     }
 
     const issues: ProjectIssue[] = [];
-    let assets: StudioAssets | null = null;
     try {
       const result = await bridge.readPlayAssets(rootPath, project.manifest.assets);
       issues.push(...result.issues);
       if (!result.ok) throw new Error("Project assets could not be read.");
-      const { gameData, urls } = result.value;
-      assets = buildStudioAssets(
-        project.manifest,
-        gameData as StudioGameData,
-        (asset) => urls[asset.id] ?? "",
-      );
-      await assets.catalog.load();
+      this.playData = result.value as PlayData;
     } catch (error) {
-      assets = null;
-      issues.push({
-        severity: "warning",
-        code: "play-assets.bindings",
-        path: "/game/data.json",
-        message: error instanceof Error ? error.message : String(error),
-      });
+      issues.push(bindingIssue(error));
+    }
+    return this.buildPlayAssets(rootPath, issues);
+  }
+
+  /**
+   * Build Play's assets from the last read files and the current manifest. Sheets
+   * keep their keys and URLs, so a manifest-only edit rebuilds without a sheet reset.
+   */
+  private async buildPlayAssets(
+    rootPath: string | null,
+    issues: ProjectIssue[] = [],
+  ): Promise<StudioAssets | null> {
+    const project = this.state.project;
+    let assets: StudioAssets | null = null;
+    if (this.playData && project) {
+      const { gameData, urls } = this.playData;
+      const playerAnimation = this.playerAnimation();
+      try {
+        const data = this.state.playerAnimation
+          ? { ...gameData, bindings: { ...gameData.bindings, playerAnimation: this.state.playerAnimation } }
+          : gameData;
+        assets = buildStudioAssets(project.manifest, data, (asset) => urls[asset.id] ?? "");
+        await assets.catalog.load();
+        const clips = this.animationAsset(playerAnimation ?? "")?.animations ?? {};
+        const missing = requiredPlayerClips(project.manifest.player?.loadout).filter((name) => !clips[name]);
+        if (missing.length > 0) {
+          issues.push({
+            severity: "warning",
+            code: "player.clips",
+            path: "/game/data.json",
+            message: `Player animation '${playerAnimation}' has no clip for: ${missing.join(", ")}.`,
+          });
+        }
+      } catch (error) {
+        assets = null;
+        issues.push(bindingIssue(error));
+      }
     }
     if (this.state.rootPath === rootPath) {
       this.setState({
@@ -122,6 +163,12 @@ export class ProjectSession {
       });
     }
     return assets;
+  }
+
+  /** Rebuild Play's assets after a manifest or binding edit (no disk read). */
+  private refreshAssets(): void {
+    const rootPath = this.state.rootPath;
+    this.assets = this.assets.catch(() => null).then(() => this.buildPlayAssets(rootPath));
   }
 
   getEntryLevelDocument() {
@@ -152,6 +199,43 @@ export class ProjectSession {
       dirty: true,
       issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
     });
+    // The loadout decides which player clips Problems reports as missing.
+    this.refreshAssets();
+  }
+
+  /** An `animation` asset of the open project, or null. */
+  animationAsset(assetId: string): AnimationAsset | null {
+    const asset = this.state.project?.manifest.assets.find((entry) => entry.id === assetId);
+    return asset?.kind === "animation" ? asset : null;
+  }
+
+  /** Replace, add or (with null) remove an `animation` asset (contract C-CLIP); saved with the project. */
+  setAnimationAsset(assetId: string, next: AnimationAsset | null): void {
+    const project = this.state.project;
+    if (!project) return;
+    const index = project.manifest.assets.findIndex((asset) => asset.id === assetId);
+    const assets = project.manifest.assets.filter((asset) => asset.id !== assetId);
+    if (next) assets.splice(index < 0 ? assets.length : index, 0, next);
+    const nextProject = { ...project, manifest: { ...project.manifest, assets } };
+    this.setState({
+      ...this.state,
+      project: nextProject,
+      dirty: true,
+      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
+    });
+    this.refreshAssets();
+  }
+
+  /** The player's animation asset id: the unsaved choice, else `game/data.json`'s. */
+  playerAnimation(): string | null {
+    return this.state.playerAnimation ?? this.playData?.gameData?.bindings?.playerAnimation ?? null;
+  }
+
+  /** Bind the player's animation (`game/data.json` bindings.playerAnimation); written on save. */
+  setPlayerAnimation(assetId: string): void {
+    if (!this.state.project) return;
+    this.setState({ ...this.state, playerAnimation: assetId, dirty: true });
+    this.refreshAssets();
   }
 
   /** A sprite asset's saved `regions` (contract C-REGIONS); [] when absent. */
@@ -340,11 +424,28 @@ export class ProjectSession {
       this.setState({ ...this.state, issues: result.issues });
       return result.issues;
     }
+    // After the manifest, so the bound animation asset is on disk first.
+    const { playerAnimation } = this.state;
+    if (playerAnimation) {
+      const written = await bridge.writePlayerAnimation(rootPath, playerAnimation);
+      if (!written.ok) {
+        this.setState({ ...this.state, issues: written.issues });
+        return written.issues;
+      }
+      if (this.playData) {
+        const { gameData } = this.playData;
+        this.playData = {
+          ...this.playData,
+          gameData: { ...gameData, bindings: { ...gameData.bindings, playerAnimation } },
+        };
+      }
+    }
 
     this.setState({
       ...this.state,
       project: result.value.project,
       dirty: false,
+      playerAnimation: undefined,
       issues: [...result.issues, ...validateOpenProject(result.value.project)],
     });
     return this.state.issues;

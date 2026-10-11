@@ -130,6 +130,9 @@ export const SLICER_PANEL: PanelSpec = {
   fallbackDir: "right",
 };
 
+/** Tool panel opened from File → Clip Editor…; not listed under View → Panels. */
+export const CLIP_PANEL: PanelSpec = { ...SLICER_PANEL, id: "clips", title: "Clip Editor", component: "clips" };
+
 /** Open the panel if closed, or close it if open (the View-menu checkbox action). */
 export function togglePanel(id: string): void {
   if (!api) return;
