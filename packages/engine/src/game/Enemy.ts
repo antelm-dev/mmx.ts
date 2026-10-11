@@ -222,7 +222,7 @@ export class Enemy extends AbilityUser {
   /** Is there ground within `probe` px below the feet, `ahead` px forward? */
   ground_ahead(ahead: number, probe = 4): boolean {
     const x = this.pos.x + ahead * this.get_facing_direction();
-    return this.world.isSolidAt(x, this.pos.y + this.hh + probe);
+    return this.world.isFloorAt(x, this.pos.y + this.hh + probe);
   }
 
   // ---------------------------------------------------------------------------

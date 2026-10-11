@@ -8,6 +8,7 @@ export const TERRAIN_TILE_NAME: Record<TerrainTile, string> = {
   [TerrainTile.Solid]: "Solid",
   [TerrainTile.SlopeUpRight]: "SlopeUpRight",
   [TerrainTile.SlopeUpLeft]: "SlopeUpLeft",
+  [TerrainTile.OneWay]: "OneWay",
 };
 
 export const TERRAIN_TILE_BY_NAME: Record<string, TerrainTile> = {
@@ -15,4 +16,5 @@ export const TERRAIN_TILE_BY_NAME: Record<string, TerrainTile> = {
   Solid: TerrainTile.Solid,
   SlopeUpRight: TerrainTile.SlopeUpRight,
   SlopeUpLeft: TerrainTile.SlopeUpLeft,
+  OneWay: TerrainTile.OneWay,
 };
