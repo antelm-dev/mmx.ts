@@ -3,6 +3,7 @@ import path from "node:path";
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
 import { compileGameData, GAME_DATA, type GameData } from "@mmx/engine/data";
 import { GAMEPLAY_SOUND_IDS, type SoundBindingMap } from "@mmx/browser-audio";
+import type { TilesetArt } from "@mmx/content-schema";
 import type { ProjectAsset } from "@mmx/project-schema";
 import {
   buildRendererAssetManifestFromProject,
@@ -158,11 +159,13 @@ function buildRendererManifest(
       )
     : undefined;
 
-  // Image layer assets load as whole sheets keyed by their asset id, like any bound sheet.
+  // Image layer and tileset assets load as whole sheets keyed by their asset id, like any bound sheet.
   const sheetImages = { ...bindingSource.bindings.sheetImages };
   for (const level of project.levels) {
     for (const layer of level.document.imageLayers ?? [])
       sheetImages[layer.assetId] = layer.assetId;
+    for (const layer of level.document.tileLayers ?? [])
+      sheetImages[layer.tilesetId] = layer.tilesetId;
   }
 
   return buildRendererAssetManifestFromProject(
@@ -191,14 +194,35 @@ export async function compileBrowserProjectBundle(
     (await readOptionalContainedJson<StudioGameDataFile>(project.root, STUDIO_GAME_DATA_FILE));
   const { soundBindings, soundIds } = compileSoundPlan(studioForSounds, project.manifest, emission);
 
-  const levels = project.levels.map((level) => ({
-    id: level.id,
-    name: level.document.name,
-    data: levelDocumentToLevelData(level.document),
-    decorations: level.document.decorations.slice(),
-    ...(level.document.imageLayers ? { imageLayers: level.document.imageLayers.slice() } : {}),
-    ...(level.document.backdrop ? { backdrop: level.document.backdrop } : {}),
-  }));
+  const tilesets: Record<string, TilesetArt> = {};
+  for (const asset of project.manifest.assets) {
+    if (asset.kind !== "tileset") continue;
+    tilesets[asset.id] = {
+      tileSize: asset.tileSize,
+      ...(asset.columns !== undefined ? { columns: asset.columns } : {}),
+    };
+  }
+
+  const levels = project.levels.map((level) => {
+    const { tileLayers } = level.document;
+    return {
+      id: level.id,
+      name: level.document.name,
+      data: levelDocumentToLevelData(level.document),
+      decorations: level.document.decorations.slice(),
+      ...(level.document.imageLayers ? { imageLayers: level.document.imageLayers.slice() } : {}),
+      ...(tileLayers
+        ? {
+            tileLayers: tileLayers.slice(),
+            cols: level.document.cols,
+            tilesets: Object.fromEntries(
+              tileLayers.map((layer) => [layer.tilesetId, tilesets[layer.tilesetId]!]),
+            ),
+          }
+        : {}),
+      ...(level.document.backdrop ? { backdrop: level.document.backdrop } : {}),
+    };
+  });
 
   return {
     meta: {

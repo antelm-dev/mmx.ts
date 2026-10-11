@@ -139,3 +139,98 @@ test("loadProject rejects image layers whose asset is not of kind image", async 
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+/** A PNG signature plus IHDR width/height: all project loading reads from a tileset image. */
+function syntheticPngHeader(width: number, height: number): Uint8Array {
+  const bytes = new Uint8Array(33);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes;
+}
+
+async function writeTileLayerProject(
+  dir: string,
+  tileset: Record<string, unknown>,
+  cells: (cols: number, rows: number) => number[],
+): Promise<void> {
+  const project = await requireProject(syntheticProject);
+  const manifest = structuredClone(project.manifest);
+  manifest.assets = [
+    ...manifest.assets,
+    { id: "tiles.stage", kind: "tileset", path: "assets/tiles.png", ...tileset } as never,
+  ];
+  await fs.mkdir(path.join(dir, "levels"), { recursive: true });
+  await fs.cp(path.join(syntheticProject, "assets"), path.join(dir, "assets"), { recursive: true });
+  // 4×2 tiles of 16 px.
+  await fs.writeFile(path.join(dir, "assets/tiles.png"), syntheticPngHeader(64, 32));
+  await fs.writeFile(path.join(dir, "project.json"), JSON.stringify(manifest), "utf8");
+  const document = project.levels[0]!.document;
+  const tileLayers = [
+    {
+      id: "tiles.ground",
+      tilesetId: "tiles.stage",
+      layer: "world-back",
+      parallax: 1,
+      cells: cells(document.cols, document.rows),
+    },
+  ];
+  await fs.writeFile(
+    path.join(dir, "levels/level.main.json"),
+    JSON.stringify({ ...document, tileLayers }),
+    "utf8",
+  );
+}
+
+const tileset = { tileSize: 16, collision: { 0: 1, 1: 2 } };
+
+test("loadProject accepts tile layers within the tileset and rejects bad ones", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
+  try {
+    const filled = (last: number) => (cols: number, rows: number) => {
+      const cells = new Array<number>(cols * rows).fill(-1);
+      cells[cells.length - 1] = last;
+      return cells;
+    };
+    await writeTileLayerProject(dir, tileset, filled(7));
+    const ok = await loadProject(dir);
+    assert.equal(ok.ok, true, JSON.stringify(ok.issues));
+
+    // 4×2 tiles: index 8 is past the image.
+    await writeTileLayerProject(dir, tileset, filled(8));
+    let result = await loadProject(dir);
+    assert.ok(!result.ok && result.issues.some((i) => i.code === "tileLayer.cells.index"));
+
+    // `columns` narrower than the image shrinks the tile count to 2×2.
+    await writeTileLayerProject(dir, { ...tileset, columns: 2 }, filled(4));
+    result = await loadProject(dir);
+    assert.ok(!result.ok && result.issues.some((i) => i.code === "tileLayer.cells.index"));
+
+    await writeTileLayerProject(dir, tileset, (cols, rows) => new Array(cols * rows - 1).fill(0));
+    result = await loadProject(dir);
+    assert.ok(!result.ok && result.issues.some((i) => i.code === "tileLayer.cells.length"));
+
+    // Collision values must be TerrainTile values.
+    await writeTileLayerProject(dir, { ...tileset, collision: { 0: 99 } }, filled(0));
+    result = await loadProject(dir);
+    assert.ok(!result.ok && result.issues.some((i) => i.code === "tileset.collision"));
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("loadProject rejects tile layers whose tilesetId is not a tileset asset", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
+  try {
+    await writeTileLayerProject(dir, tileset, (cols, rows) => new Array(cols * rows).fill(-1));
+    const levelPath = path.join(dir, "levels/level.main.json");
+    const level = JSON.parse(await fs.readFile(levelPath, "utf8"));
+    level.tileLayers[0].tilesetId = "sprite.bg";
+    await fs.writeFile(levelPath, JSON.stringify(level), "utf8");
+    const result = await loadProject(dir);
+    assert.ok(!result.ok && result.issues.some((i) => i.code === "tileLayer.tileset.unknown"));
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});

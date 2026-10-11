@@ -1,5 +1,11 @@
 import type { SoundBindingMap } from "@mmx/browser-audio";
-import type { DecorationInstance, ImageLayer, LevelDocument } from "@mmx/content-schema";
+import type {
+  DecorationInstance,
+  ImageLayer,
+  LevelDocument,
+  TileLayer,
+  TilesetArt,
+} from "@mmx/content-schema";
 import type { LevelData } from "@mmx/engine";
 import type { CompiledGameData } from "@mmx/engine/data";
 import type { ProjectDocument } from "@mmx/project-schema";
@@ -47,6 +53,12 @@ export type BrowserLevelBundle = {
   decorations: DecorationInstance[];
   /** Image layer textures resolve through `rendererManifest.sheetUrls[assetId]`. */
   imageLayers?: ImageLayer[];
+  /** Tileset textures resolve through `rendererManifest.sheetUrls[tilesetId]`. */
+  tileLayers?: TileLayer[];
+  /** Level width in cells, set with `tileLayers` so the bundle level is a full `LevelArt`. */
+  cols?: number;
+  /** Geometry of each tileset `tileLayers` reference. */
+  tilesets?: Record<string, TilesetArt>;
   backdrop?: string;
 };
 
