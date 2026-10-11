@@ -33,6 +33,12 @@ function _ac(abilityId: string, key: string): number {
 export const GRAVITY = _D.physics.gravity; // Actor.gd:12
 export const MAX_FALL_VELOCITY = _D.physics.maxFallVelocity; // Actor.gd:13
 export const FLOOR_SNAP_LENGTH = _D.physics.floorSnapLength; // Actor.gd:16
+/**
+ * Physics ticks a body ignores OneWay tiles after "down + jump" on one, so the
+ * floor sensor and snap do not catch it again before gravity has moved its feet
+ * below the tile's top edge.
+ */
+export const ONE_WAY_DROP_TICKS = 8;
 
 // --- Movement.gd (→ data/abilities.ts) ---
 export const WALK_SPEED = _ac("player.walk", "speed"); // Movement.gd:6 horizontal_velocity

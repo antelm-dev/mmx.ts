@@ -112,6 +112,12 @@ export class DebugOverlay {
           g.rect(px, py, TILE_SIZE, TILE_SIZE).stroke({ width: 1, color: COLORS.solid });
           continue;
         }
+        if (kind === Tile.OneWay) {
+          g.moveTo(px, py + 0.5)
+            .lineTo(px + TILE_SIZE, py + 0.5)
+            .stroke({ width: 1, color: COLORS.solid });
+          continue;
+        }
 
         const leftY = world.slopeSurfaceY(tx, ty, kind, px);
         const rightY = world.slopeSurfaceY(tx, ty, kind, px + TILE_SIZE);

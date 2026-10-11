@@ -37,6 +37,7 @@ const CHAR_TO_TILE: Record<string, Tile> = {
   "#": Tile.Solid,
   "/": Tile.SlopeUpRight,
   "\\": Tile.SlopeUpLeft,
+  "=": Tile.OneWay,
 };
 
 function isSlope(t: Tile): boolean {
@@ -127,6 +128,30 @@ export class World {
    */
   isSolidTile(cx: number, cy: number): boolean {
     return this.tileAt(cx, cy) === Tile.Solid;
+  }
+
+  /** Is world-space point inside a tile a walker can stand on (solid or OneWay)? */
+  isFloorAt(px: number, py: number): boolean {
+    const cx = Math.floor(px / TILE_SIZE);
+    const cy = Math.floor(py / TILE_SIZE);
+    return this.isSolidTile(cx, cy) || this.tileAt(cx, cy) === Tile.OneWay;
+  }
+
+  /**
+   * Top edge y of the highest OneWay tile under the x span `cx ± hw` whose top
+   * lies within `from..to`, or null. OneWay tiles are invisible to every other
+   * query (sweeps, overlaps, raycasts): only the body's feet crossing this edge
+   * while moving down can make one block, which {@link Actor} decides.
+   */
+  oneWayTopY(cx: number, hw: number, from: number, to: number): number | null {
+    const tx0 = Math.floor((cx - hw) / TILE_SIZE);
+    const tx1 = Math.floor((cx + hw - SKIN) / TILE_SIZE);
+    for (let ty = Math.ceil(from / TILE_SIZE); ty * TILE_SIZE <= to; ty++) {
+      for (let tx = tx0; tx <= tx1; tx++) {
+        if (this.tileAt(tx, ty) === Tile.OneWay) return ty * TILE_SIZE;
+      }
+    }
+    return null;
   }
 
   /** Is world-space point inside a solid tile? */

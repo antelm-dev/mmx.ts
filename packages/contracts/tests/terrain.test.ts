@@ -8,4 +8,5 @@ test("TerrainTile numeric values match the level format", () => {
   assert.equal(TerrainTile.Solid, 1);
   assert.equal(TerrainTile.SlopeUpRight, 2);
   assert.equal(TerrainTile.SlopeUpLeft, 3);
+  assert.equal(TerrainTile.OneWay, 4);
 });

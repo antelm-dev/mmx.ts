@@ -44,6 +44,8 @@ export type SpriteAsset = AssetFields & {
   kind: "sprite";
   region?: Region;
   anchor?: readonly [number, number];
+  /** Slicer output (C-REGIONS); editor-only, ignored by the engine. */
+  regions?: readonly { id: string; region: Region }[];
 };
 
 export type AnimationAsset = AssetFields & {

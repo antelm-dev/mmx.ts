@@ -30,6 +30,11 @@ function fallUnderGravity(
   const hw = box.w / 2;
   const hh = box.h / 2;
   const { pos, hit } = world.sweepY(box.x + hw, box.y + hh, hw, hh, nextVelocityY * dt);
+  // Same rule as Actor.resolveOneWay: rest on a OneWay edge only when falling onto it from above.
+  const bottom = box.y + box.h;
+  const top =
+    nextVelocityY >= 0 ? world.oneWayTopY(box.x + hw, hw, bottom - 0.001, pos + hh) : null;
+  if (top !== null) return { y: top - box.h, velocityY: 0 };
   return { y: pos - hh, velocityY: hit ? 0 : nextVelocityY };
 }
 

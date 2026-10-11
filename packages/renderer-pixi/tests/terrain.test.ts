@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Scene } from "@mmx/engine";
+import { Scene, Tile } from "@mmx/engine";
 import { TerrainView } from "../src/render/terrain.js";
 import { testLevel } from "./testLevel.js";
 
@@ -20,5 +20,14 @@ test("terrain tiles hide under a world image layer and show without art", () => 
   const tiles = { id: "tiles", tilesetId: "tiles.stage", parallax: 1, cells: [] };
   terrain.setArt({ tileLayers: [{ ...tiles, layer: "world-back" }] });
   assert.equal(terrain.tiles.visible, false, "a world tile layer paints the terrain too");
+  terrain.view.destroy({ children: true });
+});
+
+test("a OneWay tile builds as a top edge only, without a ramp profile", () => {
+  const level = testLevel();
+  level.tiles[10 * level.cols + 4] = Tile.OneWay;
+  const terrain = new TerrainView(Scene.create({ level, seed: 1 }).stage);
+  // Its stroke at y + 0.5 is now the highest geometry: the bounds start at its top edge.
+  assert.equal(terrain.tiles.getLocalBounds().y, 10 * 16);
   terrain.view.destroy({ children: true });
 });

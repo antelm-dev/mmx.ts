@@ -188,6 +188,35 @@ function validateRegion(value: unknown, path: string, add: IssueCollector["add"]
   return true;
 }
 
+/** Slicer regions: array of `{ id, region }`, ids non-empty and unique. */
+function validateSpriteRegions(value: unknown, path: string, add: IssueCollector["add"]): void {
+  if (!Array.isArray(value)) {
+    add({ code: "sprite.regions", path, message: "Sprite regions must be an array." });
+    return;
+  }
+  const ids = new Set<string>();
+  value.forEach((entry: unknown, index) => {
+    const entryPath = `${path}/${index}`;
+    if (!isRecord(entry) || typeof entry.id !== "string" || entry.id === "") {
+      add({
+        code: "sprite.regions",
+        path: entryPath,
+        message: "Sprite region must be { id, region } with a non-empty string id.",
+      });
+      return;
+    }
+    if (ids.has(entry.id)) {
+      add({
+        code: "sprite.regions",
+        path: `${entryPath}/id`,
+        message: `Duplicate sprite region id '${entry.id}'.`,
+      });
+    }
+    ids.add(entry.id);
+    validateRegion(entry.region, `${entryPath}/region`, add);
+  });
+}
+
 /** `[x, y]` integers with 0 <= x <= width and 0 <= y <= height of `region`. */
 function isAnchorIn(value: unknown, region: Region): boolean {
   return (
@@ -417,6 +446,7 @@ function validateAsset(
 
   if (kind === "sprite") {
     if (value.region !== undefined) validateRegion(value.region, `${path}/region`, add);
+    if (value.regions !== undefined) validateSpriteRegions(value.regions, `${path}/regions`, add);
     if (value.anchor !== undefined) {
       if (
         !Array.isArray(value.anchor) ||
