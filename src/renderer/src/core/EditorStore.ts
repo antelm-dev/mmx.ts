@@ -7,10 +7,20 @@ import {
   type ValidationResult,
   TerrainTile,
 } from "@mmx/content-schema";
+import type { TilesetAsset } from "@mmx/project-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
 import { knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
-export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile";
+export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile" | "tilePaint";
+export type TilePaintMode = "brush" | "rect" | "fill" | "erase";
+
+/** What the `tilePaint` tool paints: a tileset tile into one tile layer. */
+export interface TilePaint {
+  layerId?: string;
+  /** Tile index in the layer's tileset. */
+  tile: number;
+  mode: TilePaintMode;
+}
 export type Mode = "edit" | "play";
 
 export type EditorSelection =
@@ -112,6 +122,9 @@ export interface EditorState {
   decorationLayerVisible: LayerVisibility;
   /** Editor-only: locked layers stay visible but are not selectable. */
   decorationLayerLocked: LayerLocks;
+  /** The open project's `tileset` assets by id (tile geometry and collision per tile). */
+  tilesets: Readonly<Record<string, TilesetAsset>>;
+  tilePaint: TilePaint;
 }
 
 /** Why the store emitted — lets subscribers skip expensive work they don't need. */
@@ -139,6 +152,8 @@ export class EditorStore {
       mode: "edit",
       decorationLayerVisible: allLayersTrue(),
       decorationLayerLocked: allLayersFalse(),
+      tilesets: {},
+      tilePaint: { tile: 0, mode: "brush" },
     };
   }
 
@@ -362,13 +377,28 @@ export class EditorStore {
     this.patch({ mode }, "mode");
   }
 
+  setTilesets(tilesets: Record<string, TilesetAsset>): void {
+    this.patch({ tilesets }, "ui");
+  }
+
+  setTilePaint(patch: Partial<TilePaint>): void {
+    this.patch({ tilePaint: { ...this.state.tilePaint, ...patch } }, "ui");
+  }
+
   // --- Derived ---
 
-  /** `imageAssetIds`: the open project's `image` assets, so image layers are cross-checked. */
-  validate(imageAssetIds?: readonly string[]): ValidationResult {
+  /**
+   * `imageAssetIds` / `tilesets`: the open project's `image` and `tileset` assets, so
+   * image and tile layers are cross-checked (tileset values are tile counts, or undefined).
+   */
+  validate(
+    imageAssetIds?: readonly string[],
+    tilesets?: ReadonlyMap<string, number | undefined>,
+  ): ValidationResult {
     return validateLevelDocument(this.state.document, {
       knownDecorationAssetIds: knownDecorationAssetIds(),
       imageAssetIds,
+      tilesets,
     });
   }
 

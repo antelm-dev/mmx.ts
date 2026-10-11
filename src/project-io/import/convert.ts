@@ -9,7 +9,7 @@ const LOOP = 0xfe;
 const HOLD = 0xff;
 
 /** TerrainTile values from @mmx/contracts/terrain (on-disk ids). */
-export const Tile = { Empty: 0, Solid: 1, SlopeUpRight: 2, SlopeUpLeft: 3 } as const;
+export const Tile = { Empty: 0, Solid: 1, SlopeUpRight: 2, SlopeUpLeft: 3, OneWay: 4 } as const;
 
 // renderer-pixi draws the sprite centre at feet - body_hh - 4 (renderer-pixi/src/render/sprite.ts,
 // SPRITE_OFFSET_Y) with body_hh = 15 for player.zero (engine/src/data/actors.ts), so the
@@ -67,11 +67,11 @@ export function toClip(script: Step[], regionOf: (frame: number) => Region, mode
 /**
  * MMX1 collision byte -> [TerrainTile, slope profile?]. Profiles are [left, right] fill heights
  * in px from the tile base. 0x05-0x08 rise 4 px per tile left to right, 0x09-0x0c are their
- * mirror. Everything else non-zero (0x34/0x35 walkable top, 0x39/0x3a, 0x3b solid) is Solid:
- * the engine has no one-way tile.
+ * mirror. 0x34/0x35 (walkable top) are OneWay; everything else non-zero (0x39/0x3a, 0x3b solid) is Solid.
  */
 export function tileOf(byte: number): [number, [number, number]?] {
   if (byte === 0) return [Tile.Empty];
+  if (byte === 0x34 || byte === 0x35) return [Tile.OneWay];
   if (byte >= 0x05 && byte <= 0x08) {
     const i = byte - 0x05;
     return [Tile.SlopeUpRight, [i * 4, i * 4 + 4]];

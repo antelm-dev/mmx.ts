@@ -93,12 +93,16 @@ export function Viewport() {
                 fontWeight="bold"
                 color="#edf3fc"
               >
-                {snap.state.activeTool === "tile" ? (
+                {snap.state.activeTool === "tile" || snap.state.activeTool === "tilePaint" ? (
                   <Paintbrush size={14} color="#4b8eff" />
                 ) : (
                   <MousePointer2 size={14} color="#4b8eff" />
                 )}
-                {snap.state.activeTool === "tile" ? "Tile paint" : "Select / move"}
+                {snap.state.activeTool === "tile"
+                  ? "Tile paint"
+                  : snap.state.activeTool === "tilePaint"
+                    ? "Tile layer paint"
+                    : "Select / move"}
               </OverlayCard>
               <OverlayCard
                 display="inline-flex"

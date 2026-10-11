@@ -117,6 +117,8 @@ function tileKindLabel(value: TerrainTile): string {
       return "Slope /";
     case TerrainTile.SlopeUpLeft:
       return "Slope \\";
+    case TerrainTile.OneWay:
+      return "One-way";
     default:
       return "Empty";
   }

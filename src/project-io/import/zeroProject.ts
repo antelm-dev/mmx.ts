@@ -8,7 +8,7 @@ import { join } from "node:path";
 import type { FileSystem } from "../fs.js";
 import { msAdpcmToPcmWav } from "./adpcm.js";
 import { readArc } from "./arc.js";
-import { cameraZones, FEET_BELOW_CENTRE, introHighwayArt, packFrames, SOUND_ROLES, splitScript, tileOf, toClip, X_CLIPS, type Clip, type Frame, type Region } from "./convert.js";
+import { cameraZones, FEET_BELOW_CENTRE, introHighwayArt, packFrames, SOUND_ROLES, splitScript, Tile, tileOf, toClip, X_CLIPS, type Clip, type Frame, type Region } from "./convert.js";
 import { readMmx1Install, type Mmx1Stage, type Mmx1StageJson } from "./mmx1.js";
 import { EFFECTS_OBJECT, PANTHEON_CLIPS, PANTHEON_OBJECT, PANTHEON_SHOT_CLIP, readMmz1Install, type SpriteAtlas } from "./mmz1.js";
 import { decodePng, encodePng } from "./png.js";
@@ -271,6 +271,7 @@ export async function writeZeroProject(out: FileSystem, template: FileSystem, sr
     cell,
     tiles: [level.cols, level.rows],
     slopes: Object.keys(level.slopes).length,
+    oneWay: level.tiles.filter((t) => t === Tile.OneWay).length,
     sounds: Object.keys(zeroSounds).length,
     enemies: level.objects.filter((o) => o.definitionId === "enemy.pantheon").length,
   };

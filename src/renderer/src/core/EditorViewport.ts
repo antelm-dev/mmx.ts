@@ -48,7 +48,7 @@ export class EditorViewport {
     canvas.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       if (store.get().mode === "play") return;
-      if (store.get().activeTool === "tile") return;
+      if (store.get().activeTool === "tile" || store.get().activeTool === "tilePaint") return;
       const payload = this.interaction.emptyContextAt(e.clientX, e.clientY);
       if (payload) this.onEmptyContextMenu?.(payload);
     });

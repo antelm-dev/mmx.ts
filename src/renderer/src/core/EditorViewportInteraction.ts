@@ -1,6 +1,12 @@
 import { TerrainTile, moveDecorations, moveObjects, setTransform } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
-import { paintTiles, placeAt, placeDecorationAt, moveSelectedTiles } from "./actions.js";
+import {
+  paintTileLayer,
+  paintTiles,
+  placeAt,
+  placeDecorationAt,
+  moveSelectedTiles,
+} from "./actions.js";
 import {
   cloneSelection,
   emptySelection,
@@ -12,7 +18,9 @@ import {
 } from "./EditorStore.js";
 import {
   boxOf,
+  cellRect,
   clampTileDelta,
+  floodFill,
   handleHitTest,
   normalizeBox,
   singleResizableObject,
@@ -52,6 +60,14 @@ export class EditorViewportInteraction {
   private live: LivePreview = null;
   private resizeState: { id: string; handle: Handle; orig: Box } | null = null;
   private tileStroke: { erase: boolean; changed: Map<number, TerrainTile> } | null = null;
+  /** In-flight tile-layer stroke: cell index -> tile index (-1 erases). */
+  private tileArt: {
+    layerId: string;
+    value: number;
+    rect: boolean;
+    start: number;
+    changed: Map<number, number>;
+  } | null = null;
   private pendingToggle: string | null = null;
   private pendingDecorationToggle: string | null = null;
   private pendingTileToggle: number | null = null;
@@ -78,7 +94,12 @@ export class EditorViewportInteraction {
   }
 
   getLive(): LivePreview { return this.live; }
-  getTileStroke(): TileStrokePreview | null { return this.tileStroke; }
+  getTileStroke(): TileStrokePreview | null {
+    const art = this.tileArt;
+    if (!art) return this.tileStroke;
+    const shown = art.value < 0 ? TerrainTile.Empty : TerrainTile.Solid;
+    return { erase: art.value < 0, changed: new Map([...art.changed.keys()].map((i) => [i, shown])) };
+  }
   getMarquee(): MarqueePreview | null {
     if (!this.marquee) return null;
     return { start: this.marquee.start, current: this.marquee.current, active: this.marqueeActive };
@@ -278,7 +299,7 @@ export class EditorViewportInteraction {
   }
 
   private redraw(): void {
-    this.onRedraw(this.live, this.tileStroke, this.getMarquee(), this.pointerWorld);
+    this.onRedraw(this.live, this.getTileStroke(), this.getMarquee(), this.pointerWorld);
   }
 
   private onWheel(e: WheelEvent): void {
@@ -308,6 +329,22 @@ export class EditorViewportInteraction {
     if (state.activeTool === "tile" && (e.button === 0 || e.button === 2)) {
       this.tileStroke = { erase: e.button === 2 || e.altKey, changed: new Map() };
       this.paintTileAt(world);
+      this.redraw();
+      return;
+    }
+
+    if (state.activeTool === "tilePaint" && (e.button === 0 || e.button === 2)) {
+      const { layerId, tile, mode } = state.tilePaint;
+      const layer = state.document.tileLayers?.find((l) => l.id === layerId);
+      const index = this.tileAt(world);
+      if (!layer || index === null) return;
+      const value = mode === "erase" || e.button === 2 ? -1 : tile;
+      if (mode === "fill") {
+        const region = floodFill(layer.cells, state.document.cols, index);
+        paintTileLayer(this.store, layer.id, new Map(region.map((i) => [i, value])), "Fill tiles");
+        return;
+      }
+      this.tileArt = { layerId: layer.id, value, rect: mode === "rect", start: index, changed: new Map([[index, value]]) };
       this.redraw();
       return;
     }
@@ -386,6 +423,17 @@ export class EditorViewportInteraction {
       return;
     }
     if (this.tileStroke) { this.paintTileAt(world); this.redraw(); return; }
+    if (this.tileArt) {
+      const art = this.tileArt;
+      const index = this.tileAt(world);
+      if (index !== null && art.rect) {
+        art.changed = new Map(cellRect(this.store.get().document.cols, art.start, index).map((i) => [i, art.value]));
+      } else if (index !== null) {
+        art.changed.set(index, art.value);
+      }
+      this.redraw();
+      return;
+    }
     if (this.resizeState) { this.applyResize(world); this.redraw(); return; }
 
     if (this.marquee) {
@@ -421,7 +469,7 @@ export class EditorViewportInteraction {
 
     if (this.store.get().mode !== "play") {
       const tool = this.store.get().activeTool;
-      if (tool === "tile") { this.store.setHover(undefined); this.redraw(); return; }
+      if (tool === "tile" || tool === "tilePaint") { this.store.setHover(undefined); this.redraw(); return; }
       const hit = this.topObjectAt(world.x, world.y);
       if (hit) { this.store.setHover({ kind: "object", id: hit.id }); return; }
       const hitDec = this.topDecorationAt(world.x, world.y);
@@ -456,6 +504,14 @@ export class EditorViewportInteraction {
       const { erase, changed } = this.tileStroke;
       this.tileStroke = null;
       paintTiles(this.store, [...changed].map(([index, value]) => ({ index, value })), erase);
+      this.redraw();
+      return;
+    }
+
+    if (this.tileArt) {
+      const { layerId, changed, rect, value } = this.tileArt;
+      this.tileArt = null;
+      paintTileLayer(this.store, layerId, changed, value < 0 ? "Erase tiles" : rect ? "Paint tile rectangle" : "Paint tiles");
       this.redraw();
       return;
     }

@@ -14,9 +14,12 @@ function image(width: number, height: number, opaque: (x: number, y: number) => 
 
 export function zeroFixtureSources(): ZeroSources {
   const [w, h] = [48, 24];
-  // floor from row 22 (y 352), one 4-tile ramp (0x05..0x08) on row 21; the Pantheon spawns at x 520 / 760 fit
+  // floor from row 22 (y 352), one 4-tile ramp (0x05..0x08) on row 21, a 3-tile walkable top (0x34) on row 15;
+  // the Pantheon spawns at x 520 / 760 fit
   const collision = Array.from({ length: h }, (_, y) =>
-    Array.from({ length: w }, (_, x) => (y >= 22 ? 0x3b : y === 21 && x >= 20 && x < 24 ? 0x05 + x - 20 : 0)),
+    Array.from({ length: w }, (_, x) =>
+      y >= 22 ? 0x3b : y === 21 && x >= 20 && x < 24 ? 0x05 + x - 20 : y === 15 && x >= 4 && x < 7 ? 0x34 : 0,
+    ),
   );
   const camera = { x: 0, min_x: 0, max_x: 384, min_y: 0, max_y: 160 };
   const anims = [...new Set(ZERO_MOVES.map((m) => m.anim))];

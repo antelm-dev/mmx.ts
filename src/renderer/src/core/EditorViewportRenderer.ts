@@ -15,6 +15,7 @@ import {
   type AssetCatalog,
 } from "@mmx/renderer-pixi";
 import { EditableTerrain } from "./EditableTerrain.js";
+import { tileLayerWritesCollision } from "./actions.js";
 import {
   selectedDecorationIds,
   selectedObjectIds,
@@ -186,6 +187,9 @@ export class EditorViewportRenderer {
         const y = ty * TS;
         if (kind === TerrainTile.Solid) {
           g.rect(x, y, TS, TS);
+        } else if (kind === TerrainTile.OneWay) {
+          // Solid from above only: draw just the top edge, like the engine renderer.
+          g.rect(x, y, TS, Math.max(1, TS / 8));
         } else {
           const { l, r } = terrain.slopeProfile(tx, ty, kind);
           g.poly([x, y + TS, x + TS, y + TS, x + TS, y + TS - r, x, y + TS - l]);
@@ -218,7 +222,11 @@ export class EditorViewportRenderer {
     // An invalid colour (hand-edited JSON) is a Problems error; Pixi would throw on it.
     const backdrop = /^#[0-9a-f]{6}$/i.test(doc.backdrop ?? "") ? doc.backdrop : undefined;
     const imageLayers = Array.isArray(doc.imageLayers) ? doc.imageLayers : undefined;
-    this.art.setDecorations([], { imageLayers, backdrop });
+    const tileLayers = Array.isArray(doc.tileLayers) ? doc.tileLayers : undefined;
+    const { tilesets } = this.store.get();
+    this.art.setDecorations([], { imageLayers, backdrop, tileLayers, cols: doc.cols, tilesets });
+    // Painted world tiles stay visible through the collision fill, which the engine hides.
+    this.terrainLayer.alpha = tileLayers?.some(tileLayerWritesCollision) ? 0.35 : 1;
     this.art.backdrop.width = this.app.screen.width;
     this.art.backdrop.height = this.app.screen.height;
     this.art.farBackground.visible = vis["far-background"];
@@ -226,16 +234,22 @@ export class EditorViewportRenderer {
     this.art.worldBack.visible = vis["world-back"];
     this.art.worldFront.visible = vis["world-front"];
     this.art.foreground.visible = vis.foreground;
-    // Lets e2e tests count the image-layer sprites the viewport actually drew.
-    (this.app.canvas as HTMLCanvasElement).dataset.imageLayerSprites = String(
-      [
-        this.art.farBackground,
-        this.art.background,
-        this.art.worldBack,
-        this.art.worldFront,
-        this.art.foreground,
-      ].reduce((n, c) => n + c.children.length, 0),
+    // Lets e2e tests count the image-layer sprites (and tile sprites) the viewport actually
+    // drew, and map world cells to screen points.
+    const layers = [
+      this.art.farBackground,
+      this.art.background,
+      this.art.worldBack,
+      this.art.worldFront,
+      this.art.foreground,
+    ];
+    const canvas = this.app.canvas as HTMLCanvasElement;
+    canvas.dataset.imageLayerSprites = String(layers.reduce((n, c) => n + c.children.length, 0));
+    canvas.dataset.tileLayerSprites = String(
+      layers.reduce((n, c) => n + c.children.reduce((m, child) => m + child.children.length, 0), 0),
     );
+    const { zoom, viewportPosition } = this.store.get();
+    canvas.dataset.view = `${zoom},${viewportPosition.x},${viewportPosition.y}`;
   }
 
   private decorationDrawPos(
@@ -364,7 +378,7 @@ export class EditorViewportRenderer {
     const zoom = state.zoom;
     const grid = state.document.gridSize;
 
-    if (state.activeTool === "tile") {
+    if (state.activeTool === "tile" || state.activeTool === "tilePaint") {
       this.drawTileToolOverlay(g, grid, zoom, tileStroke, pointerWorld);
       return;
     }
@@ -515,7 +529,8 @@ export class EditorViewportRenderer {
     const state = this.store.get();
     const isPan = panning || spaceDown || state.activeTool === "pan";
     const isCross = marqueeActive || state.activeTool === "place" ||
-      state.activeTool === "placeDecoration" || state.activeTool === "tile";
+      state.activeTool === "placeDecoration" || state.activeTool === "tile" ||
+      state.activeTool === "tilePaint";
     canvas.style.cursor = state.mode === "play" ? "default" : isPan ? "grab" : isCross ? "crosshair" : "default";
   }
 }

@@ -14,6 +14,7 @@ import {
 } from "../core/EditorStore.js";
 import {
   addImageLayer,
+  addTileLayer,
   deleteSelection,
   duplicateSelection,
   nudgeSelection,
@@ -21,7 +22,9 @@ import {
   setTileAt,
 } from "../core/actions.js";
 import { EditorViewport } from "../core/EditorViewport.js";
+import { tileGrid } from "../core/EditorViewportGeometry.js";
 import { type PlaytestSnapshot } from "@mmx/editor-runtime";
+import type { TilesetAsset } from "@mmx/project-schema";
 import {
   createFileAccess,
   parseDocument,
@@ -71,6 +74,8 @@ export class EditorController {
 
   private readonly playtest: EditorPlaytestController;
   private imageKey: string | undefined;
+  private readonly tilesetSizes = new Map<string, { path: string; w: number; h: number }>();
+  private readonly tilesetSizeLoads = new Set<string>();
 
   constructor() {
     this.playtest = new EditorPlaytestController(this.store, {
@@ -78,7 +83,7 @@ export class EditorController {
       getFileAccess: () => this.fileAccess,
       getAssets: () => projectSession.getAssets(),
       getLoadoutId: () => projectSession.getSnapshot().project?.manifest.player?.loadout,
-      validate: () => this.store.validate(this.imageAssetIds()),
+      validate: () => this.validate(),
       toast: (msg) => this.toast(msg),
       focusObject: (id) => this.focusObject(id),
       onModeChange: (mode) => {
@@ -109,6 +114,14 @@ export class EditorController {
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
     // Manifest edits (e.g. the player loadout) live in the project session, not the store.
     projectSession.subscribe(() => {
+      // Tile layers draw and paint from the manifest's tilesets; keep the store's copy current.
+      const tilesets = this.tilesetAssets();
+      const prev = this.store.get().tilesets;
+      const ids = Object.keys(tilesets);
+      if (ids.length !== Object.keys(prev).length || ids.some((id) => prev[id] !== tilesets[id])) {
+        this.store.setTilesets(tilesets);
+        this.loadTilesetSizes(tilesets);
+      }
       // Image layers are validated against the manifest's image assets; recheck when they change.
       const imageKey = this.imageAssetIds()?.join(",");
       if (imageKey !== this.imageKey) {
@@ -146,6 +159,54 @@ export class EditorController {
       .map((asset) => asset.id);
   }
 
+  /** The open project's `tileset` assets by id; empty without a project. */
+  private tilesetAssets(): Record<string, TilesetAsset> {
+    const assets = projectSession.getSnapshot().project?.manifest.assets ?? [];
+    return Object.fromEntries(
+      assets.filter((a): a is TilesetAsset => a.kind === "tileset").map((a) => [a.id, a]),
+    );
+  }
+
+  private validate(): ValidationResult {
+    const imageAssetIds = this.imageAssetIds();
+    // Tile counts follow the current tile size; undefined until the image size is known.
+    const tilesets = imageAssetIds
+      ? new Map(
+          Object.values(this.tilesetAssets()).map((t) => {
+            const size = this.tilesetSizes.get(t.id);
+            if (size?.path !== t.path) return [t.id, undefined];
+            const { columns, rows } = tileGrid(t, size);
+            return [t.id, columns * rows];
+          }),
+        )
+      : undefined;
+    return this.store.validate(imageAssetIds, tilesets);
+  }
+
+  /** Read each tileset image's pixel size once per file, then revalidate with real tile counts. */
+  private loadTilesetSizes(tilesets: Record<string, TilesetAsset>): void {
+    for (const t of Object.values(tilesets)) {
+      const key = `${t.id}|${t.path}`;
+      if (this.tilesetSizes.get(t.id)?.path === t.path || this.tilesetSizeLoads.has(key)) continue;
+      this.tilesetSizeLoads.add(key);
+      void projectSession
+        .getAssets()
+        .then((assets) => {
+          const url = assets?.resolveUrl(t);
+          if (!url) return;
+          const img = new Image();
+          img.onload = () => {
+            this.tilesetSizes.set(t.id, { path: t.path, w: img.naturalWidth, h: img.naturalHeight });
+            this.snapshot = this.build("ui");
+            this.emit();
+          };
+          img.src = url;
+        })
+        .catch(() => undefined)
+        .finally(() => this.tilesetSizeLoads.delete(key));
+    }
+  }
+
   private get isDirty(): boolean {
     return this.store.isDirty || projectSession.getSnapshot().dirty === true;
   }
@@ -162,7 +223,7 @@ export class EditorController {
       canUndo: keepDerived ? prev.canUndo : this.store.canUndo,
       canRedo: keepDerived ? prev.canRedo : this.store.canRedo,
       dirty: keepDerived ? prev.dirty : this.isDirty,
-      validation: keepDerived ? prev.validation : this.store.validate(this.imageAssetIds()),
+      validation: keepDerived ? prev.validation : this.validate(),
       levelTitle: this.computeTitle(),
     };
   }
@@ -204,17 +265,18 @@ export class EditorController {
     }
   }
 
-  /** Import a PNG into the open project and add an image layer that shows it. */
-  async importImageLayer(): Promise<void> {
+  /** Import a PNG into the open project as an image (or tileset) and add a layer that shows it. */
+  async importImageLayer(kind: "image" | "tileset" = "image"): Promise<void> {
     if (!projectSession.getSnapshot().open) {
-      this.toast("Open a project before importing an image.");
+      this.toast(`Open a project before importing ${kind === "image" ? "an image" : "a tileset"}.`);
       return;
     }
     try {
-      const assetId = await projectSession.importImage();
+      const assetId = await projectSession.importImage(kind);
       if (!assetId) return;
       await this.applyProjectAssets();
-      addImageLayer(this.store, assetId);
+      if (kind === "image") addImageLayer(this.store, assetId);
+      else addTileLayer(this.store, assetId);
     } catch (error) {
       this.toast(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -552,7 +614,8 @@ export class EditorController {
         if (
           state.activeTool === "place" ||
           state.activeTool === "placeDecoration" ||
-          state.activeTool === "tile"
+          state.activeTool === "tile" ||
+          state.activeTool === "tilePaint"
         )
           this.store.setTool("select");
         else this.store.clearSelection();

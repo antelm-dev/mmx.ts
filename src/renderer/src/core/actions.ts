@@ -9,6 +9,7 @@ import {
   moveTiles,
   newId,
   requireDefinition,
+  setLevelSettings,
   setTiles,
   type DecorationInstance,
   type EditorCommand,
@@ -16,7 +17,9 @@ import {
   type LevelArt,
   type LevelDocument,
   type LevelObjectInstance,
+  type LevelSettings,
   type TileEdit,
+  type TileLayer,
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { SpriteRegion } from "@mmx/project-io";
@@ -263,6 +266,140 @@ export function setBackdrop(store: EditorStore, backdrop: string | undefined): v
   );
 }
 
+type TileState = Pick<LevelDocument, "tileLayers" | "tiles" | "slopes">;
+
+/** Apply tile state; an empty `tileLayers` or an undefined `slopes` drops its key. */
+function withTileState(doc: LevelDocument, state: Partial<TileState>): LevelDocument {
+  const next: LevelDocument = { ...doc, ...state };
+  if ("tileLayers" in state && !next.tileLayers?.length) delete next.tileLayers;
+  if ("slopes" in state && next.slopes === undefined) delete next.slopes;
+  return next;
+}
+
+/** Replace tile layers (and, for a paint stroke, the collision under them) as one undoable command. */
+export function setTileState(
+  doc: LevelDocument,
+  state: Partial<TileState>,
+  label: string,
+): EditorCommand {
+  const before = Object.fromEntries(
+    Object.keys(state).map((key) => [key, doc[key as keyof TileState]]),
+  ) as Partial<TileState>;
+  return {
+    label,
+    execute: (d) => withTileState(d, state),
+    undo: (d) => withTileState(d, before),
+  };
+}
+
+function editTileLayers(
+  store: EditorStore,
+  label: string,
+  edit: (layers: TileLayer[]) => TileLayer[],
+): void {
+  const doc = store.get().document;
+  store.execute(setTileState(doc, { tileLayers: edit([...(doc.tileLayers ?? [])]) }, label));
+}
+
+/** Tile layers on the world layers write collision when painted; the others are decor only. */
+export function tileLayerWritesCollision(layer: Pick<TileLayer, "layer">): boolean {
+  return layer.layer === "world-back" || layer.layer === "world-front";
+}
+
+/** Add an empty world tile layer painted from `tilesetId`, make it the paint target, return its id. */
+export function addTileLayer(store: EditorStore, tilesetId: string): string {
+  const { cols, rows } = store.get().document;
+  const id = newId();
+  editTileLayers(store, "Add tile layer", (layers) => [
+    ...layers,
+    { id, tilesetId, layer: "world-back", parallax: 1, cells: new Array<number>(cols * rows).fill(-1) },
+  ]);
+  store.setTilePaint({ layerId: id });
+  return id;
+}
+
+export function removeTileLayer(store: EditorStore, id: string): void {
+  editTileLayers(store, "Remove tile layer", (layers) => layers.filter((l) => l.id !== id));
+}
+
+/** Move a tile layer one step earlier (-1, drawn further back) or later (+1) in the list. */
+export function reorderTileLayer(store: EditorStore, id: string, delta: -1 | 1): void {
+  const layers = store.get().document.tileLayers ?? [];
+  const from = layers.findIndex((l) => l.id === id);
+  const to = from + delta;
+  if (from < 0 || to < 0 || to >= layers.length) return;
+  editTileLayers(store, "Reorder tile layers", (next) => {
+    [next[from], next[to]] = [next[to]!, next[from]!];
+    return next;
+  });
+}
+
+export function updateTileLayer(
+  store: EditorStore,
+  id: string,
+  patch: Partial<Pick<TileLayer, "layer" | "parallax">>,
+): void {
+  const layer = store.get().document.tileLayers?.find((l) => l.id === id);
+  if (!layer || Object.entries(patch).every(([k, v]) => layer[k as keyof TileLayer] === v)) return;
+  editTileLayers(store, "Edit tile layer", (layers) =>
+    layers.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+  );
+}
+
+/**
+ * Commit a tile-layer stroke (cell index -> tile index, -1 erases) as one undoable command.
+ * On a collision layer each cell also takes its tile's collision and slope profile from the
+ * tileset (an erased cell becomes Empty); cells already as painted are a no-op.
+ */
+export function paintTileLayer(
+  store: EditorStore,
+  layerId: string,
+  edits: ReadonlyMap<number, number>,
+  label = "Paint tile layer",
+): void {
+  const { document: doc, tilesets } = store.get();
+  const layers = doc.tileLayers ?? [];
+  const layer = layers.find((l) => l.id === layerId);
+  if (!layer) return;
+  const tileset = tilesets[layer.tilesetId];
+  const collides = tileLayerWritesCollision(layer);
+  const cells = layer.cells.slice();
+  const tiles = doc.tiles.slice();
+  let slopes = doc.slopes;
+  let changed = false;
+  for (const [index, tile] of edits) {
+    if (index < 0 || index >= cells.length) continue;
+    if (cells[index] !== tile) {
+      cells[index] = tile;
+      changed = true;
+    }
+    if (!collides) continue;
+    const kind = ((tile < 0 ? undefined : tileset?.collision[tile]) ?? TerrainTile.Empty) as TerrainTile;
+    if (tiles[index] !== kind) {
+      tiles[index] = kind;
+      changed = true;
+    }
+    const slope = kind === TerrainTile.SlopeUpRight || kind === TerrainTile.SlopeUpLeft;
+    const profile = slope ? tileset?.slopes?.[tile] : undefined;
+    const prev = slopes?.[index];
+    if (profile ? prev?.[0] !== profile[0] || prev?.[1] !== profile[1] : prev !== undefined) {
+      slopes = { ...slopes };
+      if (profile) slopes[index] = [profile[0], profile[1]];
+      else delete slopes[index];
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  const state: Partial<TileState> = {
+    tileLayers: layers.map((l) => (l.id === layerId ? { ...l, cells } : l)),
+  };
+  if (collides) {
+    state.tiles = tiles;
+    state.slopes = slopes && Object.keys(slopes).length > 0 ? slopes : undefined;
+  }
+  store.execute(setTileState(doc, state, label));
+}
+
 /**
  * Save a sprite sheet's sliced `regions` as one undoable step. The regions live in
  * the project manifest, not the level, so the command leaves the document as is and
@@ -286,6 +423,37 @@ export function setSpriteRegions(
       return doc;
     },
   });
+}
+
+/** Crop/pad a row-major cell grid to new dimensions, keeping each cell's (col, row); new cells are -1. */
+function reshapeCells(cells: readonly number[], oldCols: number, oldRows: number, newCols: number, newRows: number): number[] {
+  const out = new Array<number>(newCols * newRows).fill(-1);
+  const copyCols = Math.min(oldCols, newCols);
+  const copyRows = Math.min(oldRows, newRows);
+  for (let r = 0; r < copyRows; r++)
+    for (let c = 0; c < copyCols; c++)
+      out[r * newCols + c] = cells[r * oldCols + c] ?? -1;
+  return out;
+}
+
+/**
+ * {@link setLevelSettings} that also reshapes every tile layer's cells (the content-schema
+ * command reshapes only `tiles`/`slopes`), so art stays over its collision after a resize.
+ */
+export function setRoomSettings(doc: LevelDocument, next: LevelSettings): EditorCommand {
+  const inner = setLevelSettings(doc, next);
+  const before = doc.tileLayers;
+  const after =
+    before && (next.cols !== doc.cols || next.rows !== doc.rows)
+      ? before.map((l) => ({ ...l, cells: reshapeCells(l.cells, doc.cols, doc.rows, next.cols, next.rows) }))
+      : before;
+  const withLayers = (d: LevelDocument, tileLayers: TileLayer[] | undefined): LevelDocument =>
+    tileLayers ? { ...d, tileLayers } : d;
+  return {
+    label: inner.label,
+    execute: (d) => withLayers(inner.execute(d), after),
+    undo: (d) => withLayers(inner.undo(d), before),
+  };
 }
 
 /**

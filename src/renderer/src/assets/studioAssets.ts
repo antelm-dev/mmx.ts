@@ -78,7 +78,7 @@ export function buildStudioAssets(
 
   const sheetImages = Object.fromEntries(
     project.assets
-      .filter((asset) => asset.kind === "image" || asset.kind === "sprite")
+      .filter((asset) => ["image", "sprite", "tileset"].includes(asset.kind))
       .map((asset) => [asset.id, asset.id]),
   );
   const shotBindings = bindings.shotAnimations ?? {};

@@ -1,4 +1,9 @@
-import { validateProject, type AnimationAsset, type ValidationIssue } from "@mmx/project-schema";
+import {
+  validateProject,
+  type AnimationAsset,
+  type ProjectAsset,
+  type ValidationIssue,
+} from "@mmx/project-schema";
 import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io";
 import { PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
@@ -273,11 +278,11 @@ export class ProjectSession {
   }
 
   /**
-   * Pick a PNG, copy it into the project as an `image` (or `sprite` sheet) asset
-   * and reload the assets. Returns the new asset id, or null when cancelled;
+   * Pick a PNG, copy it into the project as an `image` (or `sprite` sheet, or `tileset`)
+   * asset and reload the assets. Returns the new asset id, or null when cancelled;
    * throws when the import fails. The manifest change is saved with the project.
    */
-  async importImage(kind: "image" | "sprite" = "image"): Promise<string | null> {
+  async importImage(kind: "image" | "sprite" | "tileset" = "image"): Promise<string | null> {
     const bridge = window.studio?.project;
     const { rootPath, project } = this.state;
     if (!bridge || !rootPath || !project) return null;
@@ -472,6 +477,20 @@ export class ProjectSession {
 
   close(): void {
     this.switchProject({ ...EMPTY });
+  }
+
+  /** Replace one manifest asset by id (e.g. a tileset's collision); saved with the project. */
+  updateAsset(asset: ProjectAsset): void {
+    const project = this.state.project;
+    if (!project) return;
+    const assets = project.manifest.assets.map((a) => (a.id === asset.id ? asset : a));
+    const nextProject = { ...project, manifest: { ...project.manifest, assets } };
+    this.setState({
+      ...this.state,
+      project: nextProject,
+      dirty: true,
+      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
+    });
   }
 }
 

@@ -20,6 +20,7 @@ const TILE_NAME: Record<number, string> = {
   [TerrainTile.Solid]: TERRAIN_TILE_NAME[TerrainTile.Solid],
   [TerrainTile.SlopeUpRight]: TERRAIN_TILE_NAME[TerrainTile.SlopeUpRight],
   [TerrainTile.SlopeUpLeft]: TERRAIN_TILE_NAME[TerrainTile.SlopeUpLeft],
+  [TerrainTile.OneWay]: TERRAIN_TILE_NAME[TerrainTile.OneWay],
 };
 
 const TILE_ENUM: Record<string, TerrainTile> = {
@@ -27,6 +28,7 @@ const TILE_ENUM: Record<string, TerrainTile> = {
   Solid: Tile.Solid,
   SlopeUpRight: Tile.SlopeUpRight,
   SlopeUpLeft: Tile.SlopeUpLeft,
+  OneWay: Tile.OneWay,
 };
 
 function assertTerrainMapsToEngine(): void {
@@ -34,7 +36,8 @@ function assertTerrainMapsToEngine(): void {
     TerrainTile.Empty !== Tile.Empty ||
     TerrainTile.Solid !== Tile.Solid ||
     TerrainTile.SlopeUpRight !== Tile.SlopeUpRight ||
-    TerrainTile.SlopeUpLeft !== Tile.SlopeUpLeft
+    TerrainTile.SlopeUpLeft !== Tile.SlopeUpLeft ||
+    TerrainTile.OneWay !== Tile.OneWay
   ) {
     throw new Error("TerrainTile values drifted from engine Tile");
   }

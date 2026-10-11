@@ -2,7 +2,6 @@ import { Box, chakra } from "@chakra-ui/react";
 import { AlertTriangle, ArrowDown, ArrowUp, ImagePlus, Trash2, X } from "lucide-react";
 import {
   DECORATION_LAYERS,
-  setLevelSettings,
   type DecorationLayer,
   type ImageLayer,
   type LevelSettings,
@@ -12,12 +11,14 @@ import {
   removeImageLayer,
   reorderImageLayer,
   setBackdrop,
+  setRoomSettings,
   updateImageLayer,
 } from "../core/actions.js";
 import { Panel, PanelScroll } from "../ui/editor/panel.js";
 import { Field, FieldInput, FieldSelect } from "../ui/editor/field.js";
 import { SectionTitle } from "../ui/editor/section-title.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
+import { TileLayersSection } from "./TilesetPanel.js";
 
 const Row = chakra("div", { base: { py: "3px", px: "3.5" } });
 const Grid2 = chakra("div", {
@@ -47,7 +48,7 @@ export function RoomPanel() {
     ) {
       return;
     }
-    editor.store.execute(setLevelSettings(doc, next));
+    editor.store.execute(setRoomSettings(doc, next));
   };
 
   /** Parse an integer field, committing only finite, whole values. */
@@ -161,6 +162,8 @@ export function RoomPanel() {
             <ImagePlus size={14} /> Add image layer…
           </ToolbarButton>
         </chakra.div>
+
+        <TileLayersSection />
 
         <SectionTitle divider>Backdrop</SectionTitle>
         <chakra.div display="flex" alignItems="center" gap="2" px="3.5" py="3px">

@@ -144,7 +144,7 @@ export function createProjectIpc() {
         }
         const urls: Record<string, string> = {};
         for (const [index, asset] of assets.entries()) {
-          if (asset.kind !== "image" && asset.kind !== "sprite" && asset.kind !== "sound") continue;
+          if (!["image", "sprite", "sound", "tileset"].includes(asset.kind)) continue;
           const mime = DATA_URL_MIME[extname(asset.path).toLowerCase()];
           try {
             if (!mime) throw new Error(`Unsupported file type '${asset.path}'.`);

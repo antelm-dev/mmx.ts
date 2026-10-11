@@ -58,7 +58,8 @@ test("rejects zero-length steps and out-of-range loop targets", () => {
 
 test("maps collision bytes to terrain tiles and slope profiles", () => {
   assert.deepEqual(tileOf(0), [Tile.Empty]);
-  for (const b of [0x34, 0x35, 0x39, 0x3a, 0x3b]) assert.deepEqual(tileOf(b), [Tile.Solid]);
+  for (const b of [0x34, 0x35]) assert.deepEqual(tileOf(b), [Tile.OneWay]);
+  for (const b of [0x39, 0x3a, 0x3b]) assert.deepEqual(tileOf(b), [Tile.Solid]);
   assert.deepEqual(tileOf(0x05), [Tile.SlopeUpRight, [0, 4]]);
   assert.deepEqual(tileOf(0x08), [Tile.SlopeUpRight, [12, 16]]);
   assert.deepEqual(tileOf(0x0c), [Tile.SlopeUpLeft, [16, 12]]);

@@ -169,11 +169,12 @@ centre, into the looping clip `pantheon_shot`.
 | `0x00` | Empty (0) | |
 | `0x05`..`0x08` | SlopeUpRight (2) | `[0,4]`, `[4,8]`, `[8,12]`, `[12,16]` |
 | `0x09`..`0x0c` | SlopeUpLeft (3) | `[4,0]`, `[8,4]`, `[12,8]`, `[16,12]` |
-| anything else (`0x34`/`0x35` walkable top, `0x39`/`0x3a`, `0x3b` solid) | Solid (1) | |
+| `0x34`/`0x35` (walkable top) | OneWay (4) | |
+| anything else (`0x39`/`0x3a`, `0x3b` solid) | Solid (1) | |
 
 The slopes are 4-tile ramps rising 16 px (read from where the bytes sit in the grid:
-`05 06 07 08` climbs one row left to right, `0c 0b 0a 09` descends). The engine has no
-one-way tile, so walkable tops are solid. One `spawn` object sits at checkpoint 0's
+`05 06 07 08` climbs one row left to right, `0c 0b 0a 09` descends). Walkable tops are
+one-way platforms: solid from above, jumped through from below. One `spawn` object sits at checkpoint 0's
 spawn `(128, 256)`; the Intro drops the player onto the road at y = 384. Only checkpoint
 0 gets one: the engine requires exactly one `spawn` (`spawn.count`) and has no checkpoint
 object, and `stage.json` keeps only the X of checkpoints 1-3. A death respawns at the

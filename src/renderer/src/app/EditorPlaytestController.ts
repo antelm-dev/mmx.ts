@@ -128,6 +128,7 @@ export class EditorPlaytestController {
       const session = createPlaytest(state.document, {
         host,
         loadoutId,
+        tilesets: state.tilesets,
         audio,
         getBindings: () => settings.snapshot().input.bindings,
         isPauseOnBlur: () => settings.snapshot().gameplay.pauseOnBlur,

@@ -26,7 +26,7 @@ export type ImportAssetResult = {
 function defaultLogicalId(sourcePath: string, kind: AssetKind): string {
   const stem = sanitizeLogicalIdCandidate(stemPortable(sourcePath));
   const prefix =
-    kind === "font" ? "font" : kind === "sound" ? "sfx" : kind === "image" ? "image" : "sprite";
+    kind === "font" || kind === "image" || kind === "tileset" ? kind : kind === "sound" ? "sfx" : "sprite";
   return `${prefix}.${stem}`;
 }
 
@@ -96,6 +96,8 @@ export async function importAsset(
     id: logicalId,
     kind: input.kind,
     path: normalizeRelativePath(targetPath),
+    // A new tileset cuts 16 px tiles and has no collision until tiles are assigned one.
+    ...(input.kind === "tileset" && { tileSize: 16, collision: {} }),
   } as ProjectAsset;
 
   return succeed({ asset, copiedTo: targetPath });

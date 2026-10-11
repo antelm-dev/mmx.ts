@@ -66,7 +66,7 @@ async function checkGenerated(t: TestContext, sources: ZeroSources) {
 test("writes a loadable Zero project from synthetic sources", async (t) => {
   const { summary, bindings, level } = await checkGenerated(t, zeroFixtureSources());
   // 2 of the 7 Pantheon spawns: the others lie past the 768 px fixture level and are dropped
-  assert.deepEqual(summary, { clips: 27, frames: 26, cell: { w: 16, h: 42 }, tiles: [48, 24], slopes: 4, sounds: 1, enemies: 2 });
+  assert.deepEqual(summary, { clips: 27, frames: 26, cell: { w: 16, h: 42 }, tiles: [48, 24], slopes: 4, oneWay: 3, sounds: 1, enemies: 2 });
   assert.equal(bindings.enemyAnimations.pantheon, "anim.enemy.pantheon");
   assert.equal(bindings.shotAnimations.pantheon_shot, "anim.effect.pantheon_shot");
   assert.equal(bindings.sounds.slash, "sfx.zero.slash");
@@ -101,6 +101,6 @@ test("reads the same sources back from a cache folder (the e2e stand-in for the 
 test("oracle: Import from Steam installs builds a loadable project", async (t) => {
   if (!(await oracle(t, "mmxlc")) || !(await oracle(t, "mzzxlc"))) return;
   const { summary, bindings } = await checkGenerated(t, await readZeroSources());
-  assert.deepEqual(summary, { clips: 27, frames: 132, cell: { w: 72, h: 54 }, tiles: [512, 64], slopes: 16, sounds: 5, enemies: 7 });
+  assert.deepEqual(summary, { clips: 27, frames: 132, cell: { w: 72, h: 54 }, tiles: [512, 64], slopes: 16, oneWay: 962, sounds: 5, enemies: 7 });
   assert.deepEqual(bindings.music, { stage: "music.stage" });
 });

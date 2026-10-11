@@ -1,4 +1,4 @@
-import { createLevelDocument, migrateDocument, type LevelDocument } from "@mmx/content-schema";
+import { TerrainTile, createLevelDocument, migrateDocument, type LevelDocument } from "@mmx/content-schema";
 import {
   PROJECT_SCHEMA_VERSION,
   parseProject,
@@ -15,7 +15,7 @@ import { fail, issue, succeed, type ProjectResult, type StudioProject } from "./
 
 /** Compiled player loadout ids a project's `player.loadout` may reference (default `player.x`). */
 export const LOADOUT_IDS: readonly string[] = [...COMPILED_GAME_DATA.loadouts.keys()];
-export const PROJECT_VALIDATION = { loadoutIds: LOADOUT_IDS };
+export const PROJECT_VALIDATION = { loadoutIds: LOADOUT_IDS, terrainTiles: Object.values(TerrainTile) };
 
 export type CreateProjectInput = {
   id: string;

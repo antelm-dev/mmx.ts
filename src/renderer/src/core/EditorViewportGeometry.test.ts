@@ -8,6 +8,8 @@ import {
   tilesIntersecting,
   clampTileDelta,
   hexToNum,
+  cellRect,
+  floodFill,
   type Box,
   type Handle,
   HANDLES,
@@ -261,5 +263,21 @@ describe("hexToNum", () => {
 
   it("handles 000000", () => {
     expect(hexToNum("#000000")).toBe(0);
+  });
+});
+
+describe("cellRect", () => {
+  it("spans the rectangle between two corners in either order", () => {
+    expect(cellRect(4, 9, 0)).toEqual([0, 1, 4, 5, 8, 9]);
+    expect(cellRect(4, 3, 3)).toEqual([3]);
+  });
+});
+
+describe("floodFill", () => {
+  it("fills the 4-connected region of the start value without wrapping rows", () => {
+    // 3 cols: column 2 is a wall of 1s; the fill from 0 stays left of it.
+    const cells = [-1, -1, 1, -1, 1, 1, -1, -1, 1];
+    expect(floodFill(cells, 3, 0).sort((a, b) => a - b)).toEqual([0, 1, 3, 6, 7]);
+    expect(floodFill(cells, 3, 2).sort((a, b) => a - b)).toEqual([2, 4, 5, 8]);
   });
 });

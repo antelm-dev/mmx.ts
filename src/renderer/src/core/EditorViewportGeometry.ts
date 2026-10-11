@@ -172,3 +172,42 @@ export function clampTileDelta(
 export function hexToNum(hex: string): number {
   return Number.parseInt(hex.replace("#", ""), 16);
 }
+
+/** Row-major indices of the cell rectangle between two corner cells, inclusive. */
+export function cellRect(cols: number, a: number, b: number): number[] {
+  const [c0, c1] = [a % cols, b % cols].sort((x, y) => x - y) as [number, number];
+  const [r0, r1] = [Math.floor(a / cols), Math.floor(b / cols)].sort((x, y) => x - y) as [number, number];
+  const out: number[] = [];
+  for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) out.push(r * cols + c);
+  return out;
+}
+
+/** Indices 4-connected to `start` that hold the same value in `cells` (the paint-bucket region). */
+export function floodFill(cells: readonly number[], cols: number, start: number): number[] {
+  const target = cells[start];
+  if (target === undefined) return [];
+  const seen = new Set([start]);
+  const stack = [start];
+  while (stack.length > 0) {
+    const i = stack.pop()!;
+    const col = i % cols;
+    for (const n of [i - cols, i + cols, col > 0 ? i - 1 : -1, col < cols - 1 ? i + 1 : -1]) {
+      if (n < 0 || n >= cells.length || seen.has(n) || cells[n] !== target) continue;
+      seen.add(n);
+      stack.push(n);
+    }
+  }
+  return [...seen];
+}
+
+/** Tile columns and rows a tileset image holds, with the renderer's `columns` cap. */
+export function tileGrid(
+  tileset: { tileSize: number; columns?: number },
+  image: { w: number; h: number },
+): { columns: number; rows: number } {
+  const fit = Math.floor(image.w / tileset.tileSize);
+  return {
+    columns: Math.min(tileset.columns ?? fit, fit),
+    rows: Math.floor(image.h / tileset.tileSize),
+  };
+}

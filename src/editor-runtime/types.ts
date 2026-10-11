@@ -1,4 +1,4 @@
-import type { LevelDocument } from "@mmx/content-schema";
+import type { LevelArt, LevelDocument } from "@mmx/content-schema";
 import type { PlaytestAudio } from "./PlaytestAudio.js";
 import type { PlaytestInput } from "./PlaytestInput.js";
 import type { PlaytestSnapshot } from "./snapshots.js";
@@ -21,6 +21,8 @@ export interface CreatePlaytestOptions {
   isPauseOnBlur?: () => boolean;
   rendererAssets?: AssetCatalog;
   rendererManifest?: RendererAssetManifest;
+  /** Geometry of the project tilesets the level's tile layers paint from. */
+  tilesets?: LevelArt["tilesets"];
 }
 
 export interface EditorPlaytestSession {

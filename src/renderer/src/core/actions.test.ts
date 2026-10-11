@@ -9,21 +9,27 @@ import {
 } from "./EditorStore.js";
 import {
   addImageLayer,
+  addTileLayer,
   cellIndex,
   deleteSelection,
   duplicateSelection,
   nudgeSelection,
+  paintTileLayer,
   paintTiles,
   placeAt,
   placeDecorationAt,
   removeImageLayer,
+  removeTileLayer,
   reorderImageLayer,
+  reorderTileLayer,
   setAnimationAsset,
   setBackdrop,
   setPlayerAnimation,
+  setRoomSettings,
   setSpriteRegions,
   setTileAt,
   updateImageLayer,
+  updateTileLayer,
 } from "./actions.js";
 
 function freshStore(): EditorStore {
@@ -274,6 +280,125 @@ describe("image layer actions", () => {
     expect(store.validate(["sprite.bg"]).issues.map((i) => i.code)).not.toContain(
       "imageLayer.asset.unknown",
     );
+  });
+});
+
+describe("tile layer actions", () => {
+  // 4x2 tileset: 0 and 1 solid, 2 one-way, 3 a slope with a profile, the rest empty.
+  const tileset = {
+    id: "tileset.ground",
+    kind: "tileset" as const,
+    path: "assets/sprites/ground.png",
+    tileSize: 16,
+    collision: { 0: TerrainTile.Solid, 1: TerrainTile.Solid, 2: TerrainTile.OneWay, 3: TerrainTile.SlopeUpRight },
+    slopes: { 3: [0, 8] as const },
+  };
+  function storeWithLayer(): { store: EditorStore; id: string; cols: number } {
+    const store = freshStore();
+    store.setTilesets({ [tileset.id]: tileset });
+    const id = addTileLayer(store, tileset.id);
+    return { store, id, cols: store.get().document.cols };
+  }
+  const layerOf = (store: EditorStore) => store.get().document.tileLayers![0]!;
+
+  it("adds an empty world layer as the paint target; undo drops the key", () => {
+    const { store, id } = storeWithLayer();
+    const { cols, rows } = store.get().document;
+    expect(layerOf(store)).toMatchObject({ id, tilesetId: tileset.id, layer: "world-back", parallax: 1 });
+    expect(layerOf(store).cells).toEqual(new Array(cols * rows).fill(-1));
+    expect(store.get().tilePaint.layerId).toBe(id);
+    store.undo();
+    expect("tileLayers" in store.get().document).toBe(false);
+  });
+
+  it("writes cells and collision (and slope profiles) in one undoable stroke", () => {
+    const { store, id } = storeWithLayer();
+    const before = store.get().document;
+    paintTileLayer(store, id, new Map([[0, 0], [1, 2], [2, 3], [3, 7]]));
+    const doc = store.get().document;
+    expect(layerOf(store).cells.slice(0, 4)).toEqual([0, 2, 3, 7]);
+    expect(doc.tiles.slice(0, 4)).toEqual([
+      TerrainTile.Solid,
+      TerrainTile.OneWay,
+      TerrainTile.SlopeUpRight,
+      TerrainTile.Empty,
+    ]);
+    expect(doc.slopes?.[2]).toEqual([0, 8]);
+
+    store.undo();
+    expect(store.get().document.tiles).toBe(before.tiles);
+    expect(layerOf(store).cells[0]).toBe(-1);
+    store.redo();
+    expect(layerOf(store).cells.slice(0, 4)).toEqual([0, 2, 3, 7]);
+    expect(store.get().document.tiles[0]).toBe(TerrainTile.Solid);
+
+    // Erasing clears the art and the collision; repainting the same tiles is a no-op.
+    paintTileLayer(store, id, new Map([[2, -1]]));
+    expect(layerOf(store).cells[2]).toBe(-1);
+    expect(store.get().document.tiles[2]).toBe(TerrainTile.Empty);
+    expect(store.get().document.slopes?.[2]).toBeUndefined();
+    const undoLabel = store.undoLabel;
+    paintTileLayer(store, id, new Map([[0, 0]]));
+    expect(store.undoLabel).toBe(undoLabel);
+  });
+
+  it("leaves collision alone on a decor-only (non-world) layer", () => {
+    const { store, id } = storeWithLayer();
+    updateTileLayer(store, id, { layer: "background" });
+    const tiles = store.get().document.tiles;
+    paintTileLayer(store, id, new Map([[0, 0]]));
+    expect(layerOf(store).cells[0]).toBe(0);
+    expect(store.get().document.tiles).toBe(tiles);
+  });
+
+  it("reorders and removes tile layers; a level without tile layers stays without the key", () => {
+    const { store, id: a } = storeWithLayer();
+    const b = addTileLayer(store, tileset.id);
+    reorderTileLayer(store, b, -1);
+    expect(store.get().document.tileLayers!.map((l) => l.id)).toEqual([b, a]);
+    removeTileLayer(store, a);
+    removeTileLayer(store, b);
+    expect("tileLayers" in store.get().document).toBe(false);
+    expect(store.validate([], new Map([[tileset.id, 8]])).ok).toBe(true);
+  });
+
+  it("reshapes tile layer cells with the room so art stays over its collision; undo restores", () => {
+    const { store, id, cols } = storeWithLayer();
+    const { rows, name, gridSize } = store.get().document;
+    const floor = Array.from({ length: 10 }, (_, c) => (rows - 2) * cols + c);
+    paintTileLayer(store, id, new Map(floor.map((i) => [i, 0])));
+    const cellsBefore = layerOf(store).cells;
+
+    store.execute(setRoomSettings(store.get().document, { name, gridSize, cols: 40, rows }));
+    const doc = store.get().document;
+    expect(layerOf(store).cells.length).toBe(40 * rows);
+    const moved = Array.from({ length: 10 }, (_, c) => (rows - 2) * 40 + c);
+    expect(moved.map((i) => [layerOf(store).cells[i], doc.tiles[i]])).toEqual(
+      moved.map(() => [0, TerrainTile.Solid]),
+    );
+    expect(layerOf(store).cells.filter((c) => c !== -1).length).toBe(10);
+    const codes = store.validate([], new Map([[tileset.id, 8]])).issues.map((i) => i.code);
+    expect(codes).not.toContain("tileLayer.cells.length");
+
+    store.undo();
+    expect(store.get().document.cols).toBe(cols);
+    expect(layerOf(store).cells).toBe(cellsBefore);
+  });
+
+  it("reports a cell index beyond the tileset's tile count", () => {
+    const { store, id } = storeWithLayer();
+    paintTileLayer(store, id, new Map([[0, 7]]));
+    expect(store.validate([], new Map([[tileset.id, 8]])).ok).toBe(true);
+    // The same sheet cut in 32 px tiles holds 2 tiles: index 7 no longer exists.
+    const codes = store.validate([], new Map([[tileset.id, 2]])).issues.map((i) => i.code);
+    expect(codes).toContain("tileLayer.cells.index");
+  });
+
+  it("reports a tile layer whose tileset is not a project tileset", () => {
+    const { store } = storeWithLayer();
+    const codes = store.validate([], new Map()).issues.map((i) => i.code);
+    expect(codes).toContain("tileLayer.tileset.unknown");
+    expect(store.validate([], new Map([[tileset.id, 8]])).ok).toBe(true);
   });
 });
 
