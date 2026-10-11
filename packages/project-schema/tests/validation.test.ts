@@ -539,3 +539,40 @@ test("player.loadout is optional, validated against known loadouts, and serializ
     ["player.object"],
   );
 });
+
+test("sprite regions round-trip, are validated, and stay absent when unset", () => {
+  assert.equal(serializeProject(validProject()).includes('"regions"'), false);
+
+  const withRegions = (regions: unknown): ProjectDocument => {
+    const project = validProject();
+    const assets = project.assets.map((asset) =>
+      asset.id === "sprite.hero" ? { ...asset, regions } : asset,
+    );
+    return { ...project, assets } as ProjectDocument;
+  };
+  const regions = [
+    { id: "b", region: [32, 0, 16, 24] },
+    { id: "a", region: [0, 0, 32, 32] },
+  ];
+  const parsed = parseProject(JSON.parse(serializeProject(withRegions(regions))));
+  assert.equal(parsed.ok, true);
+  const sprite = parsed.project?.assets.find((asset) => asset.id === "sprite.hero");
+  assert.deepEqual(sprite?.kind === "sprite" ? sprite.regions : undefined, regions);
+
+  const codes = (value: unknown) =>
+    validateProject(withRegions(value)).issues.map((issue) => [issue.code, issue.path]);
+  assert.deepEqual(
+    codes([
+      { id: "a", region: [0, 0, 8, 8] },
+      { id: "a", region: [8, 0, 8, 8] },
+    ]),
+    [["sprite.regions", "/assets/2/regions/1/id"]],
+  );
+  assert.deepEqual(codes([{ id: "a", region: [0, 0, 0, 8] }]), [
+    ["region.invalid", "/assets/2/regions/0/region"],
+  ]);
+  assert.deepEqual(codes([{ id: "", region: [0, 0, 8, 8] }]), [
+    ["sprite.regions", "/assets/2/regions/0"],
+  ]);
+  assert.deepEqual(codes({}), [["sprite.regions", "/assets/2/regions"]]);
+});
