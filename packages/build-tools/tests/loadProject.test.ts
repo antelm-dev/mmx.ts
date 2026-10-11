@@ -234,3 +234,29 @@ test("loadProject rejects tile layers whose tilesetId is not a tileset asset", a
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+test("loadProject reports unreadable and non-PNG tileset images instead of crashing", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
+  try {
+    await writeTileLayerProject(dir, tileset, (cols, rows) => new Array(cols * rows).fill(99));
+    const tilesPath = path.join(dir, "assets/tiles.png");
+
+    // Not a PNG: loads, with a warning, and indices go unchecked.
+    await fs.writeFile(tilesPath, "not a png");
+    const unknown = await loadProject(dir);
+    assert.equal(unknown.ok, true, JSON.stringify(unknown.issues));
+    const warning = unknown.issues.find((i) => i.code === "tileset.size.unknown");
+    assert.equal(warning?.severity, "warning");
+    assert.match(warning!.message, /tileset image size unknown; tile indices not checked/);
+
+    // A directory: an `asset.unreadable` error, not a thrown EISDIR.
+    await fs.rm(tilesPath);
+    await fs.mkdir(tilesPath);
+    const unreadable = await loadProject(dir);
+    assert.equal(unreadable.ok, false);
+    const error = unreadable.issues.find((i) => i.code === "asset.unreadable");
+    assert.equal(error?.severity, "error");
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});

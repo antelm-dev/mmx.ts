@@ -15,7 +15,8 @@ export function buildTileLayer(layer: TileLayer, art: LevelArt): Container | nul
   if (!tileset || !sheet || !cols) return null;
 
   const { tileSize } = tileset;
-  const columns = tileset.columns ?? Math.floor(sheet.width / tileSize);
+  // Same cap as project validation: a `columns` wider than the sheet cannot add tiles.
+  const columns = Math.min(tileset.columns ?? Infinity, Math.floor(sheet.width / tileSize));
   const container = new Container();
   layer.cells.forEach((cell, i) => {
     if (cell < 0) return;

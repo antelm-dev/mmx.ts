@@ -91,5 +91,15 @@ test("tile layers: one sprite per filled cell, layer order, grid placement and p
   assert.equal(view.background.children[0], moved);
   view.setDecorations([], { ...art, tilesets: {} });
   assert.equal(view.background.children.length, 1);
+
+  // `columns` wider than the 64 px sheet is capped at 4, as validation does: tile 5 is row 1.
+  view.setDecorations([], {
+    ...art,
+    imageLayers: [],
+    tileLayers: [{ ...ground, cells: [5, -1, -1, -1, -1, -1] }],
+    tilesets: { "tiles.stage": { tileSize: 16, columns: 8 } },
+  });
+  const frame = (view.background.children[0]!.children[0] as Sprite).texture.frame;
+  assert.deepEqual([frame.x, frame.y], [16, 16]);
   view.destroy();
 });

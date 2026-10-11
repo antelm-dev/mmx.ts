@@ -33,19 +33,44 @@ function pngSize(bytes: Uint8Array): { width: number; height: number } | undefin
   return { width: view.getUint32(16), height: view.getUint32(20) };
 }
 
-/** Tiles the tileset image holds, or undefined when its size cannot be read. */
-async function tilesetTileCount(root: string, asset: TilesetAsset): Promise<number | undefined> {
+/**
+ * Tiles the tileset image holds, or undefined when its size cannot be read; an
+ * unreadable or non-PNG image is reported to `issues` instead of thrown.
+ */
+async function tilesetTileCount(
+  root: string,
+  asset: TilesetAsset,
+  issues: ProjectIssue[],
+): Promise<number | undefined> {
+  let bytes: Uint8Array;
   try {
     const contained = await resolveContainedProjectPath(root, asset.path);
     if (!contained.exists) return undefined; // reported by the asset file check below
-    const size = pngSize(await fs.readFile(contained.absolutePath));
-    if (!size) return undefined;
-    const fit = Math.floor(size.width / asset.tileSize);
-    return Math.min(asset.columns ?? fit, fit) * Math.floor(size.height / asset.tileSize);
+    bytes = await fs.readFile(contained.absolutePath);
   } catch (error) {
     if (error instanceof ProjectLoadError) return undefined; // reported by the asset file check below
-    throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    issues.push({
+      severity: "error",
+      code: "asset.unreadable",
+      path: asset.path,
+      message: `Tileset '${asset.id}' file '${asset.path}' could not be read: ${message}`,
+    });
+    return undefined;
   }
+  const size = pngSize(bytes);
+  if (!size) {
+    issues.push({
+      severity: "warning",
+      code: "tileset.size.unknown",
+      path: asset.path,
+      message: `Tileset '${asset.id}': tileset image size unknown; tile indices not checked.`,
+    });
+    return undefined;
+  }
+  // Same cap as the renderer: a `columns` wider than the image cannot add tiles.
+  const fit = Math.floor(size.width / asset.tileSize);
+  return Math.min(asset.columns ?? fit, fit) * Math.floor(size.height / asset.tileSize);
 }
 
 export async function loadProject(root: string): Promise<LoadProjectResult> {
@@ -121,7 +146,7 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   const tilesets = new Map<string, number | undefined>();
   for (const asset of manifest.assets) {
     if (asset.kind === "tileset") {
-      tilesets.set(asset.id, await tilesetTileCount(rootResolved, asset));
+      tilesets.set(asset.id, await tilesetTileCount(rootResolved, asset, issues));
     }
   }
 
