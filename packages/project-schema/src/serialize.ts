@@ -51,6 +51,12 @@ function normalizeAsset(asset: ProjectAsset): ProjectAsset {
       const next: SpriteAsset = { id: asset.id, kind: "sprite", path: asset.path };
       if (asset.region !== undefined) next.region = cloneRegion(asset.region);
       if (asset.anchor !== undefined) next.anchor = [asset.anchor[0], asset.anchor[1]];
+      if (asset.regions !== undefined) {
+        next.regions = asset.regions.map((entry) => ({
+          id: entry.id,
+          region: cloneRegion(entry.region),
+        }));
+      }
       return next;
     }
     case "animation": {
