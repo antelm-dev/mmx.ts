@@ -10,6 +10,31 @@ The engine is **pure TypeScript** with no runtime dependencies. It runs two ways
 - **Headless** in Node (deterministic, scripted input) — `pnpm sim -- --project <dir>`
 - **In the browser** on a canvas with real keyboard input — `pnpm play`
 
+## Fan project
+
+> Mega Man characters and universe © Capcom. This is a free fan project, not
+> affiliated with or endorsed by Capcom. It distributes no Capcom asset. Rights
+> holders can request removal by opening a GitHub issue with the takedown
+> template.
+>
+> Personnages et univers Mega Man © Capcom. Ce projet de fans est gratuit, non
+> affilié à Capcom ni approuvé par Capcom. Il ne distribue aucun asset Capcom.
+> Les ayants droit peuvent demander un retrait en ouvrant une issue GitHub avec
+> le modèle « takedown ».
+
+**Rules:**
+
+- No Capcom asset in the repositories: no sprite, sound, music, ROM or game
+  file. Game content comes from a Studio project export; tests use synthetic data.
+- Content packs are made and distributed by their users, never by this project.
+- Credits are mandatory: every pack and every contribution names the origin and
+  author of what it uses.
+
+**Takedown:** open an issue on MMX Studio with the
+[takedown template](https://github.com/antelm-dev/mmx-studio/issues/new?template=takedown.md).
+Maintainers answer on the issue and remove the content concerned, in either
+repository, when the request is valid.
+
 ---
 
 ## Quick start
