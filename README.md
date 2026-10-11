@@ -162,6 +162,8 @@ installs: Mega Man X Legacy Collection and Mega Man Zero/ZX Legacy Collection.
 Formats, gotchas, oracle tests and open questions are in
 [docs/zero-import.md](docs/zero-import.md).
 
+The Mega Man Maker roadmap (all sagas, content paths, data model, decisions) is in [docs/maker-roadmap.md](docs/maker-roadmap.md).
+
 ## Build notes
 
 - **Strict CSP.** The renderer runs under `script-src 'self'` (no `unsafe-eval`),

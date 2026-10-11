@@ -5,6 +5,8 @@ read from the games is committed; the readers live in `src/project-io/import/`
 and are exported from `@mmx/project-io/node` (they use `node:fs`, so they stay
 out of the renderer-safe `@mmx/project-io` entry).
 
+The import is the reference content path of the Mega Man Maker roadmap: see [maker-roadmap.md](maker-roadmap.md).
+
 ## Why Studio and mmx-engine, not the Bevy engine
 
 zero-x-mashup proved the idea in three steps:
