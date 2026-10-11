@@ -4,7 +4,12 @@ import {
   DEFAULT_BINDINGS,
   SETTINGS_VERSION,
 } from "@mmx/client-settings";
-import { createStudioSettingsStorage, STUDIO_CLIENT_SETTINGS_KEY } from "./studioClientSettings.js";
+import {
+  createStudioSettingsStorage,
+  hasSeenNotice,
+  markNoticeSeen,
+  STUDIO_CLIENT_SETTINGS_KEY,
+} from "./studioClientSettings.js";
 
 describe("studio settings storage", () => {
   it("persists structured settings under the studio key", async () => {
@@ -83,5 +88,31 @@ describe("studio settings storage", () => {
     store.patch({ audio: { masterVolume: 0.2 } });
     await expect(store.flush()).rejects.toThrow(/quota/);
     expect(onSaveError).toHaveBeenCalled();
+  });
+});
+
+describe("first-launch notice flag", () => {
+  it("is unseen on a fresh profile and remembered once marked", () => {
+    const memory = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => void memory.set(key, value),
+    };
+    expect(hasSeenNotice(storage)).toBe(false);
+    markNoticeSeen(storage);
+    expect(hasSeenNotice(storage)).toBe(true);
+  });
+
+  it("treats unavailable storage as unseen without throwing", () => {
+    const broken = {
+      getItem: (): string | null => {
+        throw new Error("denied");
+      },
+      setItem: () => {
+        throw new Error("denied");
+      },
+    };
+    expect(() => markNoticeSeen(broken)).not.toThrow();
+    expect(hasSeenNotice(broken)).toBe(false);
   });
 });

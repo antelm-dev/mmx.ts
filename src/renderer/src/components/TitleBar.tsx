@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Grid3x3,
   History,
+  Info,
   LayoutTemplate,
   Magnet,
   Maximize,
@@ -30,6 +31,8 @@ import { PANELS, resetLayout, togglePanel, useOpenPanelIds } from "../app/dock.j
 import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import type { ThemePreference } from "../app/theme.js";
 import { useUiStore } from "../store/uiStore.js";
+import { hasSeenNotice, markNoticeSeen } from "../settings/studioClientSettings.js";
+import { AboutDialog } from "./AboutDialog.js";
 
 import {
   MenuCheckboxItem,
@@ -315,13 +318,27 @@ function ViewMenu() {
 }
 
 function HelpMenu() {
+  // First launch opens About once so the fan-content notice is seen.
+  const [aboutOpen, setAboutOpen] = useState(() => !hasSeenNotice());
   return (
-    <TitleMenu label="Help" ariaLabel="Help menu">
-      <MenuItem value="toggle-devtools" onSelect={() => void controls()?.toggleDevTools()}>
-        <Code2 size={13} /> Toggle Developer Tools
-        <MenuShortcut>{modLabel}+Shift+I</MenuShortcut>
-      </MenuItem>
-    </TitleMenu>
+    <>
+      <TitleMenu label="Help" ariaLabel="Help menu">
+        <MenuItem value="toggle-devtools" onSelect={() => void controls()?.toggleDevTools()}>
+          <Code2 size={13} /> Toggle Developer Tools
+          <MenuShortcut>{modLabel}+Shift+I</MenuShortcut>
+        </MenuItem>
+        <MenuItem value="about" onSelect={() => setAboutOpen(true)}>
+          <Info size={13} /> About MMX Studio
+        </MenuItem>
+      </TitleMenu>
+      <AboutDialog
+        open={aboutOpen}
+        onClose={() => {
+          markNoticeSeen();
+          setAboutOpen(false);
+        }}
+      />
+    </>
   );
 }
 

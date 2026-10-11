@@ -67,3 +67,22 @@ export function initStudioClientSettings(
 export async function ensureStudioClientSettings(): Promise<ClientSettingsStore> {
   return initStudioClientSettings();
 }
+
+// Outside ClientSettings on purpose: that schema is shared with the engine and drops unknown keys.
+export const NOTICE_SEEN_KEY = "mmx.studio-notice-seen.v1";
+
+export function hasSeenNotice(storage: Pick<Storage, "getItem"> = localStorage): boolean {
+  try {
+    return storage.getItem(NOTICE_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markNoticeSeen(storage: Pick<Storage, "setItem"> = localStorage): void {
+  try {
+    storage.setItem(NOTICE_SEEN_KEY, "1");
+  } catch {
+    /* storage unavailable: the notice shows again next launch, which is harmless */
+  }
+}
