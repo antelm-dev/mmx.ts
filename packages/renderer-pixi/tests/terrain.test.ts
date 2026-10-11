@@ -17,5 +17,8 @@ test("terrain tiles hide under a world image layer and show without art", () => 
   assert.equal(terrain.tiles.visible, true);
   terrain.setArt({ imageLayers: [{ ...layer, layer: "world-front" }] });
   assert.equal(terrain.tiles.visible, false);
+  const tiles = { id: "tiles", tilesetId: "tiles.stage", parallax: 1, cells: [] };
+  terrain.setArt({ tileLayers: [{ ...tiles, layer: "world-back" }] });
+  assert.equal(terrain.tiles.visible, false, "a world tile layer paints the terrain too");
   terrain.view.destroy({ children: true });
 });

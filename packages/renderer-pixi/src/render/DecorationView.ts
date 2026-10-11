@@ -12,6 +12,7 @@ import {
   getDecorationAsset,
 } from "./decorations.js";
 import { regionTexture, sheetTexture } from "./textures.js";
+import { buildTileLayer, tileSignatureOf } from "./tileLayers.js";
 
 /**
  * Static decoration scene graph. Built once per loaded level; camera parallax is
@@ -20,12 +21,13 @@ import { regionTexture, sheetTexture } from "./textures.js";
  * Layer order (parented by {@link Renderer}):
  *   backdrop → far-background → background → world { world-back → terrain → actors → world-front } → foreground
  *
- * Project image layers go first in their layer container, so they sit behind
- * the catalog decorations of the same layer.
+ * Project image layers go first in their layer container, then project tile
+ * layers (one child container each), so both sit behind the catalog decorations
+ * of the same layer.
  */
 
 type Placed = {
-  sprite: Sprite;
+  sprite: Container;
   layer: DecorationLayer;
   parallax: number;
   worldX: number;
@@ -74,7 +76,7 @@ export class DecorationView {
     if (art.backdrop !== undefined) this.backdrop.tint = art.backdrop;
 
     const imageLayers = art.imageLayers ?? [];
-    const next = `${imageSignatureOf(imageLayers)}#${signatureOf(instances)}`;
+    const next = `${imageSignatureOf(imageLayers)}#${tileSignatureOf(art)}#${signatureOf(instances)}`;
     if (next === this.signature) return;
     this.clear();
     this.signature = next;
@@ -95,6 +97,19 @@ export class DecorationView {
         parallax: layer.parallax,
         worldX: x,
         worldY: y,
+      });
+    }
+
+    for (const layer of art.tileLayers ?? []) {
+      const tiles = buildTileLayer(layer, art);
+      if (!tiles) continue;
+      this.layerContainer(layer.layer).addChild(tiles);
+      this.placed.push({
+        sprite: tiles,
+        layer: layer.layer,
+        parallax: layer.parallax,
+        worldX: 0,
+        worldY: 0,
       });
     }
 
@@ -162,7 +177,7 @@ export class DecorationView {
   }
 
   clear(): void {
-    for (const item of this.placed) item.sprite.destroy();
+    for (const item of this.placed) item.sprite.destroy({ children: true });
     this.placed = [];
     this.signature = "";
     for (const c of [

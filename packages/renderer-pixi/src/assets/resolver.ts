@@ -68,7 +68,7 @@ export function createRendererAssetResolver(
     },
 
     imageUrl(assetId) {
-      const asset = this.requireKind(assetId, ["image", "sprite"]);
+      const asset = this.requireKind(assetId, ["image", "sprite", "tileset"]);
       const url = context.resolveUrl(asset);
       if (!url) {
         throw invalidAssetError(assetId, "resolveUrl returned an empty string.");
