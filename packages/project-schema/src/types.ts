@@ -19,6 +19,8 @@ export type AnimationFrame = {
   region: Region;
   duration: number;
   armRegion?: Region;
+  /** Pixel in `region` drawn on the body's feet; absent keeps the fixed cell. */
+  anchor?: readonly [x: number, y: number];
 };
 
 export type AnimationClip = {

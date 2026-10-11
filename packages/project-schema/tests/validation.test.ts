@@ -459,6 +459,48 @@ test("animation loopStart is validated and survives serialization", () => {
   assert.equal(anim.animations.run?.loopStart, 2);
 });
 
+test("frame anchor is validated inside its region and survives serialization", () => {
+  const withAnchor = (anchor: unknown): ProjectDocument =>
+    validProject({
+      assets: [
+        {
+          id: "anim.hero",
+          kind: "animation",
+          path: "assets/anims/hero.json",
+          animations: {
+            idle: {
+              loop: true,
+              speed: 60,
+              frames: [{ region: [0, 0, 34, 39], duration: 6, anchor: anchor as [number, number] }],
+            },
+          },
+        },
+      ],
+    });
+
+  for (const bad of [[-1, 0], [35, 0], [0, 40], [1.5, 2], [1], "19,35"]) {
+    const issues = validateProject(withAnchor(bad)).issues;
+    assert.ok(
+      issues.some((issue) => issue.code === "animation.anchor"),
+      `anchor ${JSON.stringify(bad)}`,
+    );
+  }
+
+  for (const edge of [
+    [0, 0],
+    [34, 39],
+  ]) {
+    assert.ok(!validateProject(withAnchor(edge)).issues.some((i) => i.code === "animation.anchor"));
+  }
+  const good = withAnchor([19, 35]);
+  const parsed = parseProject(JSON.parse(serializeProject(good)));
+  assert.equal(parsed.ok, true);
+  const anim = parsed.project!.assets.find((asset) => asset.id === "anim.hero");
+  assert.ok(anim && anim.kind === "animation");
+  assert.deepEqual(anim.animations.idle?.frames[0]?.anchor, [19, 35]);
+  assert.equal(serializeProject(parsed.project!), serializeProject(good));
+});
+
 test("player.loadout is optional, validated against known loadouts, and serialized", () => {
   const loadoutIds = ["player.x", "player.zero"];
   assert.equal(parseProject(validProject(), { loadoutIds }).ok, true);
