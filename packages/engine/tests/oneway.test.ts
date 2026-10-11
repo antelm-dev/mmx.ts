@@ -8,6 +8,7 @@ import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
 import { makeMetool } from "../src/game/enemies/index.js";
+import { LifeCapsule } from "../src/game/Pickup.js";
 
 // Solid floor on row 11 (top 176); a OneWay ledge on row 8 (top 128), columns 3..12.
 const FLOOR_Y = 11 * TILE_SIZE;
@@ -156,4 +157,70 @@ test("a run with a jump-through and a drop is deterministic", () => {
     return [...jumpOntoLedge(input, player), ...dropThrough(input, player), player.pos.x];
   };
   assert.deepEqual(run(), run());
+});
+
+/** Stand on the ledge, then press down + jump (optionally with dash held) and trace the feet. */
+function downJumpOnLedge(dash: "held" | "tapped" | "none"): {
+  player: Player;
+  trace: number[];
+  dashJumped: boolean;
+} {
+  const { input, player } = makePlayer();
+  jumpOntoLedge(input, player);
+  if (dash === "tapped") {
+    input.setDown("dash", true);
+    player.tick(DT);
+    input.setDown("dash", false);
+    player.tick(DT);
+  }
+  input.setDown("move_down", true);
+  if (dash === "held") input.setDown("dash", true);
+  player.tick(DT);
+  input.setDown("jump", true);
+  const trace: number[] = [];
+  let dashJumped = false;
+  for (let i = 0; i < 60; i++) {
+    player.tick(DT);
+    trace.push(feet(player));
+    dashJumped ||= player.is_executing("DashJump");
+  }
+  return { player, trace, dashJumped };
+}
+
+test("dash held + down + jump on a OneWay ledge is a dash-jump, not a drop", () => {
+  const { trace, dashJumped } = downJumpOnLedge("held");
+  assert.ok(dashJumped, "DashJump ran");
+  assert.ok(Math.min(...trace) < LEDGE_Y - 8, "the body rose off the ledge");
+  assert.ok(
+    trace.every((y) => y <= LEDGE_Y),
+    "and never sank through it",
+  );
+});
+
+test("a tapped-then-released dash does not stop down + jump from dropping", () => {
+  for (const dash of ["tapped", "none"] as const) {
+    const { player, trace } = downJumpOnLedge(dash);
+    assert.ok(Math.min(...trace) >= LEDGE_Y, `${dash}: no jump happened`);
+    assert.equal(feet(player), FLOOR_Y, `${dash}: fell through to the floor`);
+  }
+});
+
+function capsuleAt(y: number): LifeCapsule {
+  return new LifeCapsule({ id: "c", kind: "small", x: 5 * TILE_SIZE, y, w: 8, h: 8 });
+}
+
+test("a capsule falling onto a OneWay ledge rests on its top edge", () => {
+  const world = room();
+  const actor = new Actor(world, 20 * TILE_SIZE, 10 * TILE_SIZE);
+  const capsule = capsuleAt(LEDGE_Y - 30 - 8);
+  for (let i = 0; i < 120; i++) capsule.tick(DT, actor, world);
+  assert.equal(capsule.y + capsule.h, LEDGE_Y);
+});
+
+test("a capsule already inside a OneWay ledge falls through to the floor", () => {
+  const world = room();
+  const actor = new Actor(world, 20 * TILE_SIZE, 10 * TILE_SIZE);
+  const capsule = capsuleAt(LEDGE_Y + 2);
+  for (let i = 0; i < 120; i++) capsule.tick(DT, actor, world);
+  assert.equal(capsule.y + capsule.h, FLOOR_Y);
 });
