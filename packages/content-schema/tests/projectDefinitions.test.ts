@@ -58,7 +58,7 @@ test("without exposed, every base property stays editable", (t) => {
   );
 });
 
-test("invalid entries are reported and left out of the catalog", (t) => {
+test("invalid entries are reported; only underivable ones are left out of the catalog", (t) => {
   t.after(() => setProjectDefinitions([]));
   const issues = setProjectDefinitions([
     { id: "enemy.bat", name: "Clash", base: "enemy.bat" },
@@ -79,7 +79,10 @@ test("invalid entries are reported and left out of the catalog", (t) => {
       [4, "field.nonNegative"],
     ],
   );
-  assert.equal(getDefinition("obj.badval"), undefined);
+  // Derivable entries stay registered so their instances render; the issue blocks builds.
+  assert.equal(getDefinition("obj.badval")?.fields.Speed, -1);
+  assert.equal(getDefinition("obj.none"), undefined);
+  assert.equal(getDefinition("obj.spawn"), undefined);
   assert.equal(
     getDefinition("enemy.bat"),
     OBJECT_DEFINITIONS.find((d) => d.id === "enemy.bat"),

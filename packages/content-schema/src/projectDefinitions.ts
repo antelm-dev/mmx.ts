@@ -78,16 +78,23 @@ export function projectDefinitionIssues(
   return issues;
 }
 
+/** Issues that leave nothing to derive from; any other issue keeps the definition registered. */
+const UNDERIVABLE = new Set(["object.base", "object.id.reserved"]);
+
 /**
- * Validates the open project's definitions and makes the valid ones visible to
- * every catalog lookup (palette, validation, compilation). Returns the issues
- * of the entries it skipped.
+ * Validates the open project's definitions and makes them visible to every
+ * catalog lookup (palette, validation, compilation). An entry with a bad value
+ * stays registered so its instances still render (validation flags the value);
+ * only entries without a usable base or with a built-in id are left out.
+ * Returns every issue found.
  */
 export function setProjectDefinitions(
   entries: readonly ProjectDefinitionEntry[],
 ): ProjectDefinitionIssue[] {
   const issues = projectDefinitionIssues(entries);
-  const skipped = new Set(issues.map((issue) => issue.index));
+  const skipped = new Set(
+    issues.filter((issue) => UNDERIVABLE.has(issue.code)).map((issue) => issue.index),
+  );
   replaceProjectDefinitions(
     entries.flatMap((entry, index) =>
       skipped.has(index) ? [] : [deriveDefinition(entry, BUILTIN.get(entry.base)!)],
