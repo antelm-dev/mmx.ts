@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  OBJECT_DEFINITIONS,
   createLevelDocument,
   type LevelDocument,
   type LevelObjectInstance,
@@ -81,4 +82,16 @@ test("engineDiagnostics is empty when conversion itself fails (authoring reports
   const combined = validateLevelDocument(doc);
   assert.equal(combined.ok, false);
   assert.ok(combined.issues.some((i) => i.code === "definition.unknown"));
+});
+
+test("the engine accepts a default instance of every definition (schema and engine agree)", () => {
+  for (const def of OBJECT_DEFINITIONS) {
+    if (def.id === "spawn") continue;
+    const doc = docWith([{ id: "o1", definitionId: def.id, x: 96, y: 96 }]);
+    assert.deepEqual(
+      engineDiagnostics(doc).filter((d) => d.severity === "error"),
+      [],
+      def.id,
+    );
+  }
 });

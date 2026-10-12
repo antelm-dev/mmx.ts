@@ -390,15 +390,18 @@ export class EditorStore {
   /**
    * `imageAssetIds` / `tilesets`: the open project's `image` and `tileset` assets, so
    * image and tile layers are cross-checked (tileset values are tile counts, or undefined).
+   * `assets`: every project asset id → kind, so `asset` properties are cross-checked.
    */
   validate(
     imageAssetIds?: readonly string[],
     tilesets?: ReadonlyMap<string, number | undefined>,
+    assets?: ReadonlyMap<string, string>,
   ): ValidationResult {
     return validateLevelDocument(this.state.document, {
       knownDecorationAssetIds: knownDecorationAssetIds(),
       imageAssetIds,
       tilesets,
+      assets,
     });
   }
 

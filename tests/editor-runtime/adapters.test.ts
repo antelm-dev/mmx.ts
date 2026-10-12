@@ -6,6 +6,7 @@ import { Tile, type LevelData } from "@mmx/engine";
 import { SCHEMA_VERSION, TerrainTile, type LevelDocument } from "@mmx/content-schema";
 import {
   documentToLevelData,
+  instanceToEntity,
   levelDataToDocument,
 } from "../../src/editor-runtime/adapters/index.js";
 
@@ -108,4 +109,15 @@ test("decorations never become engine entities", () => {
 test("levelDataToDocument starts with empty decorations", () => {
   const doc = levelDataToDocument(stage1);
   assert.deepEqual(doc.decorations, []);
+});
+
+test("an instance compiles every property, defaults included, and drops undeclared overrides", () => {
+  const entity = instanceToEntity({
+    id: "p",
+    definitionId: "platform.moving",
+    x: 0,
+    y: 0,
+    overrides: { Speed: 10, Kind: "bat" },
+  });
+  assert.deepEqual(entity.fields, { Travel: 96, Speed: 10 });
 });

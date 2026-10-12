@@ -73,7 +73,7 @@ export class EditorController {
   private readonly listeners = new Set<() => void>();
 
   private readonly playtest: EditorPlaytestController;
-  private imageKey: string | undefined;
+  private assetKey: string | undefined;
   private readonly tilesetSizes = new Map<string, { path: string; w: number; h: number }>();
   private readonly tilesetSizeLoads = new Set<string>();
 
@@ -122,10 +122,10 @@ export class EditorController {
         this.store.setTilesets(tilesets);
         this.loadTilesetSizes(tilesets);
       }
-      // Image layers are validated against the manifest's image assets; recheck when they change.
-      const imageKey = this.imageAssetIds()?.join(",");
-      if (imageKey !== this.imageKey) {
-        this.imageKey = imageKey;
+      // Image layers and asset properties are validated against the manifest's assets; recheck when they change.
+      const assetKey = this.manifestAssetKey();
+      if (assetKey !== this.assetKey) {
+        this.assetKey = assetKey;
         this.snapshot = this.build("ui");
         this.emit();
         return;
@@ -159,6 +159,14 @@ export class EditorController {
       .map((asset) => asset.id);
   }
 
+  /** Identity of the manifest's asset ids and kinds; undefined without a project. */
+  private manifestAssetKey(): string | undefined {
+    return projectSession
+      .getSnapshot()
+      .project?.manifest.assets.map((asset) => `${asset.id}:${asset.kind}`)
+      .join(",");
+  }
+
   /** The open project's `tileset` assets by id; empty without a project. */
   private tilesetAssets(): Record<string, TilesetAsset> {
     const assets = projectSession.getSnapshot().project?.manifest.assets ?? [];
@@ -180,7 +188,12 @@ export class EditorController {
           }),
         )
       : undefined;
-    return this.store.validate(imageAssetIds, tilesets);
+    const assets = projectSession.getSnapshot().project?.manifest.assets;
+    return this.store.validate(
+      imageAssetIds,
+      tilesets,
+      assets && new Map(assets.map((asset) => [asset.id, asset.kind])),
+    );
   }
 
   /** Read each tileset image's pixel size once per file, then revalidate with real tile counts. */

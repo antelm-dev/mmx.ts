@@ -124,6 +124,76 @@ function tileKindLabel(value: TerrainTile): string {
   }
 }
 
+/** Select value standing for an `asset` property set to none (asset ids are never empty). */
+const NO_ASSET = "";
+
+/** The inspector control for one property, chosen by its type; each edit is one undoable command. */
+function PropertyControl({
+  inst,
+  prop,
+  invalid,
+}: {
+  inst: LevelObjectInstance;
+  prop: PropertyMeta;
+  invalid: boolean;
+}) {
+  const assets = useProjectSession().project?.manifest.assets;
+  const value = effectiveValue(inst, prop.key);
+  const commit = (next: unknown): void => {
+    if (next !== value) {
+      editor.store.execute(setProperty(inst.id, prop.key, "override", value, next));
+    }
+  };
+
+  switch (prop.type) {
+    case "boolean":
+      return <Checkbox label={prop.label} checked={value === true} onCheckedChange={commit} />;
+    case "enum":
+      return (
+        <Select
+          label={prop.label}
+          options={(prop.options ?? []).map((opt) => ({ label: opt, value: opt }))}
+          value={String(value ?? "")}
+          onValueChange={commit}
+          invalid={invalid}
+        />
+      );
+    case "asset":
+      return (
+        <Select
+          label={prop.label}
+          options={[
+            { label: "(none)", value: NO_ASSET },
+            ...(assets ?? [])
+              .filter((asset) => asset.kind === prop.assetKind)
+              .map((asset) => ({ label: asset.id, value: asset.id })),
+          ]}
+          value={typeof value === "string" ? value : NO_ASSET}
+          onValueChange={commit}
+          invalid={invalid}
+        />
+      );
+    default: {
+      const text = String(value ?? "");
+      return (
+        <Field label={prop.label} invalid={invalid}>
+          <FieldInput
+            type={prop.type === "string" ? "text" : "number"}
+            step={prop.type === "integer" ? 1 : undefined}
+            defaultValue={text}
+            key={`${prop.key}-${inst.id}-${text}`}
+            onBlur={(e) => {
+              if (prop.type === "string") return commit(e.target.value);
+              const next = Number(e.target.value);
+              if (Number.isFinite(next)) commit(next);
+            }}
+          />
+        </Field>
+      );
+    }
+  }
+}
+
 /** Right dock: schema-generated inspector with inline validation. */
 export function Inspector() {
   const snap = useEditorSnapshot();
@@ -164,37 +234,12 @@ export function Inspector() {
   const hasIssue = (field: string) => issues.some((i) => i.field === field);
   const issueFor = (field: string) => issues.find((i) => i.field === field);
 
-  const str = (inst: LevelObjectInstance, key: string): string => {
-    const v = effectiveValue(inst, key);
-    return v === undefined || v === null ? "" : String(v);
-  };
-
   const onTransform = (s: Single, key: "x" | "y" | "width" | "height", raw: string): void => {
     const next = Number(raw);
     if (!Number.isFinite(next)) return;
     const before = key === "x" ? s.inst.x : key === "y" ? s.inst.y : s[key];
     if (next === before) return;
     editor.store.execute(setTransform(s.inst.id, { [key]: before }, { [key]: next }));
-  };
-
-  const onProp = (inst: LevelObjectInstance, prop: PropertyMeta, raw: string): void => {
-    const next = prop.type === "number" ? Number(raw) : raw;
-    if (prop.type === "number" && !Number.isFinite(next as number)) return;
-    editor.store.execute(
-      setProperty(inst.id, prop.key, "override", effectiveValue(inst, prop.key), next),
-    );
-  };
-
-  const onBool = (inst: LevelObjectInstance, prop: PropertyMeta, checked: boolean): void => {
-    editor.store.execute(
-      setProperty(inst.id, prop.key, "override", effectiveValue(inst, prop.key) === true, checked),
-    );
-  };
-
-  const onEnum = (inst: LevelObjectInstance, prop: PropertyMeta, value: string): void => {
-    editor.store.execute(
-      setProperty(inst.id, prop.key, "override", effectiveValue(inst, prop.key), value),
-    );
   };
 
   const previewFlip = (s: Single) =>
@@ -271,30 +316,11 @@ export function Inspector() {
                 <SectionTitle divider>Properties</SectionTitle>
                 {single.def.properties.map((prop) => (
                   <Row key={prop.key}>
-                    {prop.type === "boolean" ? (
-                      <Checkbox
-                        label={prop.label}
-                        checked={effectiveValue(single.inst, prop.key) === true}
-                        onCheckedChange={(c) => onBool(single.inst, prop, c)}
-                      />
-                    ) : prop.type === "enum" ? (
-                      <Select
-                        label={prop.label}
-                        options={(prop.options ?? []).map((opt) => ({ label: opt, value: opt }))}
-                        value={str(single.inst, prop.key)}
-                        onValueChange={(v) => onEnum(single.inst, prop, v)}
-                        invalid={hasIssue(prop.key)}
-                      />
-                    ) : (
-                      <Field label={prop.label} invalid={hasIssue(prop.key)}>
-                        <FieldInput
-                          type={prop.type === "number" ? "number" : "text"}
-                          defaultValue={str(single.inst, prop.key)}
-                          key={`${prop.key}-${single.inst.id}-${str(single.inst, prop.key)}`}
-                          onBlur={(e) => onProp(single.inst, prop, e.target.value)}
-                        />
-                      </Field>
-                    )}
+                    <PropertyControl
+                      inst={single.inst}
+                      prop={prop}
+                      invalid={hasIssue(prop.key)}
+                    />
                     {issueFor(prop.key) ? (
                       <ErrorText>{issueFor(prop.key)!.message}</ErrorText>
                     ) : prop.help ? (

@@ -6,6 +6,7 @@ import {
   TERRAIN_TILE_NAME,
   TerrainTile,
   effectiveValue,
+  entityFields,
   getDefinition,
   instanceSize,
   requireDefinition,
@@ -111,12 +112,15 @@ export function levelDataToDocument(data: LevelData): LevelDocument {
 export function instanceToEntity(inst: LevelObjectInstance): LevelEntity {
   const def = requireDefinition(inst.definitionId);
   const { width, height } = instanceSize(inst);
-  const fields: Record<string, unknown> = { ...def.fields };
-  for (const prop of def.properties) {
-    const value = inst.overrides?.[prop.key];
-    if (value !== undefined) fields[prop.key] = value;
-  }
-  return { id: def.engineId, iid: inst.id, x: inst.x, y: inst.y, w: width, h: height, fields };
+  return {
+    id: def.engineId,
+    iid: inst.id,
+    x: inst.x,
+    y: inst.y,
+    w: width,
+    h: height,
+    fields: entityFields(inst),
+  };
 }
 
 function bakeSlopeObjects(
