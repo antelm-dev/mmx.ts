@@ -107,4 +107,7 @@ test("asset properties accept none, and check id and kind when the project asset
   assert.equal(propertyIssue(anim, "missing", assets)?.code, "field.asset");
   assert.equal(propertyIssue(anim, "missing"), undefined);
   assert.equal(propertyIssue(anim, 3)?.code, "field.asset");
+  const any = prop({ type: "asset" });
+  assert.equal(propertyIssue(any, "boom", assets), undefined);
+  assert.equal(propertyIssue(any, "missing", assets)?.code, "field.asset");
 });

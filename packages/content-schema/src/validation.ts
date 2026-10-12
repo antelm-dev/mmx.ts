@@ -93,7 +93,11 @@ export function propertyIssue(
       if (typeof value !== "string") {
         return { code: "field.asset", message: `${prop.label} must be an asset id.` };
       }
-      if (assets && assets.get(value) !== prop.assetKind) {
+      const kind = assets?.get(value);
+      if (
+        assets &&
+        (kind === undefined || (prop.assetKind !== undefined && kind !== prop.assetKind))
+      ) {
         return {
           code: "field.asset",
           message: `${prop.label}: '${value}' is not a ${prop.assetKind ?? "known"} asset of this project.`,
