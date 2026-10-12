@@ -6,14 +6,14 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   effectiveValue,
-  requireDefinition,
+  definitionFor,
   type DecorationInstance,
   type GameObjectDefinition,
   type LevelObjectInstance,
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { DockviewPanelApi } from "dockview-react";
-import { editor, useEditorSnapshot } from "../app/useEditor.js";
+import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { selectedDecorationIds, selectedObjectIds } from "../core/EditorStore.js";
 import { useUiStore } from "../store/uiStore.js";
 import { ListRow } from "../ui/editor/list-row.js";
@@ -56,14 +56,16 @@ type SceneRow =
 export function ScenePanel({ api }: { api?: DockviewPanelApi }): ReactElement {
   const snap = useEditorSnapshot();
   const decorations = snap.state.document.decorations;
+  const objects = useProjectSession().project?.manifest.objects;
 
   const sceneItems = useMemo<SceneItem[]>(
     () =>
       snap.state.document.objects.map((inst) => ({
         inst,
-        def: requireDefinition(inst.definitionId),
+        def: definitionFor(inst.definitionId),
       })),
-    [snap.state.document.objects],
+    // `objects` changes whenever the project's definitions (read by the lookups) do.
+    [snap.state.document.objects, objects],
   );
 
   const total = sceneItems.length + decorations.length;

@@ -4,10 +4,12 @@ import assert from "node:assert/strict";
 import {
   OBJECT_DEFINITIONS,
   createLevelDocument,
+  setProjectDefinitions,
   type LevelDocument,
   type LevelObjectInstance,
 } from "@mmx/content-schema";
 import {
+  documentToLevelData,
   engineDiagnostics,
   validateLevelDocument,
 } from "../../src/editor-runtime/adapters/index.js";
@@ -93,5 +95,20 @@ test("the engine accepts a default instance of every definition (schema and engi
       [],
       def.id,
     );
+  }
+});
+
+test("instances of project object definitions compile to engine entities the engine accepts", () => {
+  setProjectDefinitions([
+    { id: "obj.fast", name: "Fast", base: "platform.moving", values: { Speed: 120 }, exposed: ["Travel"] },
+  ]);
+  try {
+    const doc = docWith([{ id: "f1", definitionId: "obj.fast", x: 96, y: 96, width: 48, height: 8 }]);
+    const entity = documentToLevelData(doc).entities.find((e) => e.iid === "f1");
+    assert.equal(entity?.id, "MovingPlatform");
+    assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96 });
+    assert.deepEqual(engineDiagnostics(doc).filter((d) => d.severity === "error"), []);
+  } finally {
+    setProjectDefinitions([]);
   }
 });

@@ -4,10 +4,10 @@ import { Grid3x3, Magnet, MousePointer2, Paintbrush } from "lucide-react";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
-  OBJECT_DEFINITIONS,
+  allDefinitions,
   type GameObjectDefinition,
 } from "@mmx/content-schema";
-import { editor, useEditorSnapshot } from "../app/useEditor.js";
+import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import {
   MenuContent,
@@ -50,14 +50,16 @@ export function Viewport() {
     };
   }, []);
 
+  const objects = useProjectSession().project?.manifest.objects;
   const placeGroups = useMemo<PlaceGroup[]>(
     () =>
       CATEGORY_ORDER.map((category) => ({
         category,
         label: CATEGORY_LABELS[category] ?? category,
-        defs: OBJECT_DEFINITIONS.filter((d) => d.category === category),
+        defs: allDefinitions().filter((d) => d.category === category),
       })).filter((g) => g.defs.length > 0),
-    [],
+    // `objects` changes whenever the project's definitions (read by allDefinitions) do.
+    [objects],
   );
 
   return (

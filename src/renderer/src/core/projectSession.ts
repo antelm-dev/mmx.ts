@@ -1,7 +1,9 @@
+import { projectDefinitionIssues, setProjectDefinitions } from "@mmx/content-schema";
 import {
   validateProject,
   type AnimationAsset,
   type ProjectAsset,
+  type ProjectObjectDefinition,
   type ValidationIssue,
 } from "@mmx/project-schema";
 import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io";
@@ -44,7 +46,16 @@ function mapSchemaIssues(issues: ValidationIssue[]): ProjectIssue[] {
 }
 
 function validateOpenProject(project: StudioProject): ProjectIssue[] {
-  return mapSchemaIssues(validateProject(project.manifest, PROJECT_VALIDATION).issues);
+  const objects = project.manifest.objects ?? [];
+  return [
+    ...mapSchemaIssues(validateProject(project.manifest, PROJECT_VALIDATION).issues),
+    ...projectDefinitionIssues(objects).map((issue) => ({
+      severity: "error" as const,
+      code: issue.code,
+      message: issue.message,
+      path: `/objects/${issue.index}${issue.field ? `/${issue.field}` : ""}`,
+    })),
+  ];
 }
 
 // `player.clips` is derived from the Play bindings too, so it is rebuilt with them.
@@ -81,6 +92,8 @@ export class ProjectSession {
   }
 
   private setState(next: ProjectSessionState): void {
+    // Before listeners run: the palette, levels and validation resolve instances against these.
+    setProjectDefinitions(next.project?.manifest.objects ?? []);
     this.state = next;
     this.emit();
   }
@@ -206,6 +219,19 @@ export class ProjectSession {
     });
     // The loadout decides which player clips Problems reports as missing.
     this.refreshAssets();
+  }
+
+  /** Replace the open project's object definitions; saved with the project. */
+  setObjects(objects: ProjectObjectDefinition[]): void {
+    const project = this.state.project;
+    if (!project) return;
+    const nextProject = { ...project, manifest: { ...project.manifest, objects } };
+    this.setState({
+      ...this.state,
+      project: nextProject,
+      dirty: true,
+      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
+    });
   }
 
   /** An `animation` asset of the open project, or null. */

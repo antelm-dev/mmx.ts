@@ -1,7 +1,7 @@
 import { useMemo, type ReactElement } from "react";
 import { chakra } from "@chakra-ui/react";
-import { instanceSize, requireDefinition, TerrainTile } from "@mmx/content-schema";
-import { useEditorSnapshot } from "../app/useEditor.js";
+import { instanceSize, definitionFor, TerrainTile } from "@mmx/content-schema";
+import { useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { selectedObjectIds, selectionSize } from "../core/EditorStore.js";
 import { Panel, PanelScroll } from "../ui/editor/panel.js";
 
@@ -28,6 +28,7 @@ function tileKindLabel(value: TerrainTile): string {
 /** Movable dock panel: details for the current selection (or level summary when empty). */
 export function SelectionPanel(): ReactElement {
   const snap = useEditorSnapshot();
+  const objects = useProjectSession().project?.manifest.objects;
 
   const selection = useMemo<Kv[]>(() => {
     const s = snap.state;
@@ -58,7 +59,7 @@ export function SelectionPanel(): ReactElement {
     if (objectIds.length > 1) return [{ k: "Selected", v: `${objectIds.length} objects` }];
     const inst = doc.objects.find((o) => o.id === objectIds[0]);
     if (!inst) return [];
-    const def = requireDefinition(inst.definitionId);
+    const def = definitionFor(inst.definitionId);
     const { width, height } = instanceSize(inst);
     const rows: Kv[] = [
       { k: "Type", v: def.name },
@@ -68,7 +69,8 @@ export function SelectionPanel(): ReactElement {
     if (def.editor.resizable) rows.push({ k: "Size", v: `${width} × ${height}` });
     rows.push({ k: "ID", v: inst.id });
     return rows;
-  }, [snap.state]);
+    // `objects` changes whenever the project's definitions (read by the lookups) do.
+  }, [snap.state, objects]);
 
   return (
     <Panel>

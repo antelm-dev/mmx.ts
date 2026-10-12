@@ -8,7 +8,7 @@ import {
   moveObjects,
   moveTiles,
   newId,
-  requireDefinition,
+  getDefinition,
   setLevelSettings,
   setTiles,
   type DecorationInstance,
@@ -40,7 +40,9 @@ export function placeAt(
   worldX: number,
   worldY: number,
 ): void {
-  const def = requireDefinition(definitionId);
+  // The palette object may have been deleted while its place tool was active.
+  const def = getDefinition(definitionId);
+  if (!def) return;
   const { width, height } = def.defaultSize;
   const resizable = def.editor.resizable === true;
   const point = def.editor.placement === "point";

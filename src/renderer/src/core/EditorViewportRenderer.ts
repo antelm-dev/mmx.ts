@@ -2,7 +2,7 @@ import { Application, Container, Graphics, Sprite, Text, TextStyle } from "pixi.
 import {
   TerrainTile,
   effectiveValue,
-  requireDefinition,
+  definitionFor,
   type DecorationInstance,
   type LevelObjectInstance,
   type SlopeMap,
@@ -309,7 +309,7 @@ export class EditorViewportRenderer {
     const zoom = state.zoom;
 
     for (const inst of state.document.objects) {
-      const def = requireDefinition(inst.definitionId);
+      const def = definitionFor(inst.definitionId);
       const color = hexToNum(def.editor.color);
       const box = this.objectDrawBox(inst, live);
       const preview = getSpritePreview(def, this.assets);

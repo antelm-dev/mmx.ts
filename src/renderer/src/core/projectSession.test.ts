@@ -107,3 +107,34 @@ describe("ProjectSession player animation binding", () => {
     expect(session.playerAnimation()).toBe("anim.b");
   });
 });
+
+describe("ProjectSession object definitions", () => {
+  it("registers the project's definitions on open and on every edit, and clears them on close", async () => {
+    const { getDefinition } = await import("@mmx/content-schema");
+    const fast = { id: "obj.fast", name: "Fast", base: "platform.moving", values: { Speed: 120 } };
+    const withObjects = { ...project, manifest: { ...project.manifest, objects: [fast] } };
+    vi.stubGlobal("window", {
+      studio: {
+        project: {
+          ...bridge,
+          load: async () => ({ ok: true, issues: [], value: { rootPath: "/p", project: withObjects } }),
+        },
+      },
+    });
+    const session = new ProjectSession();
+    await session.openProject();
+    expect(getDefinition("obj.fast")?.baseId).toBe("platform.moving");
+
+    session.setObjects([{ ...fast, base: "nope" }]);
+    expect(getDefinition("obj.fast")).toBeUndefined();
+    expect(session.getSnapshot().dirty).toBe(true);
+    expect(session.getSnapshot().issues).toContainEqual(
+      expect.objectContaining({ code: "object.base", path: "/objects/0/base" }),
+    );
+
+    session.setObjects([fast]);
+    expect(getDefinition("obj.fast")).toBeDefined();
+    session.close();
+    expect(getDefinition("obj.fast")).toBeUndefined();
+  });
+});

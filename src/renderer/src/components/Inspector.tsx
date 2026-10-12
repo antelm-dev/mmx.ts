@@ -6,7 +6,7 @@ import {
   TerrainTile,
   effectiveValue,
   instanceSize,
-  requireDefinition,
+  definitionFor,
   setDecoration,
   setProperty,
   setTransform,
@@ -14,7 +14,6 @@ import {
   type DecorationLayer,
   type GameObjectDefinition,
   type LevelObjectInstance,
-  type PropertyMeta,
   type ValidationIssue,
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
@@ -27,6 +26,8 @@ import { Field, FieldInput } from "../ui/editor/field.js";
 import { Panel, PanelActions, PanelScroll } from "../ui/editor/panel.js";
 import { SectionTitle } from "../ui/editor/section-title.js";
 import { Select } from "../ui/editor/select.js";
+import { ObjectDefinitionSection } from "./ObjectDefinitionSection.js";
+import { PropertyControl } from "./PropertyControl.js";
 import { SpritePreview } from "./SpritePreview.js";
 import { focusPanel } from "../app/dock.js";
 
@@ -124,76 +125,6 @@ function tileKindLabel(value: TerrainTile): string {
   }
 }
 
-/** Select value standing for an `asset` property set to none (asset ids are never empty). */
-const NO_ASSET = "";
-
-/** The inspector control for one property, chosen by its type; each edit is one undoable command. */
-function PropertyControl({
-  inst,
-  prop,
-  invalid,
-}: {
-  inst: LevelObjectInstance;
-  prop: PropertyMeta;
-  invalid: boolean;
-}) {
-  const assets = useProjectSession().project?.manifest.assets;
-  const value = effectiveValue(inst, prop.key);
-  const commit = (next: unknown): void => {
-    if (next !== value) {
-      editor.store.execute(setProperty(inst.id, prop.key, "override", value, next));
-    }
-  };
-
-  switch (prop.type) {
-    case "boolean":
-      return <Checkbox label={prop.label} checked={value === true} onCheckedChange={commit} />;
-    case "enum":
-      return (
-        <Select
-          label={prop.label}
-          options={(prop.options ?? []).map((opt) => ({ label: opt, value: opt }))}
-          value={String(value ?? "")}
-          onValueChange={commit}
-          invalid={invalid}
-        />
-      );
-    case "asset":
-      return (
-        <Select
-          label={prop.label}
-          options={[
-            { label: "(none)", value: NO_ASSET },
-            ...(assets ?? [])
-              .filter((asset) => asset.kind === prop.assetKind)
-              .map((asset) => ({ label: asset.id, value: asset.id })),
-          ]}
-          value={typeof value === "string" ? value : NO_ASSET}
-          onValueChange={commit}
-          invalid={invalid}
-        />
-      );
-    default: {
-      const text = String(value ?? "");
-      return (
-        <Field label={prop.label} invalid={invalid}>
-          <FieldInput
-            type={prop.type === "string" ? "text" : "number"}
-            step={prop.type === "integer" ? 1 : undefined}
-            defaultValue={text}
-            key={`${prop.key}-${inst.id}-${text}`}
-            onBlur={(e) => {
-              if (prop.type === "string") return commit(e.target.value);
-              const next = Number(e.target.value);
-              if (Number.isFinite(next)) commit(next);
-            }}
-          />
-        </Field>
-      );
-    }
-  }
-}
-
 /** Right dock: schema-generated inspector with inline validation. */
 export function Inspector() {
   const snap = useEditorSnapshot();
@@ -202,14 +133,16 @@ export function Inspector() {
   const decorationIds = selectedDecorationIds(state.selection);
   const tileSelection = state.selection.kind === "tiles" ? state.selection.indices : [];
 
+  const objects = useProjectSession().project?.manifest.objects;
   const single = useMemo<Single | null>(() => {
     if (objectIds.length !== 1) return null;
     const inst = state.document.objects.find((o) => o.id === objectIds[0]);
     if (!inst) return null;
-    const def = requireDefinition(inst.definitionId);
+    const def = definitionFor(inst.definitionId);
     const size = instanceSize(inst);
     return { inst, def, width: size.width, height: size.height };
-  }, [objectIds, state.document.objects]);
+    // `objects` changes whenever the project's definitions (read by the lookups) do.
+  }, [objectIds, state.document.objects, objects]);
 
   const singleDecoration = useMemo<DecorationInstance | null>(() => {
     if (decorationIds.length !== 1) return null;
@@ -317,8 +250,20 @@ export function Inspector() {
                 {single.def.properties.map((prop) => (
                   <Row key={prop.key}>
                     <PropertyControl
-                      inst={single.inst}
                       prop={prop}
+                      value={effectiveValue(single.inst, prop.key)}
+                      onCommit={(next) =>
+                        editor.store.execute(
+                          setProperty(
+                            single.inst.id,
+                            prop.key,
+                            "override",
+                            effectiveValue(single.inst, prop.key),
+                            next,
+                          ),
+                        )
+                      }
+                      scope={single.inst.id}
                       invalid={hasIssue(prop.key)}
                     />
                     {issueFor(prop.key) ? (
@@ -332,6 +277,8 @@ export function Inspector() {
                 ))}
               </>
             )}
+
+            <ObjectDefinitionSection inst={single.inst} def={single.def} />
 
             <PanelActions>
               <ActionButton onClick={() => editor.duplicateSelection()}>

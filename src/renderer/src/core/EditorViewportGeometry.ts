@@ -1,4 +1,4 @@
-import { instanceSize, requireDefinition, type LevelObjectInstance } from "@mmx/content-schema";
+import { instanceSize, definitionFor, type LevelObjectInstance } from "@mmx/content-schema";
 
 // ---------- Types ----------
 
@@ -88,7 +88,7 @@ export function singleResizableObject(
   if (selectedIds.length !== 1) return null;
   const inst = objects.find((o) => o.id === selectedIds[0]);
   if (!inst) return null;
-  return requireDefinition(inst.definitionId).editor.resizable ? inst : null;
+  return definitionFor(inst.definitionId).editor.resizable ? inst : null;
 }
 
 // ---------- Tile grid helpers ----------

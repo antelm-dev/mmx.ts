@@ -122,10 +122,12 @@ export class EditorController {
         this.store.setTilesets(tilesets);
         this.loadTilesetSizes(tilesets);
       }
-      // Image layers and asset properties are validated against the manifest's assets; recheck when they change.
+      // Image layers, asset properties and object instances are validated against the
+      // manifest's assets and object definitions; recheck and redraw when they change.
       const assetKey = this.manifestAssetKey();
       if (assetKey !== this.assetKey) {
         this.assetKey = assetKey;
+        this.viewport?.redraw();
         this.snapshot = this.build("ui");
         this.emit();
         return;
@@ -159,12 +161,12 @@ export class EditorController {
       .map((asset) => asset.id);
   }
 
-  /** Identity of the manifest's asset ids and kinds; undefined without a project. */
+  /** Identity of the manifest's asset ids and kinds and its object definitions; undefined without a project. */
   private manifestAssetKey(): string | undefined {
-    return projectSession
-      .getSnapshot()
-      .project?.manifest.assets.map((asset) => `${asset.id}:${asset.kind}`)
-      .join(",");
+    const manifest = projectSession.getSnapshot().project?.manifest;
+    if (!manifest) return undefined;
+    const assets = manifest.assets.map((asset) => `${asset.id}:${asset.kind}`).join(",");
+    return `${assets}|${JSON.stringify(manifest.objects ?? [])}`;
   }
 
   /** The open project's `tileset` assets by id; empty without a project. */
