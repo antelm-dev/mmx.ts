@@ -7,6 +7,7 @@ import type {
   LevelDocument,
   TileLayer,
   LevelObjectInstance,
+  PropertyMeta,
   ValidationIssue,
   ValidationResult,
 } from "./types.js";
@@ -35,9 +36,76 @@ export interface ValidateDocumentOptions {
    * errors. Values are the tileset's tile count, or undefined when the image size is unknown.
    */
   tilesets?: ReadonlyMap<string, number | undefined>;
+  /**
+   * When set, `asset` property values not in this map (asset id → kind), or of
+   * another kind than the property's `assetKind`, are errors.
+   */
+  assets?: ReadonlyMap<string, string>;
 }
 
 const BACKDROP_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * Checks one property value against its metadata. Returns the issue code and a
+ * message (without the object name), or undefined when the value is valid.
+ */
+export function propertyIssue(
+  prop: PropertyMeta,
+  value: unknown,
+  assets?: ReadonlyMap<string, string>,
+): { code: string; message: string } | undefined {
+  switch (prop.type) {
+    case "number":
+    case "integer":
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return { code: "field.number", message: `${prop.label} must be a finite number.` };
+      }
+      if (prop.type === "integer" && !Number.isInteger(value)) {
+        return { code: "field.integer", message: `${prop.label} must be a whole number.` };
+      }
+      if (prop.nonNegative && value < 0) {
+        return { code: "field.nonNegative", message: `${prop.label} must be ≥ 0.` };
+      }
+      if (prop.min !== undefined && value < prop.min) {
+        return { code: "field.min", message: `${prop.label} must be ≥ ${prop.min}.` };
+      }
+      if (prop.max !== undefined && value > prop.max) {
+        return { code: "field.max", message: `${prop.label} must be ≤ ${prop.max}.` };
+      }
+      return undefined;
+    case "boolean":
+      return typeof value === "boolean"
+        ? undefined
+        : { code: "field.boolean", message: `${prop.label} must be true or false.` };
+    case "string":
+      return typeof value === "string"
+        ? undefined
+        : { code: "field.string", message: `${prop.label} must be text.` };
+    case "enum":
+      return prop.options?.includes(String(value))
+        ? undefined
+        : {
+            code: "field.enum",
+            message: `${prop.label} '${String(value)}' is not one of ${prop.options?.join(", ")}.`,
+          };
+    case "asset":
+      if (value === undefined || value === "") return undefined;
+      if (typeof value !== "string") {
+        return { code: "field.asset", message: `${prop.label} must be an asset id.` };
+      }
+      const kind = assets?.get(value);
+      if (
+        assets &&
+        (kind === undefined || (prop.assetKind !== undefined && kind !== prop.assetKind))
+      ) {
+        return {
+          code: "field.asset",
+          message: `${prop.label}: '${value}' is not a ${prop.assetKind ?? "known"} asset of this project.`,
+        };
+      }
+      return undefined;
+  }
+}
 
 function boxOf(inst: LevelObjectInstance): { x: number; y: number; w: number; h: number } {
   const { width, height } = instanceSize(inst);
@@ -484,45 +552,26 @@ export function validateDocument(
 
     // Per-property checks driven by the definition metadata.
     for (const prop of def.properties) {
-      const value = effectiveValue(obj, prop.key);
-      if (prop.type === "number") {
-        if (typeof value !== "number" || !Number.isFinite(value)) {
-          add({
-            severity: "error",
-            code: "field.number",
-            objectId: obj.id,
-            field: prop.key,
-            message: `${def.name}: ${prop.label} must be a finite number.`,
-          });
-        } else if (prop.nonNegative && value < 0) {
-          add({
-            severity: "error",
-            code: "field.nonNegative",
-            objectId: obj.id,
-            field: prop.key,
-            message: `${def.name}: ${prop.label} must be ≥ 0.`,
-          });
-        }
-      } else if (prop.type === "enum") {
-        if (!prop.options?.includes(String(value))) {
-          add({
-            severity: "error",
-            code: "field.enum",
-            objectId: obj.id,
-            field: prop.key,
-            message: `${def.name}: ${prop.label} '${String(value)}' is not one of ${prop.options?.join(", ")}.`,
-          });
-        }
-      } else if (prop.type === "boolean") {
-        if (typeof value !== "boolean") {
-          add({
-            severity: "error",
-            code: "field.boolean",
-            objectId: obj.id,
-            field: prop.key,
-            message: `${def.name}: ${prop.label} must be true or false.`,
-          });
-        }
+      const issue = propertyIssue(prop, effectiveValue(obj, prop.key), options?.assets);
+      if (issue) {
+        add({
+          severity: "error",
+          code: issue.code,
+          objectId: obj.id,
+          field: prop.key,
+          message: `${def.name}: ${issue.message}`,
+        });
+      }
+    }
+    for (const key of Object.keys(obj.overrides ?? {})) {
+      if (!def.properties.some((p) => p.key === key)) {
+        add({
+          severity: "warning",
+          code: "field.unknown",
+          objectId: obj.id,
+          field: key,
+          message: `${def.name}: '${key}' is not an editable property and is ignored.`,
+        });
       }
     }
 

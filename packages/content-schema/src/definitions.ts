@@ -44,7 +44,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "▲",
     engineId: "Enemy",
     components: { enemy: { kind: "metool" } },
-    fields: { Kind: "metool", FacesRight: false },
+    fields: { Kind: "metool" },
     defaultSize: { width: 16, height: 16 },
     editor: { placement: "point", color: COLORS.enemy },
     properties: [
@@ -64,7 +64,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "ᗢ",
     engineId: "Enemy",
     components: { enemy: { kind: "bat" } },
-    fields: { Kind: "bat", FacesRight: false },
+    fields: { Kind: "bat" },
     defaultSize: { width: 16, height: 16 },
     editor: { placement: "point", color: COLORS.enemy },
     properties: [{ key: "FacesRight", label: "Faces Right", type: "boolean", default: false }],
@@ -76,7 +76,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "◆",
     engineId: "Enemy",
     components: { enemy: { kind: "pantheon" } },
-    fields: { Kind: "pantheon", FacesRight: false },
+    fields: { Kind: "pantheon" },
     defaultSize: { width: 16, height: 32 },
     editor: { placement: "point", color: COLORS.enemy },
     properties: [{ key: "FacesRight", label: "Faces Right", type: "boolean", default: false }],
@@ -136,7 +136,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "▭",
     engineId: "MovingPlatform",
     components: { platform: { moving: true } },
-    fields: { Travel: 96, Speed: 48 },
+    fields: {},
     defaultSize: { width: 48, height: 8 },
     editor: { placement: "rectangle", resizable: true, color: COLORS.platform },
     properties: [
@@ -165,7 +165,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "⇥",
     engineId: "Conveyor",
     components: { conveyor: {} },
-    fields: { Speed: 60 },
+    fields: {},
     defaultSize: { width: 64, height: 8 },
     editor: { placement: "rectangle", resizable: true, color: COLORS.conveyor },
     properties: [
@@ -197,7 +197,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "◿",
     engineId: "Slope",
     components: { slope: {} },
-    fields: { Dir: "UpRight" },
+    fields: {},
     defaultSize: { width: 32, height: 32 },
     editor: { placement: "rectangle", resizable: true, color: COLORS.slope },
     properties: [
@@ -218,7 +218,7 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
     icon: "▢",
     engineId: "CameraZone",
     components: { camera: { zone: true } },
-    fields: { BindX: true, BindY: true },
+    fields: {},
     defaultSize: { width: 398, height: 224 },
     editor: { placement: "rectangle", resizable: true, color: COLORS.camera },
     properties: [
@@ -294,4 +294,16 @@ export function effectiveValue(inst: LevelObjectInstance, key: string): unknown 
   const prop = def.properties.find((p) => p.key === key);
   if (prop && prop.default !== undefined) return prop.default;
   return def.fields[key];
+}
+
+/**
+ * The engine `fields` an instance compiles to: the definition's fixed fields plus
+ * every declared property, resolved. Overrides for undeclared keys are dropped
+ * (validation warns about them), so every compiler emits the same entity.
+ */
+export function entityFields(inst: LevelObjectInstance): Record<string, unknown> {
+  const def = requireDefinition(inst.definitionId);
+  const fields: Record<string, unknown> = { ...def.fields };
+  for (const prop of def.properties) fields[prop.key] = effectiveValue(inst, prop.key);
+  return fields;
 }
