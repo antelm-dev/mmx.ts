@@ -49,12 +49,16 @@ export function projectDefinitionIssues(
   entries: readonly ProjectDefinitionEntry[],
 ): ProjectDefinitionIssue[] {
   const issues: ProjectDefinitionIssue[] = [];
+  const seen = new Set<string>();
   entries.forEach((entry, index) => {
     const add = (code: string, message: string, field?: string) =>
       issues.push({ index, code, message, ...(field !== undefined ? { field } : {}) });
     if (BUILTIN.has(entry.id)) {
       add("object.id.reserved", `'${entry.id}' is a built-in object id.`, "id");
+    } else if (seen.has(entry.id)) {
+      add("object.id.duplicate", `Object id '${entry.id}' is used twice.`, "id");
     }
+    seen.add(entry.id);
     const base = BUILTIN.get(entry.base);
     if (!base || base.id === "spawn") {
       add("object.base", `'${entry.base}' is not a built-in object this can derive from.`, "base");
@@ -78,8 +82,8 @@ export function projectDefinitionIssues(
   return issues;
 }
 
-/** Issues that leave nothing to derive from; any other issue keeps the definition registered. */
-const UNDERIVABLE = new Set(["object.base", "object.id.reserved"]);
+/** Issues that leave nothing to register; any other issue keeps the definition registered. */
+const UNDERIVABLE = new Set(["object.base", "object.id.reserved", "object.id.duplicate"]);
 
 /**
  * Validates the open project's definitions and makes them visible to every

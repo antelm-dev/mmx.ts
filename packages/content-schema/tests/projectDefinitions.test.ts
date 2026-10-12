@@ -6,7 +6,10 @@ import {
   SCHEMA_VERSION,
   TerrainTile,
   allDefinitions,
+  definitionFor,
+  effectiveValue,
   entityFields,
+  instanceSize,
   getDefinition,
   setProjectDefinitions,
   validateDocument,
@@ -116,4 +119,23 @@ test("levels validate instances of project definitions, and flag them once the d
   );
   setProjectDefinitions([]);
   assert.ok(validateDocument(doc).issues.some((i) => i.code === "definition.unknown"));
+});
+
+test("editor reads tolerate a missing definition; compilation still refuses it", () => {
+  const ghost = { id: "g", definitionId: "obj.gone", x: 0, y: 0 };
+  assert.equal(definitionFor("obj.gone").category, "unknown");
+  assert.deepEqual(instanceSize(ghost), { width: 16, height: 16 });
+  assert.equal(effectiveValue(ghost, "Speed"), undefined);
+  assert.throws(() => entityFields(ghost), /unknown definition id 'obj\.gone'/);
+});
+
+test("a duplicate project id keeps only the first entry", (t) => {
+  t.after(() => setProjectDefinitions([]));
+  const issues = setProjectDefinitions([fast, { ...fast, name: "Twin" }]);
+  assert.deepEqual(
+    issues.map((i) => [i.index, i.code]),
+    [[1, "object.id.duplicate"]],
+  );
+  assert.equal(allDefinitions().filter((d) => d.id === "obj.fast").length, 1);
+  assert.equal(getDefinition("obj.fast")?.name, "Fast platform");
 });

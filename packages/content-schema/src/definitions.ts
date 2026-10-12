@@ -281,6 +281,29 @@ export function requireDefinition(id: string): GameObjectDefinition {
   return def;
 }
 
+/**
+ * The definition of an instance for display and editing: its definition, or a
+ * placeholder when the id is unknown (a project object that was removed, a
+ * level from another project). Validation reports `definition.unknown`, so the
+ * placeholder never reaches the engine; it only keeps editor reads from throwing.
+ */
+export function definitionFor(id: string): GameObjectDefinition {
+  return (
+    byId.get(id) ?? {
+      id,
+      name: `Missing object (${id})`,
+      category: "unknown",
+      icon: "?",
+      engineId: id,
+      components: {},
+      fields: {},
+      defaultSize: { width: 16, height: 16 },
+      editor: { placement: "point", color: "#9ca3af" },
+      properties: [],
+    }
+  );
+}
+
 /** Palette categories in display order. */
 export const CATEGORY_ORDER: readonly string[] = [
   "spawn",
@@ -291,6 +314,7 @@ export const CATEGORY_ORDER: readonly string[] = [
   "hazard",
   "slope",
   "camera",
+  "unknown",
 ];
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -302,11 +326,12 @@ export const CATEGORY_LABELS: Record<string, string> = {
   hazard: "Hazards",
   slope: "Slopes",
   camera: "Camera Zones",
+  unknown: "Missing Objects",
 };
 
 /** Effective box size of an instance: its own size, else the definition default. */
 export function instanceSize(inst: LevelObjectInstance): { width: number; height: number } {
-  const def = requireDefinition(inst.definitionId);
+  const def = definitionFor(inst.definitionId);
   return {
     width: inst.width ?? def.defaultSize.width,
     height: inst.height ?? def.defaultSize.height,
@@ -317,7 +342,7 @@ export function instanceSize(inst: LevelObjectInstance): { width: number; height
 export function effectiveValue(inst: LevelObjectInstance, key: string): unknown {
   const override = inst.overrides?.[key];
   if (override !== undefined) return override;
-  const def = requireDefinition(inst.definitionId);
+  const def = definitionFor(inst.definitionId);
   const prop = def.properties.find((p) => p.key === key);
   if (prop && prop.default !== undefined) return prop.default;
   return def.fields[key];
