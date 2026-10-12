@@ -2,6 +2,13 @@ import { EnemyAbility } from "./EnemyAbility.js";
 import { Vec2 } from "../../core/Vec2.js";
 import type { Enemy } from "../Enemy.js";
 
+/** Typed tuning for {@link Hover} (an enemy's `abilityConfig.Hover`). */
+export interface HoverConfig {
+  area: number;
+  travelTime: number;
+  restDuration: number;
+}
+
 /**
  * Idle drift around an anchor — port of BeePatrol.gd, which the bat's scene
  * reuses for its BatPatrol node (`area = 16`).
@@ -17,9 +24,9 @@ export class Hover extends EnemyAbility {
   readonly name = "Hover";
 
   /** BeePatrol exports, as set on SmallBat.tscn. */
-  area = 16;
-  travel_time = 0.5;
-  rest_duration = 0.5;
+  area: number;
+  travel_time: number;
+  rest_duration: number;
 
   /** The point the wandering is centred on; re-anchored after each recoil. */
   private anchor = new Vec2(0, 0);
@@ -27,8 +34,11 @@ export class Hover extends EnemyAbility {
   private to = new Vec2(0, 0);
   private rest_time = 0.5;
 
-  constructor(enemy: Enemy) {
+  constructor(enemy: Enemy, config: HoverConfig) {
     super(enemy);
+    this.area = config.area;
+    this.travel_time = config.travelTime;
+    this.rest_duration = config.restDuration;
     this.animation = "idle";
     this.conflicts = ["Pursuit"];
     this.anchor.set(enemy.pos.x, enemy.pos.y);

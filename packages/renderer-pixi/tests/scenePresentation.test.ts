@@ -11,6 +11,7 @@ import {
   spawnEnemy,
   type Player,
 } from "@mmx/engine";
+import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import type { AssetCatalog } from "../src/editor/catalogCore.js";
 import { DashSmoke } from "../src/DashSmoke.js";
 import { EnemyDebris } from "../src/EnemyDebris.js";
@@ -133,7 +134,7 @@ test("attachEnemy is idempotent and a dynamic enemy gets one death burst", () =>
   });
 
   const dynamic = spawnEnemy(
-    "metool",
+    COMPILED_GAME_DATA.enemies.get("metool")!,
     live.world,
     live.player.pos.x + 80,
     live.player.pos.y,

@@ -265,7 +265,7 @@ export function compileGameData(
     num(e.touchDamage, `enemies.${e.id}.touchDamage`, e.id, { min: 0 });
     hitbox(e.hurtbox, `enemies.${e.id}.hurtbox`, e.id);
     hitbox(e.perception, `enemies.${e.id}.perception`, e.id);
-    // Each ability id must be a known enemy behaviour.
+    // Each ability id must be a known enemy behaviour, with a full config.
     for (const [i, ability] of e.abilities.entries()) {
       if (!registries.enemyBehaviors.has(ability)) {
         error({
@@ -274,10 +274,39 @@ export function compileGameData(
           fieldPath: `enemies.${e.id}.abilities[${i}]`,
           message: `Unknown enemy behaviour '${ability}'.`,
         });
+      } else {
+        validateBehaviorConfig(
+          registries.enemyBehaviors,
+          ability,
+          e.abilityConfig?.[ability],
+          `enemies.${e.id}.abilityConfig.${ability}`,
+          e.id,
+          error,
+        );
+      }
+    }
+    const owned = new Set(e.abilities);
+    for (const [ability, config] of Object.entries(e.abilityConfig ?? {})) {
+      if (!owned.has(ability)) {
+        error({
+          code: "config.invalid",
+          definitionId: e.id,
+          fieldPath: `enemies.${e.id}.abilityConfig.${ability}`,
+          message: `Config for ability '${ability}' the enemy does not own.`,
+        });
+      }
+      // A `projectile` config field names a projectile definition (Shoot).
+      const projectile = config?.projectile;
+      if (typeof projectile === "string" && !data.projectiles[projectile]) {
+        error({
+          code: "reference.missing",
+          definitionId: e.id,
+          fieldPath: `enemies.${e.id}.abilityConfig.${ability}.projectile`,
+          message: `Enemy references unknown projectile '${projectile}'.`,
+        });
       }
     }
     // AI reactions must name abilities this enemy owns.
-    const owned = new Set(e.abilities);
     for (const [event, names] of Object.entries(e.reactions)) {
       for (const name of names ?? []) {
         if (!owned.has(name)) {
@@ -471,10 +500,24 @@ function compileEnemy(e: EnemyDefinition, data: GameData): CompiledEnemy {
     movement: e.movement,
     shield: e.shield ? { ...e.shield } : undefined,
     abilities: [...e.abilities],
+    abilityConfig: freezeAbilityConfig(e.abilityConfig ?? {}),
     reactions: Object.freeze(reactions) as CompiledEnemy["reactions"],
     hooks: Object.freeze((e.hooks ?? []).map((h) => ({ ...h }))),
     initialAnimation: e.initialAnimation,
   };
+}
+
+function freezeAbilityConfig(
+  table: NonNullable<EnemyDefinition["abilityConfig"]>,
+): CompiledEnemy["abilityConfig"] {
+  const out: Record<string, Readonly<Record<string, unknown>>> = {};
+  for (const [ability, config] of Object.entries(table)) {
+    const copy: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(config))
+      copy[k] = Array.isArray(v) ? Object.freeze([...v]) : v;
+    out[ability] = Object.freeze(copy);
+  }
+  return Object.freeze(out);
 }
 
 function compileWeapon(w: WeaponDefinition, data: GameData): CompiledWeapon {

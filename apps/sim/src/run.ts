@@ -1,4 +1,5 @@
 import { Action, DT, Input, Player, Stage, spawnEnemy, loadLevel } from "@mmx/engine";
+import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import { loadEntryLevel, requireProjectDirectory } from "./project.js";
 
 /**
@@ -21,7 +22,8 @@ async function main(): Promise<void> {
   const player = new Player(world, level.spawn.x, level.spawn.y, input, undefined, entry.loadoutId);
   const stage = new Stage(world, player);
   for (const [i, spawn] of level.enemies.entries()) {
-    stage.add(spawnEnemy(spawn.kind, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i));
+    const def = COMPILED_GAME_DATA.enemies.get(spawn.kind)!;
+    stage.add(spawnEnemy(def, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i));
   }
 
   // A scripted timeline: at frame N, set an action down/up.

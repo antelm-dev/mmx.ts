@@ -12,8 +12,10 @@ import {
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { makeBat, makeMetool } from "../src/game/enemies/index.js";
+import { makeBat, makeMetool, spawnEnemy } from "../src/game/enemies/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
+import { GAME_DATA, compileGameData, type GameData } from "../src/data/index.js";
+import { buildCompileRegistries } from "../src/behaviors/index.js";
 
 /**
  * These run without any clip data loaded, which is the same deal the movement
@@ -399,4 +401,48 @@ test("Stun interrupts everything and blocks it from restarting", () => {
   run(stage, 0.5);
   assert.equal(metool.is_executing("Patrol"), false, "and cannot restart mid-stun");
   assert.equal(metool.get_horizontal_speed(), 0, "a stunned enemy holds still");
+});
+
+// --- data-composed enemies -----------------------------------------------------
+
+test("an enemy composed from data walks at its configured travel speed", () => {
+  const data: GameData = structuredClone(GAME_DATA);
+  data.enemies.crab = {
+    ...data.enemies.metool,
+    id: "crab",
+    sheet: "crab",
+    shield: undefined,
+    abilities: ["Patrol", "Death"],
+    abilityConfig: {
+      Patrol: {
+        travelSpeed: 60,
+        travelTime: 0.8,
+        restMin: 0.8,
+        randomTurn: false,
+        conflicts: [],
+      },
+      Death: { explosionDuration: 0 },
+    },
+    reactions: { idle: ["Patrol"] },
+  };
+  const compiled = compileGameData(data, buildCompileRegistries());
+  assert.ok(compiled.ok, JSON.stringify(compiled.diagnostics));
+
+  const { world, stage } = makeStage();
+  const def = compiled.value.enemies.get("crab")!;
+  const crab = stage.add(
+    spawnEnemy(def, world, 20 * 16, FLOOR_Y - def.actor.body.hh, -1, 1234, compiled.value),
+  );
+  assert.equal(crab.kind, "crab");
+  assert.deepEqual(
+    crab.abilities.map((a) => a.name),
+    ["Patrol", "Death"],
+  );
+
+  // Past the 0.05s turn beat and inside the 0.8s leg, it walks at exactly 60px/s.
+  run(stage, 0.2);
+  assert.equal(Math.abs(crab.velocity.x), 60);
+  const x0 = crab.pos.x;
+  run(stage, 0.5);
+  assert.ok(Math.abs(Math.abs(crab.pos.x - x0) - 30) < 0.5, `moved ${crab.pos.x - x0}px`);
 });

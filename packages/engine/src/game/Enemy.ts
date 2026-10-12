@@ -5,7 +5,8 @@ import { Rng } from "../core/Rng.js";
 import { EnemyAI } from "./EnemyAI.js";
 import type { EnemyAbility } from "./enemy/EnemyAbility.js";
 import type { Projectile } from "./Projectile.js";
-import { ENEMY_FLASH_TIME, ENEMY_STATS, type EnemyStats } from "../core/constants.js";
+import { ENEMY_FLASH_TIME, enemyStats, type EnemyStats } from "../core/constants.js";
+import type { CompiledEnemy } from "../data/types.js";
 
 export type EnemyKind = "metool" | "bat" | "pantheon";
 
@@ -16,10 +17,10 @@ export type EnemyKind = "metool" | "bat" | "pantheon";
  * Those are separate Nodes in Godot because a scene tree is how that engine
  * composes behaviour; here they are fields and methods, because the only thing
  * the composition bought was editor-time configuration and that has moved into
- * ENEMY_STATS. What is preserved is the *signal flow*, since the AI is wired to
- * it: taking a hit, breaking a guard and reaching zero health each notify the AI,
- * which is what turns a broken guard into a stun instead of the ability polling
- * for it.
+ * its compiled definition (data/enemies.ts). What is preserved is the *signal
+ * flow*, since the AI is wired to it: taking a hit, breaking a guard and reaching
+ * zero health each notify the AI, which is what turns a broken guard into a stun
+ * instead of the ability polling for it.
  *
  * Enemies deliberately do NOT use AbilityUser's priority-based locomotion race.
  * The player picks his own state from input every frame; an enemy's state is
@@ -27,6 +28,8 @@ export type EnemyKind = "metool" | "bat" | "pantheon";
  * abilities arbitrate between themselves with Godot's conflicting_moves rules.
  */
 export class Enemy extends AbilityUser {
+  /** The compiled definition id (a level's enemy `Kind`). */
+  readonly kind: string;
   readonly stats: EnemyStats;
   readonly ai: EnemyAI;
   readonly rng: Rng;
@@ -69,7 +72,7 @@ export class Enemy extends AbilityUser {
   projectiles: Projectile[] = [];
 
   constructor(
-    readonly kind: EnemyKind,
+    readonly def: CompiledEnemy,
     world: World,
     x: number,
     y: number,
@@ -77,7 +80,8 @@ export class Enemy extends AbilityUser {
     seed?: number,
   ) {
     super(world, x, y);
-    this.stats = ENEMY_STATS[kind];
+    this.kind = def.id;
+    this.stats = enemyStats(def);
     this.rng = new Rng(seed);
     this.ai = new EnemyAI(this);
 

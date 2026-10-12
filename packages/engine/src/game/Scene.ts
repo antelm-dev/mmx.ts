@@ -1,6 +1,7 @@
 import { Input } from "../core/Input.js";
 import { DT, WEAPON_ORDER } from "../core/constants.js";
 import { applyInput } from "../core/Replay.js";
+import { COMPILED_GAME_DATA } from "../data/index.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
@@ -96,7 +97,7 @@ export class Scene {
       // a bat happened to reroll its hover. Derived from the scene seed so the
       // whole run still keys off one number.
       const enemy = spawnEnemy(
-        spawn.kind,
+        COMPILED_GAME_DATA.enemies.get(spawn.kind)!,
         this.world,
         spawn.x,
         spawn.y,

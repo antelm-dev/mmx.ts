@@ -3,6 +3,14 @@ import { Projectile } from "../Projectile.js";
 import type { ShotStats } from "../../core/constants.js";
 import type { Enemy } from "../Enemy.js";
 
+/** Typed tuning for {@link Shoot} (an enemy's `abilityConfig.Shoot`). */
+export interface ShootConfig {
+  /** Projectile id; the composer resolves it to the {@link ShotStats} fired. */
+  projectile: string;
+  cooldown: number;
+  recoverTime: number;
+}
+
 /**
  * Stop, aim at the player, fire one straight shot, hold the pose — the Pantheon
  * Hunter's attack (zero-x-mashup enemy.rs `think`, "aim" -> "shoot").
@@ -14,18 +22,21 @@ export class Shoot extends EnemyAbility {
   readonly name = "Shoot";
 
   /** enemies.json shot_cooldown: 100 frames between shots. */
-  cooldown = 100 / 60;
+  cooldown: number;
   /** enemy.rs holds the shoot pose 24 frames before going idle. */
-  recover_time = 24 / 60;
+  recover_time: number;
 
   /** Enemy clock (ms) at which the next shot may start; enemy.rs spawns at half a cooldown. */
   private ready_at: number;
 
   constructor(
     enemy: Enemy,
+    config: ShootConfig,
     readonly shot: ShotStats,
   ) {
     super(enemy);
+    this.cooldown = config.cooldown;
+    this.recover_time = config.recoverTime;
     this.animation = "aim";
     this.conflicts = ["Stun"];
     this.ready_at = (this.cooldown / 2) * 1000;

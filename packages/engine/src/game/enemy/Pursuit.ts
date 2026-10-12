@@ -1,10 +1,13 @@
 import { EnemyAbility } from "./EnemyAbility.js";
-import {
-  BAT_PURSUIT_GIVE_UP_DISTANCE,
-  BAT_PURSUIT_SPEED,
-  BAT_WEAVE_RATE,
-} from "../../core/constants.js";
 import type { Enemy } from "../Enemy.js";
+
+/** Typed tuning for {@link Pursuit} (an enemy's `abilityConfig.Pursuit`). */
+export interface PursuitConfig {
+  speed: number;
+  giveUpDistance: number;
+  /** The vertical weave: cos(timer * weaveRate) remapped to [-0.25, 1]. */
+  weaveRate: number;
+}
 
 /**
  * Homing flight — port of BatPursuit.gd.
@@ -18,12 +21,16 @@ import type { Enemy } from "../Enemy.js";
 export class Pursuit extends EnemyAbility {
   readonly name = "Pursuit";
 
-  pursuit_speed = BAT_PURSUIT_SPEED;
+  pursuit_speed: number;
   /** BatPursuit's give-up range, as a field so tooling can read it off the ability. */
-  give_up_distance = BAT_PURSUIT_GIVE_UP_DISTANCE;
+  give_up_distance: number;
+  private weave_rate: number;
 
-  constructor(enemy: Enemy) {
+  constructor(enemy: Enemy, config: PursuitConfig) {
     super(enemy);
+    this.pursuit_speed = config.speed;
+    this.give_up_distance = config.giveUpDistance;
+    this.weave_rate = config.weaveRate;
     this.animation = "idle";
     this.conflicts = ["Recoil"];
   }
@@ -52,7 +59,7 @@ export class Pursuit extends EnemyAbility {
     this.set_direction(dx > 0 ? 1 : -1);
     this.set_horizontal_speed(this.pursuit_speed * (dx / length));
     this.set_vertical_speed(
-      this.pursuit_speed * (dy / length) * remap(Math.cos(this.timer * BAT_WEAVE_RATE)),
+      this.pursuit_speed * (dy / length) * remap(Math.cos(this.timer * this.weave_rate)),
     );
   }
 }

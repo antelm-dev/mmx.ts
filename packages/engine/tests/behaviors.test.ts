@@ -130,3 +130,41 @@ test("an ability config missing a required key fails compilation", () => {
   data.abilities["player.dash"].config = { speed: 200, duration: 0.55 };
   assert.ok(errorCodes(compile(data).diagnostics).includes("config.invalid"));
 });
+
+test("an enemy ability config with an unknown key fails compilation", () => {
+  const data = clone();
+  data.enemies.metool.abilityConfig!.Patrol.travelSpeeed = 30;
+  const diagnostics = compile(data).diagnostics;
+  assert.ok(
+    diagnostics.some(
+      (d) =>
+        d.code === "config.invalid" &&
+        d.fieldPath === "enemies.metool.abilityConfig.Patrol.travelSpeeed",
+    ),
+  );
+});
+
+test("an enemy ability config for an ability the enemy does not own fails compilation", () => {
+  const data = clone();
+  data.enemies.bat.abilityConfig!.Hide = { ...data.enemies.metool.abilityConfig!.Hide };
+  assert.ok(errorCodes(compile(data).diagnostics).includes("config.invalid"));
+});
+
+test("an enemy ability config missing a key or out of range fails compilation", () => {
+  const data = clone();
+  delete data.enemies.bat.abilityConfig!.Recoil.duration;
+  data.enemies.bat.abilityConfig!.Hover.area = 0;
+  const paths = compile(data).diagnostics.map((d) => d.fieldPath);
+  assert.ok(paths.includes("enemies.bat.abilityConfig.Recoil.duration"));
+  assert.ok(paths.includes("enemies.bat.abilityConfig.Hover.area"));
+});
+
+test("a Shoot config naming an unknown projectile fails compilation", () => {
+  const data = clone();
+  data.enemies.pantheon.abilityConfig!.Shoot.projectile = "ghost_shot";
+  const missing = compile(data).diagnostics.filter((d) => d.code === "reference.missing");
+  assert.deepEqual(
+    missing.map((d) => d.fieldPath),
+    ["enemies.pantheon.abilityConfig.Shoot.projectile"],
+  );
+});

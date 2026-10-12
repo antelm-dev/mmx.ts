@@ -1,6 +1,14 @@
 import { EnemyAbility } from "./EnemyAbility.js";
-import { PATROL_SPEED, PATROL_TRAVEL_TIME } from "../../core/constants.js";
 import type { Enemy } from "../Enemy.js";
+
+/** Typed tuning for {@link Patrol} (an enemy's `abilityConfig.Patrol`). */
+export interface PatrolConfig {
+  travelSpeed: number;
+  travelTime: number;
+  restMin: number;
+  randomTurn: boolean;
+  conflicts: readonly string[];
+}
 
 /**
  * Walk one leg, then rest — port of CrabPatrol.gd, which the Metool's scene
@@ -15,9 +23,10 @@ export class Patrol extends EnemyAbility {
   readonly name = "Patrol";
 
   /** Metool.tscn: random_turn = false, so it simply reverses each leg. */
-  random_turn = false;
-  travel_time = PATROL_TRAVEL_TIME;
-  travel_speed = PATROL_SPEED;
+  random_turn: boolean;
+  travel_time: number;
+  travel_speed: number;
+  private rest_min: number;
 
   /**
    * CrabPatrol.random_rest_time overwrites the scene's `rest_time` on every
@@ -27,10 +36,14 @@ export class Patrol extends EnemyAbility {
    */
   private rest_time = 0.8;
 
-  constructor(enemy: Enemy) {
+  constructor(enemy: Enemy, config: PatrolConfig) {
     super(enemy);
     this.animation = "walk";
-    this.conflicts = ["Hide", "Stun"];
+    this.conflicts = [...config.conflicts];
+    this.random_turn = config.randomTurn;
+    this.travel_time = config.travelTime;
+    this.travel_speed = config.travelSpeed;
+    this.rest_min = config.restMin;
   }
 
   override _Setup(): void {
@@ -39,7 +52,7 @@ export class Patrol extends EnemyAbility {
     } else {
       this.turn();
     }
-    this.rest_time = 0.8 + this.character.rng.next();
+    this.rest_time = this.rest_min + this.character.rng.next();
   }
 
   override _Update(dt: number): void {
