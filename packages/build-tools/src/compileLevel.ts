@@ -1,10 +1,5 @@
 import { migrateDocument } from "@mmx/content-schema";
-import {
-  effectiveValue,
-  getDefinition,
-  instanceSize,
-  requireDefinition,
-} from "@mmx/content-schema";
+import { entityFields, getDefinition, instanceSize, requireDefinition } from "@mmx/content-schema";
 import type { LevelDocument, LevelObjectInstance } from "@mmx/content-schema";
 import type { LevelData, LevelEntity } from "@mmx/engine";
 import { ProjectBuildError } from "./errors.js";
@@ -13,15 +8,6 @@ import { resolveContainedProjectPath } from "./paths.js";
 function objectToEntity(inst: LevelObjectInstance): LevelEntity {
   const def = requireDefinition(inst.definitionId);
   const size = instanceSize(inst);
-  const fields: Record<string, unknown> = { ...def.fields, ...inst.overrides };
-  for (const prop of def.properties) {
-    if (fields[prop.key] === undefined && prop.default !== undefined) {
-      fields[prop.key] = prop.default;
-    }
-  }
-  for (const prop of def.properties) {
-    fields[prop.key] = effectiveValue(inst, prop.key);
-  }
   return {
     id: def.engineId,
     iid: inst.id,
@@ -29,7 +15,7 @@ function objectToEntity(inst: LevelObjectInstance): LevelEntity {
     y: inst.y,
     w: size.width,
     h: size.height,
-    fields,
+    fields: entityFields(inst),
   };
 }
 

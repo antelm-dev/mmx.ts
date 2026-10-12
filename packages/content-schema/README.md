@@ -15,7 +15,11 @@ The main model includes:
 
 - `GameProject`, `LevelDocument`, `GameObjectDefinition`, and
   `LevelObjectInstance`
-- property metadata used to build inspector controls
+- property metadata used to build inspector controls (`number`, `integer`,
+  `boolean`, `string`, `enum`, `asset`), checked by `propertyIssue`; each
+  property's `default` is the only source of its default value
+- `entityFields`, the engine fields an instance compiles to (fixed fields plus
+  every resolved property), shared by every `LevelDocument` → `LevelData` compiler
 - presentation-only decoration instances
 - presentation-only image layers (project `image` assets) and a backdrop colour
 - `validateDocument` and structured validation issues

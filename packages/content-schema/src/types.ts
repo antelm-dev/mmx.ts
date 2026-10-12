@@ -105,7 +105,7 @@ export type Placement = "point" | "rectangle" | "path";
  * The kind of value an editable property holds. Drives which inspector control
  * is rendered and how the value is validated and coerced.
  */
-export type PropertyType = "number" | "boolean" | "string" | "enum";
+export type PropertyType = "number" | "integer" | "boolean" | "string" | "enum" | "asset";
 
 /**
  * Inspector-facing metadata for one editable field of a definition.
@@ -124,11 +124,16 @@ export interface PropertyMeta {
   scope?: "transform" | "override";
   /** Allowed values for an `enum` field. */
   options?: readonly string[];
-  /** Value used when the instance carries no override for this key. */
+  /**
+   * Project asset kind an `asset` field references (e.g. "animation", "sound").
+   * The value is the asset id; an empty or absent value means "none".
+   */
+  assetKind?: string;
+  /** Value used when the instance carries no override for this key. The only source of the default. */
   default?: unknown;
-  /** Inclusive minimum for a `number` field. */
+  /** Inclusive minimum for a `number` / `integer` field. */
   min?: number;
-  /** Inclusive maximum for a `number` field. */
+  /** Inclusive maximum for a `number` / `integer` field. */
   max?: number;
   /** Numbers below this are invalid unless zero is explicitly allowed. */
   nonNegative?: boolean;
@@ -157,7 +162,10 @@ export interface GameObjectDefinition {
    * validated, editable data — never executable code.
    */
   components: Record<string, unknown>;
-  /** Base engine field values written for every instance, before overrides. */
+  /**
+   * Fixed engine field values no instance edits (e.g. `Kind`). Editable values
+   * and their defaults live only in {@link properties}.
+   */
   fields: Record<string, unknown>;
   /** Default box size in world pixels for a freshly placed instance. */
   defaultSize: { width: number; height: number };
