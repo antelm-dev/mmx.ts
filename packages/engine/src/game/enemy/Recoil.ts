@@ -1,6 +1,12 @@
 import { EnemyAbility } from "./EnemyAbility.js";
-import { BAT_JUMP_SPEED, BAT_JUMP_TIME } from "../../core/constants.js";
 import type { Enemy } from "../Enemy.js";
+
+/** Typed tuning for {@link Recoil} (an enemy's `abilityConfig.Recoil`). */
+export interface RecoilConfig {
+  /** Upward speed the hop starts at. */
+  speed: number;
+  duration: number;
+}
 
 /**
  * The hop the bat makes after it connects — port of BatJump.gd.
@@ -14,12 +20,15 @@ import type { Enemy } from "../Enemy.js";
 export class Recoil extends EnemyAbility {
   readonly name = "Recoil";
 
-  jump_time = BAT_JUMP_TIME;
+  jump_time: number;
+  private jump_speed: number;
 
   private vertical_speed = 0;
 
-  constructor(enemy: Enemy) {
+  constructor(enemy: Enemy, config: RecoilConfig) {
     super(enemy);
+    this.jump_time = config.duration;
+    this.jump_speed = config.speed;
     this.animation = "jump";
     // Conflicts with nothing: the recoil always wins, and Pursuit names it so
     // that a chase in progress is interrupted by the hop.
@@ -28,14 +37,14 @@ export class Recoil extends EnemyAbility {
 
   override _Setup(): void {
     this.force_movement(0);
-    this.vertical_speed = -BAT_JUMP_SPEED;
+    this.vertical_speed = -this.jump_speed;
   }
 
   override _Update(_dt: number): void {
     // Godot tweens `current_vertical_speed` from -200 to 0 with TRANS_CUBIC and
     // the default EASE_IN_OUT, then applies it every frame.
     const t = Math.min(1, this.timer / this.jump_time);
-    this.vertical_speed = -BAT_JUMP_SPEED * (1 - easeInOutCubic(t));
+    this.vertical_speed = -this.jump_speed * (1 - easeInOutCubic(t));
     this.set_vertical_speed(this.vertical_speed);
 
     if (this.timer > this.jump_time) {

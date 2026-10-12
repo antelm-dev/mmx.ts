@@ -1,6 +1,11 @@
 import { EnemyAbility } from "./EnemyAbility.js";
 import type { Enemy } from "../Enemy.js";
 
+/** Typed tuning for {@link Death} (an enemy's `abilityConfig.Death`). */
+export interface DeathConfig {
+  explosionDuration: number;
+}
+
 /**
  * Death sequence — port of EnemyDeath.gd.
  *
@@ -18,10 +23,11 @@ import type { Enemy } from "../Enemy.js";
 export class Death extends EnemyAbility {
   readonly name = "Death";
 
-  explosion_duration = 0;
+  explosion_duration: number;
 
-  constructor(enemy: Enemy) {
+  constructor(enemy: Enemy, config: DeathConfig) {
     super(enemy);
+    this.explosion_duration = config.explosionDuration;
     this.conflicts = [];
     enemy.events.on("zero_health", () => {
       if (!this.executing) this.ExecuteOnce();

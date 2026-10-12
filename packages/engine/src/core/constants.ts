@@ -15,6 +15,7 @@
  */
 
 import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { CompiledEnemy, ProjectileDefinition } from "../data/types.js";
 
 // Fixed physics tick — Godot _physics_process default is 60 Hz. A true invariant:
 // changing it redefines what one recorded tick means. Stays in core.
@@ -27,6 +28,10 @@ const _D = COMPILED_GAME_DATA;
 function _ac(abilityId: string, key: string): number {
   const cfg = _D.abilities.get(abilityId)?.config as Record<string, unknown> | undefined;
   return cfg?.[key] as number;
+}
+/** Read a numeric field off a compiled enemy's per-ability config. */
+function _ec(enemyId: string, abilityId: string, key: string): number {
+  return _D.enemies.get(enemyId)?.abilityConfig[abilityId]?.[key] as number;
 }
 
 // --- Actor.gd (→ data/physics.ts) ---
@@ -198,6 +203,11 @@ export const enum ChargeTier {
 function _shotStats(projectileId: string): ShotStats {
   const p = _D.projectiles.get(projectileId);
   if (!p) throw new Error(`constants: unknown projectile '${projectileId}'`);
+  return shotStats(p);
+}
+
+/** The {@link ShotStats} a projectile definition fires with. */
+export function shotStats(p: ProjectileDefinition): ShotStats {
   const stats: ShotStats = {
     kind: p.animation.kind,
     damage: p.damage,
@@ -323,7 +333,7 @@ export const MAX_HEALTH = _D.actors.get("player.x")!.maxHealth; // Actor.gd:6
  */
 export interface EnemyStats {
   /** Key into enemy_anims.json's `actors` table. */
-  sheet: EnemyId;
+  sheet: string;
   max_health: number;
   /** DamageOnTouch.damage — dealt to the player on contact. */
   touch_damage: number;
@@ -341,14 +351,18 @@ export interface EnemyStats {
   flying: boolean;
 }
 
-/** Rebuild the legacy {@link EnemyStats} shape from a compiled enemy definition. */
 type EnemyId = "metool" | "bat" | "pantheon";
 
 function _enemyStats(id: EnemyId): EnemyStats {
   const e = _D.enemies.get(id);
   if (!e) throw new Error(`constants: unknown enemy '${id}'`);
+  return enemyStats(e);
+}
+
+/** Rebuild the legacy {@link EnemyStats} shape from a compiled enemy definition. */
+export function enemyStats(e: CompiledEnemy): EnemyStats {
   return {
-    sheet: id,
+    sheet: e.sheet,
     max_health: e.maxHealth,
     touch_damage: e.touchDamage,
     hw: e.actor.body.hw,
@@ -401,28 +415,28 @@ export const ENEMY_DEBRIS_SPREAD_DEGREES = 45; // ParticleProcessMaterial defaul
 export const ENEMY_DEBRIS_GRAVITY = 800; // RemainsParticle.tres gravity.y
 export const ENEMY_DEBRIS_LIFETIME = 1.1; // remains_particles lifetime 2.0, trimmed — see EnemyDebris.ts
 
-// --- Patrol.gd (CrabPatrol, as configured on Metool.tscn's Patrol node) ---
-export const PATROL_TRAVEL_TIME = 0.8; // Metool.tscn Patrol.travel_time
-export const PATROL_SPEED = 25.0; // Metool.tscn Patrol.travel_speed
-export const PATROL_REST_TIME = 2.0; // Metool.tscn Patrol.rest_time
+// --- Patrol.gd (CrabPatrol, as configured on Metool.tscn's Patrol node → data/enemies.ts) ---
+export const PATROL_TRAVEL_TIME = _ec("metool", "Patrol", "travelTime"); // Patrol.travel_time
+export const PATROL_SPEED = _ec("metool", "Patrol", "travelSpeed"); // Patrol.travel_speed
+export const PATROL_REST_TIME = 2.0; // Metool.tscn Patrol.rest_time (overwritten by random_rest_time)
 
-// --- Hide.gd (Metool) ---
-export const HIDE_OPEN_DELAY = 3.0; // Hide.gd: attack_stage 0, timer > 3
-export const HIDE_ADVANCE_RANGE_X = 64; // is_player_nearby_horizontally(64)
-export const HIDE_ADVANCE_RANGE_Y = 16; // is_player_nearby_vertically(16)
-export const HIDE_GIVE_UP_RANGE_X = 80; // stage 2: not nearby 80 -> end
-export const HIDE_RESHIELD_DELAY = 0.1; // Tools.timer(0.1, "activate", shield)
+// --- Hide.gd (Metool → data/enemies.ts) ---
+export const HIDE_OPEN_DELAY = _ec("metool", "Hide", "openDelay"); // attack_stage 0, timer > 3
+export const HIDE_ADVANCE_RANGE_X = _ec("metool", "Hide", "advanceRangeX"); // nearby_horizontally(64)
+export const HIDE_ADVANCE_RANGE_Y = _ec("metool", "Hide", "advanceRangeY"); // nearby_vertically(16)
+export const HIDE_GIVE_UP_RANGE_X = _ec("metool", "Hide", "giveUpRangeX"); // stage 2: not nearby 80
+export const HIDE_RESHIELD_DELAY = _ec("metool", "Hide", "reshieldDelay"); // Tools.timer(0.1, ...)
 
-// --- EnemyStun.gd (as configured on Metool.tscn's EnemyStun node) ---
-export const STUN_DURATION = 1.65; // Metool.tscn EnemyStun.stun_duration
+// --- EnemyStun.gd (as configured on Metool.tscn's EnemyStun node → data/enemies.ts) ---
+export const STUN_DURATION = _ec("metool", "Stun", "duration"); // EnemyStun.stun_duration
 
-// --- BatPursuit.gd / BatJump.gd ---
-export const BAT_PURSUIT_SPEED = 80.0; // BatPursuit.gd pursuit_speed
-export const BAT_PURSUIT_GIVE_UP_DISTANCE = 200.0; // _EndCondition
+// --- BatPursuit.gd / BatJump.gd (→ data/enemies.ts) ---
+export const BAT_PURSUIT_SPEED = _ec("bat", "Pursuit", "speed"); // BatPursuit.gd pursuit_speed
+export const BAT_PURSUIT_GIVE_UP_DISTANCE = _ec("bat", "Pursuit", "giveUpDistance"); // _EndCondition
 /** The vertical weave: cos(timer * BAT_WEAVE_RATE) remapped to [-0.25, 1]. */
-export const BAT_WEAVE_RATE = 4.0;
-export const BAT_JUMP_SPEED = 200.0; // BatJump.gd current_vertical_speed = -200
-export const BAT_JUMP_TIME = 0.7; // BatJump.gd jump_timne
+export const BAT_WEAVE_RATE = _ec("bat", "Pursuit", "weaveRate");
+export const BAT_JUMP_SPEED = _ec("bat", "Recoil", "speed"); // BatJump.gd current_vertical_speed = -200
+export const BAT_JUMP_TIME = _ec("bat", "Recoil", "duration"); // BatJump.gd jump_timne
 
 // --- Damage.gd (Player.tscn's Damage node → data/abilities.ts player.damage) ---
 export const PLAYER_DAMAGE_DURATION = _ac("player.damage", "duration");

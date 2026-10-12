@@ -1,6 +1,15 @@
 import { EnemyAbility } from "./EnemyAbility.js";
-import { STUN_DURATION } from "../../core/constants.js";
 import type { Enemy } from "../Enemy.js";
+
+/** Typed tuning for {@link Stun} (an enemy's `abilityConfig.Stun`). */
+export interface StunConfig {
+  duration: number;
+  animation: string;
+  recoverAnimation: string;
+  reactivateShield: boolean;
+  gravity: boolean;
+  conflicts: readonly string[];
+}
 
 /**
  * Guard-break stun — port of EnemyStun.gd.
@@ -15,22 +24,26 @@ import type { Enemy } from "../Enemy.js";
 export class Stun extends EnemyAbility {
   readonly name = "Stun";
 
-  gravity = true;
-  stun_duration = STUN_DURATION;
+  gravity: boolean;
+  stun_duration: number;
   /** EnemyStun.reactivate_shield_on_end — false on Metool.tscn. */
-  reactivate_shield_on_end = false;
+  reactivate_shield_on_end: boolean;
   /**
    * EnemyStun.recover_animation, "" on Metool.tscn. With no recover clip, stage 1
    * tests the *stun* clip for completion — which is why "stun" must not loop.
    */
-  recover_animation = "";
+  recover_animation: string;
 
-  constructor(enemy: Enemy) {
+  constructor(enemy: Enemy, config: StunConfig) {
     super(enemy);
-    this.animation = "stun";
-    // Conflicts with nothing, so it interrupts everything that names it and
+    this.animation = config.animation;
+    // Empty on every current enemy: it interrupts everything that names it and
     // nothing can start on top of it.
-    this.conflicts = [];
+    this.conflicts = [...config.conflicts];
+    this.gravity = config.gravity;
+    this.stun_duration = config.duration;
+    this.reactivate_shield_on_end = config.reactivateShield;
+    this.recover_animation = config.recoverAnimation;
   }
 
   override _Setup(): void {

@@ -1,13 +1,15 @@
 import { EnemyAbility } from "./EnemyAbility.js";
-import {
-  HIDE_ADVANCE_RANGE_X,
-  HIDE_ADVANCE_RANGE_Y,
-  HIDE_GIVE_UP_RANGE_X,
-  HIDE_OPEN_DELAY,
-  HIDE_RESHIELD_DELAY,
-  WALK_SPEED,
-} from "../../core/constants.js";
 import type { Enemy } from "../Enemy.js";
+
+/** Typed tuning for {@link Hide} (an enemy's `abilityConfig.Hide`). */
+export interface HideConfig {
+  openDelay: number;
+  advanceRangeX: number;
+  advanceRangeY: number;
+  giveUpRangeX: number;
+  reshieldDelay: number;
+  speed: number;
+}
 
 /**
  * The Metool's whole fight — port of Hide.gd.
@@ -29,15 +31,19 @@ export class Hide extends EnemyAbility {
    * override — so it inherits Movement.gd's 90, the player's own walk speed. The
    * charge is meant to be startling next to the 25px/s patrol.
    */
-  horizontal_velocity = WALK_SPEED;
+  horizontal_velocity: number;
 
   /** Counts down the Tools.timer(0.1, "activate", shield) re-shield delay. */
   private reshield_in = -1;
 
-  constructor(enemy: Enemy) {
+  constructor(
+    enemy: Enemy,
+    private readonly config: HideConfig,
+  ) {
     super(enemy);
     this.animation = "defense";
     this.conflicts = ["Stun"];
+    this.horizontal_velocity = config.speed;
   }
 
   override _Setup(): void {
@@ -51,7 +57,7 @@ export class Hide extends EnemyAbility {
     this.tickReshield(dt);
 
     if (this.attack_stage === 0) {
-      if (this.timer > HIDE_OPEN_DELAY && this.is_player_looking_away()) {
+      if (this.timer > this.config.openDelay && this.is_player_looking_away()) {
         this.turn_and_face_player();
         this.play_animation_once("open");
         this.character.deactivate_shield();
@@ -65,8 +71,8 @@ export class Hide extends EnemyAbility {
       // which the Metool is open *and* still standing there is the opening.
       if (!this.has_finished_last_animation()) return;
       if (
-        this.is_player_nearby_horizontally(HIDE_ADVANCE_RANGE_X) &&
-        this.is_player_nearby_vertically(HIDE_ADVANCE_RANGE_Y)
+        this.is_player_nearby_horizontally(this.config.advanceRangeX) &&
+        this.is_player_nearby_vertically(this.config.advanceRangeY)
       ) {
         this.turn_and_face_player();
         this.play_animation_once("walk");
@@ -81,13 +87,13 @@ export class Hide extends EnemyAbility {
     }
 
     if (this.attack_stage === 2) {
-      if (!this.is_player_nearby_horizontally(HIDE_GIVE_UP_RANGE_X)) {
+      if (!this.is_player_nearby_horizontally(this.config.giveUpRangeX)) {
         this.EndAbility();
       } else if (!this.is_player_looking_away()) {
         this.force_movement(0);
         // The shield comes back a beat *after* the helmet starts closing, so a
         // shot already in the air during the turn still connects.
-        this.reshield_in = HIDE_RESHIELD_DELAY;
+        this.reshield_in = this.config.reshieldDelay;
         this.play_animation_once("defense");
         this.go_to_attack_stage(0);
       }

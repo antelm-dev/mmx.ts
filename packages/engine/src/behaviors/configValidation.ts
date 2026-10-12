@@ -11,6 +11,7 @@ export type FieldType =
   | "number"
   | "boolean"
   | "string"
+  | "string[]"
   | "number[]"
   | "tuple2"
   | "offset"
@@ -19,7 +20,13 @@ export type FieldType =
 /** The exact keys of a `slashStep` (data/types.ts SlashStep). */
 const SLASH_STEP_NUMBERS = ["duration", "activeFrom", "activeTo", "damage", "chainWindow"];
 const BOX_KEYS = ["x", "y", "w", "h"];
-export type Schema = Readonly<Record<string, FieldType>>;
+/** A field with bounds, for numbers an editor should clamp (both ends inclusive). */
+export interface FieldSpec {
+  type: FieldType;
+  min?: number;
+  max?: number;
+}
+export type Schema = Readonly<Record<string, FieldType | FieldSpec>>;
 
 export function validateConfig<T>(schema: Schema, input: unknown): ValidationResult<T> {
   const obj = input ?? {};
@@ -34,13 +41,14 @@ export function validateConfig<T>(schema: Schema, input: unknown): ValidationRes
       issues.push({ fieldPath: key, message: `unknown config key '${key}'.` });
     }
   }
-  for (const [key, type] of Object.entries(schema)) {
+  for (const [key, field] of Object.entries(schema)) {
     const value = record[key];
     if (value === undefined) {
       issues.push({ fieldPath: key, message: `missing config '${key}'.` });
       continue;
     }
-    const err = checkField(type, value);
+    const spec = typeof field === "string" ? { type: field } : field;
+    const err = checkField(spec.type, value) ?? checkRange(spec, value as number);
     if (err) issues.push({ fieldPath: key, message: err });
   }
 
@@ -52,6 +60,12 @@ function isFiniteNumber(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
 }
 
+function checkRange(spec: FieldSpec, value: number): string | null {
+  if (spec.min !== undefined && value < spec.min) return `must be >= ${spec.min}.`;
+  if (spec.max !== undefined && value > spec.max) return `must be <= ${spec.max}.`;
+  return null;
+}
+
 function checkField(type: FieldType, value: unknown): string | null {
   switch (type) {
     case "number":
@@ -60,6 +74,10 @@ function checkField(type: FieldType, value: unknown): string | null {
       return typeof value === "boolean" ? null : "must be a boolean.";
     case "string":
       return typeof value === "string" ? null : "must be a string.";
+    case "string[]":
+      return Array.isArray(value) && value.every((v) => typeof v === "string")
+        ? null
+        : "must be an array of strings.";
     case "number[]":
       return Array.isArray(value) && value.every(isFiniteNumber)
         ? null

@@ -11,7 +11,13 @@ export * from "./types.js";
 export * from "./geometryTypes.js";
 export * from "./configValidation.js";
 export { abilityRegistry, type AbilityFactory, type AbilityConfig } from "./abilityRegistry.js";
-export { enemyBehaviorRegistry, type EnemyBehaviorFactory } from "./enemyBehaviorRegistry.js";
+export {
+  ENEMY_BEHAVIOR_SCHEMAS,
+  enemyBehaviorRegistry,
+  type EnemyBehaviorConfig,
+  type EnemyBehaviorFactory,
+  type EnemyBehaviorId,
+} from "./enemyBehaviorRegistry.js";
 export {
   projectileBehaviorRegistry,
   type ProjectileBehaviorFactory,

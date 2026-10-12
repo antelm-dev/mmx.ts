@@ -170,6 +170,11 @@ export interface EnemyDefinition {
   shield?: { breakable: boolean };
   /** Ability ids this enemy owns, in composition order. */
   abilities: string[];
+  /**
+   * Per-ability tuning, keyed by ability id. Each entry is the full config the
+   * enemy-behaviour registry's schema for that id requires (no partial configs).
+   */
+  abilityConfig?: Record<string, Record<string, number | string | boolean | string[]>>;
   /** Which abilities answer which AI events. */
   reactions: Partial<Record<AIEvent, string[]>>;
   /** Registered special reactions (see {@link ReactionHook}). */
@@ -342,6 +347,8 @@ export interface CompiledEnemy {
   movement: MovementModel;
   shield?: { breakable: boolean };
   abilities: string[];
+  /** Validated per-ability tuning, keyed by ability id ({} when none). */
+  abilityConfig: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   /** Precomputed AI reaction lookup: event → ability ids. */
   reactions: Readonly<Partial<Record<AIEvent, readonly string[]>>>;
   hooks: readonly ReactionHook[];
