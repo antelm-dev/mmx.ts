@@ -87,6 +87,19 @@ export type ProjectPlayer = {
   loadout: string;
 };
 
+/**
+ * A project object definition: a built-in object definition (`base`) with some
+ * property values fixed (`values`) and only `exposed` properties editable per
+ * instance (all of them when absent). `@mmx/content-schema` resolves it.
+ */
+export type ProjectObjectDefinition = {
+  id: string;
+  name: string;
+  base: string;
+  values?: Record<string, unknown>;
+  exposed?: string[];
+};
+
 export type ProjectDocument = {
   schemaVersion: number;
   id: string;
@@ -97,6 +110,7 @@ export type ProjectDocument = {
   levels: LevelDocumentRef[];
   assets: ProjectAsset[];
   player?: ProjectPlayer;
+  objects?: ProjectObjectDefinition[];
 };
 
 export type ValidateProjectOptions = {

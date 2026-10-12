@@ -1,5 +1,6 @@
 export * from "./types.js";
 export * from "./definitions.js";
+export * from "./projectDefinitions.js";
 export * from "./validation.js";
 export * from "./commands.js";
 export * from "./factory.js";

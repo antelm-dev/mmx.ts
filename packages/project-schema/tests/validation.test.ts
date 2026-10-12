@@ -618,3 +618,42 @@ test("sprite regions round-trip, are validated, and stay absent when unset", () 
   ]);
   assert.deepEqual(codes({}), [["sprite.regions", "/assets/2/regions"]]);
 });
+
+test("objects are optional, shape-checked and serialized sorted", () => {
+  assert.equal(serializeProject(validProject()).includes('"objects"'), false);
+
+  const fast = {
+    id: "obj.fast",
+    name: "Fast platform",
+    base: "platform.moving",
+    values: { Speed: 120 },
+    exposed: ["Travel"],
+  };
+  const slow = { id: "obj.slow", name: "Slow platform", base: "platform.moving" };
+  const parsed = parseProject(
+    JSON.parse(serializeProject(validProject({ objects: [slow, fast] }))),
+  );
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.project?.objects, [fast, slow]);
+
+  const bad = validateProject({
+    ...validProject(),
+    objects: [
+      fast,
+      { ...fast },
+      { id: "obj.x", name: "", base: "", values: [], exposed: [1] },
+      "nope",
+    ],
+  } as unknown as ProjectDocument);
+  assert.deepEqual(
+    bad.issues.map((issue) => [issue.code, issue.path]),
+    [
+      ["id.duplicate", "/objects/1/id"],
+      ["name.missing", "/objects/2/name"],
+      ["id.missing", "/objects/2/base"],
+      ["object.values", "/objects/2/values"],
+      ["object.exposed", "/objects/2/exposed"],
+      ["object.shape", "/objects/3"],
+    ],
+  );
+});

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   migrateDocument,
+  setProjectDefinitions,
   TerrainTile,
   validateImageLayers,
   validateTileLayers,
@@ -139,6 +140,15 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
 
   const manifest = parsed.project;
   const issues: ProjectIssue[] = toIssues(parsed.issues);
+  // Before any level is checked or compiled: instances may use project definitions.
+  for (const issue of setProjectDefinitions(manifest.objects ?? [])) {
+    issues.push({
+      severity: "error",
+      code: issue.code,
+      message: issue.message,
+      path: `/objects/${issue.index}${issue.field ? `/${issue.field}` : ""}`,
+    });
+  }
   const levels: LoadedProject["levels"] = [];
   const imageAssetIds = new Set(
     manifest.assets.filter((asset) => asset.kind === "image").map((asset) => asset.id),

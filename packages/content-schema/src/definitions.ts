@@ -240,16 +240,43 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
   },
 ];
 
-const BY_ID = new Map(OBJECT_DEFINITIONS.map((d) => [d.id, d]));
+const BUILTIN_IDS = new Set(OBJECT_DEFINITIONS.map((d) => d.id));
+let projectDefinitions: readonly GameObjectDefinition[] = [];
+let byId = new Map(OBJECT_DEFINITIONS.map((d) => [d.id, d]));
+
+/** True for an id of the built-in catalog (never a project definition). */
+export function isBuiltinDefinition(id: string): boolean {
+  return BUILTIN_IDS.has(id);
+}
+
+/** Built-in definitions followed by the open project's, in palette order. */
+export function allDefinitions(): readonly GameObjectDefinition[] {
+  return projectDefinitions.length
+    ? [...OBJECT_DEFINITIONS, ...projectDefinitions]
+    : OBJECT_DEFINITIONS;
+}
+
+/**
+ * Replaces the project part of the catalog that every lookup below reads.
+ * Call `setProjectDefinitions`, which validates and derives them first.
+ *
+ * shortcut: one catalog per process (Studio opens one project, build-tools
+ * compiles one at a time); thread a catalog through the lookups if two
+ * projects ever need to be resolved side by side.
+ */
+export function replaceProjectDefinitions(defs: readonly GameObjectDefinition[]): void {
+  projectDefinitions = defs;
+  byId = new Map([...OBJECT_DEFINITIONS, ...defs].map((d) => [d.id, d]));
+}
 
 /** Look up a definition by id, or undefined for an unknown one. */
 export function getDefinition(id: string): GameObjectDefinition | undefined {
-  return BY_ID.get(id);
+  return byId.get(id);
 }
 
 /** Look up a definition, throwing when the id is unknown (adapter/render paths). */
 export function requireDefinition(id: string): GameObjectDefinition {
-  const def = BY_ID.get(id);
+  const def = byId.get(id);
   if (!def) throw new Error(`content-schema: unknown definition id '${id}'`);
   return def;
 }

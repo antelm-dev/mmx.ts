@@ -118,6 +118,19 @@ export function normalizeProject(project: ProjectDocument): ProjectDocument {
     levels,
     assets,
     ...(project.player !== undefined ? { player: { loadout: project.player.loadout } } : {}),
+    ...(project.objects?.length
+      ? {
+          objects: project.objects
+            .map((entry) => ({
+              id: entry.id,
+              name: entry.name,
+              base: entry.base,
+              ...(entry.values !== undefined ? { values: { ...entry.values } } : {}),
+              ...(entry.exposed !== undefined ? { exposed: entry.exposed.slice() } : {}),
+            }))
+            .sort((a, b) => compareId(a.id, b.id)),
+        }
+      : {}),
   };
 }
 

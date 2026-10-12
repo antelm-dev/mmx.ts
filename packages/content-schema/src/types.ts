@@ -177,6 +177,11 @@ export interface GameObjectDefinition {
   };
   /** Editable fields exposed by the inspector, in display order. */
   properties: readonly PropertyMeta[];
+  /**
+   * The built-in definition a project definition derives from; sprites and
+   * previews are looked up by it. Absent on built-in definitions.
+   */
+  baseId?: string;
 }
 
 /**

@@ -12,6 +12,7 @@ export {
   type ParseProjectResult,
   type ProjectAsset,
   type ProjectDocument,
+  type ProjectObjectDefinition,
   type ProjectPlayer,
   type Region,
   type Severity,
