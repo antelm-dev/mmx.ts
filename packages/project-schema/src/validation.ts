@@ -571,6 +571,52 @@ function validatePlayer(
   }
 }
 
+function validateObjects(value: unknown, add: IssueCollector["add"]): void {
+  if (!Array.isArray(value)) {
+    add({ code: "objects.array", path: "/objects", message: "objects must be an array." });
+    return;
+  }
+  const ids = new Set<string>();
+  value.forEach((entry, index) => {
+    const path = `/objects/${index}`;
+    if (!isRecord(entry)) {
+      add({ code: "object.shape", path, message: "Object definition must be an object." });
+      return;
+    }
+    if (validateLogicalId(entry.id, `${path}/id`, add)) {
+      if (ids.has(entry.id)) {
+        add({
+          code: "id.duplicate",
+          path: `${path}/id`,
+          message: `Duplicate object definition id '${entry.id}'.`,
+        });
+      }
+      ids.add(entry.id);
+    }
+    if (typeof entry.name !== "string" || entry.name.trim().length === 0) {
+      add({
+        code: "name.missing",
+        path: `${path}/name`,
+        message: "Object name must be a non-empty string.",
+      });
+    }
+    validateLogicalId(entry.base, `${path}/base`, add);
+    if (entry.values !== undefined && !isRecord(entry.values)) {
+      add({ code: "object.values", path: `${path}/values`, message: "values must be an object." });
+    }
+    if (
+      entry.exposed !== undefined &&
+      (!Array.isArray(entry.exposed) || entry.exposed.some((key) => typeof key !== "string"))
+    ) {
+      add({
+        code: "object.exposed",
+        path: `${path}/exposed`,
+        message: "exposed must be an array of property keys.",
+      });
+    }
+  });
+}
+
 export function validateProject(
   project: ProjectDocument,
   options: ValidateProjectOptions = {},
@@ -668,6 +714,7 @@ export function validateProject(
   }
 
   if (project.player !== undefined) validatePlayer(project.player, add, options.loadoutIds);
+  if (project.objects !== undefined) validateObjects(project.objects, add);
 
   return resultOf(issues);
 }

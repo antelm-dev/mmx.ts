@@ -240,18 +240,68 @@ export const OBJECT_DEFINITIONS: readonly GameObjectDefinition[] = [
   },
 ];
 
-const BY_ID = new Map(OBJECT_DEFINITIONS.map((d) => [d.id, d]));
+const BUILTIN_IDS = new Set(OBJECT_DEFINITIONS.map((d) => d.id));
+let projectDefinitions: readonly GameObjectDefinition[] = [];
+let byId = new Map(OBJECT_DEFINITIONS.map((d) => [d.id, d]));
+
+/** True for an id of the built-in catalog (never a project definition). */
+export function isBuiltinDefinition(id: string): boolean {
+  return BUILTIN_IDS.has(id);
+}
+
+/** Built-in definitions followed by the open project's, in palette order. */
+export function allDefinitions(): readonly GameObjectDefinition[] {
+  return projectDefinitions.length
+    ? [...OBJECT_DEFINITIONS, ...projectDefinitions]
+    : OBJECT_DEFINITIONS;
+}
+
+/**
+ * Replaces the project part of the catalog that every lookup below reads.
+ * Call `setProjectDefinitions`, which validates and derives them first.
+ *
+ * shortcut: one catalog per process (Studio opens one project, build-tools
+ * compiles one at a time); thread a catalog through the lookups if two
+ * projects ever need to be resolved side by side.
+ */
+export function replaceProjectDefinitions(defs: readonly GameObjectDefinition[]): void {
+  projectDefinitions = defs;
+  byId = new Map([...OBJECT_DEFINITIONS, ...defs].map((d) => [d.id, d]));
+}
 
 /** Look up a definition by id, or undefined for an unknown one. */
 export function getDefinition(id: string): GameObjectDefinition | undefined {
-  return BY_ID.get(id);
+  return byId.get(id);
 }
 
 /** Look up a definition, throwing when the id is unknown (adapter/render paths). */
 export function requireDefinition(id: string): GameObjectDefinition {
-  const def = BY_ID.get(id);
+  const def = byId.get(id);
   if (!def) throw new Error(`content-schema: unknown definition id '${id}'`);
   return def;
+}
+
+/**
+ * The definition of an instance for display and editing: its definition, or a
+ * placeholder when the id is unknown (a project object that was removed, a
+ * level from another project). Validation reports `definition.unknown`, so the
+ * placeholder never reaches the engine; it only keeps editor reads from throwing.
+ */
+export function definitionFor(id: string): GameObjectDefinition {
+  return (
+    byId.get(id) ?? {
+      id,
+      name: `Missing object (${id})`,
+      category: "unknown",
+      icon: "?",
+      engineId: id,
+      components: {},
+      fields: {},
+      defaultSize: { width: 16, height: 16 },
+      editor: { placement: "point", color: "#9ca3af" },
+      properties: [],
+    }
+  );
 }
 
 /** Palette categories in display order. */
@@ -264,6 +314,7 @@ export const CATEGORY_ORDER: readonly string[] = [
   "hazard",
   "slope",
   "camera",
+  "unknown",
 ];
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -275,11 +326,12 @@ export const CATEGORY_LABELS: Record<string, string> = {
   hazard: "Hazards",
   slope: "Slopes",
   camera: "Camera Zones",
+  unknown: "Missing Objects",
 };
 
 /** Effective box size of an instance: its own size, else the definition default. */
 export function instanceSize(inst: LevelObjectInstance): { width: number; height: number } {
-  const def = requireDefinition(inst.definitionId);
+  const def = definitionFor(inst.definitionId);
   return {
     width: inst.width ?? def.defaultSize.width,
     height: inst.height ?? def.defaultSize.height,
@@ -290,7 +342,7 @@ export function instanceSize(inst: LevelObjectInstance): { width: number; height
 export function effectiveValue(inst: LevelObjectInstance, key: string): unknown {
   const override = inst.overrides?.[key];
   if (override !== undefined) return override;
-  const def = requireDefinition(inst.definitionId);
+  const def = definitionFor(inst.definitionId);
   const prop = def.properties.find((p) => p.key === key);
   if (prop && prop.default !== undefined) return prop.default;
   return def.fields[key];

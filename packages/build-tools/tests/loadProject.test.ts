@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { setProjectDefinitions } from "@mmx/content-schema";
+import { levelDocumentToLevelData } from "../src/compileLevel.js";
 import { loadProject, requireProject } from "../src/loadProject.js";
 import { resolveProjectPath } from "../src/paths.js";
 
@@ -258,5 +260,45 @@ test("loadProject reports unreadable and non-PNG tileset images instead of crash
     assert.equal(error?.severity, "error");
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("loadProject registers project object definitions before checking levels", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
+  try {
+    await fs.cp(syntheticProject, dir, { recursive: true });
+    const manifestPath = path.join(dir, "project.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    const levelPath = path.join(dir, "levels/level.main.json");
+    const level = JSON.parse(await fs.readFile(levelPath, "utf8"));
+    level.objects.push({ id: "fast.1", definitionId: "obj.fast", x: 64, y: 96 });
+    await fs.writeFile(levelPath, JSON.stringify(level), "utf8");
+
+    const fast = {
+      id: "obj.fast",
+      name: "Fast",
+      base: "platform.moving",
+      values: { Speed: 120 },
+      exposed: ["Travel"],
+    };
+    await fs.writeFile(manifestPath, JSON.stringify({ ...manifest, objects: [fast] }), "utf8");
+    const result = await loadProject(dir);
+    assert.equal(result.ok, true, JSON.stringify(result.issues));
+    if (!result.ok) return;
+    const entity = levelDocumentToLevelData(result.value.levels[0]!.document).entities.at(-1);
+    assert.equal(entity?.id, "MovingPlatform");
+    assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96 });
+
+    await fs.writeFile(
+      manifestPath,
+      JSON.stringify({ ...manifest, objects: [{ ...fast, base: "nope" }] }),
+      "utf8",
+    );
+    const bad = await loadProject(dir);
+    assert.equal(bad.ok, false);
+    assert.ok(bad.issues.some((i) => i.code === "object.base" && i.path === "/objects/0/base"));
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+    setProjectDefinitions([]);
   }
 });
