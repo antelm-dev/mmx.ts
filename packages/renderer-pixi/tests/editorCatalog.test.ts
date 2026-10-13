@@ -135,6 +135,20 @@ test("preview Metool prefers defense", () => {
   assert.deepEqual(crop.region, t.enemyActors.metool.animations.defense.frames[0].region);
 });
 
+test("preview an enemy by its sheet when it differs from its kind", () => {
+  const t = fakeTables();
+  const crop = resolveSpriteCrop(
+    {
+      id: "enemy.crab",
+      category: "enemy",
+      components: { enemy: { kind: "crab", sheet: "metool" } },
+    },
+    t,
+  );
+  assert.ok(crop);
+  assert.equal(crop.imageUrl, "memory://sprites/enemies/metool.png");
+});
+
 test("preview life pickup prefers idle", () => {
   const t = fakeTables();
   const crop = resolveSpriteCrop(
