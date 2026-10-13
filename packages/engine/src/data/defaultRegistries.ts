@@ -38,6 +38,7 @@ export const DEFAULT_COMPILE_REGISTRIES: CompileRegistries = {
   pickups: idSet(["pickup.life", "pickup.weapon-energy"]),
   environments: idSet([
     "environment.moving-platform",
+    "environment.falling-platform",
     "environment.conveyor",
     "environment.hazard",
     "environment.camera-zone",

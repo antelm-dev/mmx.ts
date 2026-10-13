@@ -287,7 +287,7 @@ test("loadProject registers project object definitions before checking levels", 
     if (!result.ok) return;
     const entity = levelDocumentToLevelData(result.value.levels[0]!.document).entities.at(-1);
     assert.equal(entity?.id, "MovingPlatform");
-    assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96 });
+    assert.deepEqual(entity?.fields, { Speed: 120, Axis: "horizontal", Travel: 96 });
 
     await fs.writeFile(
       manifestPath,

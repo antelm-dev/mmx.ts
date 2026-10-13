@@ -182,7 +182,7 @@ export class TerrainView {
 
   sync(stage: Stage): void {
     this.moving.clear();
-    for (const platform of stage.platforms) {
+    for (const platform of [...stage.platforms, ...stage.fallingPlatforms]) {
       this.moving.rect(platform.x, platform.y, platform.w, platform.h);
       this.moving.fill(0xffd166);
       this.moving

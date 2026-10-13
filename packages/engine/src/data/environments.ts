@@ -1,7 +1,7 @@
 import type { EnvironmentDefinition } from "./types.js";
 
 /**
- * Environment object definitions — moving platforms, conveyors, hazards, and
+ * Environment object definitions — moving and falling platforms, conveyors, hazards, and
  * camera zones. The movement/collection/constraint algorithms stay in code
  * (Environment.ts, Camera.ts); the definition carries the runtime behaviour id
  * and the default field values a level instance overrides.
@@ -14,6 +14,11 @@ export const environments = {
     id: "moving-platform",
     behavior: "environment.moving-platform",
     defaults: { travel: 96, speed: 48 },
+  },
+  "falling-platform": {
+    id: "falling-platform",
+    behavior: "environment.falling-platform",
+    defaults: { delay: 0.5 },
   },
   conveyor: {
     id: "conveyor",

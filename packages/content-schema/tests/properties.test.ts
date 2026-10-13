@@ -47,7 +47,7 @@ test("entityFields resolves every property and drops undeclared overrides", () =
     y: 0,
     overrides: { Speed: 10, Kind: "bat" },
   });
-  assert.deepEqual(fields, { Travel: 96, Speed: 10 });
+  assert.deepEqual(fields, { Travel: 96, Speed: 10, Axis: "horizontal" });
   assert.deepEqual(entityFields({ id: "e", definitionId: "enemy.bat", x: 0, y: 0 }), {
     Kind: "bat",
     FacesRight: false,

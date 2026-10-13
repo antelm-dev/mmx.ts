@@ -63,7 +63,14 @@ export const prefabs = {
     fields: [
       { name: "Travel", type: "number", default: 96, min: 0 },
       { name: "Speed", type: "number", default: 48, min: 0 },
+      { name: "Axis", type: "enum", default: "horizontal", enum: ["horizontal", "vertical"] },
     ],
+  },
+  "platform.falling": {
+    id: "platform.falling",
+    runtime: "environment",
+    source: { kind: "environment", ref: "falling-platform" },
+    fields: [{ name: "Delay", type: "number", default: 0.5, min: 0 }],
   },
   conveyor: {
     id: "conveyor",

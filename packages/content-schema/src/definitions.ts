@@ -113,6 +113,15 @@ const ENGINE_KINDS: Record<
     defaultSize: { width: 48, height: 8 },
     components: () => ({ platform: { moving: true } }),
   },
+  "environment.falling-platform": {
+    category: "platform",
+    engineId: "FallingPlatform",
+    icon: "▭",
+    color: "#eab308",
+    placement: "rectangle",
+    defaultSize: { width: 48, height: 8 },
+    components: () => ({ platform: { falling: true } }),
+  },
   "environment.conveyor": {
     category: "conveyor",
     engineId: "Conveyor",
@@ -164,7 +173,12 @@ const PRESENTATION: Record<
     help: {
       Travel: "Horizontal travel distance in pixels.",
       Speed: "Travel speed in pixels/second.",
+      Axis: "Horizontal travels right from the placed position; vertical travels down.",
     },
+  },
+  "platform.falling": {
+    name: "Falling Platform",
+    help: { Delay: "Seconds after the player first lands on it before it falls." },
   },
   conveyor: {
     name: "Conveyor",

@@ -6,6 +6,7 @@ import { Input } from "../src/core/Input.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
+import { MovingPlatform } from "../src/game/Environment.js";
 import { loadLevel } from "../src/game/level.js";
 import { stage2 } from "./fixtures/levels.js";
 
@@ -103,4 +104,108 @@ test("a falling player lands on a moving platform from above", () => {
 
   assert.equal(player.is_on_floor(), true);
   assert.equal(player.pos.y + player.hh, 48);
+});
+
+test("a vertical platform folds back at both ends like a horizontal one", () => {
+  const platform = new MovingPlatform({
+    id: "lift",
+    x: 0,
+    y: 100,
+    w: 48,
+    h: 8,
+    travel: 20,
+    speed: 60,
+    axis: "vertical",
+  });
+  let minY = Infinity;
+  let maxY = -Infinity;
+  const directions = new Set<number>();
+  for (let i = 0; i < 120; i++) {
+    platform.tick(DT);
+    minY = Math.min(minY, platform.y);
+    maxY = Math.max(maxY, platform.y);
+    directions.add(platform.direction);
+    assert.equal(platform.x, 0);
+  }
+  assert.equal(minY >= 100 && maxY <= 120, true, `left its range: ${minY}..${maxY}`);
+  assert.ok(maxY - minY > 19, `span ${maxY - minY}`);
+  assert.deepEqual([...directions].sort(), [-1, 1]);
+});
+
+for (const speed of [60, 240]) {
+  test(`a vertical platform carries its rider up and down at ${speed}px/s`, () => {
+    const world = World.fromRows(new Array(12).fill("..........") as string[]);
+    const player = new Player(world, 24, 40, new Input());
+    const stage = new Stage(world, player, {
+      platforms: [{ id: "lift", x: 0, y: 64, w: 64, h: 8, travel: 80, speed, axis: "vertical" }],
+    });
+    const lift = stage.platforms[0];
+    for (let i = 0; i < 60 && !player.is_on_floor(); i++) stage.tick(DT);
+    assert.equal(player.is_on_floor(), true, "never landed");
+
+    // A landing can leave the feet a fraction above the top (within the floor
+    // probe), as on any platform; the carry must hold that gap exactly — no jitter.
+    const gap = lift.y - (player.pos.y + player.hh);
+    assert.ok(gap >= 0 && gap < 2, `landed ${gap}px off the top`);
+    const directions = new Set<number>();
+    for (let i = 0; i < 240; i++) {
+      stage.tick(DT);
+      directions.add(Math.sign(lift.deltaY));
+      assert.equal(player.is_on_floor(), true, `rider detached on frame ${i}`);
+      const now = lift.y - (player.pos.y + player.hh);
+      assert.ok(Math.abs(now - gap) < 0.001, `rider gap ${now} != ${gap} on frame ${i}`);
+      assert.equal(player.pos.x, 24, "a vertical lift pushed its rider sideways");
+    }
+    assert.ok(directions.has(1) && directions.has(-1), "lift did not go both ways");
+  });
+}
+
+test("a falling platform waits Delay after it is stood on, falls with its rider, then despawns", () => {
+  // 6 rows = 96px of world: the platform leaves it after a short fall.
+  const world = World.fromRows(new Array(6).fill("..........") as string[]);
+  const player = new Player(world, 24, 0, new Input());
+  const stage = new Stage(world, player, {
+    fallingPlatforms: [{ id: "drop", x: 0, y: 32, w: 64, h: 8, delay: 0.25 }],
+  });
+  const platform = stage.fallingPlatforms[0];
+
+  let frames = 0;
+  while (!player.is_on_floor()) {
+    stage.tick(DT);
+    assert.ok(++frames < 60, "never landed");
+  }
+  // Untouched until landed on, then still for the delay.
+  for (let i = 0; i < 14; i++) {
+    stage.tick(DT);
+    assert.equal(platform.y, 32, `fell early on frame ${i}`);
+  }
+  let fell = false;
+  for (let i = 0; i < 3; i++) {
+    stage.tick(DT);
+    fell ||= platform.y > 32;
+  }
+  assert.ok(fell, "did not fall after its delay");
+
+  // The rider goes down with it, standing on it, until it leaves the world.
+  const gap = platform.y - (player.pos.y + player.hh);
+  while (stage.fallingPlatforms.length > 0) {
+    assert.equal(player.is_on_floor(), true);
+    const now = platform.y - (player.pos.y + player.hh);
+    assert.ok(Math.abs(now - gap) < 0.001, `rider gap ${now} != ${gap}`);
+    stage.tick(DT);
+    assert.ok(++frames < 300, "never despawned");
+  }
+  assert.ok(platform.y > world.heightPx);
+  stage.tick(DT);
+  assert.equal(player.is_on_floor(), false, "rider still standing on a despawned platform");
+});
+
+test("a falling platform nobody stands on never falls", () => {
+  const world = World.fromRows(new Array(6).fill("..........") as string[]);
+  const player = new Player(world, 120, 0, new Input());
+  const stage = new Stage(world, player, {
+    fallingPlatforms: [{ id: "drop", x: 0, y: 32, w: 64, h: 8, delay: 0 }],
+  });
+  for (let i = 0; i < 120; i++) stage.tick(DT);
+  assert.equal(stage.fallingPlatforms[0].y, 32);
 });
