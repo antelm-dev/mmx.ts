@@ -67,6 +67,7 @@ test("setCatalogGameData makes a project enemy placeable and derivable", (t) => 
   assert.equal(crab.category, "enemy");
   assert.equal(crab.engineId, "Enemy");
   assert.deepEqual(crab.fields, { Kind: "crab" });
+  assert.deepEqual(crab.components, { enemy: { kind: "crab", sheet: "anim.enemy.crab" } });
   assert.deepEqual(crab.defaultSize, { width: 24, height: 12 });
   assert.deepEqual(
     crab.properties.map((p) => [p.key, p.type, p.default]),

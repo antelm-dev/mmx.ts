@@ -27,7 +27,8 @@
     "engineId": "Enemy",
     "components": {
       "enemy": {
-        "kind": "metool"
+        "kind": "metool",
+        "sheet": "metool"
       }
     },
     "fields": {
@@ -59,7 +60,8 @@
     "engineId": "Enemy",
     "components": {
       "enemy": {
-        "kind": "bat"
+        "kind": "bat",
+        "sheet": "bat"
       }
     },
     "fields": {
@@ -90,7 +92,8 @@
     "engineId": "Enemy",
     "components": {
       "enemy": {
-        "kind": "pantheon"
+        "kind": "pantheon",
+        "sheet": "pantheon"
       }
     },
     "fields": {

@@ -64,7 +64,8 @@ const ENGINE_KINDS: Record<
     color: string;
     placement: "point" | "rectangle";
     defaultSize: Size;
-    components: (kind: string) => Record<string, unknown>;
+    /** `sheet`: an enemy's sprite sheet key, which renderers look its clips up by. */
+    components: (kind: string, sheet?: string) => Record<string, unknown>;
   }
 > = {
   "spawn.player": {
@@ -83,7 +84,7 @@ const ENGINE_KINDS: Record<
     color: "#f97316",
     placement: "point",
     defaultSize: SMALL,
-    components: (kind) => ({ enemy: { kind } }),
+    components: (kind, sheet) => ({ enemy: { kind, sheet } }),
   },
   "pickup.life": {
     category: "pickup",
@@ -236,7 +237,8 @@ function definitionOf(data: GameData, prefab: PrefabDefinition): GameObjectDefin
   // shortcut: a pickup's level Kind is its size, the last segment of its id
   // ("life.small" → "small"); give PickupDefinition a size if that ever diverges.
   const entityKind = source.kind === "pickup" ? ref.slice(ref.lastIndexOf(".") + 1) : ref;
-  const hurtbox = source.kind === "enemy" ? data.enemies[ref]?.hurtbox : undefined;
+  const enemy = source.kind === "enemy" ? data.enemies[ref] : undefined;
+  const hurtbox = enemy?.hurtbox;
   const look = PRESENTATION[prefab.id];
   const lastSegment = prefab.id.slice(prefab.id.lastIndexOf(".") + 1);
   return {
@@ -245,7 +247,7 @@ function definitionOf(data: GameData, prefab: PrefabDefinition): GameObjectDefin
     category: kind.category,
     icon: look?.icon ?? kind.icon,
     engineId: kind.engineId,
-    components: kind.components(entityKind),
+    components: kind.components(entityKind, enemy?.sheet),
     fields: kind.category === "enemy" || kind.category === "pickup" ? { Kind: entityKind } : {},
     defaultSize:
       look?.defaultSize ??

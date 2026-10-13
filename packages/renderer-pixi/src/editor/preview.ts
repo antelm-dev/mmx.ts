@@ -76,9 +76,11 @@ export function resolveSpriteCrop(
   }
 
   if (definition.category === "enemy") {
-    const enemy = definition.components.enemy as { kind?: string } | undefined;
-    if (!enemy?.kind) return null;
-    return fromActor(tables.enemyActors[enemy.kind], ["defense", "idle"], tables.sheetUrls);
+    // Clips are keyed by the enemy's sheet, like the game renderer; older definitions carry only the kind.
+    const enemy = definition.components.enemy as { kind?: string; sheet?: string } | undefined;
+    const sheet = enemy?.sheet ?? enemy?.kind;
+    if (!sheet) return null;
+    return fromActor(tables.enemyActors[sheet], ["defense", "idle"], tables.sheetUrls);
   }
 
   if (definition.category === "pickup") {
