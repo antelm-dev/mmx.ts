@@ -10,6 +10,7 @@ export * from "./types.js";
 export * from "./gameData.js";
 export * from "./compileGameData.js";
 export * from "./hash.js";
+export * from "./overlay.js";
 export { DEFAULT_COMPILE_REGISTRIES } from "./defaultRegistries.js";
 
 import { GAME_DATA } from "./gameData.js";

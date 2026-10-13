@@ -1,7 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { buildCompileRegistries } from "@mmx/engine/behaviors";
-import { compileGameData, GAME_DATA, type GameData } from "@mmx/engine/data";
 import { GAMEPLAY_SOUND_IDS, type SoundBindingMap } from "@mmx/browser-audio";
 import type { TilesetArt } from "@mmx/content-schema";
 import type { ProjectAsset } from "@mmx/project-schema";
@@ -10,7 +8,7 @@ import {
   type RendererAssetBindings,
   type RendererAssetManifest,
 } from "@mmx/renderer-pixi";
-import { ASSET_PUBLIC_PREFIX, GAME_DATA_FILE, RENDERER_BINDINGS_FILE } from "./constants.js";
+import { ASSET_PUBLIC_PREFIX, RENDERER_BINDINGS_FILE } from "./constants.js";
 import {
   buildShotAnimsFromStudioBindings,
   compileStudioSoundBindings,
@@ -80,11 +78,6 @@ async function readOptionalContainedJson<T>(root: string, relativePath: string):
   }
 }
 
-async function loadGameData(root: string): Promise<GameData> {
-  const authored = await readOptionalContainedJson<GameData>(root, GAME_DATA_FILE);
-  return authored ?? GAME_DATA;
-}
-
 type RendererBindingSource = {
   bindings: RendererAssetBindings;
   studioShotAnimations: Record<string, string> | null;
@@ -110,22 +103,10 @@ async function loadRendererBindingSource(
   if (!studio?.bindings) return null;
 
   return {
-    bindings: studioBindingsToRendererBindings(studio, project.manifest),
+    bindings: studioBindingsToRendererBindings(studio, project.manifest, project.gameData.enemies),
     studioShotAnimations: studio.bindings.shotAnimations,
     studio,
   };
-}
-
-function compileAuthoredGameData(data: GameData) {
-  const result = compileGameData(data, buildCompileRegistries());
-  if (!result.ok) {
-    const first = result.diagnostics.find((d: { severity: string }) => d.severity === "error");
-    throw new ProjectBuildError(
-      "gameData.compile",
-      first?.message ?? "Game data compilation failed.",
-    );
-  }
-  return result.value;
 }
 
 function compileSoundPlan(
@@ -181,8 +162,6 @@ export async function compileBrowserProjectBundle(
   emission: AssetEmissionPlan,
 ): Promise<BrowserProjectBundle> {
   const bindingSource = await loadRendererBindingSource(project);
-  const gameData = await loadGameData(project.root);
-  const compiledGameData = compileAuthoredGameData(gameData);
   const rendererManifest = buildRendererManifest(project, emission, bindingSource);
 
   const assetUrls = Object.fromEntries(
@@ -233,7 +212,7 @@ export async function compileBrowserProjectBundle(
       ...(project.manifest.player ? { playerLoadout: project.manifest.player.loadout } : {}),
     },
     levels,
-    compiledGameData,
+    gameData: project.gameData,
     rendererManifest,
     rendererBindings: bindingSource?.bindings ?? null,
     soundBindings,

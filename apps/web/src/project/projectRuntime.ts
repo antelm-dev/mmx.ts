@@ -2,6 +2,8 @@ import type { BrowserProjectBundle } from "@mmx/build-tools";
 import { SoundAssetError } from "@mmx/browser-audio";
 import type { SoundAssetResolver } from "@mmx/browser-audio";
 import type { LevelData } from "@mmx/engine";
+import { buildCompileRegistries } from "@mmx/engine/behaviors";
+import { compileGameData, type CompiledGameData } from "@mmx/engine/data";
 import { createAssetCatalog, type AssetCatalog } from "@mmx/renderer-pixi";
 
 const DEFAULT_UI_FONT_ASSET_ID = "font.ui.mega-man-x";
@@ -24,6 +26,18 @@ export function requireProjectBundle(bundle: BrowserProjectBundle | null): Brows
     );
   }
   return bundle;
+}
+
+/** The bundle's merged game data, compiled once at boot for `SceneOptions.gameData`. */
+export function compileProjectGameData(bundle: BrowserProjectBundle): CompiledGameData {
+  const result = compileGameData(bundle.gameData, buildCompileRegistries());
+  if (!result.ok) {
+    const errors = result.diagnostics.filter((d) => d.severity === "error");
+    throw new Error(
+      `Project game data failed to compile: ${errors.map((d) => d.message).join("; ")}`,
+    );
+  }
+  return result.value;
 }
 
 export function projectLevelCatalog(bundle: BrowserProjectBundle): readonly LevelData[] {

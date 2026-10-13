@@ -7,7 +7,7 @@ import type {
   TilesetArt,
 } from "@mmx/content-schema";
 import type { LevelData } from "@mmx/engine";
-import type { CompiledGameData } from "@mmx/engine/data";
+import type { CompiledGameData, GameData } from "@mmx/engine/data";
 import type { ProjectDocument } from "@mmx/project-schema";
 import type { RendererAssetBindings, RendererAssetManifest } from "@mmx/renderer-pixi";
 
@@ -21,6 +21,10 @@ export type LoadedProject = {
   root: string;
   manifest: ProjectDocument;
   levels: LoadedLevel[];
+  /** The engine's built-in game data with the project's `data/game.json` overlay merged in. */
+  gameData: GameData;
+  /** {@link gameData}, compiled; what the project's scenes run with. */
+  compiledGameData: CompiledGameData;
 };
 
 export type EmittedAsset = {
@@ -65,7 +69,8 @@ export type BrowserLevelBundle = {
 export type BrowserProjectBundle = {
   meta: BrowserProjectMeta;
   levels: BrowserLevelBundle[];
-  compiledGameData: CompiledGameData;
+  /** Merged raw game data (JSON-safe); compile it at boot for `SceneOptions.gameData`. */
+  gameData: GameData;
   rendererManifest: RendererAssetManifest | null;
   rendererBindings: RendererAssetBindings | null;
   soundBindings: SoundBindingMap | null;

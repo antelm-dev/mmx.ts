@@ -301,10 +301,8 @@ test("optional game data reached through an outside junction is rejected", async
     );
     await createJunction(path.join(outside, "data"), path.join(root, "data"));
 
-    const project = await requireProject(root);
-    const emission = await planAssetEmission(project);
     await assert.rejects(
-      () => compileBrowserProjectBundle(project, emission),
+      () => requireProject(root),
       (error: unknown) => error instanceof ProjectLoadError && error.code === "path.traversal",
     );
   });
