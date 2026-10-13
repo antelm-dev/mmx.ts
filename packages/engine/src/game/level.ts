@@ -1,7 +1,8 @@
 import { World } from "./World.js";
 import type { CameraZone } from "./Camera.js";
 import type { LevelData, LevelEntity } from "./LevelData.js";
-import type { EnemyKind } from "./Enemy.js";
+import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { CompiledGameData } from "../data/types.js";
 import type {
   LifeCapsuleKind,
   LifeCapsuleSpawn,
@@ -23,8 +24,11 @@ export interface LevelRuntime {
   cameraZones: CameraZone[];
 }
 
-const LIFE_CAPSULE_KINDS: readonly LifeCapsuleKind[] = ["small", "large"];
-const WEAPON_CAPSULE_KINDS: readonly WeaponCapsuleKind[] = ["small", "large"];
+// shortcut: capsule runtime stats are still keyed by size (Pickup.ts), so a Kind must be one of
+// these sizes *and* defined in the game data (`life.<Kind>` / `weapon.<Kind>`); drop the size
+// lists once capsules read their amount and sheet from the compiled pickup.
+const LIFE_CAPSULE_KINDS: readonly string[] = ["small", "large"];
+const WEAPON_CAPSULE_KINDS: readonly string[] = ["small", "large"];
 
 /** Authored entity ids the runtime knows how to instantiate (or, for Slope, bakes upstream). */
 const KNOWN_ENTITY_IDS: ReadonlySet<string> = new Set([
@@ -94,8 +98,14 @@ export class LevelCompileError extends Error {
  * error-level invariant holds, so no caller can observe a half-built level. All
  * problems — including warnings that do not block — are returned together, so a
  * tool reports the whole list rather than one-thrown-error-at-a-time.
+ *
+ * Enemy and capsule kinds are checked against `gameData`, which must be the same
+ * compiled data the scene is built from.
  */
-export function compileLevel(data: LevelData): CompileLevelResult {
+export function compileLevel(
+  data: LevelData,
+  gameData: CompiledGameData = COMPILED_GAME_DATA,
+): CompileLevelResult {
   const diagnostics: EngineDiagnostic[] = [];
   const error = (d: Omit<EngineDiagnostic, "severity">): void => {
     diagnostics.push({ severity: "error", ...d });
@@ -195,7 +205,7 @@ export function compileLevel(data: LevelData): CompileLevelResult {
     // Kind support.
     if (e.id === "Enemy") {
       const kind = e.fields.Kind;
-      if (typeof kind !== "string" || !ENEMY_KINDS.includes(kind as EnemyKind)) {
+      if (typeof kind !== "string" || !gameData.enemies.has(kind)) {
         error({
           code: "enemy.kind",
           entityId: e.iid,
@@ -206,7 +216,11 @@ export function compileLevel(data: LevelData): CompileLevelResult {
       }
     } else if (e.id === "LifeCapsule") {
       const kind = e.fields.Kind;
-      if (typeof kind !== "string" || !LIFE_CAPSULE_KINDS.includes(kind as LifeCapsuleKind)) {
+      if (
+        typeof kind !== "string" ||
+        !LIFE_CAPSULE_KINDS.includes(kind) ||
+        !gameData.pickups.has(`life.${kind}`)
+      ) {
         error({
           code: "pickup.kind",
           entityId: e.iid,
@@ -217,7 +231,11 @@ export function compileLevel(data: LevelData): CompileLevelResult {
       }
     } else if (e.id === "WeaponCapsule") {
       const kind = e.fields.Kind;
-      if (typeof kind !== "string" || !WEAPON_CAPSULE_KINDS.includes(kind as WeaponCapsuleKind)) {
+      if (
+        typeof kind !== "string" ||
+        !WEAPON_CAPSULE_KINDS.includes(kind) ||
+        !gameData.pickups.has(`weapon.${kind}`)
+      ) {
         error({
           code: "pickup.kind",
           entityId: e.iid,
@@ -281,7 +299,7 @@ function buildRuntime(data: LevelData): LevelRuntime {
     })),
     enemies: matching("Enemy").map((e) => ({
       id: e.iid,
-      kind: e.fields.Kind as EnemyKind,
+      kind: e.fields.Kind as string,
       x: e.x,
       y: e.y,
       facing: boolField(e, "FacesRight", false) ? 1 : -1,
@@ -321,8 +339,11 @@ function buildRuntime(data: LevelData): LevelRuntime {
  * runtime on success and throws a {@link LevelCompileError} carrying every
  * diagnostic on failure, rather than the ad-hoc per-callback errors it used to.
  */
-export function loadLevel(data: LevelData): LevelRuntime {
-  const result = compileLevel(data);
+export function loadLevel(
+  data: LevelData,
+  gameData: CompiledGameData = COMPILED_GAME_DATA,
+): LevelRuntime {
+  const result = compileLevel(data, gameData);
   if (!result.ok) throw new LevelCompileError(data.identifier, result.diagnostics);
   return result.value;
 }
@@ -340,11 +361,10 @@ function numberField(e: LevelEntity, name: string, fallback: number): number {
 export interface EnemySpawn {
   /** The authored entity iid, carried into the spawned enemy as its runtime identity. */
   id: string;
-  kind: EnemyKind;
+  /** Compiled enemy definition id ({@link CompiledGameData.enemies}). */
+  kind: string;
   x: number;
   y: number;
   /** +1 / -1, as the Enemy constructor takes it. */
   facing: number;
 }
-
-const ENEMY_KINDS: readonly EnemyKind[] = ["metool", "bat", "pantheon"];

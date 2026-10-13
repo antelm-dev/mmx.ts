@@ -76,6 +76,11 @@ async function main(): Promise<void> {
     // Stepped by hand rather than through Recorder.replay so the trace can be
     // printed as it goes; the state sequence is identical either way.
     scene = Scene.create({ level, loadoutId, seed: replay.seed });
+    if (replay.gameDataHash !== undefined && replay.gameDataHash !== scene.gameDataHash) {
+      throw new Error(
+        `replay was recorded with game data '${replay.gameDataHash}', this build has '${scene.gameDataHash}'`,
+      );
+    }
     console.log("frame |    posX |    posY |   velX |   velY | floor | hp | input      | state");
     console.log(
       "------+---------+---------+--------+--------+-------+----+------------+--------------",
