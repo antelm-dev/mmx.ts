@@ -26,7 +26,8 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@mmx/contracts": "workspace:*"
+    "@mmx/contracts": "workspace:*",
+    "@mmx/engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

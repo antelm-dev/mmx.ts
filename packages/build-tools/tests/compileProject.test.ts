@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { compileLevel } from "@mmx/engine";
 import { GAME_DATA } from "@mmx/engine/data";
 import {
   buildProjectToDisk,
@@ -242,6 +243,34 @@ test("a data/game.json overlay adds a project enemy to the bundle and auto-binds
     assert.deepEqual(parsed.gameData.enemies.crab, crab);
   } finally {
     await fixture.dispose();
+  }
+});
+
+test("a level can place the enemy.crab prefab a data/game.json overlay adds", async () => {
+  const fixture = await createOverlayFixture({
+    enemies: { crab },
+    prefabs: {
+      "enemy.crab": {
+        ...GAME_DATA.prefabs["enemy.metool"],
+        id: "enemy.crab",
+        source: { kind: "enemy", ref: "crab" },
+      },
+    },
+  });
+  try {
+    const levelPath = path.join(fixture.root, "levels/level.fixture.json");
+    const level = JSON.parse(await fs.readFile(levelPath, "utf8"));
+    level.objects.push({ id: "crab.1", definitionId: "enemy.crab", x: 64, y: 32 });
+    await fs.writeFile(levelPath, JSON.stringify(level), "utf8");
+
+    const project = await requireProject(fixture.root);
+    const data = levelDocumentToLevelData(project.levels[0]!.document);
+    const enemy = data.entities.find((entity) => entity.id === "Enemy");
+    assert.deepEqual(enemy?.fields, { Kind: "crab", FacesRight: false });
+    assert.equal(compileLevel(data, project.compiledGameData).ok, true);
+  } finally {
+    await fixture.dispose();
+    await requireProject(syntheticProject); // restore the default catalog
   }
 });
 

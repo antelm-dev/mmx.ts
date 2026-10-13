@@ -18,12 +18,10 @@ import type {
  * advisory (an object drifted off the map) and never block.
  *
  * The set mirrors the invariants `packages/engine/src/game/level.ts` enforces at
- * load time — exactly one Spawn, known enemy/pickup kinds, finite fields — so the
- * editor surfaces them at authoring time instead of as a thrown error on Play.
+ * load time — exactly one Spawn, known definitions (and so kinds), finite fields —
+ * so the editor surfaces them at authoring time instead of as a thrown error on Play.
  */
 
-const SUPPORTED_ENEMY_KINDS = new Set(["metool", "bat", "pantheon"]);
-const SUPPORTED_PICKUP_KINDS = new Set(["small", "large"]);
 const LAYER_SET = new Set<string>(DECORATION_LAYERS);
 
 export interface ValidateDocumentOptions {
@@ -530,24 +528,6 @@ export function validateDocument(
           message: `${def.name}: width and height must be positive.`,
         });
       }
-    }
-
-    // Kind support (redundant with the definition catalog, but a clear message).
-    if (def.category === "enemy" && !SUPPORTED_ENEMY_KINDS.has(String(def.fields.Kind))) {
-      add({
-        severity: "error",
-        code: "enemy.kind",
-        objectId: obj.id,
-        message: `Unsupported enemy kind '${String(def.fields.Kind)}'.`,
-      });
-    }
-    if (def.category === "pickup" && !SUPPORTED_PICKUP_KINDS.has(String(def.fields.Kind))) {
-      add({
-        severity: "error",
-        code: "pickup.kind",
-        objectId: obj.id,
-        message: `Unsupported pickup kind '${String(def.fields.Kind)}'.`,
-      });
     }
 
     // Per-property checks driven by the definition metadata.

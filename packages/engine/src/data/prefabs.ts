@@ -4,12 +4,12 @@ import type { PrefabDefinition } from "./types.js";
  * Level-facing prefabs — the stable spawnables a {@link LevelEntity.prefabId}
  * references. Each resolves to a runtime spawner (by `runtime` id) and to one of
  * the definition categories, and declares the typed override fields it exposes to
- * a level author. The engine-name mapping (Enemy+Kind=metool → enemy.metool
- * and friends) lives at the level-compiler boundary, not here.
+ * a level author. Prefab ids are the level-facing definition ids: content-schema
+ * generates its object catalog from these records (`definitionsFromGameData`).
  */
 export const prefabs = {
-  "spawn.player": {
-    id: "spawn.player",
+  spawn: {
+    id: "spawn",
     runtime: "spawn.player",
     source: { kind: "loadout", ref: "player.x" },
     fields: [],
@@ -56,8 +56,8 @@ export const prefabs = {
     source: { kind: "pickup", ref: "weapon.large" },
     fields: [],
   },
-  "environment.moving-platform": {
-    id: "environment.moving-platform",
+  "platform.moving": {
+    id: "platform.moving",
     runtime: "environment",
     source: { kind: "environment", ref: "moving-platform" },
     fields: [
@@ -65,20 +65,20 @@ export const prefabs = {
       { name: "Speed", type: "number", default: 48, min: 0 },
     ],
   },
-  "environment.conveyor": {
-    id: "environment.conveyor",
+  conveyor: {
+    id: "conveyor",
     runtime: "environment",
     source: { kind: "environment", ref: "conveyor" },
     fields: [{ name: "Speed", type: "number", default: 60 }],
   },
-  "environment.hazard": {
-    id: "environment.hazard",
+  hazard: {
+    id: "hazard",
     runtime: "environment",
     source: { kind: "environment", ref: "hazard" },
     fields: [],
   },
-  "camera.zone": {
-    id: "camera.zone",
+  "camera-zone": {
+    id: "camera-zone",
     runtime: "camera",
     source: { kind: "environment", ref: "camera-zone" },
     fields: [

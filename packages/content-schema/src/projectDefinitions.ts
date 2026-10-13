@@ -1,4 +1,11 @@
-import { OBJECT_DEFINITIONS, replaceProjectDefinitions } from "./definitions.js";
+import type { GameData } from "@mmx/engine/data";
+import {
+  definitionsFromGameData,
+  getDefinition,
+  isBuiltinDefinition,
+  replaceBuiltinDefinitions,
+  replaceProjectDefinitions,
+} from "./definitions.js";
 import type { GameObjectDefinition, PropertyMeta } from "./types.js";
 import { propertyIssue } from "./validation.js";
 
@@ -23,7 +30,11 @@ export interface ProjectDefinitionIssue {
   message: string;
 }
 
-const BUILTIN = new Map(OBJECT_DEFINITIONS.map((d) => [d.id, d]));
+/** The current built-in definition with this id (a project definition never shadows one). */
+const builtin = (id: string) => (isBuiltinDefinition(id) ? getDefinition(id) : undefined);
+
+/** The entries last passed to {@link setProjectDefinitions}, re-derived when the built-ins change. */
+let projectEntries: readonly ProjectDefinitionEntry[] = [];
 
 /**
  * Resolves an entry against its base: exposed properties keep their control
@@ -53,13 +64,13 @@ export function projectDefinitionIssues(
   entries.forEach((entry, index) => {
     const add = (code: string, message: string, field?: string) =>
       issues.push({ index, code, message, ...(field !== undefined ? { field } : {}) });
-    if (BUILTIN.has(entry.id)) {
+    if (isBuiltinDefinition(entry.id)) {
       add("object.id.reserved", `'${entry.id}' is a built-in object id.`, "id");
     } else if (seen.has(entry.id)) {
       add("object.id.duplicate", `Object id '${entry.id}' is used twice.`, "id");
     }
     seen.add(entry.id);
-    const base = BUILTIN.get(entry.base);
+    const base = builtin(entry.base);
     if (!base || base.id === "spawn") {
       add("object.base", `'${entry.base}' is not a built-in object this can derive from.`, "base");
       return;
@@ -95,14 +106,25 @@ const UNDERIVABLE = new Set(["object.base", "object.id.reserved", "object.id.dup
 export function setProjectDefinitions(
   entries: readonly ProjectDefinitionEntry[],
 ): ProjectDefinitionIssue[] {
+  projectEntries = entries;
   const issues = projectDefinitionIssues(entries);
   const skipped = new Set(
     issues.filter((issue) => UNDERIVABLE.has(issue.code)).map((issue) => issue.index),
   );
   replaceProjectDefinitions(
     entries.flatMap((entry, index) =>
-      skipped.has(index) ? [] : [deriveDefinition(entry, BUILTIN.get(entry.base)!)],
+      skipped.has(index) ? [] : [deriveDefinition(entry, builtin(entry.base)!)],
     ),
   );
   return issues;
+}
+
+/**
+ * Regenerates the built-in part of the catalog from `data` (the project's game
+ * data merged over the engine defaults, so project enemies become placeable)
+ * and re-derives the project definitions against it. Returns their issues.
+ */
+export function setCatalogGameData(data: GameData): ProjectDefinitionIssue[] {
+  replaceBuiltinDefinitions(definitionsFromGameData(data));
+  return setProjectDefinitions(projectEntries);
 }
