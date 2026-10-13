@@ -390,6 +390,14 @@ export function compileGameData(
 
   // --- prefabs ---------------------------------------------------------------
   for (const pf of Object.values(data.prefabs)) {
+    if (pf.name !== undefined && (typeof pf.name !== "string" || pf.name.trim() === "")) {
+      error({
+        code: "value.string",
+        definitionId: pf.id,
+        fieldPath: `prefabs.${pf.id}.name`,
+        message: `Prefab name must be a non-empty string.`,
+      });
+    }
     if (!registries.prefabRuntimes.has(pf.runtime)) {
       error({
         code: "prefab.runtime",

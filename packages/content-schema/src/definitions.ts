@@ -243,7 +243,7 @@ function definitionOf(data: GameData, prefab: PrefabDefinition): GameObjectDefin
   const lastSegment = prefab.id.slice(prefab.id.lastIndexOf(".") + 1);
   return {
     id: prefab.id,
-    name: look?.name ?? lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1),
+    name: look?.name ?? prefab.name ?? lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1),
     category: kind.category,
     icon: look?.icon ?? kind.icon,
     engineId: kind.engineId,

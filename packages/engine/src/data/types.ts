@@ -258,6 +258,12 @@ export interface PrefabField {
  */
 export interface PrefabDefinition {
   id: string;
+  /**
+   * Display name for authoring tools (e.g. "Spiky Crab"). Presentation only:
+   * the runtime never reads it and {@link hashGameData} ignores it, so renaming
+   * a prefab keeps replays valid.
+   */
+  name?: string;
   /** References a {@link PrefabRuntimeRegistry} entry that spawns it. */
   runtime: string;
   /** Which definition category this prefab draws from, and the id within it. */
