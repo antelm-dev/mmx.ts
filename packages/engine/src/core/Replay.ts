@@ -45,6 +45,12 @@ export interface Replay {
   seed: number;
   /** Level identifier, so a recording is never replayed against other geometry. */
   level: string;
+  /**
+   * {@link CompiledGameData.hash} the run was recorded against, so a recording is
+   * never replayed against other enemy/loadout data. Absent in legacy recordings,
+   * which are accepted as-is.
+   */
+  gameDataHash?: string;
   /** True if a debug cheat ran during capture, which makes replay non-faithful. */
   tainted: boolean;
   /** One input mask per fixed step, from the first tick of the run. */
@@ -109,6 +115,7 @@ export function encodeReplay(replay: Replay): string {
       version: replay.version,
       seed: replay.seed,
       level: replay.level,
+      gameDataHash: replay.gameDataHash,
       tainted: replay.tainted,
       frameCount: replay.frames.length,
       runs: encodeRuns(replay.frames),
@@ -136,6 +143,9 @@ export function decodeReplay(text: string): Replay {
   if (typeof raw.seed !== "number" || typeof raw.level !== "string") {
     throw new Error("replay: missing seed or level");
   }
+  if (raw.gameDataHash !== undefined && typeof raw.gameDataHash !== "string") {
+    throw new Error("replay: gameDataHash must be a string");
+  }
   if (!Array.isArray(raw.runs)) throw new Error("replay: missing runs");
 
   const frames = decodeRuns(raw.runs as Run[]);
@@ -148,6 +158,7 @@ export function decodeReplay(text: string): Replay {
     version: REPLAY_VERSION,
     seed: raw.seed,
     level: raw.level,
+    ...(raw.gameDataHash === undefined ? {} : { gameDataHash: raw.gameDataHash }),
     tainted: raw.tainted === true,
     frames,
   };

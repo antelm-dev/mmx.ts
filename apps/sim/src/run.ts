@@ -16,14 +16,23 @@ import { loadEntryLevel, requireProjectDirectory } from "./project.js";
 
 async function main(): Promise<void> {
   const entry = await loadEntryLevel(requireProjectDirectory());
-  const level = loadLevel(entry.level);
+  const gameData = COMPILED_GAME_DATA;
+  const level = loadLevel(entry.level, gameData);
   const input = new Input();
   const world = level.world;
-  const player = new Player(world, level.spawn.x, level.spawn.y, input, undefined, entry.loadoutId);
+  const player = new Player(
+    world,
+    level.spawn.x,
+    level.spawn.y,
+    input,
+    undefined,
+    entry.loadoutId,
+    gameData,
+  );
   const stage = new Stage(world, player);
   for (const [i, spawn] of level.enemies.entries()) {
-    const def = COMPILED_GAME_DATA.enemies.get(spawn.kind)!;
-    stage.add(spawnEnemy(def, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i));
+    const def = gameData.enemies.get(spawn.kind)!;
+    stage.add(spawnEnemy(def, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i, gameData));
   }
 
   // A scripted timeline: at frame N, set an action down/up.

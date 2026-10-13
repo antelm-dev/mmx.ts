@@ -5,6 +5,7 @@ import { createToolingRuntime } from "../src/tooling/createToolingRuntime.js";
 import { RuntimeSession } from "../src/core/RuntimeSession.js";
 import type { RuntimePresentation } from "../src/core/types.js";
 import type { Scene } from "@mmx/engine";
+import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import { testLevel } from "./testLevel.js";
 
 const SEED = 42;
@@ -145,4 +146,22 @@ test("headless createPlayerRuntime does not need DOM globals", () => {
   runtime.dispose();
 
   assert.equal("window" in globalThis, hadWindow);
+});
+
+test("the scene's game data survives level loads, restarts and replays", () => {
+  const gameData = { ...COMPILED_GAME_DATA, hash: "custom-data" };
+  const tooling = createToolingRuntime({ scene: { level: testLevel(), seed: SEED, gameData } });
+  tooling.step(0);
+  const replay = tooling.toReplay();
+  assert.equal(replay.gameDataHash, "custom-data");
+
+  tooling.loadLevel(testLevel());
+  assert.equal(tooling.session.scene.gameDataHash, "custom-data");
+  tooling.loadReplay(replay);
+  tooling.restartCheckpoint();
+  assert.equal(tooling.session.scene.gameDataHash, "custom-data");
+
+  tooling.replaceScene({ level: testLevel(), seed: SEED });
+  assert.throws(() => tooling.loadReplay(replay), /recorded with game data/);
+  tooling.dispose();
 });

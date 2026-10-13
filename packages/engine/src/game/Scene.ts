@@ -2,6 +2,7 @@ import { Input } from "../core/Input.js";
 import { DT, WEAPON_ORDER } from "../core/constants.js";
 import { applyInput } from "../core/Replay.js";
 import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { CompiledGameData } from "../data/types.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
 import { spawnEnemy } from "./enemies/index.js";
@@ -40,6 +41,11 @@ export interface SceneOptions {
   /** Compiled player loadout id (a project's `player.loadout`); the Player default when omitted. */
   loadoutId?: string;
   /**
+   * Compiled game data the scene is built from — enemy definitions, loadouts.
+   * Defaults to the built-in {@link COMPILED_GAME_DATA}.
+   */
+  gameData?: CompiledGameData;
+  /**
    * Called for each enemy as it spawns, before the first tick. The browser uses
    * it to attach clip data and audio; the headless sim passes nothing and the
    * enemies run without either.
@@ -62,13 +68,17 @@ export class Scene {
   readonly input: Input;
   readonly seed: number;
   readonly level: LevelData;
+  /** Hash of the compiled game data this scene was built from — recorded so replays cannot cross it. */
+  readonly gameDataHash: string;
 
   /** Fixed steps executed since the scene was built — the simulation frame number. */
   frame = 0;
 
   private constructor(seed: number, options: SceneOptions) {
     this.seed = seed;
-    const level = loadLevel(options.level);
+    const gameData = options.gameData ?? COMPILED_GAME_DATA;
+    this.gameDataHash = gameData.hash;
+    const level = loadLevel(options.level, gameData);
     this.level = level.data;
     this.input = new Input();
     this.world = level.world;
@@ -79,6 +89,7 @@ export class Scene {
       this.input,
       seed,
       options.loadoutId,
+      gameData,
     );
     this.camera = new Camera(this.world.widthPx, this.world.heightPx);
     this.camera.setZones(level.cameraZones);
@@ -97,12 +108,13 @@ export class Scene {
       // a bat happened to reroll its hover. Derived from the scene seed so the
       // whole run still keys off one number.
       const enemy = spawnEnemy(
-        COMPILED_GAME_DATA.enemies.get(spawn.kind)!,
+        gameData.enemies.get(spawn.kind)!,
         this.world,
         spawn.x,
         spawn.y,
         spawn.facing,
         enemySeed(seed, i),
+        gameData,
       );
       // Carry the authored entity iid through as the enemy's runtime identity, so
       // an inspector can trace a live enemy back to the object that placed it.

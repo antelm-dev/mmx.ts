@@ -6,6 +6,7 @@ import { Damage } from "./abilities/Damage.js";
 import { Intro } from "./abilities/Intro.js";
 import type { Actor } from "./Actor.js";
 import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { CompiledGameData } from "../data/types.js";
 import { buildPlayerLoadout } from "./loadout/PlayerLoadout.js";
 import { DEFAULT_DASH_CROUCH } from "../core/constants.js";
 
@@ -30,17 +31,18 @@ export class Player extends Character {
     input: Input,
     seed?: number,
     loadoutId: string = DEFAULT_PLAYER_LOADOUT,
+    gameData: CompiledGameData = COMPILED_GAME_DATA,
   ) {
     super(world, x, y, input, seed);
 
-    const loadout = COMPILED_GAME_DATA.loadouts.get(loadoutId);
+    const loadout = gameData.loadouts.get(loadoutId);
     if (!loadout) throw new Error(`Player: unknown loadout '${loadoutId}'.`);
     const { body, maxHealth } = loadout.actor;
     this.hw = body.hw;
     this.hh = this.body_hh = body.hh;
     this.dash_crouch = body.dashCrouch ?? DEFAULT_DASH_CROUCH;
     this.max_health = this.current_health = maxHealth;
-    buildPlayerLoadout(this, loadout, COMPILED_GAME_DATA);
+    buildPlayerLoadout(this, loadout, gameData);
   }
 
   /** Actor.damage routed through Damage.gd's state instead of reducing health inline. */

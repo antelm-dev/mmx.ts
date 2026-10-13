@@ -124,6 +124,7 @@ export class Recorder {
       version: REPLAY_VERSION,
       seed: this.scene.seed,
       level: this.scene.levelId,
+      gameDataHash: this.scene.gameDataHash,
       tainted: this.tainted,
       frames: this.frames.slice(0, this.scene.frame),
     };
@@ -135,11 +136,7 @@ export class Recorder {
    * capture ended in, and play simply continues from there.
    */
   load(replay: Replay): Scene {
-    if (replay.level !== this.scene.levelId) {
-      throw new Error(
-        `replay was recorded on level '${replay.level}', this build has '${this.scene.levelId}'`,
-      );
-    }
+    assertReplayMatches(replay, this.scene);
     this.scene = Scene.create({ ...this.options, seed: replay.seed });
     this.frames = replay.frames.slice();
     this.tainted = replay.tainted;
@@ -154,12 +151,25 @@ export class Recorder {
    */
   static replay(replay: Replay, options: SceneOptions): Scene {
     const scene = Scene.create({ ...options, seed: replay.seed });
-    if (replay.level !== scene.levelId) {
-      throw new Error(
-        `replay was recorded on level '${replay.level}', this build has '${scene.levelId}'`,
-      );
-    }
+    assertReplayMatches(replay, scene);
     for (const mask of replay.frames) scene.step(mask);
     return scene;
+  }
+}
+
+/**
+ * Refuse a recording made against other geometry or other game data. A replay
+ * without a `gameDataHash` predates the field and is accepted.
+ */
+function assertReplayMatches(replay: Replay, scene: Scene): void {
+  if (replay.level !== scene.levelId) {
+    throw new Error(
+      `replay was recorded on level '${replay.level}', this build has '${scene.levelId}'`,
+    );
+  }
+  if (replay.gameDataHash !== undefined && replay.gameDataHash !== scene.gameDataHash) {
+    throw new Error(
+      `replay was recorded with game data '${replay.gameDataHash}', this build has '${scene.gameDataHash}'`,
+    );
   }
 }
