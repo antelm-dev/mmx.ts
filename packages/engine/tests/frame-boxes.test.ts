@@ -224,6 +224,30 @@ test("without clips a scene keeps the game data hash; with clips the hash covers
   );
 });
 
+test("player frame boxes stay out of the hash until the engine reads them", () => {
+  const base = Scene.create({ level: level(), clips: CLIPS }).gameDataHash;
+  const boxed = structuredClone(X_ANIMS);
+  for (const clip of Object.values(boxed.animations)) {
+    clip.frames = clip.frames.map((f) => ({
+      ...f,
+      hurtbox: { x: -4, y: -20, w: 8, h: 20 },
+      hitboxes: [{ x: 0, y: -10, w: 6, h: 6 }],
+    }));
+  }
+  assert.equal(
+    Scene.create({ level: level(), clips: { ...CLIPS, player: boxed } }).gameDataHash,
+    base,
+  );
+
+  // Player timing still counts.
+  const slower = structuredClone(X_ANIMS);
+  slower.animations.idle!.frames[0]!.duration += 1;
+  assert.notEqual(
+    Scene.create({ level: level(), clips: { ...CLIPS, player: slower } }).gameDataHash,
+    base,
+  );
+});
+
 test("a replay recorded with different clip boxes is refused", () => {
   const recorder = new Recorder({ level: level(), seed: 5, clips: CLIPS });
   for (let i = 0; i < 30; i++) recorder.step(script(i));

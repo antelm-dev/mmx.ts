@@ -153,13 +153,7 @@ export class Scene {
       // an inspector can trace a live enemy back to the object that placed it.
       enemy.runtimeId = spawn.id;
       enemy.sourceEntityId = spawn.id;
-      if (clips?.enemies) {
-        const table = clips.enemies[enemy.stats.sheet];
-        if (!table)
-          throw new Error(`scene clips have no table for enemy sheet '${enemy.stats.sheet}'`);
-        enemy.loadAnimations(table);
-        enemy.sceneClips = true;
-      }
+      loadSceneEnemyClips(enemy, clips);
       options.onEnemySpawned?.(enemy, i);
       this.stage.add(enemy);
     }
@@ -269,11 +263,23 @@ export class Scene {
 }
 
 /**
+ * Load `enemy`'s table from `clips.enemies`, as the scene does at spawn. When
+ * `clips.enemies` is given, every enemy's sheet must have one.
+ */
+export function loadSceneEnemyClips(enemy: Enemy, clips: SceneClips | undefined): void {
+  if (!clips?.enemies) return;
+  const table = clips.enemies[enemy.stats.sheet];
+  if (!table) throw new Error(`scene clips have no table for enemy sheet '${enemy.stats.sheet}'`);
+  enemy.loadAnimations(table);
+  enemy.sceneClips = true;
+}
+
+/**
  * Only what gameplay reads goes into the hash — timing and boxes, keyed by clip
  * name — so re-cropping art (regions, anchors) does not invalidate replays.
  */
 function hashWithClips(gameDataHash: string, clips: SceneClips): string {
-  const gameplay = (data: AnimData | undefined) =>
+  const gameplay = (data: AnimData | undefined, boxes: boolean) =>
     data &&
     Object.fromEntries(
       Object.entries(data.animations).map(([name, clip]) => [
@@ -282,19 +288,20 @@ function hashWithClips(gameDataHash: string, clips: SceneClips): string {
           loop: clip.loop,
           loopStart: clip.loopStart ?? 0,
           speed: clip.speed,
-          frames: clip.frames.map((f) => ({
-            duration: f.duration,
-            hurtbox: f.hurtbox ?? null,
-            hitboxes: f.hitboxes ?? [],
-          })),
+          frames: clip.frames.map((f) =>
+            boxes
+              ? { duration: f.duration, hurtbox: f.hurtbox ?? null, hitboxes: f.hitboxes ?? [] }
+              : { duration: f.duration },
+          ),
         },
       ]),
     );
   return hashCanonical({
     gameData: gameDataHash,
-    player: gameplay(clips.player) ?? null,
+    // Timing only: include the player's boxes once Player/Stage read them.
+    player: gameplay(clips.player, false) ?? null,
     enemies: clips.enemies
-      ? Object.fromEntries(Object.entries(clips.enemies).map(([k, v]) => [k, gameplay(v)]))
+      ? Object.fromEntries(Object.entries(clips.enemies).map(([k, v]) => [k, gameplay(v, true)]))
       : null,
   });
 }

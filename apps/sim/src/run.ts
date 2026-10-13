@@ -1,4 +1,13 @@
-import { Action, DT, Input, Player, Stage, spawnEnemy, loadLevel } from "@mmx/engine";
+import {
+  Action,
+  DT,
+  Input,
+  Player,
+  Stage,
+  loadLevel,
+  loadSceneEnemyClips,
+  spawnEnemy,
+} from "@mmx/engine";
 import { loadEntryLevel, requireProjectDirectory } from "./project.js";
 
 /**
@@ -33,8 +42,7 @@ async function main(): Promise<void> {
   for (const [i, spawn] of level.enemies.entries()) {
     const def = gameData.enemies.get(spawn.kind)!;
     const enemy = spawnEnemy(def, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i, gameData);
-    const clips = entry.clips?.enemies?.[def.sheet];
-    if (clips) enemy.loadAnimations(clips);
+    loadSceneEnemyClips(enemy, entry.clips);
     stage.add(enemy);
   }
 
