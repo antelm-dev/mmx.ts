@@ -8,6 +8,20 @@
 
 // ---------- Context fed in from EditorController ----------
 
+/** What Ctrl+Z/Ctrl+Y undo: the level document, or the project's object and game-data definitions. */
+export type UndoScope = "level" | "definitions";
+
+/** Spread on a definition surface (Enemy panel, Object section, palette): edits inside it undo as definitions. */
+export const DEFINITIONS_SCOPE = { "data-undo-scope": "definitions" } as const;
+
+/** The undo scope of an event target: "definitions" inside a marked surface, else "level". */
+export function undoScopeOf(target: EventTarget | null): UndoScope {
+  const closest = (target as { closest?: (selector: string) => unknown } | null)?.closest;
+  return typeof closest === "function" && closest.call(target, '[data-undo-scope="definitions"]')
+    ? "definitions"
+    : "level";
+}
+
 export interface KeyboardContext {
   mode: "edit" | "play";
   activeTool: string;
@@ -15,14 +29,16 @@ export interface KeyboardContext {
   isFullscreen: boolean;
   hasContextMenu: boolean;
   invulnerable: boolean;
+  /** Where undo/redo go: the surface the user last clicked or focused. */
+  undoScope: UndoScope;
 }
 
 // ---------- Command union ----------
 
 export type EditorCommand =
   // edit-mode commands
-  | { kind: "undo" }
-  | { kind: "redo" }
+  | { kind: "undo"; scope: UndoScope }
+  | { kind: "redo"; scope: UndoScope }
   | { kind: "save" }
   | { kind: "newLevel" }
   | { kind: "openLevel" }
@@ -94,8 +110,9 @@ export function dispatchEditorKey(
   if (e.code === "Escape" && ctx.hasContextMenu) return { kind: "closeContextMenu" };
 
   // mod-key shortcuts work even in typing fields
-  if (mod && e.code === "KeyZ") return e.shiftKey ? { kind: "redo" } : { kind: "undo" };
-  if (mod && e.code === "KeyY") return { kind: "redo" };
+  const scope = ctx.undoScope;
+  if (mod && e.code === "KeyZ") return { kind: e.shiftKey ? "redo" : "undo", scope };
+  if (mod && e.code === "KeyY") return { kind: "redo", scope };
   if (mod && e.code === "KeyS") return { kind: "save" };
   if (mod && e.code === "KeyN") return { kind: "newLevel" };
   if (mod && e.code === "KeyO") return { kind: "openLevel" };

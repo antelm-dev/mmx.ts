@@ -1,5 +1,5 @@
 import { projectDefinitionIssues, setCatalogGameData, setProjectDefinitions } from "@mmx/content-schema";
-import type { GameData, GameDataOverlay } from "@mmx/engine/data";
+import { GAME_DATA, type GameData, type GameDataOverlay } from "@mmx/engine/data";
 import {
   validateProject,
   type AnimationAsset,
@@ -87,6 +87,12 @@ const bindingIssue = (error: unknown): ProjectIssue => ({
 
 type PlayData = { gameData: StudioGameData; urls: Record<string, string> };
 
+/** The project's definitions: its manifest objects and data/game.json records. */
+type Definitions = { objects: ProjectObjectDefinition[] | undefined; gameData: GameDataOverlay | undefined };
+
+/** Definition edits kept for undo; snapshots share unchanged records, so each is small. */
+const DEFINITION_HISTORY_DEPTH = 100;
+
 export class ProjectSession {
   private state: ProjectSessionState = { ...EMPTY };
   private assets: Promise<StudioAssets | null> = Promise.resolve(starterAssets);
@@ -94,6 +100,9 @@ export class ProjectSession {
   /** The open project's `game/data.json` and asset data URLs, as last read from disk. */
   private playData: PlayData | null = null;
   private loaded: StudioAssets | null = starterAssets;
+  /** Definition snapshots before (undo) and after (redo) the current one; reset on project open/close. */
+  private undoStack: Definitions[] = [];
+  private redoStack: Definitions[] = [];
   /** Stops Play and drops viewport sprites; runs before old sheet textures are destroyed. */
   beforeSheetReset: () => void = () => {};
 
@@ -126,8 +135,12 @@ export class ProjectSession {
     this.emit();
   }
 
-  /** Replace the open project (or close it) and reload its assets. */
-  private switchProject(next: ProjectSessionState): void {
+  /** Replace the open project (or close it) and reload its assets; a new project starts a new definition history. */
+  private switchProject(next: ProjectSessionState, keepHistory = false): void {
+    if (!keepHistory) {
+      this.undoStack = [];
+      this.redoStack = [];
+    }
     this.setState(next);
     // Chained so two quick switches never load sheets concurrently.
     this.assets = this.assets.catch(() => null).then(() => this.loadAssets());
@@ -255,32 +268,80 @@ export class ProjectSession {
     this.refreshAssets();
   }
 
-  /** Replace the open project's object definitions; saved with the project. */
-  setObjects(objects: ProjectObjectDefinition[]): void {
+  private definitions(): Definitions | null {
     const project = this.state.project;
-    if (!project) return;
-    const nextProject = { ...project, manifest: { ...project.manifest, objects } };
-    this.setState({
-      ...this.state,
-      project: nextProject,
-      dirty: true,
-      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
-    });
+    return project ? { objects: project.manifest.objects, gameData: project.gameData } : null;
   }
 
-  /** Replace the project's `data/game.json` records; saved with the project. */
-  setGameData(gameData: GameDataOverlay): void {
+  /** Make `next` the project's definitions (re-registering the catalog); saved with the project. */
+  private applyDefinitions(next: Definitions): void {
     const project = this.state.project;
     if (!project) return;
-    const nextProject = { ...project, gameData };
+    const { objects: _objects, ...manifest } = project.manifest;
+    const nextProject = {
+      ...project,
+      manifest: next.objects ? { ...manifest, objects: next.objects } : manifest,
+      // Undoing the first enemy keeps an empty overlay, so saving clears an already written data/game.json.
+      gameData: next.gameData ?? (project.gameData && { schemaVersion: GAME_DATA.schemaVersion }),
+    };
     this.setState({
       ...this.state,
       project: nextProject,
+      // shortcut: undoing back to the saved definitions still reads as unsaved; compare with a saved snapshot if that confuses.
       dirty: true,
       issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
     });
     // Project enemies drawn from an animation asset are bound to it in Play and the viewport.
-    this.refreshAssets();
+    if (nextProject.gameData !== project.gameData) this.refreshAssets();
+  }
+
+  /** Record the current definitions for undo, then apply `next`; an edit that changes nothing is dropped. */
+  private editDefinitions(patch: Partial<Definitions>): void {
+    const current = this.definitions();
+    if (!current) return;
+    const next = { ...current, ...patch };
+    if (JSON.stringify(next) === JSON.stringify(current)) return;
+    this.undoStack.push(current);
+    if (this.undoStack.length > DEFINITION_HISTORY_DEPTH) this.undoStack.shift();
+    this.redoStack = [];
+    this.applyDefinitions(next);
+  }
+
+  /** Replace the open project's object definitions (undoable); saved with the project. */
+  setObjects(objects: ProjectObjectDefinition[]): void {
+    this.editDefinitions({ objects });
+  }
+
+  /** Replace the project's `data/game.json` records (undoable); saved with the project. */
+  setGameData(gameData: GameDataOverlay): void {
+    this.editDefinitions({ gameData });
+  }
+
+  get canUndoDefinitions(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  get canRedoDefinitions(): boolean {
+    return this.redoStack.length > 0;
+  }
+
+  /** Undo the last object or game-data edit; false when there is none. */
+  undoDefinitions(): boolean {
+    return this.step(this.undoStack, this.redoStack);
+  }
+
+  /** Redo the last undone object or game-data edit; false when there is none. */
+  redoDefinitions(): boolean {
+    return this.step(this.redoStack, this.undoStack);
+  }
+
+  private step(from: Definitions[], to: Definitions[]): boolean {
+    const current = this.definitions();
+    const target = from.pop();
+    if (!current || !target) return false;
+    to.push(current);
+    this.applyDefinitions(target);
+    return true;
   }
 
   /** An `animation` asset of the open project, or null. */
@@ -368,12 +429,15 @@ export class ProjectSession {
       kind,
     });
     if (!result.ok) throw new Error(result.issues[0]?.message ?? "Import failed.");
-    this.switchProject({
-      ...this.state,
-      project: result.value.project,
-      dirty: true,
-      issues: [...validateOpenProject(result.value.project), ...this.state.issues.filter(isPlayAssetIssue)],
-    });
+    this.switchProject(
+      {
+        ...this.state,
+        project: result.value.project,
+        dirty: true,
+        issues: [...validateOpenProject(result.value.project), ...this.state.issues.filter(isPlayAssetIssue)],
+      },
+      true,
+    );
     return result.value.assetId;
   }
 

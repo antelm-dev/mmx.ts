@@ -139,9 +139,10 @@ test("a level instance of a removed project object shows as missing instead of c
   await del.click();
   await expect(page.getByTitle("Place Moving Platform copy", { exact: true })).toHaveCount(0);
 
-  // Undo brings the instance back; it renders as a missing object and blocks Play.
-  await page.keyboard.press("Control+z");
+  // Undo from outside the palette (a definition surface) brings the instance back; it renders
+  // as a missing object and blocks Play.
   await page.getByRole("tab", { name: /Scene/ }).click();
+  await page.keyboard.press("Control+z");
   await expect(page.getByText("Missing Objects")).toBeVisible();
   await page.getByRole("tab", { name: /^Problems/ }).click();
   await expect(page.getByText(/Unknown object definition 'obj\.platform\.moving\.\d+'/).first()).toBeVisible();

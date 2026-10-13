@@ -95,7 +95,7 @@ export function uniqueEnemySlug(data: GameData, name: string): string {
 /**
  * Add a new enemy copied from `input.base` to the overlay: its actor `enemy.<slug>`
  * (with the health), enemy `<slug>` (with the sheet and touch damage) and placeable
- * prefab `enemy.<slug>`, named like the built-ins. Returns the next overlay and the
+ * prefab `enemy.<slug>`, displayed as `input.name`. Returns the next overlay and the
  * prefab id, which is also the palette definition id.
  */
 export function addEnemy(
@@ -112,6 +112,8 @@ export function addEnemy(
 
   const slug = uniqueEnemySlug(data, input.name);
   const id = `enemy.${slug}`;
+  const name = input.name.trim();
+  const { name: _baseName, ...prefab } = basePrefab;
   const next: GameDataOverlay = {
     schemaVersion: GAME_DATA.schemaVersion,
     ...overlay,
@@ -120,7 +122,10 @@ export function addEnemy(
       ...overlay?.enemies,
       [slug]: { ...baseEnemy, id: slug, actor: id, sheet: input.sheet, touchDamage: input.touchDamage },
     },
-    prefabs: { ...overlay?.prefabs, [id]: { ...basePrefab, id, source: { kind: "enemy", ref: slug } } },
+    prefabs: {
+      ...overlay?.prefabs,
+      [id]: { ...prefab, id, ...(name ? { name } : {}), source: { kind: "enemy", ref: slug } },
+    },
   };
   return { overlay: next, id };
 }

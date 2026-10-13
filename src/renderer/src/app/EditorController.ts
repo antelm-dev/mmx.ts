@@ -40,7 +40,7 @@ import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
-import { dispatchEditorKey, type KeyboardContext } from "./editorKeyboard.js";
+import { dispatchEditorKey, undoScopeOf, type KeyboardContext, type UndoScope } from "./editorKeyboard.js";
 
 const ZOOM_STEP = 1.2;
 
@@ -516,8 +516,26 @@ export class EditorController {
 
   // ---------- History ----------
 
-  undo(): void { this.store.undo(); }
-  redo(): void { this.store.redo(); }
+  /** Where Ctrl+Z/Ctrl+Y go: the surface last clicked or focused (a blurred field leaves it unchanged). */
+  private undoScope: UndoScope = "level";
+  noteUndoScope(target: EventTarget | null): void { this.undoScope = undoScopeOf(target); }
+
+  /**
+   * Undo a level edit, or (scope "definitions") a project object or game-data edit.
+   * The latter says so in a toast: after a palette click, Ctrl+Z is not the placement's.
+   */
+  undo(scope: UndoScope = "level"): void {
+    if (scope === "level") this.store.undo();
+    else this.stepDefinitions(projectSession.undoDefinitions(), "Undid object edit.", "No object edit to undo.");
+  }
+  redo(scope: UndoScope = "level"): void {
+    if (scope === "level") this.store.redo();
+    else this.stepDefinitions(projectSession.redoDefinitions(), "Redid object edit.", "No object edit to redo.");
+  }
+  private stepDefinitions(done: boolean, doneMessage: string, noneMessage: string): void {
+    this.toast(done ? doneMessage : noneMessage);
+    if (done) void this.applyProjectAssets();
+  }
 
   // ---------- View ----------
 
@@ -554,11 +572,11 @@ export class EditorController {
     void this.applyProjectAssets();
   }
 
-  /** Copy an enemy into the project under a new id and open the copy in the enemy editor. */
-  duplicateEnemy(enemyId: string): void {
+  /** Copy an enemy (displayed as `name`) into the project under a new id and open the copy in the enemy editor. */
+  duplicateEnemy(enemyId: string, name: string): void {
     const project = projectSession.getSnapshot().project;
     if (!project) return;
-    const { overlay, id } = duplicateEnemy(project.gameData, projectSession.gameData().data, enemyId);
+    const { overlay, id } = duplicateEnemy(project.gameData, projectSession.gameData().data, enemyId, name);
     this.setGameData(overlay);
     useUiStore.getState().setEnemyEditorId(id);
   }
@@ -643,6 +661,7 @@ export class EditorController {
       isFullscreen: uiState.fullscreen,
       hasContextMenu: !!uiState.contextMenu,
       invulnerable: this.playtest.getSnapshot().debug.invulnerable,
+      undoScope: this.undoScope,
     };
 
     const cmd = dispatchEditorKey(e, ctx, state.document.gridSize);
@@ -650,8 +669,8 @@ export class EditorController {
     e.preventDefault();
 
     switch (cmd.kind) {
-      case "undo": this.undo(); break;
-      case "redo": this.redo(); break;
+      case "undo": this.undo(cmd.scope); break;
+      case "redo": this.redo(cmd.scope); break;
       case "save": this.save(); break;
       case "newLevel": this.newLevel(); break;
       case "openLevel": void this.openLevel(); break;

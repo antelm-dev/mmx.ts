@@ -82,8 +82,16 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => editor.handleKeydown(e);
+    // Captured, so a surface that stops propagation (the viewport) still claims undo.
+    const onFocus = (e: Event) => editor.noteUndoScope(e.target);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onFocus, true);
+    window.addEventListener("focusin", onFocus, true);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onFocus, true);
+      window.removeEventListener("focusin", onFocus, true);
+    };
   }, []);
 
   const onReady = useCallback(({ api }: DockviewReadyEvent) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dispatchEditorKey, type EditorCommand, type KeyboardContext } from "./editorKeyboard.js";
+import { dispatchEditorKey, undoScopeOf, type EditorCommand, type KeyboardContext } from "./editorKeyboard.js";
 
 // ---------- helpers ----------
 
@@ -22,6 +22,7 @@ const editCtx: KeyboardContext = {
   isFullscreen: false,
   hasContextMenu: false,
   invulnerable: false,
+  undoScope: "level",
 };
 
 const playCtx: KeyboardContext = {
@@ -31,6 +32,7 @@ const playCtx: KeyboardContext = {
   isFullscreen: false,
   hasContextMenu: false,
   invulnerable: false,
+  undoScope: "level",
 };
 
 const GRID = 16;
@@ -46,16 +48,36 @@ function dispatch(
 
 describe("edit mode — undo/redo/save", () => {
   it("Ctrl+Z → undo", () => {
-    expect(dispatch(key("KeyZ", { mod: true }))).toEqual({ kind: "undo" });
+    expect(dispatch(key("KeyZ", { mod: true }))).toEqual({ kind: "undo", scope: "level" });
   });
   it("Ctrl+Shift+Z → redo", () => {
-    expect(dispatch(key("KeyZ", { mod: true, shift: true }))).toEqual({ kind: "redo" });
+    expect(dispatch(key("KeyZ", { mod: true, shift: true }))).toEqual({ kind: "redo", scope: "level" });
   });
   it("Ctrl+Y → redo", () => {
-    expect(dispatch(key("KeyY", { mod: true }))).toEqual({ kind: "redo" });
+    expect(dispatch(key("KeyY", { mod: true }))).toEqual({ kind: "redo", scope: "level" });
   });
   it("Ctrl+S → save", () => {
     expect(dispatch(key("KeyS", { mod: true }))).toEqual({ kind: "save" });
+  });
+});
+
+// ---------- undo routing ----------
+
+describe("undo routing", () => {
+  const definitionsCtx: KeyboardContext = { ...editCtx, undoScope: "definitions" };
+  const inSurface = { closest: (selector: string) => (selector === '[data-undo-scope="definitions"]' ? {} : null) };
+  const outside = { closest: () => null };
+
+  it("undo and both redo chords go to the definitions from a definition surface", () => {
+    expect(dispatch(key("KeyZ", { mod: true }), definitionsCtx)).toEqual({ kind: "undo", scope: "definitions" });
+    expect(dispatch(key("KeyZ", { mod: true, shift: true }), definitionsCtx)).toEqual({ kind: "redo", scope: "definitions" });
+    expect(dispatch(key("KeyY", { mod: true }), definitionsCtx)).toEqual({ kind: "redo", scope: "definitions" });
+  });
+  it("a target inside a marked surface is in the definitions scope; anything else is the level's", () => {
+    expect(undoScopeOf(inSurface as unknown as EventTarget)).toBe("definitions");
+    expect(undoScopeOf(outside as unknown as EventTarget)).toBe("level");
+    expect(undoScopeOf({} as EventTarget)).toBe("level");
+    expect(undoScopeOf(null)).toBe("level");
   });
 });
 
@@ -74,7 +96,7 @@ describe("typing-field protection", () => {
     expect(dispatch(key("ArrowLeft"), typingCtx)).toBeNull();
   });
   it("Ctrl+Z still works in typing field", () => {
-    expect(dispatch(key("KeyZ", { mod: true }), typingCtx)).toEqual({ kind: "undo" });
+    expect(dispatch(key("KeyZ", { mod: true }), typingCtx)).toEqual({ kind: "undo", scope: "level" });
   });
   it("Ctrl+S still works in typing field", () => {
     expect(dispatch(key("KeyS", { mod: true }), typingCtx)).toEqual({ kind: "save" });

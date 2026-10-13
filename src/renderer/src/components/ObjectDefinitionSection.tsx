@@ -7,6 +7,8 @@ import {
 } from "@mmx/content-schema";
 import type { ProjectObjectDefinition } from "@mmx/project-schema";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
+import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
+import { deleteBlocker, duplicateObject, freeObjectId } from "../core/objectDefinitions.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Checkbox } from "../ui/editor/checkbox.js";
 import { Field, FieldInput } from "../ui/editor/field.js";
@@ -19,24 +21,18 @@ const Note = chakra("div", {
   base: { color: "studio.muted", fontSize: "10px", mt: "3px", mb: "1" },
 });
 
-/** Placed instances of a definition across the open level (live) and the project's other levels. */
-export function definitionUseCount(definitionId: string): number {
+/**
+ * Why a definition cannot be deleted (instances in the open level, live, or the
+ * project's other levels; project objects based on it), or null. The open level
+ * is always the entry level's slot: EditorController syncs every document it opens,
+ * Ctrl+O included, into `entryLevelId`, so the slot's stored copy is the live one.
+ */
+export function definitionDeleteBlocker(definitionId: string): string | null {
   const project = projectSession.getSnapshot().project;
   const others = (project?.levels ?? [])
     .filter((level) => level.id !== project?.manifest.entryLevelId)
     .map((level) => level.document);
-  return [editor.store.get().document, ...others].reduce(
-    (n, doc) => n + doc.objects.filter((o) => o.definitionId === definitionId).length,
-    0,
-  );
-}
-
-/** A free `obj.<base>.<n>` id; built-in ids never start with `obj.`. */
-function freeId(base: string, objects: readonly ProjectObjectDefinition[]): string {
-  for (let n = 1; ; n++) {
-    const id = `obj.${base}.${n}`;
-    if (!objects.some((o) => o.id === id)) return id;
-  }
+  return deleteBlocker(definitionId, [editor.store.get().document, ...others], project?.manifest.objects ?? []);
 }
 
 /**
@@ -66,13 +62,13 @@ export function ObjectDefinitionSection({
     );
     projectSession.setObjects([
       ...objects,
-      { id: freeId(baseId, objects), name: `${def.name} copy`, base: baseId, values },
+      { id: freeObjectId(baseId, objects), name: `${def.name} copy`, base: baseId, values },
     ]);
   };
 
   if (!entry) {
     return (
-      <>
+      <chakra.div {...DEFINITIONS_SCOPE}>
         <SectionTitle divider>Object</SectionTitle>
         <Row>
           <Note>Save this object's values as a new object in the palette.</Note>
@@ -80,7 +76,7 @@ export function ObjectDefinitionSection({
         <PanelActions>
           <ActionButton onClick={create}>New object from this</ActionButton>
         </PanelActions>
-      </>
+      </chakra.div>
     );
   }
 
@@ -90,7 +86,7 @@ export function ObjectDefinitionSection({
   const exposed = entry.exposed ?? keys;
 
   return (
-    <>
+    <chakra.div {...DEFINITIONS_SCOPE}>
       <SectionTitle divider>Object · {entry.name}</SectionTitle>
       <Row>
         <Field label="Name">
@@ -126,7 +122,10 @@ export function ObjectDefinitionSection({
       ))}
       <PanelActions>
         <ActionButton onClick={create}>New object from this</ActionButton>
+        <ActionButton onClick={() => projectSession.setObjects(duplicateObject(objects, entry.id))}>
+          Duplicate
+        </ActionButton>
       </PanelActions>
-    </>
+    </chakra.div>
   );
 }

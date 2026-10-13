@@ -175,20 +175,65 @@ export function enemyForPrefab(overlay: GameDataOverlay | undefined, prefabId: s
   return { enemy, actor, editable: !!own };
 }
 
-/** Copy enemy `enemyId` (actor, enemy, prefab) into the overlay as `enemy.<id>-copy`; returns the new prefab id. */
+/**
+ * Copy enemy `enemyId` (actor, enemy, prefab) into the overlay as "`name` copy"
+ * (id `enemy.<name>-copy`, or the next free one); returns the new prefab id.
+ */
 export function duplicateEnemy(
   overlay: GameDataOverlay | undefined,
   data: GameData,
   enemyId: string,
+  name: string,
 ): { overlay: GameDataOverlay; id: string } {
   const enemy = data.enemies[enemyId];
   const actor = enemy && data.actors[enemy.actor];
   if (!enemy || !actor) throw new Error(`Unknown enemy '${enemyId}'.`);
   return addEnemy(overlay, data, {
-    name: `${enemyId} copy`,
+    name: `${name} copy`,
     base: enemyId,
     sheet: enemy.sheet,
     health: actor.maxHealth,
     touchDamage: enemy.touchDamage,
   });
+}
+
+/**
+ * Whether `prefabId` places an enemy the project adds (neither a built-in nor an
+ * override of one), which can be renamed and deleted.
+ */
+export function isProjectEnemy(overlay: GameDataOverlay | undefined, prefabId: string): boolean {
+  const source = overlay?.prefabs?.[prefabId]?.source;
+  return (
+    source?.kind === "enemy" &&
+    !!overlay?.enemies?.[source.ref] &&
+    !(prefabId in GAME_DATA.prefabs) &&
+    !(source.ref in GAME_DATA.enemies)
+  );
+}
+
+/** The overlay with project enemy `prefabId` displayed as `name`; its ids and records are unchanged. */
+export function renameEnemy(overlay: GameDataOverlay, prefabId: string, name: string): GameDataOverlay {
+  const prefab = overlay.prefabs?.[prefabId];
+  if (!prefab || !isProjectEnemy(overlay, prefabId)) throw new Error(`'${prefabId}' is not a project enemy.`);
+  return { ...overlay, prefabs: { ...overlay.prefabs, [prefabId]: { ...prefab, name } } };
+}
+
+/**
+ * The overlay without project enemy `prefabId`: its prefab, its enemy, and its
+ * actor unless a built-in or another project enemy still uses that actor.
+ */
+export function deleteEnemy(overlay: GameDataOverlay, prefabId: string): GameDataOverlay {
+  const prefab = overlay.prefabs?.[prefabId];
+  // A record overriding a built-in is never deleted: that would silently revert the built-in.
+  if (!prefab || prefab.source.kind !== "enemy" || !isProjectEnemy(overlay, prefabId)) {
+    throw new Error(`'${prefabId}' is not a project enemy.`);
+  }
+  // shortcut: assumes one prefab per enemy (as Studio writes them); a hand-written second one fails to compile.
+  const ref = prefab.source.ref;
+  const { [prefabId]: _prefab, ...prefabs } = overlay.prefabs ?? {};
+  const { [ref]: enemy, ...enemies } = overlay.enemies ?? {};
+  const actorId = enemy?.actor ?? "";
+  const shared = actorId in GAME_DATA.actors || Object.values(enemies).some((other) => other.actor === actorId);
+  const { [actorId]: _actor, ...actors } = overlay.actors ?? {};
+  return { ...overlay, prefabs, enemies, actors: shared ? overlay.actors : actors };
 }

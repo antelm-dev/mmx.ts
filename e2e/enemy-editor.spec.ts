@@ -75,7 +75,7 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   await hurtboxWidth.press("Enter");
   await expect(page.getByRole("group", { name: "Hurtbox" }).getByText("enemies.crab.hurtbox.hw must be > 0.")).toBeVisible();
   await expect(newEnemy).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Duplicate" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Duplicate", exact: true })).toBeDisabled();
   await hurtboxWidth.fill("9");
   await hurtboxWidth.press("Enter");
   await expect(newEnemy).toBeEnabled();
@@ -93,10 +93,10 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   await page.getByRole("button", { name: "Edit Metool" }).click();
   await expect(page.getByText("Built-in enemy, read-only.", { exact: false })).toBeVisible();
   await expect(page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed")).toBeDisabled();
-  await page.getByRole("button", { name: "Duplicate" }).click();
+  await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   await expect(page.getByText("Enemy · metool-copy")).toBeVisible();
   await expect(page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed")).toBeEnabled();
-  await expect(page.getByTitle("Place Metool-copy", { exact: true })).toBeVisible();
+  await expect(page.getByTitle("Place Metool copy", { exact: true })).toBeVisible();
 
   await save(page);
   const gameData = readGameData();

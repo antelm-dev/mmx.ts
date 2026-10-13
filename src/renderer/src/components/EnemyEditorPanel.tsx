@@ -1,15 +1,19 @@
 import type { ReactNode } from "react";
 import { chakra } from "@chakra-ui/react";
 import { ArrowDown, ArrowUp } from "lucide-react";
-import type { PropertyMeta } from "@mmx/content-schema";
+import { getDefinition, type PropertyMeta } from "@mmx/content-schema";
 import type { ActorDefinition, EnemyDefinition, Hitbox, MovementModel } from "@mmx/engine/data";
-import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
+import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
+import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import {
   abilityFields,
   AI_EVENTS,
+  deleteEnemy,
   ENEMY_ABILITIES,
   enemyForPrefab,
+  isProjectEnemy,
   putEnemy,
+  renameEnemy,
   toggled,
   withAbilities,
   withConfig,
@@ -21,6 +25,7 @@ import { Checkbox } from "../ui/editor/checkbox.js";
 import { labelStyle } from "../ui/editor/field.js";
 import { Panel, PanelActions, PanelNote, PanelScroll } from "../ui/editor/panel.js";
 import { SectionTitle } from "../ui/editor/section-title.js";
+import { definitionDeleteBlocker } from "./ObjectDefinitionSection.js";
 import { PropertyControl } from "./PropertyControl.js";
 
 const Row = chakra("div", { base: { py: "3px", px: "3.5" } });
@@ -102,14 +107,19 @@ function Chips({
 export function EnemyEditorPanel() {
   const project = useProjectSession().project;
   const prefabId = useUiStore((s) => s.enemyEditorId);
-  if (!project) return <PanelNote>Open a project to edit its enemies.</PanelNote>;
+  // Re-render on level edits: placed instances block Delete.
+  useEditorSnapshot();
+  if (!project) return <PanelNote {...DEFINITIONS_SCOPE}>Open a project to edit its enemies.</PanelNote>;
   const found = prefabId ? enemyForPrefab(project.gameData, prefabId) : null;
-  if (!found) {
+  const def = prefabId ? getDefinition(prefabId) : undefined;
+  if (!found || !prefabId) {
     return (
-      <PanelNote>
-        {prefabId
-          ? `'${prefabId}' cannot be shown: fix data/game.json (see Problems) or pick another enemy.`
-          : "Pick an enemy to edit with its Edit button in the Object Palette."}
+      <PanelNote {...DEFINITIONS_SCOPE}>
+        {!prefabId
+          ? "Pick an enemy to edit with its Edit button in the Object Palette."
+          : project.gameData?.prefabs?.[prefabId] || def
+            ? `'${prefabId}' cannot be shown: fix data/game.json (see Problems) or pick another enemy.`
+            : `'${prefabId}' was deleted.`}
       </PanelNote>
     );
   }
@@ -124,6 +134,14 @@ export function EnemyEditorPanel() {
     errorsAt(fieldPath).map((message) => <ErrorText key={message}>{message}</ErrorText>);
   const save = (next: EnemyDefinition, nextActor?: ActorDefinition): void => {
     if (project.gameData) editor.setGameData(putEnemy(project.gameData, next, nextActor));
+  };
+  const name = def?.name ?? enemy.id;
+  // Rename and Delete are for enemies the project adds, not built-ins or overrides of them.
+  const own = isProjectEnemy(project.gameData, prefabId);
+  const blocker = own ? definitionDeleteBlocker(prefabId) : null;
+  const remove = (): void => {
+    if (!project.gameData || !window.confirm(`Delete the enemy '${name}' from the project?`)) return;
+    editor.setGameData(deleteEnemy(project.gameData, prefabId));
   };
 
   /** One property of the enemy (or its actor) at `fieldPath`, with that field's compile errors. */
@@ -168,7 +186,7 @@ export function EnemyEditorPanel() {
   };
 
   return (
-    <Panel>
+    <Panel {...DEFINITIONS_SCOPE}>
       {/* The containing block of the checkboxes' hidden inputs, so focusing one never scrolls the dock. */}
       <PanelScroll position="relative">
         <SectionTitle>Enemy · {enemy.id}</SectionTitle>
@@ -177,12 +195,26 @@ export function EnemyEditorPanel() {
           <ActionButton
             disabled={broken}
             title={broken ? "Fix the data/game.json errors in Problems first" : undefined}
-            onClick={() => editor.duplicateEnemy(enemy.id)}
+            onClick={() => editor.duplicateEnemy(enemy.id, name)}
           >
             Duplicate
           </ActionButton>
+          {own && (
+            <ActionButton disabled={!!blocker} title={blocker ?? undefined} onClick={remove}>
+              Delete
+            </ActionButton>
+          )}
         </PanelActions>
         <chakra.fieldset disabled={!editable} border="0" m="0" p="0" minW="0">
+          {/* The display name only: ids, placed instances and objects based on it are unchanged. */}
+          <Row>
+            <chakra.fieldset disabled={!own} border="0" m="0" p="0" minW="0">
+              {control({ key: "name", label: "Name", type: "string" }, name, `prefabs.${prefabId}.name`, (next: string) => {
+                const trimmed = next.trim();
+                if (trimmed && trimmed !== name && project.gameData) editor.setGameData(renameEnemy(project.gameData, prefabId, trimmed));
+              })}
+            </chakra.fieldset>
+          </Row>
           {actor &&
             field(num("maxHealth", "Health"), actor.maxHealth, `actors.${actor.id}.maxHealth`, (maxHealth: number) =>
               save(enemy, { ...actor, maxHealth }),

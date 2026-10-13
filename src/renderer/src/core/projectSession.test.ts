@@ -186,3 +186,58 @@ describe("ProjectSession game data", () => {
     await session.getAssets();
   });
 });
+
+describe("ProjectSession definition history", () => {
+  it("undoes and redoes object and game-data edits, re-registering the catalog, until the project changes", async () => {
+    const { getDefinition } = await import("@mmx/content-schema");
+    const { GAME_DATA } = await import("@mmx/engine/data");
+    const { addEnemy } = await import("./gameData.js");
+    const { renameEnemy } = await import("./enemyEditor.js");
+    vi.stubGlobal("window", { studio: { project: bridge } });
+    const session = new ProjectSession();
+    await session.openProject();
+    expect(session.undoDefinitions()).toBe(false);
+
+    const { overlay } = addEnemy(undefined, GAME_DATA, { name: "Crab", base: "metool", sheet: "anim.crab", health: 3, touchDamage: 2 });
+    session.setGameData(overlay);
+    session.setGameData(renameEnemy(overlay, "enemy.crab", "Spiky Crab"));
+    const right = { id: "obj.enemy.crab.1", name: "Crab (right)", base: "enemy.crab" };
+    session.setObjects([right]);
+    expect(getDefinition("enemy.crab")?.name).toBe("Spiky Crab");
+    expect(getDefinition(right.id)?.baseId).toBe("enemy.crab");
+
+    expect(session.undoDefinitions()).toBe(true);
+    expect(getDefinition(right.id)).toBeUndefined();
+    expect(session.undoDefinitions()).toBe(true);
+    expect(getDefinition("enemy.crab")?.name).toBe("Crab");
+    expect(session.getSnapshot().dirty).toBe(true);
+    expect(session.redoDefinitions()).toBe(true);
+    expect(getDefinition("enemy.crab")?.name).toBe("Spiky Crab");
+
+    // Back to before the first enemy: an empty overlay, so a save would clear data/game.json.
+    session.undoDefinitions();
+    session.undoDefinitions();
+    expect(getDefinition("enemy.crab")).toBeUndefined();
+    expect(session.getSnapshot().project?.gameData).toEqual({ schemaVersion: GAME_DATA.schemaVersion });
+    expect(session.getSnapshot().project?.manifest.objects).toBeUndefined();
+    expect(session.undoDefinitions()).toBe(false);
+
+    // A new edit drops the redo branch.
+    session.redoDefinitions();
+    expect(session.canRedoDefinitions).toBe(true);
+    session.setObjects([]);
+    expect(session.canRedoDefinitions).toBe(false);
+    expect(session.canUndoDefinitions).toBe(true);
+
+    // A commit that changes nothing records nothing.
+    while (session.undoDefinitions());
+    session.setGameData(structuredClone(overlay));
+    session.setGameData(structuredClone(overlay));
+    session.undoDefinitions();
+    expect(session.canUndoDefinitions).toBe(false);
+
+    session.close();
+    expect(session.canUndoDefinitions).toBe(false);
+    await session.getAssets();
+  });
+});

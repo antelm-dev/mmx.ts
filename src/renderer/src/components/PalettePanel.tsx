@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
-import { Pencil, Search, Trash2, X } from "lucide-react";
+import { Copy, Pencil, Search, Trash2, X } from "lucide-react";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -9,6 +9,8 @@ import {
   type GameObjectDefinition,
 } from "@mmx/content-schema";
 import { ENEMY_PANEL, openPanel } from "../app/dock.js";
+import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
+import { duplicateObject, freeObjectId } from "../core/objectDefinitions.js";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -16,12 +18,37 @@ import { ListRow, ListRowAdd } from "../ui/editor/list-row.js";
 import { Panel, PanelActions, PanelNote, PanelScroll, SearchBox } from "../ui/editor/panel.js";
 import { CategoryHeader } from "../ui/editor/section-title.js";
 import { NewEnemyDialog } from "./NewEnemyDialog.js";
-import { definitionUseCount } from "./ObjectDefinitionSection.js";
+import { definitionDeleteBlocker } from "./ObjectDefinitionSection.js";
 import { SpritePreview } from "./SpritePreview.js";
 
 type PaletteRow =
   | { kind: "header"; key: string; label: string }
   | { kind: "def"; key: string; def: GameObjectDefinition };
+
+/**
+ * Palette → Duplicate: a project object or enemy is copied under a new id; any
+ * other built-in becomes a new project object based on it.
+ */
+function duplicateDefinition(def: GameObjectDefinition): void {
+  const objects = projectSession.getSnapshot().project?.manifest.objects ?? [];
+  if (def.baseId) projectSession.setObjects(duplicateObject(objects, def.id));
+  else if (def.category === "enemy") editor.duplicateEnemy(String(def.fields.Kind), def.name);
+  else projectSession.setObjects([...objects, { id: freeObjectId(def.id, objects), name: `${def.name} copy`, base: def.id }]);
+}
+
+const rowAction = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  display: "grid",
+  placeItems: "center",
+  w: "6",
+  h: "6",
+  rounded: "md",
+  color: "studio.fgTertiary",
+  cursor: "pointer",
+  _disabled: { opacity: 0.35, cursor: "default", _hover: { color: "studio.fgTertiary", bg: "transparent" } },
+} as const;
 
 /** Detachable dock panel: the searchable, virtualized object palette. */
 export function PalettePanel() {
@@ -34,7 +61,7 @@ export function PalettePanel() {
   const broken = session.open && projectSession.gameData().issues.length > 0;
 
   return (
-    <Panel>
+    <Panel {...DEFINITIONS_SCOPE}>
       <SearchBox>
         <Search size={16} />
         <input
@@ -76,6 +103,8 @@ function PaletteList({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { project, open: projectOpen } = useProjectSession();
+  // Enemy copies get ids picked against the merged data, the engine's alone while data/game.json has errors.
+  const broken = projectOpen && projectSession.gameData().issues.length > 0;
 
   const rows = useMemo<PaletteRow[]>(() => {
     const q = query.trim().toLowerCase();
@@ -139,11 +168,21 @@ function PaletteList({
           }
           const def = row.def;
           // Project objects (derived from a built-in) can be deleted once nothing uses them.
-          const uses = def.baseId ? definitionUseCount(def.id) : 0;
+          const blocker = def.baseId ? definitionDeleteBlocker(def.id) : null;
           // Enemy types (not project presets of them) open in the Enemy panel.
           const editable = projectOpen && def.category === "enemy" && !def.baseId;
+          const duplicable = projectOpen && def.id !== "spawn";
+          const copyEnemy = def.category === "enemy" && !def.baseId;
           return (
-            <div key={v.key} style={style}>
+            // Duplicate shows on hover and keyboard focus, like the row's add icon.
+            <chakra.div
+              key={v.key}
+              style={style}
+              css={{
+                "& [data-row-reveal]": { opacity: 0 },
+                "&:is(:hover, :focus-within) [data-row-reveal]": { opacity: 1 },
+              }}
+            >
               <ListRow
                 active={isActive(def.id)}
                 title={`Place ${def.name}`}
@@ -159,26 +198,12 @@ function PaletteList({
               {def.baseId && (
                 <chakra.button
                   type="button"
-                  position="absolute"
-                  top="50%"
+                  {...rowAction}
                   right="52px"
-                  transform="translateY(-50%)"
-                  display="grid"
-                  placeItems="center"
-                  w="6"
-                  h="6"
-                  rounded="md"
-                  color="studio.fgTertiary"
-                  cursor="pointer"
                   _hover={{ color: "studio.dangerFg", bg: "studio.hover" }}
-                  _disabled={{ opacity: 0.35, cursor: "default", _hover: { color: "studio.fgTertiary", bg: "transparent" } }}
-                  disabled={uses > 0}
+                  disabled={!!blocker}
                   aria-label={`Delete ${def.name}`}
-                  title={
-                    uses > 0
-                      ? `Used by ${uses} placed object${uses === 1 ? "" : "s"}; delete them first`
-                      : `Delete ${def.name}`
-                  }
+                  title={blocker ?? `Delete ${def.name}`}
                   onClick={() => {
                     if (!window.confirm(`Delete the object '${def.name}' from the project?`)) return;
                     const objects = projectSession.getSnapshot().project?.manifest.objects ?? [];
@@ -191,17 +216,8 @@ function PaletteList({
               {editable && (
                 <chakra.button
                   type="button"
-                  position="absolute"
-                  top="50%"
+                  {...rowAction}
                   right="52px"
-                  transform="translateY(-50%)"
-                  display="grid"
-                  placeItems="center"
-                  w="6"
-                  h="6"
-                  rounded="md"
-                  color="studio.fgTertiary"
-                  cursor="pointer"
                   _hover={{ color: "studio.fg", bg: "studio.hover" }}
                   aria-label={`Edit ${def.name}`}
                   title={`Edit ${def.name}`}
@@ -213,7 +229,23 @@ function PaletteList({
                   <Pencil size={14} />
                 </chakra.button>
               )}
-            </div>
+              {duplicable && (
+                <chakra.button
+                  type="button"
+                  data-row-reveal=""
+                  {...rowAction}
+                  right={def.baseId || editable ? "80px" : "52px"}
+                  bg="studio.raised"
+                  _hover={{ color: "studio.fg", bg: "studio.hover" }}
+                  disabled={copyEnemy && broken}
+                  aria-label={`Duplicate ${def.name}`}
+                  title={copyEnemy && broken ? "Fix the data/game.json errors in Problems first" : `Duplicate ${def.name}`}
+                  onClick={() => duplicateDefinition(def)}
+                >
+                  <Copy size={14} />
+                </chakra.button>
+              )}
+            </chakra.div>
           );
         })}
       </chakra.div>

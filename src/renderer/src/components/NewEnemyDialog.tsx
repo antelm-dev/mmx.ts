@@ -2,6 +2,7 @@ import { useState } from "react";
 import { chakra, Dialog, Portal } from "@chakra-ui/react";
 import { GAME_DATA } from "@mmx/engine/data";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
+import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import { uniqueEnemySlug } from "../core/gameData.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Field, FieldInput, FieldSelect } from "../ui/editor/field.js";
@@ -46,6 +47,7 @@ export function NewEnemyDialog({ open, onClose }: Readonly<{ open: boolean; onCl
         <Dialog.Backdrop />
         <Dialog.Positioner>
           <Dialog.Content
+            {...DEFINITIONS_SCOPE}
             maxW="360px"
             bg="studio.popover"
             border="1px solid"
