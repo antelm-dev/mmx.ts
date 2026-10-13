@@ -9,8 +9,10 @@ import {
 import type { World } from "./World.js";
 import { HIT_FX_FPS, HIT_FX_FRAME_COUNT } from "../core/constants.js";
 import {
+  FallingPlatform,
   MovingPlatform,
   type Conveyor,
+  type FallingPlatformSpawn,
   type Hazard,
   type MovingPlatformSpawn,
 } from "./Environment.js";
@@ -32,6 +34,7 @@ export interface StageEnvironment {
   hazards?: readonly Hazard[];
   conveyors?: readonly Conveyor[];
   platforms?: readonly MovingPlatformSpawn[];
+  fallingPlatforms?: readonly FallingPlatformSpawn[];
   pickups?: readonly LifeCapsuleSpawn[];
   weaponCapsules?: readonly WeaponCapsuleSpawn[];
 }
@@ -55,6 +58,7 @@ export class Stage {
   readonly hazards: readonly Hazard[];
   readonly conveyors: readonly Conveyor[];
   readonly platforms: MovingPlatform[];
+  readonly fallingPlatforms: FallingPlatform[];
   readonly pickups: LifeCapsule[];
   readonly weaponCapsules: WeaponCapsule[];
   readonly sparks: HitSpark[] = [];
@@ -67,11 +71,14 @@ export class Stage {
     this.hazards = environment.hazards ?? [];
     this.conveyors = environment.conveyors ?? [];
     this.platforms = (environment.platforms ?? []).map((spawn) => new MovingPlatform(spawn));
+    this.fallingPlatforms = (environment.fallingPlatforms ?? []).map(
+      (spawn) => new FallingPlatform(spawn),
+    );
     this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn));
     this.weaponCapsules = (environment.weaponCapsules ?? []).map(
       (spawn) => new WeaponCapsule(spawn),
     );
-    this.player.setPlatforms(this.platforms);
+    this.player.setPlatforms([...this.platforms, ...this.fallingPlatforms]);
   }
 
   add(enemy: Enemy): Enemy {
@@ -105,6 +112,7 @@ export class Stage {
     }
 
     for (const platform of this.platforms) platform.tick(dt);
+    if (this.fallingPlatforms.length > 0) this.tickFallingPlatforms(dt);
     this.player.conveyor_belt_speed = this.conveyorSpeedUnderPlayer();
     this.player.tick(dt);
 
@@ -143,6 +151,19 @@ export class Stage {
 
     this.reapConsumedPickups();
     this.reapConsumedWeaponCapsules();
+  }
+
+  /** Falling platforms drop once stood on and are removed once below the level. */
+  private tickFallingPlatforms(dt: number): void {
+    const riding = this.player.standingOn;
+    for (const platform of this.fallingPlatforms) platform.tick(dt, riding === platform);
+    const before = this.fallingPlatforms.length;
+    for (let i = before - 1; i >= 0; i--) {
+      if (this.fallingPlatforms[i].y > this.world.heightPx) this.fallingPlatforms.splice(i, 1);
+    }
+    if (this.fallingPlatforms.length !== before) {
+      this.player.setPlatforms([...this.platforms, ...this.fallingPlatforms]);
+    }
   }
 
   /**

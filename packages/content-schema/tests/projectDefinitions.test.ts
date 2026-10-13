@@ -31,19 +31,20 @@ test("a project definition fixes hidden values and re-defaults exposed ones", (t
   const def = getDefinition("obj.fast")!;
   assert.equal(def.baseId, "platform.moving");
   assert.equal(def.engineId, "MovingPlatform");
-  assert.deepEqual(def.fields, { Speed: 120 });
+  assert.deepEqual(def.fields, { Speed: 120, Axis: "horizontal" });
   assert.deepEqual(
     def.properties.map((p) => [p.key, p.default]),
     [["Travel", 32]],
   );
   assert.deepEqual(entityFields({ id: "i", definitionId: "obj.fast", x: 0, y: 0 }), {
     Speed: 120,
+    Axis: "horizontal",
     Travel: 32,
   });
   // A hidden property cannot be overridden per instance.
   assert.deepEqual(
     entityFields({ id: "i", definitionId: "obj.fast", x: 0, y: 0, overrides: { Speed: 1 } }),
-    { Speed: 120, Travel: 32 },
+    { Speed: 120, Axis: "horizontal", Travel: 32 },
   );
   assert.equal(allDefinitions().at(-1)?.id, "obj.fast");
 });

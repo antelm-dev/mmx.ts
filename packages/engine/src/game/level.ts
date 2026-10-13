@@ -9,7 +9,7 @@ import type {
   WeaponCapsuleKind,
   WeaponCapsuleSpawn,
 } from "./Pickup.js";
-import type { Conveyor, Hazard, MovingPlatformSpawn } from "./Environment.js";
+import type { Conveyor, FallingPlatformSpawn, Hazard, MovingPlatformSpawn } from "./Environment.js";
 
 export interface LevelRuntime {
   data: LevelData;
@@ -18,6 +18,7 @@ export interface LevelRuntime {
   hazards: Hazard[];
   conveyors: Conveyor[];
   platforms: MovingPlatformSpawn[];
+  fallingPlatforms: FallingPlatformSpawn[];
   enemies: EnemySpawn[];
   pickups: LifeCapsuleSpawn[];
   weaponCapsules: WeaponCapsuleSpawn[];
@@ -37,6 +38,7 @@ const KNOWN_ENTITY_IDS: ReadonlySet<string> = new Set([
   "LifeCapsule",
   "WeaponCapsule",
   "MovingPlatform",
+  "FallingPlatform",
   "Conveyor",
   "Hazard",
   "CameraZone",
@@ -249,6 +251,18 @@ export function compileLevel(
     } else if (e.id === "MovingPlatform") {
       checkNumberField(e, "Travel", true);
       checkNumberField(e, "Speed", true);
+      const axis = e.fields.Axis;
+      if (axis !== undefined && axis !== null && axis !== "horizontal" && axis !== "vertical") {
+        error({
+          code: "field.enum",
+          entityId: e.iid,
+          field: "Axis",
+          message: `${e.id}: Axis must be "horizontal" or "vertical".`,
+          position: pos,
+        });
+      }
+    } else if (e.id === "FallingPlatform") {
+      checkNumberField(e, "Delay", true);
     }
 
     // Advisory: an entity that falls entirely outside the level never participates.
@@ -296,6 +310,15 @@ function buildRuntime(data: LevelData): LevelRuntime {
       h: e.h,
       travel: Math.max(0, numberField(e, "Travel", 96)),
       speed: Math.max(0, numberField(e, "Speed", 48)),
+      ...(e.fields.Axis === "vertical" ? { axis: "vertical" as const } : {}),
+    })),
+    fallingPlatforms: matching("FallingPlatform").map((e) => ({
+      id: e.iid,
+      x: e.x,
+      y: e.y,
+      w: e.w,
+      h: e.h,
+      delay: Math.max(0, numberField(e, "Delay", 0.5)),
     })),
     enemies: matching("Enemy").map((e) => ({
       id: e.iid,

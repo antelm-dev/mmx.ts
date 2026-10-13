@@ -134,6 +134,47 @@ test("negative moving-platform Travel or Speed is an error", () => {
   assert.equal(find(speed.diagnostics, "field.nonNegative")?.field, "Speed");
 });
 
+test("an unknown moving-platform Axis or a negative falling-platform Delay is an error", () => {
+  const axis = compileLevel(
+    level([SPAWN, entity({ id: "MovingPlatform", iid: "p1", fields: { Axis: "diagonal" } })]),
+  );
+  assert.equal(find(axis.diagnostics, "field.enum")?.field, "Axis");
+  const delay = compileLevel(
+    level([SPAWN, entity({ id: "FallingPlatform", iid: "f1", fields: { Delay: -1 } })]),
+  );
+  assert.equal(find(delay.diagnostics, "field.nonNegative")?.field, "Delay");
+});
+
+test("Axis and FallingPlatform compile into platform spawns", () => {
+  const runtime = loadLevel(
+    level([
+      SPAWN,
+      entity({ id: "MovingPlatform", iid: "v", fields: { Axis: "vertical" } }),
+      entity({ id: "MovingPlatform", iid: "h", fields: { Axis: "horizontal" } }),
+      entity({ id: "FallingPlatform", iid: "f", w: 48, h: 8 }),
+    ]),
+  );
+  assert.equal(runtime.platforms[0].axis, "vertical");
+  // Horizontal is the default, so it is left off and the spawn matches an untagged one.
+  assert.equal(runtime.platforms[1].axis, undefined);
+  assert.deepEqual(runtime.fallingPlatforms, [{ id: "f", x: 32, y: 32, w: 48, h: 8, delay: 0.5 }]);
+});
+
+test("the digest covers a vertical platform's y; an explicit horizontal Axis changes nothing", () => {
+  const digestAfter = (fields: Record<string, unknown>): string => {
+    const scene = Scene.create({
+      level: level([SPAWN, entity({ id: "MovingPlatform", iid: "p", x: 128, y: 16, fields })]),
+    });
+    for (let i = 0; i < 10; i++) scene.step(0);
+    return scene.digest();
+  };
+  assert.notEqual(
+    digestAfter({ Axis: "vertical", Travel: 64 }),
+    digestAfter({ Axis: "vertical", Travel: 0 }),
+  );
+  assert.equal(digestAfter({ Axis: "horizontal" }), digestAfter({}));
+});
+
 test("a non-positive entity width or height is an error", () => {
   const result = compileLevel(level([SPAWN, entity({ id: "Hazard", iid: "h1", w: 0 })]));
   const d = find(result.diagnostics, "size.positive");

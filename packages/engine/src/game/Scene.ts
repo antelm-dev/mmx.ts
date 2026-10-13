@@ -98,6 +98,7 @@ export class Scene {
       hazards: level.hazards,
       conveyors: level.conveyors,
       platforms: level.platforms,
+      fallingPlatforms: level.fallingPlatforms,
       pickups: level.pickups,
       weaponCapsules: level.weaponCapsules,
     });
@@ -212,6 +213,11 @@ export class Scene {
     }
     for (const platform of this.stage.platforms) {
       parts.push("platform", q(platform.x), platform.direction);
+      // Only vertical platforms add y, so horizontal-only digests are unchanged.
+      if (platform.axis === "vertical") parts.push(q(platform.y));
+    }
+    for (const platform of this.stage.fallingPlatforms) {
+      parts.push("falling", platform.id, q(platform.y), q(platform.elapsed ?? -1));
     }
     for (const pickup of this.stage.pickups) {
       parts.push("pickup", pickup.id, pickup.collecting ? 1 : 0);

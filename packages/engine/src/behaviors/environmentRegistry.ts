@@ -1,20 +1,65 @@
 import { Registry, notWired, type BehaviorFactory } from "./types.js";
+import type { DebugPrimitive, EntityTransform } from "./geometryTypes.js";
 import type { EnvironmentDefinition } from "../data/types.js";
+import { environments } from "../data/environments.js";
+
+/** A placed environment instance's field values, keyed by prefab field name (Travel, Axis…). */
+export type EnvironmentFields = Readonly<Record<string, unknown>>;
 
 /**
- * Environment behaviour registry — moving platforms, conveyors, hazards, and
- * camera zones. The movement/constraint algorithms stay in code (Environment.ts,
- * Camera.ts); an entry names which one runs. Part 8 wires `create`, and Part 11
- * adds the `debugGeometry` providers (travel paths, influence areas, zones).
+ * Environment behaviour registry — moving and falling platforms, conveyors,
+ * hazards, and camera zones. The movement/constraint algorithms stay in code
+ * (Environment.ts, Camera.ts); an entry names which one runs. Part 8 wires
+ * `create`.
+ *
+ * `debugGeometry` describes one placed instance for the editor: `fields` are
+ * its resolved prefab field values (prefab defaults merged with the instance's
+ * overrides) and the transform is its rectangle, `x`/`y` its top-left corner.
  */
-export type EnvironmentBehaviorFactory = BehaviorFactory<unknown, EnvironmentDefinition, unknown>;
+export interface EnvironmentBehaviorFactory extends Omit<
+  BehaviorFactory<unknown, EnvironmentDefinition, unknown>,
+  "debugGeometry"
+> {
+  debugGeometry?(fields: EnvironmentFields, transform: EntityTransform): readonly DebugPrimitive[];
+}
 
 const ENVIRONMENT_BEHAVIOR_IDS = [
   "environment.moving-platform",
+  "environment.falling-platform",
   "environment.conveyor",
   "environment.hazard",
   "environment.camera-zone",
 ] as const;
+
+const MOVING_DEFAULTS = environments["moving-platform"].defaults;
+
+/**
+ * A moving platform's travel: a path from its rectangle's centre at the origin
+ * to its centre at the far end, and the rectangle at the far end (the handle a
+ * gizmo drags to set Travel). Empty when it does not travel.
+ */
+function movingPlatformGeometry(
+  fields: EnvironmentFields,
+  transform: EntityTransform,
+): DebugPrimitive[] {
+  const travel =
+    typeof fields.Travel === "number" ? Math.max(0, fields.Travel) : MOVING_DEFAULTS.travel;
+  if (!(travel > 0)) return [];
+  const vertical = fields.Axis === "vertical";
+  const width = transform.width ?? 0;
+  const height = transform.height ?? 0;
+  const endX = transform.x + (vertical ? 0 : travel);
+  const endY = transform.y + (vertical ? travel : 0);
+  return [
+    {
+      kind: "line",
+      role: "movement-path",
+      from: { x: transform.x + width / 2, y: transform.y + height / 2 },
+      to: { x: endX + width / 2, y: endY + height / 2 },
+    },
+    { kind: "rect", role: "movement-path", x: endX, y: endY, width, height, label: "end" },
+  ];
+}
 
 export const environmentBehaviorRegistry = new Registry<EnvironmentBehaviorFactory>();
 
@@ -26,5 +71,6 @@ for (const id of ENVIRONMENT_BEHAVIOR_IDS) {
         ? { ok: true, value: input as EnvironmentDefinition }
         : { ok: false, issues: [{ message: "environment config must be an object." }] },
     create: () => notWired(id, "Part 8 (Pickups & environment)"),
+    ...(id === "environment.moving-platform" ? { debugGeometry: movingPlatformGeometry } : {}),
   });
 }

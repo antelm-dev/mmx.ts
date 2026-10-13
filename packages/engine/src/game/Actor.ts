@@ -11,7 +11,7 @@ import {
   MAX_HEALTH,
   ONE_WAY_DROP_TICKS,
 } from "../core/constants.js";
-import type { MovingPlatform } from "./Environment.js";
+import type { Platform } from "./Environment.js";
 
 /**
  * Physics body — port of Actor.gd.
@@ -58,9 +58,9 @@ export class Actor {
   floor_snap_enabled = true;
   collisions_enabled = true;
   conveyor_belt_speed = 0;
-  private platforms: readonly MovingPlatform[] = [];
+  private platforms: readonly Platform[] = [];
   /** Dynamic floor currently carrying this actor, retained until it truly leaves. */
-  private ridingPlatform: MovingPlatform | null = null;
+  private ridingPlatform: Platform | null = null;
 
   // health
   max_health = MAX_HEALTH;
@@ -114,9 +114,20 @@ export class Actor {
   }
   get_floor_velocity(): Vec2 {
     const platform = this.ridingPlatform ?? this.findSupportingPlatform();
-    return new Vec2(platform ? platform.deltaX : 0, 0);
+    return platform ? new Vec2(platform.deltaX, platform.deltaY) : new Vec2(0, 0);
   }
-  setPlatforms(platforms: readonly MovingPlatform[]): void {
+  /** The platform this actor stood on after the last step (the floor probe's reach), or null. */
+  get standingOn(): Platform | null {
+    if (this.ridingPlatform || !this._onFloor) return this.ridingPlatform;
+    const feet = this.pos.y + this.hh;
+    return (
+      this.platforms.find(
+        (platform) =>
+          this.overlapsPlatformX(platform) && platform.y >= feet - 0.001 && platform.y <= feet + 2,
+      ) ?? null
+    );
+  }
+  setPlatforms(platforms: readonly Platform[]): void {
     this.platforms = platforms;
     if (this.ridingPlatform && !platforms.includes(this.ridingPlatform)) {
       this.ridingPlatform = null;
@@ -251,13 +262,17 @@ export class Actor {
       return;
     }
 
-    const oldFeet = this.pos.y + this.hh;
     let support = this.ridingPlatform ?? this.findSupportingPlatform();
     if (this.final_velocity.y < 0 || (support && !this.overlapsPreviousPlatformX(support))) {
       support = null;
       this.ridingPlatform = null;
     }
-    if (support) this.moveXResolve(support.deltaX);
+    if (support) {
+      this.moveXResolve(support.deltaX);
+      this.moveYResolve(support.deltaY);
+    }
+    // After the carry, so a rider of a vertical platform starts the step on its top.
+    const oldFeet = this.pos.y + this.hh;
     this.moveXResolve(this.final_velocity.x * dt);
     this.moveYResolve(this.final_velocity.y * dt);
     // Ramps are passable to the swept resolvers, so the body is placed on the
@@ -379,11 +394,14 @@ export class Actor {
   private resolvePlatformFloor(oldFeet: number): boolean {
     if (this.final_velocity.y < 0) return false;
     const feet = this.pos.y + this.hh;
-    let floor: MovingPlatform | null = null;
+    let floor: Platform | null = null;
     for (const platform of this.platforms) {
       if (!this.overlapsPlatformX(platform)) continue;
       const contactTolerance = platform === this.ridingPlatform ? 2 : 0.001;
-      if (oldFeet > platform.y + contactTolerance || feet < platform.y) continue;
+      // Either top counts as "above": the current one for a carried rider, the
+      // previous one for a body a rising platform has just overtaken.
+      const top = Math.max(platform.y, platform.previousY);
+      if (oldFeet > top + contactTolerance || feet < platform.y) continue;
       if (floor === null || platform.y < floor.y) floor = platform;
     }
     if (floor === null) return false;
@@ -421,23 +439,24 @@ export class Actor {
     );
   }
 
-  private findSupportingPlatform(): MovingPlatform | null {
+  private findSupportingPlatform(): Platform | null {
     const feet = this.pos.y + this.hh;
     return (
       this.platforms.find(
-        (platform) => Math.abs(feet - platform.y) <= 2 && this.overlapsPreviousPlatformX(platform),
+        (platform) =>
+          Math.abs(feet - platform.previousY) <= 2 && this.overlapsPreviousPlatformX(platform),
       ) ?? null
     );
   }
 
-  private overlapsPreviousPlatformX(platform: MovingPlatform): boolean {
+  private overlapsPreviousPlatformX(platform: Platform): boolean {
     return (
       this.pos.x + this.hw > platform.previousX &&
       this.pos.x - this.hw < platform.previousX + platform.w
     );
   }
 
-  private overlapsPlatformX(platform: MovingPlatform): boolean {
+  private overlapsPlatformX(platform: Platform): boolean {
     return this.pos.x + this.hw > platform.x && this.pos.x - this.hw < platform.x + platform.w;
   }
 

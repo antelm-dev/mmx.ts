@@ -5,6 +5,7 @@ import {
   Registry,
   abilityRegistry,
   enemyBehaviorRegistry,
+  environmentBehaviorRegistry,
   buildCompileRegistries,
   validateConfig,
   notWired,
@@ -176,5 +177,30 @@ test("a Shoot config naming an unknown projectile fails compilation", () => {
   assert.deepEqual(
     missing.map((d) => d.fieldPath),
     ["enemies.pantheon.abilityConfig.Shoot.projectile"],
+  );
+});
+
+// --- Environment debug geometry ---------------------------------------------
+
+test("a moving platform's debug geometry is its travel path and end rectangle on its axis", () => {
+  const geometry = environmentBehaviorRegistry.get("environment.moving-platform").debugGeometry!;
+  const at = { x: 100, y: 50, facing: 1, width: 48, height: 8 };
+  assert.deepEqual(geometry({ Travel: 40, Speed: 48, Axis: "vertical" }, at), [
+    { kind: "line", role: "movement-path", from: { x: 124, y: 54 }, to: { x: 124, y: 94 } },
+    { kind: "rect", role: "movement-path", x: 100, y: 90, width: 48, height: 8, label: "end" },
+  ]);
+  const horizontal = geometry({ Travel: 40, Axis: "horizontal" }, at);
+  assert.deepEqual(horizontal[0], {
+    kind: "line",
+    role: "movement-path",
+    from: { x: 124, y: 54 },
+    to: { x: 164, y: 54 },
+  });
+  // Unset Travel falls back to the built-in default; no travel, no path.
+  assert.equal((geometry({}, at)[1] as { x: number }).x, 196);
+  assert.deepEqual(geometry({ Travel: 0 }, at), []);
+  assert.equal(
+    environmentBehaviorRegistry.get("environment.falling-platform").debugGeometry,
+    undefined,
   );
 });

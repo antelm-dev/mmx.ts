@@ -253,6 +253,46 @@
         "default": 48,
         "nonNegative": true,
         "help": "Travel speed in pixels/second."
+      },
+      {
+        "key": "Axis",
+        "label": "Axis",
+        "type": "enum",
+        "default": "horizontal",
+        "options": ["horizontal", "vertical"],
+        "help": "Horizontal travels right from the placed position; vertical travels down."
+      }
+    ]
+  },
+  {
+    "id": "platform.falling",
+    "name": "Falling Platform",
+    "category": "platform",
+    "icon": "▭",
+    "engineId": "FallingPlatform",
+    "components": {
+      "platform": {
+        "falling": true
+      }
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 48,
+      "height": 8
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#eab308"
+    },
+    "properties": [
+      {
+        "key": "Delay",
+        "label": "Delay",
+        "type": "number",
+        "default": 0.5,
+        "nonNegative": true,
+        "help": "Seconds after the player first lands on it before it falls."
       }
     ]
   },
