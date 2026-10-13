@@ -138,3 +138,51 @@ describe("ProjectSession object definitions", () => {
     expect(getDefinition("obj.fast")).toBeUndefined();
   });
 });
+
+describe("ProjectSession game data", () => {
+  it("compiles data/game.json, registers its enemies before the project's objects, and reports a bad overlay", async () => {
+    const { getDefinition } = await import("@mmx/content-schema");
+    const { GAME_DATA } = await import("@mmx/engine/data");
+    const { addEnemy } = await import("./gameData.js");
+    const { overlay } = addEnemy(undefined, GAME_DATA, {
+      name: "Crab",
+      base: "metool",
+      sheet: "anim.crab",
+      health: 3,
+      touchDamage: 2,
+    });
+    const right = { id: "obj.crab.right", name: "Crab (right)", base: "enemy.crab", values: { FacesRight: true } };
+    const crabProject = { ...project, manifest: { ...project.manifest, objects: [right] }, gameData: overlay };
+    vi.stubGlobal("window", {
+      studio: {
+        project: {
+          ...bridge,
+          load: async () => ({ ok: true, issues: [], value: { rootPath: "/p", project: crabProject } }),
+        },
+      },
+    });
+    const session = new ProjectSession();
+    await session.openProject();
+    expect(getDefinition("enemy.crab")?.fields).toEqual({ Kind: "crab" });
+    expect(getDefinition("obj.crab.right")?.baseId).toBe("enemy.crab");
+    expect(session.getSnapshot().issues).toEqual([]);
+    expect(session.gameData().compiled.enemies.has("crab")).toBe(true);
+
+    // An unsupported category: reported, the crab is gone, and Play is refused (issues).
+    session.setGameData({ ...overlay, weapons: {} } as never);
+    expect(session.getSnapshot().dirty).toBe(true);
+    expect(session.getSnapshot().issues).toContainEqual(
+      expect.objectContaining({ severity: "error", code: "game-data.overlay.category", path: "/data/game.json" }),
+    );
+    expect(session.gameData().issues).not.toEqual([]);
+    expect(session.gameData().compiled.enemies.has("crab")).toBe(false);
+    expect(getDefinition("enemy.crab")).toBeUndefined();
+
+    session.setGameData(overlay);
+    expect(session.getSnapshot().issues).toEqual([]);
+    expect(getDefinition("obj.crab.right")).toBeDefined();
+    session.close();
+    expect(getDefinition("enemy.crab")).toBeUndefined();
+    await session.getAssets();
+  });
+});

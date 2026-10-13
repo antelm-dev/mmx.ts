@@ -30,6 +30,16 @@ describe("buildStudioAssets", () => {
     expect(soundIds).toEqual(["music.stage"]);
   });
 
+  it("draws project enemies from their animation-asset sheet; explicit bindings win", () => {
+    const enemies = { crab: { sheet: "anim.player.fixture" }, ghost: { sheet: "sprite.bg" } };
+    const { manifest } = buildStudioAssets(project, gameData, resolveUrl, enemies);
+    expect(manifest.enemyActorIds).toEqual({ "anim.player.fixture": "anim.player.fixture" });
+    const bound = { bindings: { ...gameData.bindings, enemyAnimations: { "anim.player.fixture": "anim.effect.fixture" } } };
+    expect(buildStudioAssets(project, bound, resolveUrl, enemies).manifest.enemyActorIds).toEqual({
+      "anim.player.fixture": "anim.effect.fixture",
+    });
+  });
+
   it("throws a readable error for missing or invalid bindings", () => {
     const broken = { bindings: { ...gameData.bindings, playerAnimation: "anim.nope" } };
     expect(() => buildStudioAssets(project, broken, resolveUrl)).toThrow(/anim\.nope/);

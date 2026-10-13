@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
 import { Search, Trash2, X } from "lucide-react";
@@ -10,9 +10,11 @@ import {
 } from "@mmx/content-schema";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
+import { ActionButton } from "../ui/editor/action-button.js";
 import { ListRow, ListRowAdd } from "../ui/editor/list-row.js";
-import { Panel, PanelNote, PanelScroll, SearchBox } from "../ui/editor/panel.js";
+import { Panel, PanelActions, PanelNote, PanelScroll, SearchBox } from "../ui/editor/panel.js";
 import { CategoryHeader } from "../ui/editor/section-title.js";
+import { NewEnemyDialog } from "./NewEnemyDialog.js";
 import { definitionUseCount } from "./ObjectDefinitionSection.js";
 import { SpritePreview } from "./SpritePreview.js";
 
@@ -25,6 +27,8 @@ export function PalettePanel() {
   const snap = useEditorSnapshot();
   const query = useUiStore((s) => s.paletteQuery);
   const setQuery = useUiStore((s) => s.setPaletteQuery);
+  const projectOpen = useProjectSession().open;
+  const [newEnemy, setNewEnemy] = useState(false);
 
   return (
     <Panel>
@@ -43,6 +47,13 @@ export function PalettePanel() {
         )}
       </SearchBox>
       <PaletteList query={query} snap={snap} />
+      {/* A project's enemies are saved in its data/game.json. */}
+      {projectOpen && (
+        <PanelActions>
+          <ActionButton onClick={() => setNewEnemy(true)}>New enemy…</ActionButton>
+          <NewEnemyDialog open={newEnemy} onClose={() => setNewEnemy(false)} />
+        </PanelActions>
+      )}
     </Panel>
   );
 }
@@ -55,7 +66,7 @@ function PaletteList({
   snap: ReturnType<typeof useEditorSnapshot>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const objects = useProjectSession().project?.manifest.objects;
+  const project = useProjectSession().project;
 
   const rows = useMemo<PaletteRow[]>(() => {
     const q = query.trim().toLowerCase();
@@ -75,8 +86,8 @@ function PaletteList({
       for (const def of defs) out.push({ kind: "def", key: def.id, def });
     }
     return out;
-    // `objects` changes whenever the project's definitions (read by allDefinitions) do.
-  }, [query, objects]);
+    // The project's objects and game data change whenever the definitions allDefinitions reads do.
+  }, [query, project?.manifest.objects, project?.gameData]);
 
   const virtualizer = useVirtualizer({
     count: rows.length,

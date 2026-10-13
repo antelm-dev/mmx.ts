@@ -6,6 +6,7 @@ import {
   getSpritePreview,
 } from "@mmx/renderer-pixi";
 import { starterAssets } from "../assets/studioAssets.js";
+import { projectSession, useProjectSession } from "../app/useEditor.js";
 
 const ring = "0 0 0 1px {colors.studio.border}";
 
@@ -24,12 +25,15 @@ export function SpritePreview({
   flip = false,
   fallbackColor,
 }: Props) {
+  // The open project's sprites (its enemies are drawn from its animation assets).
+  const gameData = useProjectSession().project?.gameData;
+  const catalog = (projectSession.loadedAssets() ?? starterAssets).catalog;
   const preview = useMemo(() => {
-    if (assetId) return getDecorationPreview(assetId, starterAssets.catalog);
+    if (assetId) return getDecorationPreview(assetId, catalog);
     if (!definitionId) return null;
     const def = getDefinition(definitionId);
-    return def ? getSpritePreview(def, starterAssets.catalog) : null;
-  }, [definitionId, assetId]);
+    return def ? getSpritePreview(def, catalog) : null;
+  }, [definitionId, assetId, catalog, gameData]);
 
   if (preview) {
     const [rx, ry, rw, rh] = preview.region;

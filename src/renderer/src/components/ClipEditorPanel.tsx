@@ -92,7 +92,7 @@ export function ClipEditorPanel() {
   const clip: AnimationClip | undefined = clips[clipName];
   const frames = clip?.frames ?? [];
   const isPlayer = projectSession.playerAnimation() === animId;
-  const required = requiredPlayerClips(session.project?.manifest.player?.loadout);
+  const required = requiredPlayerClips(session.project?.manifest.player?.loadout, projectSession.gameData().compiled);
 
   useEffect(() => {
     let cancelled = false;

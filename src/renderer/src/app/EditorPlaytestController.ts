@@ -14,6 +14,7 @@ import { type FileAccess } from "../core/persistence.js";
 import { ensureStudioClientSettings } from "../settings/studioClientSettings.js";
 import type { StudioAssets } from "../assets/studioAssets.js";
 import type { ValidationResult } from "@mmx/content-schema";
+import type { CompiledGameData } from "@mmx/engine/data";
 
 export interface PlaytestCallbacks {
   getHost: () => HTMLElement | null;
@@ -22,6 +23,8 @@ export interface PlaytestCallbacks {
   getAssets: () => Promise<StudioAssets | null>;
   /** The open project's `player.loadout`, or undefined for the engine default. */
   getLoadoutId: () => string | undefined;
+  /** The open project's compiled game data, or null when its data/game.json has errors. */
+  getGameData: () => CompiledGameData | null;
   validate: () => ValidationResult;
   toast: (message: string) => void;
   /** Called when play exits and the source entity should receive focus. */
@@ -83,6 +86,11 @@ export class EditorPlaytestController {
   private async startPlay(): Promise<void> {
     const host = this.cb.getHost();
     if (!host) return;
+    const gameData = this.cb.getGameData();
+    if (!gameData) {
+      this.cb.toast("Fix the errors in data/game.json (see Problems) before playing.");
+      return;
+    }
     const assets = await this.cb.getAssets();
     if (!assets) {
       this.cb.toast("Fix the project's asset bindings (see Problems) before playing.");
@@ -128,6 +136,7 @@ export class EditorPlaytestController {
       const session = createPlaytest(state.document, {
         host,
         loadoutId,
+        gameData,
         tilesets: state.tilesets,
         audio,
         getBindings: () => settings.snapshot().input.bindings,
@@ -172,6 +181,7 @@ export class EditorPlaytestController {
       host.dataset.playerSheet = assets.manifest.playerSheet;
       host.dataset.playerLoadout = loadoutId ?? "player.x";
       host.dataset.playerMoveset = session.playerMoveset.join(" ");
+      host.dataset.enemyKinds = session.enemyKinds.join(" ");
     } catch (error) {
       this.cb.toast(
         `Could not start Play: ${error instanceof Error ? error.message : String(error)}`,

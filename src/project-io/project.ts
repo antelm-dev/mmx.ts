@@ -10,7 +10,7 @@ import {
 import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 
 import type { FileSystem } from "./fs.js";
-import { levelManifestPath, PROJECT_MANIFEST } from "./paths.js";
+import { CANONICAL_GAME_DATA_FILE, levelManifestPath, PROJECT_MANIFEST } from "./paths.js";
 import { fail, issue, succeed, type ProjectResult, type StudioProject } from "./model.js";
 
 /** Compiled player loadout ids a project's `player.loadout` may reference (default `player.x`). */
@@ -145,11 +145,27 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
     }
   }
 
+  let gameData: StudioProject["gameData"];
+  if (await fs.exists(CANONICAL_GAME_DATA_FILE)) {
+    try {
+      gameData = JSON.parse(await fs.readText(CANONICAL_GAME_DATA_FILE));
+    } catch (error) {
+      // Like a broken manifest: opening and re-saving must not drop the file's records.
+      issues.push(
+        issue(
+          "game-data.parse",
+          error instanceof Error ? error.message : String(error),
+          `/${CANONICAL_GAME_DATA_FILE}`,
+        ),
+      );
+    }
+  }
+
   if (issues.some((entry) => entry.severity === "error")) {
     return fail(issues);
   }
 
-  return succeed({ root: ".", manifest, levels }, issues);
+  return succeed({ root: ".", manifest, levels, ...(gameData ? { gameData } : {}) }, issues);
 }
 
 export async function saveProject(
@@ -172,6 +188,10 @@ export async function saveProject(
     await fs.writeText(level.path, `${JSON.stringify(level.document, null, 2)}\n`);
   }
   await fs.writeText(PROJECT_MANIFEST, serializeProject(project.manifest));
+  if (project.gameData) {
+    await fs.writeText(CANONICAL_GAME_DATA_FILE, `${JSON.stringify(project.gameData, null, 2)}
+`);
+  }
   return succeed(project);
 }
 

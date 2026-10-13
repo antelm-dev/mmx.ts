@@ -85,11 +85,12 @@ export async function exportProject(
 
   const levelDocuments = project.levels.map((level) => level.document);
   const bindingAssetIds = await readBindingAssetIds(sourceFs);
-  const referencedAssets = filterReferencedAssets(
-    project.manifest,
-    levelDocuments,
-    bindingAssetIds,
-  );
+  // A project enemy's sheet is an animation asset id (data/game.json).
+  const enemySheets = Object.values(project.gameData?.enemies ?? {}).map((enemy) => enemy.sheet);
+  const referencedAssets = filterReferencedAssets(project.manifest, levelDocuments, [
+    ...bindingAssetIds,
+    ...enemySheets,
+  ]);
   const orphanIds = new Set(
     project.manifest.assets
       .filter((asset) => !referencedAssets.some((entry) => entry.id === asset.id))

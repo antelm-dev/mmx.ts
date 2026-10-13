@@ -1,4 +1,5 @@
 import { compileLevel, type EngineDiagnostic } from "@mmx/engine/content";
+import type { CompiledGameData } from "@mmx/engine/data";
 import {
   validateDocument,
   type LevelDocument,
@@ -15,9 +16,10 @@ function mapDiagnostic(d: EngineDiagnostic): ValidationIssue {
   return issue;
 }
 
-export function engineDiagnostics(doc: LevelDocument): ValidationIssue[] {
+/** `gameData`: what Play builds the scene from (the project's), so both agree on enemy kinds. */
+export function engineDiagnostics(doc: LevelDocument, gameData?: CompiledGameData): ValidationIssue[] {
   try {
-    return compileLevel(documentToLevelData(doc)).diagnostics.map(mapDiagnostic);
+    return compileLevel(documentToLevelData(doc), gameData).diagnostics.map(mapDiagnostic);
   } catch {
     return [];
   }
@@ -50,8 +52,9 @@ function outOfBounds(engine: ValidationIssue[]): ValidationIssue[] {
 export function validateLevelDocument(
   doc: LevelDocument,
   options?: ValidateDocumentOptions,
+  gameData?: CompiledGameData,
 ): ValidationResult {
-  const engine = outOfBounds(engineDiagnostics(doc));
+  const engine = outOfBounds(engineDiagnostics(doc, gameData));
   const outside = new Set(
     engine.filter((i) => i.code === "object.out-of-bounds").map((i) => i.objectId),
   );

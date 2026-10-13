@@ -215,6 +215,42 @@ test("player.loadout round-trips through save, and new projects omit it (default
   });
 });
 
+test("data/game.json round-trips through load and save, and export keeps its enemy sheets", async () => {
+  const fs = createMemoryFileSystem();
+  const created = await createProject(fs, { id: "crab.project", name: "Crab" });
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+  assert.equal(created.value.gameData, undefined);
+  const sheet = { id: "anim.crab", kind: "animation" as const, path: "assets/sprites/crab.png", animations: { idle: { loop: true, speed: 1, frames: [{ region: [0, 0, 16, 16] as [number, number, number, number], duration: 1 }] } } };
+  await fs.writeText(sheet.path, "png");
+  const gameData = { schemaVersion: 1, enemies: { crab: { id: "crab", sheet: "anim.crab" } } };
+  const withCrab = {
+    ...created.value,
+    manifest: { ...created.value.manifest, assets: [sheet] },
+    gameData: gameData as never,
+  };
+  const saved = await saveProject(fs, withCrab);
+  assert.equal(saved.ok, true, JSON.stringify(saved.issues));
+  assert.deepEqual(JSON.parse(await fs.readText("data/game.json")), gameData);
+
+  const loaded = await loadProject(fs);
+  assert.equal(loaded.ok, true);
+  if (!loaded.ok) return;
+  assert.deepEqual(loaded.value.gameData, gameData);
+
+  const destFs = createMemoryFileSystem();
+  const exported = await exportProject(fs, destFs, loaded.value);
+  assert.equal(exported.ok, true);
+  if (!exported.ok) return;
+  assert.deepEqual(exported.value.excludedOrphans, []);
+  assert.ok(exported.value.exportedDataFiles.includes("data/game.json"));
+
+  await fs.writeText("data/game.json", "{ nope");
+  const broken = await loadProject(fs);
+  assert.equal(broken.ok, false);
+  assert.equal(broken.issues[0]?.code, "game-data.parse");
+});
+
 test("an unknown player.loadout is reported at /player/loadout on load and save", async () => {
   const fs = createMemoryFileSystem();
   const created = await createProject(fs, { id: "loadout.project", name: "Loadout" });

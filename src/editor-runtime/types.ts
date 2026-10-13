@@ -1,4 +1,5 @@
 import type { LevelArt, LevelDocument } from "@mmx/content-schema";
+import type { CompiledGameData } from "@mmx/engine/data";
 import type { PlaytestAudio } from "./PlaytestAudio.js";
 import type { PlaytestInput } from "./PlaytestInput.js";
 import type { PlaytestSnapshot } from "./snapshots.js";
@@ -12,6 +13,8 @@ export interface CreatePlaytestOptions {
   seed?: number;
   /** Compiled player loadout id (the project's `player.loadout`); engine default when omitted. */
   loadoutId?: string;
+  /** The project's compiled game data (its `data/game.json` merged in); engine default when omitted. */
+  gameData?: CompiledGameData;
   onSnapshot?: (snapshot: PlaytestSnapshot) => void;
   onError?: (error: string) => void;
   onExitToObject?: (sourceEntityId: string) => void;
@@ -36,6 +39,8 @@ export interface EditorPlaytestSession {
   readonly isPaused: boolean;
   /** Ability names of the running player's loadout (empty when stopped). */
   readonly playerMoveset: readonly string[];
+  /** Game data enemy ids of the running scene's enemies (empty when stopped). */
+  readonly enemyKinds: readonly string[];
   setCheckpoint(): void;
   restartCheckpoint(): void;
   restartLevel(): void;

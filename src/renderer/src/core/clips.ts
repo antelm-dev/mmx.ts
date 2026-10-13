@@ -1,4 +1,4 @@
-import { COMPILED_GAME_DATA } from "@mmx/engine/data";
+import { COMPILED_GAME_DATA, type CompiledGameData } from "@mmx/engine/data";
 import type { Region } from "@mmx/project-schema";
 
 /**
@@ -23,10 +23,10 @@ const BEHAVIOR_CLIPS: Record<string, string[]> = {
   "player.damage": ["damage"],
 };
 
-/** Clip names a player loadout expects in its animation asset (default loadout X). */
-export function requiredPlayerClips(loadoutId = "player.x"): string[] {
+/** Clip names a player loadout of `gameData` expects in its animation asset (default loadout X). */
+export function requiredPlayerClips(loadoutId = "player.x", gameData: CompiledGameData = COMPILED_GAME_DATA): string[] {
   const names = new Set<string>();
-  for (const ability of COMPILED_GAME_DATA.loadouts.get(loadoutId)?.abilities ?? []) {
+  for (const ability of gameData.loadouts.get(loadoutId)?.abilities ?? []) {
     for (const name of BEHAVIOR_CLIPS[ability.behavior] ?? []) names.add(name);
     for (const value of Object.values(ability.config)) {
       const animation = (value as { animation?: unknown } | null)?.animation;

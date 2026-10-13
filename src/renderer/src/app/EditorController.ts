@@ -35,6 +35,7 @@ import {
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
 import { projectSession } from "../core/projectSession.js";
+import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
 import { dispatchEditorKey, type KeyboardContext } from "./editorKeyboard.js";
@@ -83,6 +84,10 @@ export class EditorController {
       getFileAccess: () => this.fileAccess,
       getAssets: () => projectSession.getAssets(),
       getLoadoutId: () => projectSession.getSnapshot().project?.manifest.player?.loadout,
+      getGameData: () => {
+        const { compiled, issues } = projectSession.gameData();
+        return issues.length > 0 ? null : compiled;
+      },
       validate: () => this.validate(),
       toast: (msg) => this.toast(msg),
       focusObject: (id) => this.focusObject(id),
@@ -161,12 +166,13 @@ export class EditorController {
       .map((asset) => asset.id);
   }
 
-  /** Identity of the manifest's asset ids and kinds and its object definitions; undefined without a project. */
+  /** Identity of the manifest's asset ids and kinds, its object definitions and game data; undefined without a project. */
   private manifestAssetKey(): string | undefined {
-    const manifest = projectSession.getSnapshot().project?.manifest;
-    if (!manifest) return undefined;
+    const project = projectSession.getSnapshot().project;
+    if (!project) return undefined;
+    const { manifest } = project;
     const assets = manifest.assets.map((asset) => `${asset.id}:${asset.kind}`).join(",");
-    return `${assets}|${JSON.stringify(manifest.objects ?? [])}`;
+    return `${assets}|${JSON.stringify(manifest.objects ?? [])}|${JSON.stringify(project.gameData ?? null)}`;
   }
 
   /** The open project's `tileset` assets by id; empty without a project. */
@@ -195,6 +201,7 @@ export class EditorController {
       imageAssetIds,
       tilesets,
       assets && new Map(assets.map((asset) => [asset.id, asset.kind])),
+      projectSession.gameData().compiled,
     );
   }
 
@@ -522,6 +529,17 @@ export class EditorController {
 
   duplicateSelection(): void { duplicateSelection(this.store); }
   deleteSelection(): void { deleteSelection(this.store); }
+
+  /** Add a project enemy (data/game.json) and pick it for placing; saved with the project. */
+  createEnemy(input: NewEnemyInput): void {
+    const project = projectSession.getSnapshot().project;
+    if (!project) return;
+    const { overlay, id } = addEnemy(project.gameData, projectSession.gameData().data, input);
+    projectSession.setGameData(overlay);
+    // The viewport draws the new enemy from the rebuilt sprites.
+    void this.applyProjectAssets();
+    this.store.setTool("place", id);
+  }
 
   selectPalette(definitionId: string): void {
     const state = this.store.get();

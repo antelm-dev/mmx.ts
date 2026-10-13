@@ -1,4 +1,5 @@
 import type { LevelDocument } from "@mmx/content-schema";
+import type { GameDataOverlay } from "@mmx/engine/data";
 import type { ProjectDocument } from "@mmx/project-schema";
 
 export type ProjectLevel = {
@@ -11,6 +12,8 @@ export type StudioProject = {
   root: string;
   manifest: ProjectDocument;
   levels: ProjectLevel[];
+  /** `data/game.json`: records merged over the engine's game data; absent when the file is. */
+  gameData?: GameDataOverlay;
 };
 
 export type ProjectPayload = {

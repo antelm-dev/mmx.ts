@@ -1,4 +1,5 @@
-import { projectDefinitionIssues, setProjectDefinitions } from "@mmx/content-schema";
+import { projectDefinitionIssues, setCatalogGameData, setProjectDefinitions } from "@mmx/content-schema";
+import type { GameData, GameDataOverlay } from "@mmx/engine/data";
 import {
   validateProject,
   type AnimationAsset,
@@ -17,6 +18,7 @@ import {
   type StudioGameData,
 } from "../assets/studioAssets.js";
 import { requiredPlayerClips } from "./clips.js";
+import { projectGameData, type ProjectGameData } from "./gameData.js";
 
 export type ProjectSessionState = {
   open: boolean;
@@ -45,10 +47,24 @@ function mapSchemaIssues(issues: ValidationIssue[]): ProjectIssue[] {
   }));
 }
 
+let catalogData: GameData | null = null;
+
+/** Point the object catalog at `data` (only when it changed: that regenerates it). */
+function applyCatalogData(data: GameData): void {
+  if (data === catalogData) return;
+  catalogData = data;
+  setCatalogGameData(data);
+}
+
 function validateOpenProject(project: StudioProject): ProjectIssue[] {
   const objects = project.manifest.objects ?? [];
+  const gameData = projectGameData(project.gameData);
+  // Project objects may derive from the project's enemies: the catalog comes first.
+  applyCatalogData(gameData.data);
+  const validation = { ...PROJECT_VALIDATION, loadoutIds: [...gameData.compiled.loadouts.keys()] };
   return [
-    ...mapSchemaIssues(validateProject(project.manifest, PROJECT_VALIDATION).issues),
+    ...gameData.issues,
+    ...mapSchemaIssues(validateProject(project.manifest, validation).issues),
     ...projectDefinitionIssues(objects).map((issue) => ({
       severity: "error" as const,
       code: issue.code,
@@ -77,6 +93,7 @@ export class ProjectSession {
   private readonly listeners = new Set<() => void>();
   /** The open project's `game/data.json` and asset data URLs, as last read from disk. */
   private playData: PlayData | null = null;
+  private loaded: StudioAssets | null = starterAssets;
   /** Stops Play and drops viewport sprites; runs before old sheet textures are destroyed. */
   beforeSheetReset: () => void = () => {};
 
@@ -87,12 +104,23 @@ export class ProjectSession {
 
   getSnapshot = (): ProjectSessionState => this.state;
 
+  /** The open project's game data (the engine's when none is open or its data/game.json has errors). */
+  gameData(): ProjectGameData {
+    return projectGameData(this.state.project?.gameData);
+  }
+
+  /** The last built sprites and animations, for previews; null while none are loaded. */
+  loadedAssets(): StudioAssets | null {
+    return this.loaded;
+  }
+
   private emit(): void {
     for (const fn of this.listeners) fn();
   }
 
   private setState(next: ProjectSessionState): void {
     // Before listeners run: the palette, levels and validation resolve instances against these.
+    applyCatalogData(projectGameData(next.project?.gameData).data);
     setProjectDefinitions(next.project?.manifest.objects ?? []);
     this.state = next;
     this.emit();
@@ -122,9 +150,11 @@ export class ProjectSession {
     this.beforeSheetReset();
     await resetSheetCache();
     this.playData = null;
+    this.loaded = null;
     if (!bridge || !rootPath || !project) {
       const assets = buildStarterAssets();
       await assets.catalog.load();
+      this.loaded = assets;
       return assets;
     }
 
@@ -157,10 +187,13 @@ export class ProjectSession {
         const data = this.state.playerAnimation
           ? { ...gameData, bindings: { ...gameData.bindings, playerAnimation: this.state.playerAnimation } }
           : gameData;
-        assets = buildStudioAssets(project.manifest, data, (asset) => urls[asset.id] ?? "");
+        const { data: engineData, compiled } = projectGameData(project.gameData);
+        assets = buildStudioAssets(project.manifest, data, (asset) => urls[asset.id] ?? "", engineData.enemies);
         await assets.catalog.load();
         const clips = this.animationAsset(playerAnimation ?? "")?.animations ?? {};
-        const missing = requiredPlayerClips(project.manifest.player?.loadout).filter((name) => !clips[name]);
+        const missing = requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
+          (name) => !clips[name],
+        );
         if (missing.length > 0) {
           issues.push({
             severity: "warning",
@@ -175,6 +208,7 @@ export class ProjectSession {
       }
     }
     if (this.state.rootPath === rootPath) {
+      this.loaded = assets;
       this.setState({
         ...this.state,
         issues: [...this.state.issues.filter((entry) => !isPlayAssetIssue(entry)), ...issues],
@@ -232,6 +266,21 @@ export class ProjectSession {
       dirty: true,
       issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
     });
+  }
+
+  /** Replace the project's `data/game.json` records; saved with the project. */
+  setGameData(gameData: GameDataOverlay): void {
+    const project = this.state.project;
+    if (!project) return;
+    const nextProject = { ...project, gameData };
+    this.setState({
+      ...this.state,
+      project: nextProject,
+      dirty: true,
+      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
+    });
+    // Project enemies drawn from an animation asset are bound to it in Play and the viewport.
+    this.refreshAssets();
   }
 
   /** An `animation` asset of the open project, or null. */

@@ -3574,6 +3574,7 @@ snapshots:
   '@mmx/content-schema@file:../mmx-core-ts/packages/content-schema':
     dependencies:
       '@mmx/contracts': file:../mmx-core-ts/packages/contracts
+      '@mmx/engine': file:../mmx-core-ts/packages/engine
 
   '@mmx/contracts@file:../mmx-core-ts/packages/contracts': {}
 

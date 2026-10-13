@@ -53,12 +53,16 @@ function resolveStarterAssetUrl(asset: ProjectAsset): string {
 
 /**
  * Builds the renderer manifest and catalog for a project from its `game/data.json`
- * bindings. Throws on missing or invalid bindings; callers report the message.
+ * bindings. `enemies` (the project's game data enemies): each one whose sheet is an
+ * animation asset is drawn from it (keyed by sheet, like the renderer), unless
+ * `bindings.enemyAnimations` binds that sheet. Throws on missing or invalid
+ * bindings; callers report the message.
  */
 export function buildStudioAssets(
   project: ProjectDocument,
   gameData: StudioGameData,
   resolveUrl: (asset: ProjectAsset) => string,
+  enemies: Record<string, { sheet: string }> = {},
 ): StudioAssets {
   const bindings = gameData?.bindings;
   if (!bindings || typeof bindings !== "object") {
@@ -89,7 +93,14 @@ export function buildStudioAssets(
     playerAnimation: bindings.playerAnimation,
     playerSheetNormal: playerAnimation.sheetAssetId,
     playerSheetPointing: bindings.playerPointingSheet,
-    enemyActors: { ...bindings.enemyAnimations },
+    enemyActors: {
+      ...Object.fromEntries(
+        Object.values(enemies)
+          .filter(({ sheet }) => project.assets.some((asset) => asset.id === sheet && asset.kind === "animation"))
+          .map(({ sheet }) => [sheet, sheet]),
+      ),
+      ...bindings.enemyAnimations,
+    },
     pickupActors: { ...bindings.pickupAnimations },
     shotAnimations: firstShotAnimation,
     sheetImages,

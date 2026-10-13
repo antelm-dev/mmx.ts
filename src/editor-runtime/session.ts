@@ -50,6 +50,7 @@ class PlaytestSession implements EditorPlaytestSession {
       scene: {
         seed: this.options.seed,
         loadoutId: this.options.loadoutId,
+        gameData: this.options.gameData,
         level: documentToLevelData(this.document),
       },
       audio,
@@ -153,6 +154,10 @@ class PlaytestSession implements EditorPlaytestSession {
 
   get playerMoveset(): readonly string[] {
     return this.runtime?.session.scene.player.moveset.map((ability) => ability.name) ?? [];
+  }
+
+  get enemyKinds(): readonly string[] {
+    return this.runtime?.session.scene.stage.enemies.map((enemy) => enemy.kind) ?? [];
   }
 
   setCheckpoint(): void {

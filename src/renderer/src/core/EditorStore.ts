@@ -7,6 +7,7 @@ import {
   type ValidationResult,
   TerrainTile,
 } from "@mmx/content-schema";
+import type { CompiledGameData } from "@mmx/engine/data";
 import type { TilesetAsset } from "@mmx/project-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
 import { knownDecorationAssetIds } from "@mmx/renderer-pixi";
@@ -391,18 +392,24 @@ export class EditorStore {
    * `imageAssetIds` / `tilesets`: the open project's `image` and `tileset` assets, so
    * image and tile layers are cross-checked (tileset values are tile counts, or undefined).
    * `assets`: every project asset id → kind, so `asset` properties are cross-checked.
+   * `gameData`: the project's compiled game data, which Play builds the scene from.
    */
   validate(
     imageAssetIds?: readonly string[],
     tilesets?: ReadonlyMap<string, number | undefined>,
     assets?: ReadonlyMap<string, string>,
+    gameData?: CompiledGameData,
   ): ValidationResult {
-    return validateLevelDocument(this.state.document, {
-      knownDecorationAssetIds: knownDecorationAssetIds(),
-      imageAssetIds,
-      tilesets,
-      assets,
-    });
+    return validateLevelDocument(
+      this.state.document,
+      {
+        knownDecorationAssetIds: knownDecorationAssetIds(),
+        imageAssetIds,
+        tilesets,
+        assets,
+      },
+      gameData,
+    );
   }
 
   /** Snap a world coordinate to the grid when snapping is on. */

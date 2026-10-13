@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   OBJECT_DEFINITIONS,
   createLevelDocument,
+  setCatalogGameData,
   setProjectDefinitions,
   type LevelDocument,
   type LevelObjectInstance,
@@ -13,6 +14,8 @@ import {
   engineDiagnostics,
   validateLevelDocument,
 } from "../../src/editor-runtime/adapters/index.js";
+import { GAME_DATA } from "@mmx/engine/data";
+import { addEnemy, projectGameData } from "../../src/renderer/src/core/gameData.js";
 
 function docWith(objects: LevelObjectInstance[]): LevelDocument {
   const doc = createLevelDocument();
@@ -111,4 +114,23 @@ test("instances of project object definitions compile to engine entities the eng
   } finally {
     setProjectDefinitions([]);
   }
+});
+
+test("a project enemy is checked against the compiled game data Play uses", (t) => {
+  const { overlay } = addEnemy(undefined, GAME_DATA, {
+    name: "Crab",
+    base: "metool",
+    sheet: "anim.crab",
+    health: 3,
+    touchDamage: 2,
+  });
+  const { data, compiled } = projectGameData(overlay);
+  setCatalogGameData(data);
+  t.after(() => setCatalogGameData(GAME_DATA));
+
+  const doc = docWith([{ id: "crab-1", definitionId: "enemy.crab", x: 64, y: 32 }]);
+  const result = validateLevelDocument(doc, undefined, compiled);
+  assert.equal(result.ok, true, JSON.stringify(result.issues));
+  const unknown = engineDiagnostics(doc).filter((i) => i.severity === "error");
+  assert.ok(unknown.some((i) => i.objectId === "crab-1"), JSON.stringify(unknown));
 });

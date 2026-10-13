@@ -17,7 +17,6 @@ import {
   type ValidationIssue,
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
-import { LOADOUT_IDS } from "@mmx/project-io";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { selectedDecorationIds, selectedObjectIds } from "../core/EditorStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -429,7 +428,7 @@ function ProjectSettings() {
       <Row display="flex" flexDirection="column">
         <Select
           label="Player loadout"
-          options={LOADOUT_IDS.map((id) => ({ label: loadoutLabel(id), value: id }))}
+          options={[...projectSession.gameData().compiled.loadouts.keys()].map((id) => ({ label: loadoutLabel(id), value: id }))}
           value={loadout}
           onValueChange={(id) => projectSession.setPlayerLoadout(id)}
         />
