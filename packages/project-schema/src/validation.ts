@@ -230,6 +230,18 @@ function isAnchorIn(value: unknown, region: Region): boolean {
   );
 }
 
+const FRAME_BOX_MESSAGE = "Frame box must be { x, y, w, h } integers with positive w and h.";
+
+/** `{ x, y, w, h }` integers with positive size; x/y may be negative (above/behind the feet). */
+function isFrameBox(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    [value.x, value.y, value.w, value.h].every((part) => Number.isInteger(part)) &&
+    Number(value.w) > 0 &&
+    Number(value.h) > 0
+  );
+}
+
 function validateAnimationFrame(
   value: unknown,
   path: string,
@@ -266,6 +278,30 @@ function validateAnimationFrame(
   }
   if (value.armRegion !== undefined) {
     ok = validateRegion(value.armRegion, `${path}/armRegion`, add) && ok;
+  }
+  if (value.hurtbox !== undefined && !isFrameBox(value.hurtbox)) {
+    add({ code: "animation.box", path: `${path}/hurtbox`, message: FRAME_BOX_MESSAGE });
+    ok = false;
+  }
+  if (value.hitboxes !== undefined) {
+    if (!Array.isArray(value.hitboxes)) {
+      add({
+        code: "animation.box",
+        path: `${path}/hitboxes`,
+        message: "Frame hitboxes must be an array.",
+      });
+      ok = false;
+    } else {
+      value.hitboxes.forEach((box, index) => {
+        if (isFrameBox(box)) return;
+        add({
+          code: "animation.box",
+          path: `${path}/hitboxes/${index}`,
+          message: FRAME_BOX_MESSAGE,
+        });
+        ok = false;
+      });
+    }
   }
   return ok;
 }

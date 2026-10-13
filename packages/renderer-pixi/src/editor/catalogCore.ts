@@ -14,7 +14,8 @@ export interface SpritePreview {
   texture: Texture | null;
 }
 
-type Animatable = { loadAnimations(data: AnimData): void };
+/** `sceneClips`: the engine already owns this actor's clips (SceneOptions.clips); attach skips it. */
+type Animatable = { loadAnimations(data: AnimData): void; sceneClips?: boolean };
 
 export interface AssetCatalog {
   load(): Promise<void>;
@@ -79,10 +80,12 @@ export function createCatalog(deps: AssetCatalogDeps): AssetCatalog {
     },
 
     attachPlayerAnimations(player) {
+      if (player.sceneClips) return;
       player.loadAnimations(deps.toAnimData(deps.tables.playerAnims, "player animations"));
     },
 
     attachEnemyAnimations(enemy) {
+      if (enemy.sceneClips) return;
       const actor = deps.tables.enemyActors[enemy.stats.sheet];
       const assetId = deps.enemyActorIds?.[enemy.stats.sheet];
       if (!actor) {

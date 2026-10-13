@@ -6,11 +6,11 @@ import { loadEntryLevel, requireProjectDirectory } from "./project.js";
  * input timeline and prints the resulting state trace — proving the whole gameplay
  * runs in pure Node with no rendering. Run with: pnpm sim
  *
- * The enemies run here too, without any clip data: with no frames loaded every
- * clip reports itself finished on the next tick, so the animation-gated beats of
- * their state machines pass through in one frame instead of several. They still
- * patrol, hide, chase and die — which is the point, since it means none of that
- * logic secretly depends on the renderer's assets.
+ * The project's gameplay clip tables (timing and per-frame boxes) are loaded
+ * into the actors exactly as `SceneOptions.clips` does, so animation-gated beats
+ * last as long as they do in the browser. A project with no renderer bindings
+ * runs clip-less: every clip reports itself finished on the next tick, and the
+ * enemies still patrol, hide, chase and die.
  */
 
 async function main(): Promise<void> {
@@ -28,10 +28,14 @@ async function main(): Promise<void> {
     entry.loadoutId,
     gameData,
   );
+  if (entry.clips?.player) player.loadAnimations(entry.clips.player);
   const stage = new Stage(world, player);
   for (const [i, spawn] of level.enemies.entries()) {
     const def = gameData.enemies.get(spawn.kind)!;
-    stage.add(spawnEnemy(def, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i, gameData));
+    const enemy = spawnEnemy(def, world, spawn.x, spawn.y, spawn.facing, 0x51ed + i, gameData);
+    const clips = entry.clips?.enemies?.[def.sheet];
+    if (clips) enemy.loadAnimations(clips);
+    stage.add(enemy);
   }
 
   // A scripted timeline: at frame N, set an action down/up.

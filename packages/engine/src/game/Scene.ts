@@ -1,7 +1,8 @@
 import { Input } from "../core/Input.js";
 import { DT, WEAPON_ORDER } from "../core/constants.js";
 import { applyInput } from "../core/Replay.js";
-import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { AnimData } from "@mmx/contracts/animation";
+import { COMPILED_GAME_DATA, hashCanonical } from "../data/index.js";
 import type { CompiledGameData } from "../data/types.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
@@ -34,6 +35,22 @@ export const DEFAULT_SEED = 0x9e3779b9;
 /** How far below the bottom of the view the player may fall before a pit kills. */
 const PIT_MARGIN = 32;
 
+/**
+ * Clip tables the scene owns: animation timing (`animation_finished`, so
+ * `has_finished_last_animation`) and per-frame hurtboxes/hitboxes come from here
+ * for every actor covered, whether or not a renderer attaches. A renderer must
+ * not load clips into an actor whose {@link AbilityUser.sceneClips} is set.
+ */
+export interface SceneClips {
+  /** The player's clip table (a renderer manifest's `playerAnims`). */
+  player?: AnimData;
+  /**
+   * Enemy clip tables keyed by the enemy definition's `sheet`. When given, every
+   * spawned enemy must have one.
+   */
+  enemies?: Readonly<Record<string, AnimData>>;
+}
+
 export interface SceneOptions {
   seed?: number;
   /** Authored level to instantiate. Core does not ship a built-in game level. */
@@ -45,6 +62,12 @@ export interface SceneOptions {
    * Defaults to the built-in {@link COMPILED_GAME_DATA}.
    */
   gameData?: CompiledGameData;
+  /**
+   * Gameplay clip data owned by the engine (see {@link SceneClips}). Absent: actors
+   * run clip-less until a renderer attaches clips, as before. Folded into
+   * {@link Scene.gameDataHash} so a replay cannot cross different clip timing or boxes.
+   */
+  clips?: SceneClips;
   /**
    * Called for each enemy as it spawns, before the first tick. The browser uses
    * it to attach clip data and audio; the headless sim passes nothing and the
@@ -68,7 +91,11 @@ export class Scene {
   readonly input: Input;
   readonly seed: number;
   readonly level: LevelData;
-  /** Hash of the compiled game data this scene was built from — recorded so replays cannot cross it. */
+  /**
+   * Hash of the compiled game data this scene was built from, combined with the
+   * gameplay part of {@link SceneOptions.clips} when given — recorded so replays
+   * cannot cross either. Without clips it is exactly `gameData.hash`.
+   */
   readonly gameDataHash: string;
 
   /** Fixed steps executed since the scene was built — the simulation frame number. */
@@ -77,7 +104,8 @@ export class Scene {
   private constructor(seed: number, options: SceneOptions) {
     this.seed = seed;
     const gameData = options.gameData ?? COMPILED_GAME_DATA;
-    this.gameDataHash = gameData.hash;
+    const clips = options.clips;
+    this.gameDataHash = clips ? hashWithClips(gameData.hash, clips) : gameData.hash;
     const level = loadLevel(options.level, gameData);
     this.level = level.data;
     this.input = new Input();
@@ -91,6 +119,10 @@ export class Scene {
       options.loadoutId,
       gameData,
     );
+    if (clips?.player) {
+      this.player.loadAnimations(clips.player);
+      this.player.sceneClips = true;
+    }
     this.camera = new Camera(this.world.widthPx, this.world.heightPx);
     this.camera.setZones(level.cameraZones);
     this.camera.snapTo(this.player.pos.x, this.player.pos.y);
@@ -121,6 +153,13 @@ export class Scene {
       // an inspector can trace a live enemy back to the object that placed it.
       enemy.runtimeId = spawn.id;
       enemy.sourceEntityId = spawn.id;
+      if (clips?.enemies) {
+        const table = clips.enemies[enemy.stats.sheet];
+        if (!table)
+          throw new Error(`scene clips have no table for enemy sheet '${enemy.stats.sheet}'`);
+        enemy.loadAnimations(table);
+        enemy.sceneClips = true;
+      }
       options.onEnemySpawned?.(enemy, i);
       this.stage.add(enemy);
     }
@@ -227,6 +266,37 @@ export class Scene {
     }
     return fnv1a(parts.join("|"));
   }
+}
+
+/**
+ * Only what gameplay reads goes into the hash — timing and boxes, keyed by clip
+ * name — so re-cropping art (regions, anchors) does not invalidate replays.
+ */
+function hashWithClips(gameDataHash: string, clips: SceneClips): string {
+  const gameplay = (data: AnimData | undefined) =>
+    data &&
+    Object.fromEntries(
+      Object.entries(data.animations).map(([name, clip]) => [
+        name,
+        {
+          loop: clip.loop,
+          loopStart: clip.loopStart ?? 0,
+          speed: clip.speed,
+          frames: clip.frames.map((f) => ({
+            duration: f.duration,
+            hurtbox: f.hurtbox ?? null,
+            hitboxes: f.hitboxes ?? [],
+          })),
+        },
+      ]),
+    );
+  return hashCanonical({
+    gameData: gameDataHash,
+    player: gameplay(clips.player) ?? null,
+    enemies: clips.enemies
+      ? Object.fromEntries(Object.entries(clips.enemies).map(([k, v]) => [k, gameplay(v)]))
+      : null,
+  });
 }
 
 /** Per-enemy seed, mixed so adjacent indices do not produce correlated streams. */

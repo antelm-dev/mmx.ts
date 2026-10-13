@@ -1,5 +1,18 @@
 export type Region = readonly [x: number, y: number, width: number, height: number];
 
+/**
+ * A gameplay box on a frame, in pixels: `x, y` is its top-left measured from the
+ * body's feet (the frame `anchor`), `w, h` its size — drawn as authored (the frame
+ * unflipped), y down, and mirrored with the sprite. Same convention as a
+ * `player.slash` hitbox.
+ */
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface FrameData {
   region: Region;
   armRegion?: Region;
@@ -9,6 +22,10 @@ export interface FrameData {
    * Absent: the frame sits in the renderer's fixed cell. Shared by `armRegion`.
    */
   anchor?: readonly [x: number, y: number];
+  /** Replaces the actor's definition hurtbox while this frame shows. */
+  hurtbox?: Box;
+  /** Contact-damage volumes live while this frame shows (enemies). */
+  hitboxes?: Box[];
 }
 
 export interface ClipData {
@@ -77,8 +94,31 @@ export function assertAnimData(data: unknown, label = "animation data"): asserts
       if (frame.anchor !== undefined && !isAnchorIn(frame.anchor, frame.region as Region)) {
         throw new Error(`${clipLabel}: frame ${index} anchor must be integers inside its region`);
       }
+      if (frame.hurtbox !== undefined && !isBox(frame.hurtbox)) {
+        throw new Error(`${clipLabel}: frame ${index} hurtbox ${BOX_RULE}`);
+      }
+      if (
+        frame.hitboxes !== undefined &&
+        (!Array.isArray(frame.hitboxes) || !frame.hitboxes.every(isBox))
+      ) {
+        throw new Error(
+          `${clipLabel}: frame ${index} hitboxes must be an array of boxes that each ${BOX_RULE}`,
+        );
+      }
     });
   }
+}
+
+const BOX_RULE = "must be { x, y, w, h } integers with positive w and h";
+
+/** `{ x, y, w, h }` integers with positive size; x/y may be negative (above/behind the feet). */
+export function isBox(value: unknown): value is Box {
+  return (
+    isRecord(value) &&
+    [value.x, value.y, value.w, value.h].every((part) => Number.isInteger(part)) &&
+    Number(value.w) > 0 &&
+    Number(value.h) > 0
+  );
 }
 
 /** `[x, y]` integers with 0 <= x <= width and 0 <= y <= height of `region`. */

@@ -15,12 +15,22 @@ export type LevelDocumentRef = {
   path: string;
 };
 
+/**
+ * A gameplay box on a frame: top-left `x, y` from the feet (the frame anchor),
+ * size `w, h`, drawn as authored (frame unflipped), y down. Integers; x/y may be negative.
+ */
+export type FrameBox = { x: number; y: number; w: number; h: number };
+
 export type AnimationFrame = {
   region: Region;
   duration: number;
   armRegion?: Region;
   /** Pixel in `region` drawn on the body's feet; absent keeps the fixed cell. */
   anchor?: readonly [x: number, y: number];
+  /** Replaces the actor's hurtbox while this frame shows. */
+  hurtbox?: FrameBox;
+  /** Contact-damage volumes while this frame shows. */
+  hitboxes?: FrameBox[];
 };
 
 export type AnimationClip = {

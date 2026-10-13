@@ -7,6 +7,7 @@ export {
   type AssetKind,
   type CompatibleRuntimeRange,
   type FontAsset,
+  type FrameBox,
   type ImageAsset,
   type LevelDocumentRef,
   type ParseProjectResult,

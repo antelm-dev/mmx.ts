@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { decodeReplay, describeInput } from "@mmx/engine";
 import { Recorder } from "@mmx/engine";
 import { Scene } from "@mmx/engine";
+import { loadProjectSceneClips } from "@mmx/build-tools";
 import { loadProjectLevels, requireProjectDirectory } from "./project.js";
 
 /**
@@ -18,13 +19,11 @@ import { loadProjectLevels, requireProjectDirectory } from "./project.js";
  * run is compared against this one, so a replay committed alongside a fix fails
  * loudly if a later change moves the simulation, even by a fraction of a pixel.
  *
- * Note that no clip data is loaded here, exactly as in run.ts — with no frames
- * every clip reports itself finished on the next tick, so animation-gated
- * transitions resolve in one frame instead of several. A recording made in the
- * browser therefore diverges from its headless replay wherever an ability waits
- * on an animation. That is a real limitation and not a rounding error: see
- * tests/replay.test.ts, which replays headless-captured input where it does not
- * apply.
+ * The project's gameplay clips go into the scene as `SceneOptions.clips`, the
+ * same tables the browser passes, so animation-gated transitions take as long
+ * here as they did when the replay was recorded — and the clips are part of
+ * the replay's `gameDataHash`, so a recording made against different clip
+ * timing or boxes is refused rather than silently diverging.
  */
 
 interface Options {
@@ -56,6 +55,7 @@ async function main(): Promise<void> {
   const { project, levels } = await loadProjectLevels(requireProjectDirectory());
   const loadoutId = project.manifest.player?.loadout;
   const gameData = project.compiledGameData;
+  const clips = await loadProjectSceneClips(project);
   const level = levels.find((candidate) => candidate.identifier === replay.level);
   if (!level) {
     throw new Error(`Replay level '${replay.level}' is not present in the selected project.`);
@@ -76,7 +76,7 @@ async function main(): Promise<void> {
   if (options.trace) {
     // Stepped by hand rather than through Recorder.replay so the trace can be
     // printed as it goes; the state sequence is identical either way.
-    scene = Scene.create({ level, loadoutId, gameData, seed: replay.seed });
+    scene = Scene.create({ level, loadoutId, gameData, clips, seed: replay.seed });
     if (replay.gameDataHash !== undefined && replay.gameDataHash !== scene.gameDataHash) {
       throw new Error(
         `replay was recorded with game data '${replay.gameDataHash}', this build has '${scene.gameDataHash}'`,
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
     }
     console.log("");
   } else {
-    scene = Recorder.replay(replay, { level, loadoutId, gameData });
+    scene = Recorder.replay(replay, { level, loadoutId, gameData, clips });
   }
 
   const elapsed = performance.now() - started;

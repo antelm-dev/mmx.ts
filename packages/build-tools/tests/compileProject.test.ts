@@ -11,6 +11,7 @@ import {
   bundleContainsAbsolutePaths,
   bundleModuleSource,
   compileBrowserProjectBundle,
+  loadProjectSceneClips,
 } from "../src/compileProject.js";
 import { hashContent } from "../src/contentHash.js";
 import { levelDocumentToLevelData } from "../src/compileLevel.js";
@@ -313,4 +314,24 @@ test("a malformed data/game.json record fails loadProject instead of throwing", 
   } finally {
     await fixture.dispose();
   }
+});
+
+test("loadProjectSceneClips hands the scene the bundle manifest's player and enemy clips", async () => {
+  const fixture = await createStudioShapedFixture("mmx-scene-clips-");
+  try {
+    const project = await requireProject(fixture.root);
+    const clips = await loadProjectSceneClips(project);
+    const bundle = await compileBrowserProjectBundle(project, await planAssetEmission(project));
+    const manifest = bundle.rendererManifest!;
+    assert.deepEqual(clips?.player, manifest.playerAnims);
+    assert.deepEqual(Object.keys(clips?.enemies ?? {}), Object.keys(manifest.enemyActors));
+    assert.deepEqual(clips?.enemies?.metool?.animations, manifest.enemyActors.metool!.animations);
+  } finally {
+    await fixture.dispose();
+  }
+  // No renderer bindings: no clips, the scene runs clip-less as before.
+  assert.equal(
+    await loadProjectSceneClips(await requireProject(path.join(fixturesDir, "synthetic-project"))),
+    undefined,
+  );
 });

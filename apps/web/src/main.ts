@@ -4,6 +4,7 @@ import { DebugPanel } from "./debug/DebugPanel.js";
 import { AnimationInspector } from "./debug/AnimationInspector.js";
 import { DebugSession } from "./debug/DebugSession.js";
 import { InputBinding } from "./input/InputBinding.js";
+import { sceneClipsFromManifest } from "@mmx/renderer-pixi";
 import { ScenePresenter } from "./presentation/ScenePresenter.js";
 import {
   compileProjectGameData,
@@ -58,6 +59,8 @@ async function bootstrap(): Promise<void> {
     level: entryLevel(projectBundle),
     loadoutId: projectBundle.meta.playerLoadout,
     gameData: compileProjectGameData(projectBundle),
+    // The engine owns gameplay clips (timing, frame boxes): same tables the sim loads.
+    clips: sceneClipsFromManifest(projectBundle.rendererManifest!),
     onEnemySpawned: (enemy) => presenter.attachEnemy(enemy),
     onPickupSpawned: (pickup) => presenter.attachPickup(pickup),
     onWeaponCapsuleSpawned: (capsule) => presenter.attachWeaponCapsule(capsule),

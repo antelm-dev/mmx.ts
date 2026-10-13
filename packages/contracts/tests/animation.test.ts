@@ -79,3 +79,30 @@ test("assertAnimData keeps a frame anchor inside its region", () => {
     assert.throws(() => assertAnimData(data(bad)), /anchor/);
   }
 });
+
+test("assertAnimData validates per-frame hurtbox and hitboxes", () => {
+  const data = (extra: Record<string, unknown>): unknown => ({
+    animations: {
+      idle: { loop: true, speed: 60, frames: [{ region: [0, 0, 34, 39], duration: 6, ...extra }] },
+    },
+  });
+  assert.doesNotThrow(() =>
+    assertAnimData(
+      data({
+        hurtbox: { x: -8, y: -20, w: 16, h: 20 },
+        hitboxes: [{ x: 4, y: -10, w: 12, h: 6 }],
+      }),
+    ),
+  );
+  assert.doesNotThrow(() => assertAnimData(data({ hitboxes: [] })));
+  for (const bad of [
+    { x: 0, y: 0, w: 0, h: 4 },
+    { x: 0.5, y: 0, w: 4, h: 4 },
+    { x: 0, y: 0, w: 4 },
+    [0, 0, 4, 4],
+  ]) {
+    assert.throws(() => assertAnimData(data({ hurtbox: bad })), /hurtbox/);
+    assert.throws(() => assertAnimData(data({ hitboxes: [bad] })), /hitboxes/);
+  }
+  assert.throws(() => assertAnimData(data({ hitboxes: { x: 0, y: 0, w: 4, h: 4 } })), /hitboxes/);
+});

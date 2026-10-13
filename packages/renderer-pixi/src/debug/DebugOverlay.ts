@@ -13,6 +13,7 @@ const COLORS = {
   body: 0x51ff8a,
   bodyDash: 0xffe066,
   hurtbox: 0xff6b6b,
+  hitbox: 0xff3b3b,
   vision: 0x7aa2ff,
   pursuit: 0xc17aff,
   shot: 0xffb347,
@@ -178,7 +179,8 @@ export class DebugOverlay {
       }
 
       box(g, enemy.pos.x, enemy.pos.y, enemy.hw, enemy.hh, COLORS.body, 0.7);
-      box(g, enemy.pos.x, enemy.pos.y, s.hurt_hw, s.hurt_hh, COLORS.hurtbox, 0.9);
+      rect(g, enemy.hurtbox, COLORS.hurtbox);
+      for (const hit of enemy.hitboxes) rect(g, hit, COLORS.hitbox);
 
       if (enemy.has_shield()) {
         g.circle(enemy.pos.x, enemy.pos.y, 3).stroke({ width: 1, color: COLORS.hurtbox });
@@ -282,6 +284,14 @@ export class DebugOverlay {
       if (trail.length > TRAIL_LENGTH) trail.shift();
     }
   }
+}
+
+function rect(
+  g: Graphics,
+  r: { left: number; right: number; top: number; bottom: number },
+  color: number,
+): void {
+  g.rect(r.left, r.top, r.right - r.left, r.bottom - r.top).stroke({ width: 1, color, alpha: 0.9 });
 }
 
 function box(

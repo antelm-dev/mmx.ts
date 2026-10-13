@@ -12,6 +12,7 @@ export {
   buildRendererAssetManifest,
   buildRendererAssetManifestFromProject,
   manifestToPreviewTables,
+  sceneClipsFromManifest,
   validateRendererAssetManifest,
   type BuildRendererAssetManifestOptions,
   type RendererAssetBindings,

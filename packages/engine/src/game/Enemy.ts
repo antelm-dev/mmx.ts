@@ -7,6 +7,9 @@ import type { EnemyAbility } from "./enemy/EnemyAbility.js";
 import type { Projectile } from "./Projectile.js";
 import { ENEMY_FLASH_TIME, enemyStats, type EnemyStats } from "../core/constants.js";
 import type { CompiledEnemy } from "../data/types.js";
+import type { Box } from "@mmx/contracts/animation";
+
+type Rect = { left: number; right: number; top: number; bottom: number };
 
 /**
  * Enemy actor — port of Enemy.gd plus the per-enemy modules its scenes hang off
@@ -117,8 +120,13 @@ export class Enemy extends AbilityUser {
     );
   }
 
-  /** World-space hurtbox (area2D) — what player projectiles are tested against. */
-  get hurtbox(): { left: number; right: number; top: number; bottom: number } {
+  /**
+   * World-space hurtbox (area2D) — what player projectiles are tested against.
+   * The current clip frame's `hurtbox` when it has one, else the definition's.
+   */
+  get hurtbox(): Rect {
+    const frameBox = this.anim.currentFrame()?.hurtbox;
+    if (frameBox) return this.frameBoxRect(frameBox);
     const s = this.stats;
     return {
       left: this.pos.x - s.hurt_hw,
@@ -126,6 +134,24 @@ export class Enemy extends AbilityUser {
       top: this.pos.y - s.hurt_hh,
       bottom: this.pos.y + s.hurt_hh,
     };
+  }
+
+  /** World-space contact-damage volumes of the current clip frame (`hitboxes`). */
+  get hitboxes(): Rect[] {
+    return this.anim.currentFrame()?.hitboxes?.map((box) => this.frameBoxRect(box)) ?? [];
+  }
+
+  /**
+   * A frame box is measured from the feet in the frame as authored, and mirrors
+   * with the sprite — which for enemies is flipped against facing (see the
+   * renderer's syncEnemies: the scenes set `flip_h`).
+   */
+  private frameBoxRect(box: Box): Rect {
+    const sx = -this.get_facing_direction();
+    const x0 = this.pos.x + sx * box.x;
+    const x1 = this.pos.x + sx * (box.x + box.w);
+    const top = this.pos.y + this.hh + box.y;
+    return { left: Math.min(x0, x1), right: Math.max(x0, x1), top, bottom: top + box.h };
   }
 
   // ---------------------------------------------------------------------------
