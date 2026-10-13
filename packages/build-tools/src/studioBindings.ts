@@ -42,9 +42,15 @@ export function buildSheetImagesFromManifest(manifest: ProjectDocument): Record<
   return sheetImages;
 }
 
+/**
+ * `enemies` are the project's merged enemy definitions: one whose `sheet` is an
+ * animation asset id of the project binds to that asset unless
+ * `bindings.enemyAnimations` names the sheet explicitly.
+ */
 export function studioBindingsToRendererBindings(
   studio: StudioGameDataFile,
   manifest: ProjectDocument,
+  enemies: Readonly<Record<string, { sheet: string }>> = {},
 ): RendererAssetBindings {
   const playerAnim = manifest.assets.find((asset) => asset.id === studio.bindings.playerAnimation);
   if (!playerAnim || playerAnim.kind !== "animation") {
@@ -73,11 +79,18 @@ export function studioBindingsToRendererBindings(
     );
   }
 
+  const enemyActors: Record<string, string> = {};
+  for (const { sheet } of Object.values(enemies)) {
+    if (manifest.assets.some((asset) => asset.id === sheet && asset.kind === "animation")) {
+      enemyActors[sheet] = sheet;
+    }
+  }
+
   return {
     playerAnimation: studio.bindings.playerAnimation,
     playerSheetNormal: playerAnim.sheetAssetId,
     playerSheetPointing: studio.bindings.playerPointingSheet,
-    enemyActors: { ...studio.bindings.enemyAnimations },
+    enemyActors: { ...enemyActors, ...studio.bindings.enemyAnimations },
     pickupActors: { ...studio.bindings.pickupAnimations },
     shotAnimations: firstShotAnim,
     sheetImages: buildSheetImagesFromManifest(manifest),

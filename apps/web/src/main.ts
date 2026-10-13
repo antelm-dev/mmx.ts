@@ -6,6 +6,7 @@ import { DebugSession } from "./debug/DebugSession.js";
 import { InputBinding } from "./input/InputBinding.js";
 import { ScenePresenter } from "./presentation/ScenePresenter.js";
 import {
+  compileProjectGameData,
   createProjectAssetCatalog,
   createProjectSoundAssetResolver,
   decorationsForLevel,
@@ -56,6 +57,7 @@ async function bootstrap(): Promise<void> {
   debug = new DebugSession({
     level: entryLevel(projectBundle),
     loadoutId: projectBundle.meta.playerLoadout,
+    gameData: compileProjectGameData(projectBundle),
     onEnemySpawned: (enemy) => presenter.attachEnemy(enemy),
     onPickupSpawned: (pickup) => presenter.attachPickup(pickup),
     onWeaponCapsuleSpawned: (capsule) => presenter.attachWeaponCapsule(capsule),

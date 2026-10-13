@@ -1,5 +1,4 @@
 import { Action, DT, Input, Player, Stage, spawnEnemy, loadLevel } from "@mmx/engine";
-import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import { loadEntryLevel, requireProjectDirectory } from "./project.js";
 
 /**
@@ -16,7 +15,7 @@ import { loadEntryLevel, requireProjectDirectory } from "./project.js";
 
 async function main(): Promise<void> {
   const entry = await loadEntryLevel(requireProjectDirectory());
-  const gameData = COMPILED_GAME_DATA;
+  const gameData = entry.gameData;
   const level = loadLevel(entry.level, gameData);
   const input = new Input();
   const world = level.world;

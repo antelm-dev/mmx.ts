@@ -7,9 +7,19 @@ import {
   validateImageLayers,
   validateTileLayers,
 } from "@mmx/content-schema";
-import { COMPILED_GAME_DATA } from "@mmx/engine/data";
+import { buildCompileRegistries } from "@mmx/engine/behaviors";
+import {
+  COMPILED_GAME_DATA,
+  compileGameData,
+  GAME_DATA,
+  mergeGameData,
+  type CompiledGameData,
+  type GameData,
+  type GameDataDiagnostic,
+  type GameDataOverlay,
+} from "@mmx/engine/data";
 import { parseProject, type TilesetAsset } from "@mmx/project-schema";
-import { PROJECT_MANIFEST } from "./constants.js";
+import { GAME_DATA_FILE, PROJECT_MANIFEST } from "./constants.js";
 import { validateLevelObjects } from "./compileLevel.js";
 import { ProjectLoadError } from "./errors.js";
 import { containAbsolutePath, resolveContainedProjectPath } from "./paths.js";
@@ -74,6 +84,54 @@ async function tilesetTileCount(
   return Math.min(asset.columns ?? fit, fit) * Math.floor(size.height / asset.tileSize);
 }
 
+type ProjectGameData = { gameData: GameData; compiledGameData: CompiledGameData };
+
+/**
+ * `data/game.json` merged as an overlay over the engine's {@link GAME_DATA} and
+ * compiled; without the file, the built-in data unchanged. Problems are reported
+ * to `issues` against the file and yield undefined.
+ */
+async function loadGameData(
+  root: string,
+  issues: ProjectIssue[],
+): Promise<ProjectGameData | undefined> {
+  const report = (code: string, message: string): undefined => {
+    issues.push({ severity: "error", code, path: `/${GAME_DATA_FILE}`, message });
+    return undefined;
+  };
+  const reportDiagnostics = (diagnostics: GameDataDiagnostic[]): undefined => {
+    for (const d of diagnostics) {
+      if (d.severity !== "error") continue;
+      report(d.code, `${GAME_DATA_FILE}${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`);
+    }
+    return undefined;
+  };
+
+  let overlay: GameDataOverlay;
+  try {
+    const contained = await resolveContainedProjectPath(root, GAME_DATA_FILE);
+    if (!contained.exists) return { gameData: GAME_DATA, compiledGameData: COMPILED_GAME_DATA };
+    overlay = JSON.parse(await fs.readFile(contained.absolutePath, "utf8")) as GameDataOverlay;
+  } catch (error) {
+    if (error instanceof ProjectLoadError) return report(error.code, error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    return report("gameData.parse", `Failed to read '${GAME_DATA_FILE}': ${message}`);
+  }
+
+  const merged = mergeGameData(GAME_DATA, overlay);
+  if (!merged.ok) return reportDiagnostics(merged.diagnostics);
+  let compiled;
+  try {
+    compiled = compileGameData(merged.value, buildCompileRegistries());
+  } catch (error) {
+    // compileGameData trusts record shapes; a record missing a nested object throws.
+    const message = error instanceof Error ? error.message : String(error);
+    return report("gameData.invalid", `${GAME_DATA_FILE} is malformed: ${message}`);
+  }
+  if (!compiled.ok) return reportDiagnostics(compiled.diagnostics);
+  return { gameData: merged.value, compiledGameData: compiled.value };
+}
+
 export async function loadProject(root: string): Promise<LoadProjectResult> {
   const rootResolved = path.resolve(root);
   const manifestPath = path.join(rootResolved, PROJECT_MANIFEST);
@@ -130,16 +188,18 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
     };
   }
 
+  const gameDataIssues: ProjectIssue[] = [];
+  const projectGameData = await loadGameData(rootResolved, gameDataIssues);
   const parsed = parseProject(raw, {
-    loadoutIds: COMPILED_GAME_DATA.loadouts.keys(),
+    loadoutIds: (projectGameData?.compiledGameData ?? COMPILED_GAME_DATA).loadouts.keys(),
     terrainTiles: Object.values(TerrainTile),
   });
   if (!parsed.ok || !parsed.project) {
-    return { ok: false, issues: toIssues(parsed.issues) };
+    return { ok: false, issues: [...gameDataIssues, ...toIssues(parsed.issues)] };
   }
 
   const manifest = parsed.project;
-  const issues: ProjectIssue[] = toIssues(parsed.issues);
+  const issues: ProjectIssue[] = [...gameDataIssues, ...toIssues(parsed.issues)];
   // Before any level is checked or compiled: instances may use project definitions.
   for (const issue of setProjectDefinitions(manifest.objects ?? [])) {
     issues.push({
@@ -246,13 +306,13 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   }
 
   const errorCount = issues.filter((issue) => issue.severity === "error").length;
-  if (errorCount > 0) {
+  if (errorCount > 0 || !projectGameData) {
     return { ok: false, issues };
   }
 
   return {
     ok: true,
-    value: { root: rootResolved, manifest, levels },
+    value: { root: rootResolved, manifest, levels, ...projectGameData },
     issues,
   };
 }

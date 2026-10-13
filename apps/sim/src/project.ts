@@ -1,6 +1,7 @@
 import path from "node:path";
 import { levelDocumentToLevelData, requireProject, type LoadedProject } from "@mmx/build-tools";
 import type { LevelData } from "@mmx/engine";
+import type { CompiledGameData } from "@mmx/engine/data";
 
 function projectArgument(argv: readonly string[]): string | undefined {
   const index = argv.indexOf("--project");
@@ -30,12 +31,16 @@ export async function loadProjectLevels(projectDir: string): Promise<{
 
 export async function loadEntryLevel(
   projectDir: string,
-): Promise<{ level: LevelData; loadoutId?: string }> {
+): Promise<{ level: LevelData; loadoutId?: string; gameData: CompiledGameData }> {
   const { project, levels } = await loadProjectLevels(projectDir);
   const index = project.levels.findIndex((entry) => entry.id === project.manifest.entryLevelId);
   const level = levels[index];
   if (!level) {
     throw new Error(`Entry level '${project.manifest.entryLevelId}' is missing.`);
   }
-  return { level, loadoutId: project.manifest.player?.loadout };
+  return {
+    level,
+    loadoutId: project.manifest.player?.loadout,
+    gameData: project.compiledGameData,
+  };
 }

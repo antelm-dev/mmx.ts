@@ -55,6 +55,7 @@ async function main(): Promise<void> {
   const replay = decodeReplay(readFileSync(options.file, "utf8"));
   const { project, levels } = await loadProjectLevels(requireProjectDirectory());
   const loadoutId = project.manifest.player?.loadout;
+  const gameData = project.compiledGameData;
   const level = levels.find((candidate) => candidate.identifier === replay.level);
   if (!level) {
     throw new Error(`Replay level '${replay.level}' is not present in the selected project.`);
@@ -75,7 +76,7 @@ async function main(): Promise<void> {
   if (options.trace) {
     // Stepped by hand rather than through Recorder.replay so the trace can be
     // printed as it goes; the state sequence is identical either way.
-    scene = Scene.create({ level, loadoutId, seed: replay.seed });
+    scene = Scene.create({ level, loadoutId, gameData, seed: replay.seed });
     if (replay.gameDataHash !== undefined && replay.gameDataHash !== scene.gameDataHash) {
       throw new Error(
         `replay was recorded with game data '${replay.gameDataHash}', this build has '${scene.gameDataHash}'`,
@@ -98,7 +99,7 @@ async function main(): Promise<void> {
     }
     console.log("");
   } else {
-    scene = Recorder.replay(replay, { level, loadoutId });
+    scene = Recorder.replay(replay, { level, loadoutId, gameData });
   }
 
   const elapsed = performance.now() - started;

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { GAME_DATA } from "@mmx/engine/data";
 import {
   buildProjectToDisk,
   bundleContainsAbsolutePaths,
@@ -12,7 +13,7 @@ import {
 } from "../src/compileProject.js";
 import { hashContent } from "../src/contentHash.js";
 import { levelDocumentToLevelData } from "../src/compileLevel.js";
-import { requireProject } from "../src/loadProject.js";
+import { loadProject, requireProject } from "../src/loadProject.js";
 import { planAssetEmission } from "../src/compileProject.js";
 import { createStudioShapedFixture } from "./helpers/createStudioShapedFixture.js";
 
@@ -45,7 +46,7 @@ test("compileBrowserProjectBundle injects engine data without absolute paths", a
   assert.equal(bundleContainsAbsolutePaths(source), false);
   assert.equal(bundle.meta.entryLevelId, "level.main");
   assert.equal(bundle.levels[0]?.data.identifier, "level.main");
-  assert.ok(bundle.compiledGameData.hash.length > 0);
+  assert.deepEqual(bundle.gameData, GAME_DATA);
   assert.equal(bundle.assetUrls["sprite.bg"], emission.byId["sprite.bg"]?.publicUrl);
 });
 
@@ -191,6 +192,95 @@ test("browser bundle carries tile layers, tileset geometry and the tileset sheet
       bundle.rendererManifest?.sheetUrls["tiles.stage"],
       emission.byId["tiles.stage"]?.publicUrl,
     );
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+/** The studio-shaped fixture plus an animation asset `anim.enemy.crab` and a `data/game.json`. */
+async function createOverlayFixture(overlay: unknown) {
+  const fixture = await createStudioShapedFixture("mmx-game-data-overlay-");
+  const manifestPath = path.join(fixture.root, "project.json");
+  const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+  manifest.assets.push({
+    id: "anim.enemy.crab",
+    kind: "animation",
+    path: "assets/sprites/enemy.png",
+    sheetAssetId: "sprite.fixture.enemy",
+    animations: {
+      defense: { loop: true, speed: 1, frames: [{ region: [0, 0, 16, 16], duration: 0.1 }] },
+    },
+  });
+  await fs.writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+  await fs.mkdir(path.join(fixture.root, "data"), { recursive: true });
+  await fs.writeFile(path.join(fixture.root, "data/game.json"), JSON.stringify(overlay), "utf8");
+  return fixture;
+}
+
+const crab = { ...GAME_DATA.enemies.metool!, id: "crab", sheet: "anim.enemy.crab" };
+
+test("a data/game.json overlay adds a project enemy to the bundle and auto-binds its sheet", async () => {
+  const fixture = await createOverlayFixture({ schemaVersion: 1, enemies: { crab } });
+  try {
+    const project = await requireProject(fixture.root);
+    assert.ok(project.compiledGameData.enemies.has("crab"));
+    assert.deepEqual(project.gameData.enemies.metool, GAME_DATA.enemies.metool);
+
+    const emission = await planAssetEmission(project);
+    const bundle = await compileBrowserProjectBundle(project, emission);
+    assert.deepEqual(bundle.gameData.enemies.crab, crab);
+    assert.equal(bundle.rendererBindings?.enemyActors["anim.enemy.crab"], "anim.enemy.crab");
+    // Explicit bindings still win and are kept.
+    assert.equal(bundle.rendererBindings?.enemyActors.metool, "anim.fixture.enemy");
+    const actor = bundle.rendererManifest?.enemyActors["anim.enemy.crab"];
+    assert.ok(actor);
+    assert.equal(actor.sheet, "sprite.fixture.enemy");
+
+    const source = bundleModuleSource(bundle);
+    const parsed = JSON.parse(source.replace(/^export default /, "").replace(/;\s*$/, ""));
+    assert.deepEqual(parsed.gameData, bundle.gameData);
+    assert.deepEqual(parsed.gameData.enemies.crab, crab);
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+test("an invalid data/game.json overlay fails loadProject with the compile diagnostic", async () => {
+  const fixture = await createOverlayFixture({
+    enemies: { crab: { ...crab, abilities: ["Patrol", "Teleport"] } },
+  });
+  try {
+    const result = await loadProject(fixture.root);
+    assert.equal(result.ok, false);
+    const issue = result.issues.find((entry) => entry.path === "/data/game.json");
+    assert.ok(issue);
+    assert.equal(issue.severity, "error");
+    assert.match(issue.message, /Teleport/);
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+test("a data/game.json overlay with an unsupported category fails loadProject", async () => {
+  const fixture = await createOverlayFixture({ pickups: {} });
+  try {
+    const result = await loadProject(fixture.root);
+    assert.equal(result.ok, false);
+    assert.deepEqual(
+      result.issues.map((entry) => [entry.code, entry.path]),
+      [["overlay.category", "/data/game.json"]],
+    );
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+test("a malformed data/game.json record fails loadProject instead of throwing", async () => {
+  const fixture = await createOverlayFixture({ enemies: { crab: { id: "crab" } } });
+  try {
+    const result = await loadProject(fixture.root);
+    assert.equal(result.ok, false);
+    assert.ok(result.issues.some((entry) => entry.path === "/data/game.json"));
   } finally {
     await fixture.dispose();
   }
