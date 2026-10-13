@@ -1,4 +1,11 @@
-import { TerrainTile, moveDecorations, moveObjects, setTransform } from "@mmx/content-schema";
+import {
+  TerrainTile,
+  effectiveValue,
+  moveDecorations,
+  moveObjects,
+  setProperty,
+  setTransform,
+} from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
 import {
   paintTileLayer,
@@ -21,11 +28,15 @@ import {
   cellRect,
   clampTileDelta,
   floodFill,
+  dragTravel,
   handleHitTest,
   normalizeBox,
+  pointHitTest,
   singleResizableObject,
   tileIndexAt,
   tilesIntersecting,
+  travelsVertically,
+  travelTarget,
   type Box,
   type Handle,
 } from "./EditorViewportGeometry.js";
@@ -59,6 +70,14 @@ export class EditorViewportInteraction {
   private dragging = false;
   private live: LivePreview = null;
   private resizeState: { id: string; handle: Handle; orig: Box } | null = null;
+  /** In-flight travel-grip drag: committed as one Set Travel on release. */
+  private travelDrag: {
+    id: string;
+    start: { x: number; y: number };
+    travel: number;
+    before: unknown;
+    vertical: boolean;
+  } | null = null;
   private tileStroke: { erase: boolean; changed: Map<number, TerrainTile> } | null = null;
   /** In-flight tile-layer stroke: cell index -> tile index (-1 erases). */
   private tileArt: {
@@ -229,6 +248,17 @@ export class EditorViewportInteraction {
     );
   }
 
+  private travelGripAt(clientX: number, clientY: number) {
+    const state = this.store.get();
+    const target = travelTarget(state.document.objects, selectedObjectIds(state.selection));
+    if (!target) return null;
+    const { zoom, viewportPosition } = state;
+    const rect = this.canvas.getBoundingClientRect();
+    return pointHitTest(target.grip, clientX, clientY, rect, zoom, viewportPosition.x, viewportPosition.y)
+      ? target.inst
+      : null;
+  }
+
   private paintTileAt(world: { x: number; y: number }): void {
     const stroke = this.tileStroke;
     if (!stroke) return;
@@ -366,6 +396,19 @@ export class EditorViewportInteraction {
       if (target) { this.resizeState = { id: target.id, handle, orig: boxOf(target) }; return; }
     }
 
+    const traveller = this.travelGripAt(e.clientX, e.clientY);
+    if (traveller) {
+      const travel = effectiveValue(traveller, "Travel");
+      this.travelDrag = {
+        id: traveller.id,
+        start: world,
+        travel: typeof travel === "number" ? travel : 0,
+        before: traveller.overrides?.Travel,
+        vertical: travelsVertically(traveller),
+      };
+      return;
+    }
+
     const hit = this.topObjectAt(world.x, world.y);
     if (hit) {
       if (e.shiftKey) { this.pendingToggle = hit.id; return; }
@@ -435,6 +478,13 @@ export class EditorViewportInteraction {
       return;
     }
     if (this.resizeState) { this.applyResize(world); this.redraw(); return; }
+    if (this.travelDrag) {
+      const td = this.travelDrag;
+      const travel = dragTravel(td.travel, world.x - td.start.x, world.y - td.start.y, td.vertical, (v) => this.store.snap(v));
+      this.live = { type: "travel", id: td.id, travel };
+      this.redraw();
+      return;
+    }
 
     if (this.marquee) {
       this.marquee.current = world;
@@ -527,6 +577,15 @@ export class EditorViewportInteraction {
       return;
     }
     this.resizeState = null;
+
+    if (this.travelDrag) {
+      const td = this.travelDrag;
+      const travel = this.live?.type === "travel" ? this.live.travel : td.travel;
+      this.travelDrag = null; this.live = null;
+      if (travel !== td.travel) this.store.execute(setProperty(td.id, "Travel", "override", td.before, travel));
+      else this.redraw();
+      return;
+    }
 
     if (this.dragging && this.live?.type === "moveTiles") { this.commitTileDrag(); return; }
     if (this.dragging && this.live?.type === "moveDecorations") { this.commitDecorationDrag(); return; }

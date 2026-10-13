@@ -1,4 +1,13 @@
-import { instanceSize, definitionFor, type LevelObjectInstance } from "@mmx/content-schema";
+import {
+  instanceSize,
+  definitionFor,
+  effectiveValue,
+  entityFields,
+  getDefinition,
+  type LevelObjectInstance,
+} from "@mmx/content-schema";
+import { environmentBehaviorRegistry, type DebugPrimitive } from "@mmx/engine/behaviors";
+import { GAME_DATA } from "@mmx/engine/data";
 
 // ---------- Types ----------
 
@@ -55,6 +64,21 @@ export function handlePos(b: Box, h: Handle): { x: number; y: number } {
   }
 }
 
+/** Whether screen-space client coords fall on the handle square drawn at world point `p`. */
+export function pointHitTest(
+  p: { x: number; y: number },
+  clientX: number,
+  clientY: number,
+  canvasRect: DOMRect,
+  zoom: number,
+  viewportX: number,
+  viewportY: number,
+): boolean {
+  const dx = clientX - canvasRect.left - (p.x - viewportX) * zoom;
+  const dy = clientY - canvasRect.top - (p.y - viewportY) * zoom;
+  return Math.abs(dx) <= HANDLE_HIT_PX && Math.abs(dy) <= HANDLE_HIT_PX;
+}
+
 /**
  * Given screen-space client coords and the world-to-screen projection, return
  * which resize handle (if any) is hit on the given box.
@@ -69,14 +93,68 @@ export function handleHitTest(
   viewportY: number,
 ): Handle | null {
   for (const h of HANDLES) {
-    const wp = handlePos(b, h);
-    const sx = (wp.x - viewportX) * zoom;
-    const sy = (wp.y - viewportY) * zoom;
-    const dx = clientX - canvasRect.left - sx;
-    const dy = clientY - canvasRect.top - sy;
-    if (Math.abs(dx) <= HANDLE_HIT_PX && Math.abs(dy) <= HANDLE_HIT_PX) return h;
+    if (pointHitTest(handlePos(b, h), clientX, clientY, canvasRect, zoom, viewportX, viewportY)) return h;
   }
   return null;
+}
+
+// ---------- Environment gizmos ----------
+
+/**
+ * The engine's design-time geometry for an environment instance drawn at `box`
+ * (a moving platform's travel path and end rect), or none: not an environment,
+ * no provider, or an unknown definition (editor reads never throw).
+ */
+export function environmentGeometry(
+  inst: LevelObjectInstance,
+  box: Box = boxOf(inst),
+): readonly DebugPrimitive[] {
+  const def = getDefinition(inst.definitionId);
+  if (!def) return [];
+  const source = GAME_DATA.prefabs[def.baseId ?? def.id]?.source;
+  if (source?.kind !== "environment") return [];
+  const behavior = GAME_DATA.environments[source.ref]?.behavior;
+  if (!behavior || !environmentBehaviorRegistry.has(behavior)) return [];
+  const provider = environmentBehaviorRegistry.get(behavior).debugGeometry;
+  return provider?.(entityFields(inst), { x: box.x, y: box.y, facing: 1, width: box.w, height: box.h }) ?? [];
+}
+
+/** The grip that drags Travel: the centre of the geometry's travel `end` rect. */
+export function travelGrip(geometry: readonly DebugPrimitive[]): { x: number; y: number } | null {
+  const end = geometry.find((p) => p.kind === "rect" && p.label === "end");
+  return end?.kind === "rect" ? { x: end.x + end.width / 2, y: end.y + end.height / 2 } : null;
+}
+
+/** Whether a grip may set the instance's Travel: a project object can fix it (not exposed), and an override of it would be dropped. */
+export function travelEditable(inst: LevelObjectInstance): boolean {
+  return definitionFor(inst.definitionId).properties.some((p) => p.key === "Travel");
+}
+
+/** The single selected object with a travel grip and an editable Travel, and that grip. */
+export function travelTarget(
+  objects: readonly LevelObjectInstance[],
+  selectedIds: readonly string[],
+): { inst: LevelObjectInstance; grip: { x: number; y: number } } | null {
+  if (selectedIds.length !== 1) return null;
+  const inst = objects.find((o) => o.id === selectedIds[0]);
+  const grip = inst && travelEditable(inst) ? travelGrip(environmentGeometry(inst)) : null;
+  return inst && grip ? { inst, grip } : null;
+}
+
+/** Whether an instance travels vertically (its Axis), so a grip drag reads the pointer's y. */
+export function travelsVertically(inst: LevelObjectInstance): boolean {
+  return effectiveValue(inst, "Axis") === "vertical";
+}
+
+/** Travel after dragging the grip by (dx, dy) world px from `start`: along the axis, snapped, never negative. */
+export function dragTravel(
+  start: number,
+  dx: number,
+  dy: number,
+  vertical: boolean,
+  snap: (value: number) => number,
+): number {
+  return Math.max(0, snap(start + (vertical ? dy : dx)));
 }
 
 // ---------- Object resizability ----------

@@ -119,5 +119,21 @@ test("an instance compiles every property, defaults included, and drops undeclar
     y: 0,
     overrides: { Speed: 10, Kind: "bat" },
   });
-  assert.deepEqual(entity.fields, { Travel: 96, Speed: 10 });
+  assert.deepEqual(entity.fields, { Travel: 96, Speed: 10, Axis: "horizontal" });
+});
+
+test("falling platforms and every built-in enemy kind import as their own definitions", () => {
+  const doc: LevelDocument = {
+    ...stage1Document,
+    objects: [
+      { id: "f", definitionId: "platform.falling", x: 32, y: 64, width: 32, height: 8, overrides: { Delay: 1 } },
+      { id: "p", definitionId: "enemy.pantheon", x: 96, y: 64 },
+    ],
+  };
+  const back = levelDataToDocument(documentToLevelData(doc));
+  assert.deepEqual(
+    back.objects.map((o) => o.definitionId),
+    ["platform.falling", "enemy.pantheon"],
+  );
+  roundTrip(documentToLevelData(doc));
 });

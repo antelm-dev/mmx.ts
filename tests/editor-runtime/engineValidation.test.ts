@@ -109,7 +109,7 @@ test("instances of project object definitions compile to engine entities the eng
     const doc = docWith([{ id: "f1", definitionId: "obj.fast", x: 96, y: 96, width: 48, height: 8 }]);
     const entity = documentToLevelData(doc).entities.find((e) => e.iid === "f1");
     assert.equal(entity?.id, "MovingPlatform");
-    assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96 });
+    assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96, Axis: "horizontal" });
     assert.deepEqual(engineDiagnostics(doc).filter((d) => d.severity === "error"), []);
   } finally {
     setProjectDefinitions([]);

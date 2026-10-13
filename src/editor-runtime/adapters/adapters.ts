@@ -52,13 +52,15 @@ function definitionIdFor(entity: LevelEntity): string {
     case "Spawn":
       return "spawn";
     case "Enemy":
-      return kind === "bat" ? "enemy.bat" : "enemy.metool";
+      return kind && getDefinition(`enemy.${kind}`) ? `enemy.${kind}` : "enemy.metool";
     case "LifeCapsule":
       return kind === "large" ? "pickup.life.large" : "pickup.life.small";
     case "WeaponCapsule":
       return kind === "large" ? "pickup.weapon.large" : "pickup.weapon.small";
     case "MovingPlatform":
       return "platform.moving";
+    case "FallingPlatform":
+      return "platform.falling";
     case "Conveyor":
       return "conveyor";
     case "Hazard":

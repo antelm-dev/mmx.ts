@@ -14,6 +14,7 @@ import {
   getSpritePreview,
   type AssetCatalog,
 } from "@mmx/renderer-pixi";
+import type { DebugPrimitive } from "@mmx/engine/behaviors";
 import { EditableTerrain } from "./EditableTerrain.js";
 import { tileLayerWritesCollision } from "./actions.js";
 import {
@@ -23,12 +24,15 @@ import {
 } from "./EditorStore.js";
 import {
   boxOf,
+  environmentGeometry,
   handlePos,
   normalizeBox,
   singleResizableObject,
   hexToNum,
   HANDLES,
   HANDLE_HIT_PX,
+  travelEditable,
+  travelGrip,
   type Box,
 } from "./EditorViewportGeometry.js";
 
@@ -52,6 +56,7 @@ const COLOR_GRID = 0x161d2b;
 const COLOR_SELECT = 0x4c8dff;
 const COLOR_HOVER = 0xffffff;
 const COLOR_ERASE = 0xff5a5a;
+const COLOR_PATH = 0xffc94d;
 
 /** Typed snapshot of in-flight interaction state passed to {@link EditorViewportRenderer.redraw}. */
 export type LivePreview =
@@ -59,6 +64,7 @@ export type LivePreview =
   | { type: "moveDecorations"; dx: number; dy: number }
   | { type: "moveTiles"; dCol: number; dRow: number }
   | { type: "resize"; id: string; box: Box }
+  | { type: "travel"; id: string; travel: number }
   | null;
 
 /** Tile-paint stroke preview: maps row-major tile index → target value. */
@@ -417,6 +423,18 @@ export class EditorViewportRenderer {
       const b = this.objectDrawBox(inst, live);
       g.rect(b.x - 1 / zoom, b.y - 1 / zoom, b.w + 2 / zoom, b.h + 2 / zoom)
         .stroke({ width: 2 / zoom, color: COLOR_SELECT });
+      const shown = live?.type === "travel" && live.id === id
+        ? { ...inst, overrides: { ...inst.overrides, Travel: live.travel } }
+        : inst;
+      const geometry = environmentGeometry(shown, b);
+      this.drawGeometry(g, geometry, zoom);
+      const grip = selectedIds.length === 1 && travelEditable(inst) ? travelGrip(geometry) : null;
+      if (grip) {
+        const s = HANDLE_HIT_PX / zoom;
+        g.rect(grip.x - s / 2, grip.y - s / 2, s, s)
+          .fill(COLOR_PATH)
+          .stroke({ width: 1 / zoom, color: 0xffffff });
+      }
     }
 
     for (const id of selectedDecIds) {
@@ -481,6 +499,33 @@ export class EditorViewportRenderer {
         color: COLOR_SELECT,
         alpha: 0.95,
       });
+    }
+  }
+
+  /** Engine debug primitives (travel path, end rect…), styled by Studio. */
+  private drawGeometry(g: Graphics, geometry: readonly DebugPrimitive[], zoom: number): void {
+    const stroke = { width: 1 / zoom, color: COLOR_PATH, alpha: 0.9 };
+    for (const p of geometry) {
+      if (p.kind === "rect") {
+        g.rect(p.x, p.y, p.width, p.height).fill({ color: COLOR_PATH, alpha: 0.08 }).stroke(stroke);
+      } else if (p.kind === "point") {
+        g.circle(p.x, p.y, 2 / zoom).fill(COLOR_PATH);
+      } else {
+        g.moveTo(p.from.x, p.from.y).lineTo(p.to.x, p.to.y).stroke(stroke);
+        // Arrowhead mid-path (the far end holds the grip), so the travel direction reads at a glance.
+        const len = Math.hypot(p.to.x - p.from.x, p.to.y - p.from.y);
+        if (len === 0) continue;
+        const ux = (p.to.x - p.from.x) / len;
+        const uy = (p.to.y - p.from.y) / len;
+        const head = Math.min(6 / zoom, len / 2);
+        const tx = (p.from.x + p.to.x) / 2 + (ux * head) / 2;
+        const ty = (p.from.y + p.to.y) / 2 + (uy * head) / 2;
+        g.poly([
+          tx, ty,
+          tx - ux * head - uy * head * 0.5, ty - uy * head + ux * head * 0.5,
+          tx - ux * head + uy * head * 0.5, ty - uy * head - ux * head * 0.5,
+        ]).fill(COLOR_PATH);
+      }
     }
   }
 

@@ -13,7 +13,14 @@ import {
   type Box,
   type Handle,
   HANDLES,
+  dragTravel,
+  environmentGeometry,
+  travelEditable,
+  travelGrip,
+  travelTarget,
+  travelsVertically,
 } from "./EditorViewportGeometry.js";
+import { setProjectDefinitions, type LevelObjectInstance } from "@mmx/content-schema";
 
 describe("normalizeBox", () => {
   it("returns same box when already normalized", () => {
@@ -279,5 +286,92 @@ describe("floodFill", () => {
     const cells = [-1, -1, 1, -1, 1, 1, -1, -1, 1];
     expect(floodFill(cells, 3, 0).sort((a, b) => a - b)).toEqual([0, 1, 3, 6, 7]);
     expect(floodFill(cells, 3, 2).sort((a, b) => a - b)).toEqual([2, 4, 5, 8]);
+  });
+});
+
+describe("environment travel gizmo", () => {
+  const platform = (overrides?: Record<string, unknown>): LevelObjectInstance => ({
+    id: "p",
+    definitionId: "platform.moving",
+    x: 32,
+    y: 64,
+    width: 48,
+    height: 8,
+    overrides,
+  });
+
+  it("maps a horizontal moving platform's travel end rect to a grip at its centre", () => {
+    const geometry = environmentGeometry(platform({ Travel: 80 }));
+    expect(geometry.map((p) => p.kind)).toEqual(["line", "rect"]);
+    expect(travelGrip(geometry)).toEqual({ x: 32 + 80 + 24, y: 64 + 4 });
+  });
+
+  it("puts the grip below the platform when it travels vertically", () => {
+    const geometry = environmentGeometry(platform({ Travel: 40, Axis: "vertical" }));
+    expect(travelGrip(geometry)).toEqual({ x: 32 + 24, y: 64 + 40 + 4 });
+  });
+
+  it("uses the definition's default Travel and the box it is drawn at", () => {
+    const grip = travelGrip(environmentGeometry(platform(), { x: 0, y: 0, w: 16, h: 16 }));
+    expect(grip).toEqual({ x: 96 + 8, y: 8 });
+  });
+
+  it("draws nothing for a falling platform, a non-environment or an unknown definition", () => {
+    const at = { x: 0, y: 0 };
+    expect(environmentGeometry({ id: "f", definitionId: "platform.falling", ...at, width: 32, height: 8 })).toEqual([]);
+    expect(environmentGeometry({ id: "e", definitionId: "enemy.metool", ...at })).toEqual([]);
+    expect(environmentGeometry({ id: "m", definitionId: "obj.removed", ...at })).toEqual([]);
+  });
+
+  it("offers a grip only for a single selected travelling object", () => {
+    const p = platform();
+    const other: LevelObjectInstance = { id: "e", definitionId: "enemy.metool", x: 0, y: 0 };
+    expect(travelTarget([p, other], ["p"])?.inst).toBe(p);
+    expect(travelTarget([p, other], ["p", "e"])).toBeNull();
+    expect(travelTarget([p, other], ["e"])).toBeNull();
+    expect(travelTarget([platform({ Travel: 0 })], ["p"])).toBeNull();
+  });
+
+  it("draws the path but offers no grip when a project object fixes Travel", () => {
+    setProjectDefinitions([
+      { id: "obj.fixed", name: "Fixed", base: "platform.moving", values: { Travel: 64 }, exposed: ["Speed"] },
+    ]);
+    try {
+      const fixed: LevelObjectInstance = { ...platform(), definitionId: "obj.fixed" };
+      expect(environmentGeometry(fixed).map((p) => p.kind)).toEqual(["line", "rect"]);
+      expect(travelEditable(fixed)).toBe(false);
+      expect(travelTarget([fixed], ["p"])).toBeNull();
+      expect(travelEditable(platform())).toBe(true);
+    } finally {
+      setProjectDefinitions([]);
+    }
+  });
+
+  it("reads the instance's Axis", () => {
+    expect(travelsVertically(platform())).toBe(false);
+    expect(travelsVertically(platform({ Axis: "vertical" }))).toBe(true);
+  });
+});
+
+describe("dragTravel", () => {
+  const snap16 = (v: number) => Math.round(v / 16) * 16;
+  const noSnap = (v: number) => v;
+
+  it("follows the pointer along the horizontal axis only", () => {
+    expect(dragTravel(96, 30, 200, false, noSnap)).toBe(126);
+  });
+
+  it("follows the pointer along the vertical axis only", () => {
+    expect(dragTravel(96, 200, -30, true, noSnap)).toBe(66);
+  });
+
+  it("snaps the travel to the grid", () => {
+    expect(dragTravel(96, 21, 0, false, snap16)).toBe(112);
+    expect(dragTravel(96, 0, 7, true, snap16)).toBe(96);
+  });
+
+  it("never goes below zero", () => {
+    expect(dragTravel(96, -500, 0, false, snap16)).toBe(0);
+    expect(dragTravel(96, 0, -500, true, noSnap)).toBe(0);
   });
 });
