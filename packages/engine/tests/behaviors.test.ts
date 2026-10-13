@@ -159,6 +159,16 @@ test("an enemy ability config missing a key or out of range fails compilation", 
   assert.ok(paths.includes("enemies.bat.abilityConfig.Hover.area"));
 });
 
+test("an enemy ability config whose conflicts name an ability the enemy does not own fails compilation", () => {
+  const data = clone();
+  data.enemies.metool.abilityConfig!.Patrol.conflicts = ["Hide", "Stunn"];
+  const missing = compile(data).diagnostics.filter((d) => d.code === "reaction.missing");
+  assert.deepEqual(
+    missing.map((d) => d.fieldPath),
+    ["enemies.metool.abilityConfig.Patrol.conflicts"],
+  );
+});
+
 test("a Shoot config naming an unknown projectile fails compilation", () => {
   const data = clone();
   data.enemies.pantheon.abilityConfig!.Shoot.projectile = "ghost_shot";

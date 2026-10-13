@@ -305,6 +305,20 @@ export function compileGameData(
           message: `Enemy references unknown projectile '${projectile}'.`,
         });
       }
+      // `conflicts` names abilities this enemy owns, like reactions.
+      const conflicts = config?.conflicts;
+      if (Array.isArray(conflicts)) {
+        for (const name of conflicts) {
+          if (!owned.has(name)) {
+            error({
+              code: "reaction.missing",
+              definitionId: e.id,
+              fieldPath: `enemies.${e.id}.abilityConfig.${ability}.conflicts`,
+              message: `Ability '${ability}' conflicts with '${name}', which the enemy does not own.`,
+            });
+          }
+        }
+      }
     }
     // AI reactions must name abilities this enemy owns.
     for (const [event, names] of Object.entries(e.reactions)) {
