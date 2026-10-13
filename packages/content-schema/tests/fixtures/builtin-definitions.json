@@ -244,7 +244,7 @@
         "type": "number",
         "default": 96,
         "nonNegative": true,
-        "help": "Horizontal travel distance in pixels."
+        "help": "Travel distance in pixels along Axis."
       },
       {
         "key": "Speed",

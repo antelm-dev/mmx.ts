@@ -171,7 +171,7 @@ const PRESENTATION: Record<
   "platform.moving": {
     name: "Moving Platform",
     help: {
-      Travel: "Horizontal travel distance in pixels.",
+      Travel: "Travel distance in pixels along Axis.",
       Speed: "Travel speed in pixels/second.",
       Axis: "Horizontal travels right from the placed position; vertical travels down.",
     },
