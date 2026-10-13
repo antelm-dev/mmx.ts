@@ -657,3 +657,48 @@ test("objects are optional, shape-checked and serialized sorted", () => {
     ],
   );
 });
+
+test("frame hurtbox and hitboxes are validated and survive serialization", () => {
+  const withBoxes = (frame: Record<string, unknown>): ProjectDocument =>
+    validProject({
+      assets: [
+        {
+          id: "anim.hero",
+          kind: "animation",
+          path: "assets/anims/hero.json",
+          animations: {
+            idle: {
+              loop: true,
+              speed: 60,
+              frames: [{ region: [0, 0, 34, 39], duration: 6, ...frame }],
+            },
+          },
+        },
+      ],
+    });
+
+  for (const bad of [{ x: 0, y: 0, w: 0, h: 4 }, { x: 0.5, y: 0, w: 4, h: 4 }, [0, 0, 4, 4]]) {
+    const issues = validateProject(withBoxes({ hurtbox: bad, hitboxes: [bad] })).issues;
+    assert.ok(issues.some((i) => i.code === "animation.box" && i.path.endsWith("/hurtbox")));
+    assert.ok(issues.some((i) => i.code === "animation.box" && i.path.endsWith("/hitboxes/0")));
+  }
+  assert.ok(
+    validateProject(withBoxes({ hitboxes: { x: 0, y: 0, w: 4, h: 4 } })).issues.some(
+      (i) => i.code === "animation.box",
+    ),
+  );
+
+  const good = withBoxes({
+    hurtbox: { x: -8, y: -20, w: 16, h: 20 },
+    hitboxes: [{ x: 4, y: -10, w: 12, h: 6 }],
+  });
+  const parsed = parseProject(JSON.parse(serializeProject(good)));
+  assert.equal(parsed.ok, true);
+  const anim = parsed.project!.assets.find((asset) => asset.id === "anim.hero");
+  assert.ok(anim && anim.kind === "animation");
+  const frame = anim.animations.idle?.frames[0];
+  assert.deepEqual(frame?.hurtbox, { x: -8, y: -20, w: 16, h: 20 });
+  assert.deepEqual(frame?.hitboxes, [{ x: 4, y: -10, w: 12, h: 6 }]);
+  assert.equal(serializeProject(parsed.project!), serializeProject(good));
+  assert.deepEqual(normalizeProject(good), JSON.parse(serializeProject(good)));
+});

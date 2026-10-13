@@ -1,6 +1,7 @@
 import type {
   AnimationClip,
   AnimationFrame,
+  FrameBox,
   ProjectAsset,
   ProjectDocument,
   Region,
@@ -16,6 +17,10 @@ function cloneRegion(region: Region): Region {
   return [region[0], region[1], region[2], region[3]];
 }
 
+function cloneBox(box: FrameBox): FrameBox {
+  return { x: box.x, y: box.y, w: box.w, h: box.h };
+}
+
 function cloneFrame(frame: AnimationFrame): AnimationFrame {
   const next: AnimationFrame = {
     region: cloneRegion(frame.region),
@@ -27,6 +32,8 @@ function cloneFrame(frame: AnimationFrame): AnimationFrame {
   if (frame.anchor !== undefined) {
     next.anchor = [frame.anchor[0], frame.anchor[1]];
   }
+  if (frame.hurtbox !== undefined) next.hurtbox = cloneBox(frame.hurtbox);
+  if (frame.hitboxes !== undefined) next.hitboxes = frame.hitboxes.map(cloneBox);
   return next;
 }
 

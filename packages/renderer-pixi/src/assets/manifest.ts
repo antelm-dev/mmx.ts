@@ -1,5 +1,5 @@
 import { assertAnimData, assertRegion, type AnimData, type Region } from "@mmx/contracts/animation";
-import { assertTimedClip } from "@mmx/engine";
+import { assertTimedClip, type SceneClips } from "@mmx/engine";
 import type { AnimationClip, AnimationAsset, ProjectDocument } from "@mmx/project-schema";
 import type { ClipActor } from "../editor/preview.js";
 import { duplicateSheetKeyError, invalidAssetError } from "./errors.js";
@@ -289,5 +289,22 @@ export function manifestToPreviewTables(manifest: RendererAssetManifest) {
     playerSheet: manifest.playerSheet,
     enemyActors: manifest.enemyActors,
     pickupActors: manifest.pickupActors,
+  };
+}
+
+/**
+ * The manifest's gameplay clip tables for `SceneOptions.clips` — the same data
+ * the asset catalog would attach, handed to the engine up front so a headless
+ * run and a rendered one animate (and collide) identically.
+ */
+export function sceneClipsFromManifest(manifest: RendererAssetManifest): SceneClips {
+  return {
+    player: manifest.playerAnims,
+    enemies: Object.fromEntries(
+      Object.entries(manifest.enemyActors).map(([sheet, actor]) => [
+        sheet,
+        { animations: actor.animations },
+      ]),
+    ),
   };
 }

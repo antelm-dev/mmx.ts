@@ -16,6 +16,7 @@ export {
   bundleModuleSource,
   compileBrowserProjectBundle,
   emitAssetsToDirectory,
+  loadProjectSceneClips,
   planAssetEmission,
 } from "./compileProject.js";
 export { hashContent, hashedAssetFileName } from "./contentHash.js";

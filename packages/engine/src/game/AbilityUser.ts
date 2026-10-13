@@ -25,6 +25,11 @@ export class AbilityUser extends Actor {
 
   /** The AnimatedSprite the Godot abilities drive (AbilityUser.gd `animatedSprite`). */
   readonly anim = new AnimationPlayer();
+  /**
+   * Set when the scene loaded this actor's clips from `SceneOptions.clips` — the
+   * engine owns them, so a renderer must not load its own copy over them.
+   */
+  sceneClips = false;
 
   constructor(world: World, x: number, y: number) {
     super(world, x, y);

@@ -1,6 +1,11 @@
 import path from "node:path";
-import { levelDocumentToLevelData, requireProject, type LoadedProject } from "@mmx/build-tools";
-import type { LevelData } from "@mmx/engine";
+import {
+  levelDocumentToLevelData,
+  loadProjectSceneClips,
+  requireProject,
+  type LoadedProject,
+} from "@mmx/build-tools";
+import type { LevelData, SceneClips } from "@mmx/engine";
 import type { CompiledGameData } from "@mmx/engine/data";
 
 function projectArgument(argv: readonly string[]): string | undefined {
@@ -29,9 +34,12 @@ export async function loadProjectLevels(projectDir: string): Promise<{
   };
 }
 
-export async function loadEntryLevel(
-  projectDir: string,
-): Promise<{ level: LevelData; loadoutId?: string; gameData: CompiledGameData }> {
+export async function loadEntryLevel(projectDir: string): Promise<{
+  level: LevelData;
+  loadoutId?: string;
+  gameData: CompiledGameData;
+  clips?: SceneClips;
+}> {
   const { project, levels } = await loadProjectLevels(projectDir);
   const index = project.levels.findIndex((entry) => entry.id === project.manifest.entryLevelId);
   const level = levels[index];
@@ -42,5 +50,6 @@ export async function loadEntryLevel(
     level,
     loadoutId: project.manifest.player?.loadout,
     gameData: project.compiledGameData,
+    clips: await loadProjectSceneClips(project),
   };
 }

@@ -296,3 +296,26 @@ test("catalog getSpritePreview exposes texture from resolver without sheet names
   assert.equal(preview.texture, fake);
   assert.equal("sheet" in preview, false);
 });
+
+test("attach leaves actors whose clips the scene owns alone", () => {
+  const catalog = createCatalog({
+    tables: fakeTables(),
+    sheetUrls: fakeTables().sheetUrls,
+    validate: () => undefined,
+    loadSheets: async () => undefined,
+    resolveTexture: () => null,
+    toAnimData: (actor) => actor as AnimData,
+  });
+  const loaded: string[] = [];
+  const actor = (name: string, sceneClips: boolean) => ({
+    sceneClips,
+    stats: { sheet: "metool" },
+    loadAnimations: () => loaded.push(name),
+  });
+
+  catalog.attachPlayerAnimations(actor("owned player", true));
+  catalog.attachEnemyAnimations(actor("owned enemy", true));
+  catalog.attachPlayerAnimations(actor("player", false));
+  catalog.attachEnemyAnimations(actor("enemy", false));
+  assert.deepEqual(loaded, ["player", "enemy"]);
+});

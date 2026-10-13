@@ -3,8 +3,10 @@ import path from "node:path";
 import { GAMEPLAY_SOUND_IDS, type SoundBindingMap } from "@mmx/browser-audio";
 import type { TilesetArt } from "@mmx/content-schema";
 import type { ProjectAsset } from "@mmx/project-schema";
+import type { SceneClips } from "@mmx/engine";
 import {
   buildRendererAssetManifestFromProject,
+  sceneClipsFromManifest,
   type RendererAssetBindings,
   type RendererAssetManifest,
 } from "@mmx/renderer-pixi";
@@ -155,6 +157,21 @@ function buildRendererManifest(
     resolveUrl,
     shotAnims ? { shotAnims } : undefined,
   );
+}
+
+/**
+ * The project's gameplay clip tables for `SceneOptions.clips`, from the same
+ * renderer manifest the web bundle ships — so a headless run animates and
+ * collides exactly like the browser. Undefined when the project binds no
+ * renderer assets.
+ */
+export async function loadProjectSceneClips(
+  project: LoadedProject,
+): Promise<SceneClips | undefined> {
+  const bindingSource = await loadRendererBindingSource(project);
+  if (!bindingSource) return undefined;
+  const manifest = buildRendererManifest(project, await planAssetEmission(project), bindingSource);
+  return manifest ? sceneClipsFromManifest(manifest) : undefined;
 }
 
 export async function compileBrowserProjectBundle(

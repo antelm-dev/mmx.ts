@@ -35,6 +35,7 @@ export {
   buildRendererAssetManifestFromProject,
   createRendererAssetResolver,
   manifestToPreviewTables,
+  sceneClipsFromManifest,
   validateRendererAssetManifest,
   RendererAssetError,
   type RendererAssetBindings,

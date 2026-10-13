@@ -304,13 +304,14 @@ export class Stage {
    * The original re-applies this every 0.016s while the boxes overlap. The player's
    * Damage state accepts the first hit, becomes invulnerable, and carries him clear;
    * the inflicter is passed through so knockback is always away from the enemy.
+   * The enemy's current frame `hitboxes` deal the same touch damage as its body.
    */
   private resolveContact(): void {
     if (!this.player.has_health()) return; // Death is running; nothing can touch a corpse
     if (!this.player.collisions_enabled) return;
     for (const enemy of this.enemies) {
       if (!enemy.has_health() || enemy.exploding) continue;
-      if (!bodiesOverlap(enemy, this.player)) continue;
+      if (!bodiesOverlap(enemy, this.player) && !hitboxesTouch(enemy, this.player)) continue;
 
       if (!this.player.is_invulnerable()) {
         this.player.damage(enemy.stats.touch_damage, enemy);
@@ -366,6 +367,17 @@ function bodiesOverlap(enemy: Enemy, player: Player): boolean {
     Math.abs(enemy.pos.x - player.pos.x) < enemy.hw + player.hw &&
     Math.abs(enemy.pos.y - player.pos.y) < enemy.hh + player.hh
   );
+}
+
+/** Any of the enemy's frame hitboxes against the player body. */
+function hitboxesTouch(enemy: Enemy, player: Player): boolean {
+  const body = {
+    left: player.pos.x - player.hw,
+    right: player.pos.x + player.hw,
+    top: player.pos.y - player.hh,
+    bottom: player.pos.y + player.hh,
+  };
+  return enemy.hitboxes.some((box) => rectsOverlap(box, body));
 }
 
 function bodyOverlapsRect(

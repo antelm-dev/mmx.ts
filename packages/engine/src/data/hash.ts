@@ -38,7 +38,12 @@ export function hashGameData(data: CompiledGameData): string {
     environments: fromMap(data.environments),
     prefabs: fromMap(data.prefabs).map(({ name: _name, ...p }) => p),
   };
-  return fnv1a64(stableStringify(canonical));
+  return hashCanonical(canonical);
+}
+
+/** The same 64-bit content hash over any JSON-safe value (object keys sorted). */
+export function hashCanonical(value: unknown): string {
+  return fnv1a64(stableStringify(value));
 }
 
 function fromMap<T>(map: ReadonlyMap<string, T>): T[] {
