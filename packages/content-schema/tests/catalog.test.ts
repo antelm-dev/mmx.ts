@@ -47,6 +47,15 @@ function withCrab(): GameData {
   return merged.value;
 }
 
+test("a project prefab's name is its display name; built-in presentation still wins", () => {
+  const data = structuredClone(withCrab());
+  data.prefabs["enemy.crab"]!.name = "Spiky Crab";
+  data.prefabs["enemy.metool"]!.name = "Ignored";
+  const byId = new Map(definitionsFromGameData(data).map((d) => [d.id, d]));
+  assert.equal(byId.get("enemy.crab")!.name, "Spiky Crab");
+  assert.equal(byId.get("enemy.metool")!.name, "Metool");
+});
+
 test("setCatalogGameData makes a project enemy placeable and derivable", (t) => {
   t.after(() => {
     setProjectDefinitions([]);

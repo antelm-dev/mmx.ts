@@ -105,6 +105,20 @@ test("the hash is invariant to authoring key order", () => {
   if (result.ok) assert.equal(result.value.hash, COMPILED_GAME_DATA.hash);
 });
 
+test("a prefab's display name is presentation: it never changes the hash", () => {
+  const data = clone();
+  data.prefabs["enemy.metool"].name = "Hard Hat";
+  const result = compile(data);
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.value.hash, COMPILED_GAME_DATA.hash);
+});
+
+test("a blank prefab name is an error", () => {
+  const data = clone();
+  data.prefabs["enemy.metool"].name = "  ";
+  assert.ok(codes(compile(data).diagnostics).includes("value.string"));
+});
+
 // --- diagnostics ------------------------------------------------------------
 
 test("no partial compiled value is produced when errors exist", () => {

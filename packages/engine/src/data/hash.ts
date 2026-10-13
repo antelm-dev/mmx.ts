@@ -14,7 +14,8 @@ import type { CompiledGameData } from "./types.js";
  *   - Functions and registry object identity (the compiled data stores only ids
  *     and validated values — never the resolved registry entries).
  *   - Studio-facing presentation metadata (labels, colours, layout), which never
- *     lives in engine game data in the first place.
+ *     lives in engine game data in the first place — except a prefab's display
+ *     `name`, which is dropped here so renaming never invalidates a replay.
  *
  * The hash is a function of the canonical value only, so two builds that produce
  * value-equal compiled data produce the same hash regardless of Map insertion
@@ -35,7 +36,7 @@ export function hashGameData(data: CompiledGameData): string {
     projectiles: fromMap(data.projectiles),
     pickups: fromMap(data.pickups),
     environments: fromMap(data.environments),
-    prefabs: fromMap(data.prefabs),
+    prefabs: fromMap(data.prefabs).map(({ name: _name, ...p }) => p),
   };
   return fnv1a64(stableStringify(canonical));
 }
