@@ -393,12 +393,14 @@ export class EditorStore {
    * image and tile layers are cross-checked (tileset values are tile counts, or undefined).
    * `assets`: every project asset id → kind, so `asset` properties are cross-checked.
    * `gameData`: the project's compiled game data, which Play builds the scene from.
+   * `enemySheets`: the enemy sheets Play has animations for (unchecked when undefined).
    */
   validate(
     imageAssetIds?: readonly string[],
     tilesets?: ReadonlyMap<string, number | undefined>,
     assets?: ReadonlyMap<string, string>,
     gameData?: CompiledGameData,
+    enemySheets?: ReadonlySet<string>,
   ): ValidationResult {
     return validateLevelDocument(
       this.state.document,
@@ -409,6 +411,7 @@ export class EditorStore {
         assets,
       },
       gameData,
+      enemySheets,
     );
   }
 

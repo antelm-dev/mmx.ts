@@ -77,6 +77,8 @@ export class EditorController {
 
   private readonly playtest: EditorPlaytestController;
   private assetKey: string | undefined;
+  /** The Play assets the last validation saw: their enemy sheets decide `enemy.animation`. */
+  private validatedAssets: unknown = projectSession.loadedAssets();
   private readonly tilesetSizes = new Map<string, { path: string; w: number; h: number }>();
   private readonly tilesetSizeLoads = new Set<string>();
 
@@ -137,9 +139,12 @@ export class EditorController {
       }
       // Image layers, asset properties and object instances are validated against the
       // manifest's assets and object definitions; recheck and redraw when they change.
+      // Placed enemies are checked against the loaded Play assets: recheck when they land too.
       const assetKey = this.manifestAssetKey();
-      if (assetKey !== this.assetKey) {
+      const loaded = projectSession.loadedAssets();
+      if (assetKey !== this.assetKey || loaded !== this.validatedAssets) {
         this.assetKey = assetKey;
+        this.validatedAssets = loaded;
         this.viewport?.redraw();
         this.snapshot = this.build("ui");
         this.emit();
@@ -205,11 +210,13 @@ export class EditorController {
         )
       : undefined;
     const assets = projectSession.getSnapshot().project?.manifest.assets;
+    const enemyActors = projectSession.loadedAssets()?.manifest.enemyActors;
     return this.store.validate(
       imageAssetIds,
       tilesets,
       assets && new Map(assets.map((asset) => [asset.id, asset.kind])),
       projectSession.gameData().compiled,
+      enemyActors && new Set(Object.keys(enemyActors)),
     );
   }
 

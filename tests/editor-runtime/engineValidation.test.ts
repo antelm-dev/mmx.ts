@@ -134,3 +134,16 @@ test("a project enemy is checked against the compiled game data Play uses", (t) 
   const unknown = engineDiagnostics(doc).filter((i) => i.severity === "error");
   assert.ok(unknown.some((i) => i.objectId === "crab-1"), JSON.stringify(unknown));
 });
+
+test("a placed enemy whose sheet Play has no animation for is an error, before Play", () => {
+  const doc = docWith([{ id: "metool-1", definitionId: "enemy.metool", x: 64, y: 32 }]);
+  const unbound = validateLevelDocument(doc, undefined, undefined, new Set(["bat"]));
+  assert.equal(unbound.ok, false);
+  assert.deepEqual(
+    unbound.issues.filter((i) => i.code === "enemy.animation").map((i) => [i.severity, i.objectId]),
+    [["error", "metool-1"]],
+  );
+  assert.equal(validateLevelDocument(doc, undefined, undefined, new Set(["metool"])).ok, true);
+  // Unchecked without the sheet list (no assets loaded yet).
+  assert.equal(validateLevelDocument(doc).ok, true);
+});

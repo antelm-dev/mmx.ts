@@ -135,6 +135,57 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
     await expect(panel.getByTestId("frame-anchor")).toHaveText(undone ? "16, 28" : "15, 29");
   });
 
+  // Boxes (C-BOX): on frame 2 (feet 15, 29) draw a hurtbox, then a hitbox over it, in region pixels.
+  const preview = panel.getByTestId("clip-preview");
+  const dragOn = async (from: [number, number], to: [number, number]) => {
+    await preview.scrollIntoViewIfNeeded();
+    const box = (await preview.boundingBox())!;
+    await page.mouse.move(box.x + from[0] * 3 + 1, box.y + from[1] * 3 + 1);
+    await page.mouse.down();
+    await page.mouse.move(box.x + to[0] * 3 + 1, box.y + to[1] * 3 + 1, { steps: 4 });
+    await page.mouse.up();
+  };
+  const hurt = panel.getByTestId("frame-hurtbox");
+  const hits = panel.getByTestId("frame-hitboxes");
+  await panel.getByLabel("Preview tool").selectOption("hurtbox");
+  await dragOn([10, 8], [22, 28]);
+  await expect(hurt).toHaveText("-5, -21 12×20");
+  await expect(panel.getByTestId("frame-anchor")).toHaveText("15, 29");
+  await panel.getByLabel("Preview tool").selectOption("hitbox");
+  await dragOn([20, 14], [28, 18]);
+  await expect(hits).toHaveText("5, -15 8×4");
+  await expect(hurt).toHaveText("-5, -21 12×20");
+  // Move the hitbox one pixel right and down; one undo step.
+  await dragOn([24, 16], [25, 17]);
+  await expect(hits).toHaveText("6, -14 8×4");
+  await undoRedo(page, async (undone) => {
+    await expect(hits).toHaveText(undone ? "5, -15 8×4" : "6, -14 8×4");
+  });
+  // Resize it from its corner handle, then take that back.
+  await dragOn([29, 19], [30, 20]);
+  await expect(hits).toHaveText("6, -14 9×5");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(hits).toHaveText("6, -14 8×4");
+  // A second hitbox, then delete it (selected as drawn).
+  await dragOn([2, 2], [6, 6]);
+  await expect(hits).toHaveText("6, -14 8×4 | -13, -27 4×4");
+  await panel.getByRole("button", { name: "Delete box" }).click();
+  await expect(hits).toHaveText("6, -14 8×4");
+  // A bare click draws nothing (and leaves no history: Undo still restores the deleted box).
+  await preview.click({ position: { x: 3 * 3 + 1, y: 3 * 3 + 1 } });
+  await expect(hits).toHaveText("6, -14 8×4");
+  await undoRedo(page, async (undone) => {
+    await expect(hits).toHaveText(undone ? "6, -14 8×4 | -13, -27 4×4" : "6, -14 8×4");
+  });
+  await panel.getByRole("button", { name: "Copy boxes to all frames" }).click();
+  await panel.getByRole("button", { name: "Frame 4", exact: true }).click();
+  await expect(hurt).toHaveText("-5, -21 12×20");
+  await expect(hits).toHaveText("6, -14 8×4");
+  await undoRedo(page, async (undone) => {
+    await expect(hurt).toHaveText(undone ? "none" : "-5, -21 12×20");
+  });
+  await panel.getByLabel("Preview tool").selectOption("anchor");
+
   // Bind the asset as the player's animation.
   await panel.getByRole("button", { name: "Use as player animation" }).click();
   await expect(panel.getByRole("button", { name: "Player animation" })).toBeDisabled();
@@ -177,11 +228,34 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
   expect(walk.frames.map((f: { region: number[] }) => f.region[0])).toEqual([0, 32, 64, 96]);
   expect(walk.frames.map((f: { duration: number }) => f.duration)).toEqual([6, 6, 6, 6]);
   expect(walk.frames[1].anchor).toEqual([15, 29]);
+  // Every walk frame carries frame 2's boxes, measured from its own feet.
+  for (const frame of walk.frames) {
+    expect(frame.hurtbox).toEqual({ x: -5, y: -21, w: 12, h: 20 });
+    expect(frame.hitboxes).toEqual([{ x: 6, y: -14, w: 8, h: 4 }]);
+  }
   // The fixture's own animation is untouched: still no anchor.
   const fixture = manifest.assets.find((asset: { id: string }) => asset.id === "anim.player.fixture");
   expect(fixture.animations.idle.frames[0]).not.toHaveProperty("anchor");
   const data = JSON.parse(readFileSync(join(projectRoot, "game/data.json"), "utf8"));
   expect(data.bindings.playerAnimation).toBe("anim.sheet");
   expect(data.bindings.shotAnimations).toEqual({ lemon: "anim.effect.fixture" });
+
+  // An enemy drawn from the boxed animation is placed and plays: Play hands the scene its clips.
+  await page.getByRole("tab", { name: "Object Palette" }).click();
+  await page.getByRole("button", { name: "New enemy…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await dialog.getByLabel("Name").fill("Crab");
+  await dialog.getByLabel("Based on").selectOption("metool");
+  await dialog.getByLabel("Animation").selectOption("anim.sheet");
+  await dialog.getByRole("button", { name: "Create" }).click();
+  await expect(dialog).toHaveCount(0);
+  const canvas = page.locator("#viewport-canvas");
+  const view = (await canvas.boundingBox())!;
+  await canvas.click({ position: { x: view.width / 2, y: view.height / 2 } });
+  await page.getByRole("button", { name: /^Play$/ }).click();
+  await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute("data-enemy-kinds", /\bcrab\b/);
+  await expect(page.getByText(/Could not start Play|Play error|Fix \d+ error/)).toHaveCount(0);
+  await page.getByRole("button", { name: /^Stop$/ }).click();
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

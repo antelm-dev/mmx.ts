@@ -1,10 +1,20 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
 import { chakra } from "@chakra-ui/react";
 import { AnimationCursor } from "@mmx/engine";
-import type { AnimationAsset, AnimationClip, AnimationFrame, Region } from "@mmx/project-schema";
+import type { AnimationAsset, AnimationClip, AnimationFrame, FrameBox, Region } from "@mmx/project-schema";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { setAnimationAsset, setPlayerAnimation } from "../core/actions.js";
-import { canDeleteClip, DURATION_PRESETS, feetAnchor, moveItem, requiredPlayerClips } from "../core/clips.js";
+import {
+  boxFromPoints,
+  canDeleteClip,
+  copyBoxes,
+  DURATION_PRESETS,
+  feetAnchor,
+  moveBox,
+  moveItem,
+  requiredPlayerClips,
+  withBoxes,
+} from "../core/clips.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Checkbox } from "../ui/editor/checkbox.js";
 import { Field, FieldInput, FieldSelect } from "../ui/editor/field.js";
@@ -37,6 +47,21 @@ const Tile = chakra("button", {
 
 const PREVIEW_ZOOM = 3;
 const SPEEDS = [0.25, 0.5, 1, 2];
+
+/** What a press on the preview does: set the feet, or draw a box of that type. */
+type PreviewTool = "anchor" | "hurtbox" | "hitbox";
+/** A box of the shown frame: its hurtbox, or hitbox `index`. */
+type BoxRef = { type: "hurtbox" } | { type: "hitbox"; index: number };
+/** A box being drawn, moved or resized: written once, on release (one undo step). */
+type BoxDrag = { mode: "draw" | "move" | "resize"; ref: BoxRef; start: [number, number]; from: FrameBox | null; box: FrameBox };
+
+/** Hurtbox blue, hitboxes red. */
+const BOX_COLORS = { hurtbox: "#3b82f6", hitbox: "#ef4444" } as const;
+const sameRef = (a: BoxRef | null, b: BoxRef): boolean =>
+  !!a && a.type === b.type && (a.type === "hurtbox" || a.index === (b as { index: number }).index);
+/** Region pixels a press must travel before it draws a box. */
+const DRAW_MIN_DRAG = 2;
+const boxText = (box: FrameBox): string => `${box.x}, ${box.y} ${box.w}×${box.h}`;
 
 /** One region of the sheet drawn at `zoom`, cropped with a CSS background. */
 function RegionView({ sheet, region, zoom, style }: { sheet: Sheet; region: Region; zoom: number; style?: CSSProperties }) {
@@ -79,6 +104,9 @@ export function ClipEditorPanel() {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [playFrame, setPlayFrame] = useState(0);
+  const [tool, setTool] = useState<PreviewTool>("anchor");
+  const [boxSel, setBoxSel] = useState<BoxRef | null>(null);
+  const [drag, setDrag] = useState<BoxDrag | null>(null);
 
   const sheetAsset = sheets.find((asset) => asset.id === sheetId);
   const regions = projectSession.spriteRegions(sheetId);
@@ -110,6 +138,10 @@ export function ClipEditorPanel() {
   }, [sheetId, session.rootPath]);
 
   useEffect(() => setFrameSel([]), [clipName, animId]);
+  useEffect(() => {
+    setBoxSel(null);
+    setDrag(null);
+  }, [clipName, animId, frameSel[0], playing, tool]);
 
   // Preview playback on the engine's own cursor, at 60 Hz clip time scaled by `speed`.
   useEffect(() => {
@@ -165,6 +197,73 @@ export function ClipEditorPanel() {
   const setAnchors = (label: string, anchorOf: (frame: AnimationFrame) => [number, number]): void =>
     writeFrames(label, frames.map((frame, i) => (targets.includes(i) ? { ...frame, anchor: anchorOf(frame) } : frame)));
   const anchorAt = (frame: AnimationFrame | undefined): [number, number] => frame?.anchor ? [frame.anchor[0], frame.anchor[1]] : [0, 0];
+
+  // Boxes of the shown frame, with the box being dragged in place of its stored one.
+  const hitboxes = current?.hitboxes ?? [];
+  const boxAt = (ref: BoxRef): FrameBox | undefined => (ref.type === "hurtbox" ? current?.hurtbox : hitboxes[ref.index]);
+  const shownBoxes: { ref: BoxRef; box: FrameBox }[] = [
+    ...(current?.hurtbox ? [{ ref: { type: "hurtbox" } as BoxRef, box: current.hurtbox }] : []),
+    ...hitboxes.map((box, index) => ({ ref: { type: "hitbox", index } as BoxRef, box })),
+  ].map((entry) => (drag && sameRef(drag.ref, entry.ref) ? { ...entry, box: drag.box } : entry));
+  if (drag?.mode === "draw" && !shownBoxes.some((entry) => sameRef(drag.ref, entry.ref))) {
+    shownBoxes.push({ ref: drag.ref, box: drag.box });
+  }
+  const selectedBox = boxSel ? boxAt(boxSel) : undefined;
+  const boxing = tool !== "anchor" && !playing && !!current?.anchor;
+
+  /** Write the shown frame's boxes with `ref` set to `box` (removed when null). */
+  const writeBox = (label: string, ref: BoxRef, box: FrameBox | null): void => {
+    if (!current) return;
+    const nextHit =
+      ref.type === "hurtbox"
+        ? hitboxes
+        : box
+          ? [...hitboxes.slice(0, ref.index), box, ...hitboxes.slice(ref.index + 1)]
+          : hitboxes.filter((_, i) => i !== ref.index);
+    const nextHurt = ref.type === "hurtbox" ? (box ?? undefined) : current.hurtbox;
+    writeFrames(label, frames.map((frame, i) => (i === shown ? withBoxes(frame, nextHurt, nextHit) : frame)));
+  };
+  /** Pointer position in the shown frame's region pixels (fractional). */
+  const regionPoint = (e: PointerEvent<HTMLElement>, preview: HTMLElement): [number, number] => {
+    const rect = preview.getBoundingClientRect();
+    return [(e.clientX - rect.left) / PREVIEW_ZOOM, (e.clientY - rect.top) / PREVIEW_ZOOM];
+  };
+  const startDrag = (e: PointerEvent<HTMLElement>, mode: BoxDrag["mode"], ref: BoxRef, from: FrameBox | null): void => {
+    const preview = e.currentTarget.closest<HTMLElement>("[data-testid=clip-preview]");
+    if (e.button !== 0 || !boxing || !preview || !current?.anchor) return;
+    e.stopPropagation();
+    preview.setPointerCapture(e.pointerId);
+    const start = regionPoint(e, preview);
+    const size: [number, number] = [current.region[2], current.region[3]];
+    setBoxSel(ref);
+    setDrag({ mode, ref, start, from, box: from ?? boxFromPoints(start, start, current.anchor, size) });
+  };
+  const onPreviewMove = (e: PointerEvent<HTMLElement>): void => {
+    if (!drag || !current?.anchor) return;
+    const point = regionPoint(e, e.currentTarget);
+    const size: [number, number] = [current.region[2], current.region[3]];
+    const [ax, ay] = current.anchor;
+    const box =
+      drag.mode === "move" && drag.from
+        ? moveBox(drag.from, point[0] - drag.start[0], point[1] - drag.start[1], current.anchor, size)
+        : drag.mode === "resize" && drag.from
+          ? boxFromPoints([ax + drag.from.x, ay + drag.from.y], point, current.anchor, size)
+          : boxFromPoints(drag.start, point, current.anchor, size);
+    setDrag({ ...drag, box });
+  };
+  const onPreviewUp = (e: PointerEvent<HTMLElement>): void => {
+    if (!drag) return;
+    setDrag(null);
+    // A bare click (under DRAW_MIN_DRAG region pixels) draws nothing: it only selects.
+    const [x, y] = regionPoint(e, e.currentTarget);
+    if (drag.mode === "draw" && Math.max(Math.abs(x - drag.start[0]), Math.abs(y - drag.start[1])) < DRAW_MIN_DRAG) {
+      setBoxSel(null);
+      return;
+    }
+    if (drag.from && boxText(drag.from) === boxText(drag.box)) return;
+    const label = drag.mode === "draw" ? `Draw ${drag.ref.type}` : drag.mode === "move" ? "Move box" : "Resize box";
+    writeBox(label, drag.ref, drag.box);
+  };
 
   return (
     <Panel data-testid="clip-editor">
@@ -395,10 +494,55 @@ export function ClipEditorPanel() {
                 </ActionButton>
               </chakra.div>
             </Grid2>
+            <Grid2>
+              <Field label="Preview tool">
+                <FieldSelect value={tool} onChange={(e) => setTool(e.target.value as PreviewTool)}>
+                  <option value="anchor">Set feet (anchor)</option>
+                  <option value="hurtbox">Draw hurtbox</option>
+                  <option value="hitbox">Draw hitbox</option>
+                </FieldSelect>
+              </Field>
+            </Grid2>
             <chakra.div px="3.5" py="1" fontSize="xs" color="studio.fgTertiary">
-              Anchor <span data-testid="frame-anchor">{current?.anchor ? current.anchor.join(", ") : "none"}</span> · click the
-              preview to set the feet of the selected frames
+              Anchor <span data-testid="frame-anchor">{current?.anchor ? current.anchor.join(", ") : "none"}</span> ·{" "}
+              {tool === "anchor"
+                ? "click the preview to set the feet of the selected frames"
+                : current && !current.anchor
+                  ? "set this frame's feet first: boxes are measured from them"
+                  : "drag on the preview to draw; drag a box to move it, its corner to resize it"}
             </chakra.div>
+            {tool !== "anchor" && current && (
+              <>
+                <chakra.div px="3.5" py="1" fontSize="xs" color="studio.fgTertiary">
+                  Hurtbox <span data-testid="frame-hurtbox">{current.hurtbox ? boxText(current.hurtbox) : "none"}</span> · Hitboxes{" "}
+                  <span data-testid="frame-hitboxes">{hitboxes.length > 0 ? hitboxes.map(boxText).join(" | ") : "none"}</span>
+                </chakra.div>
+                <PanelActions flexWrap="wrap">
+                  <ActionButton
+                    disabled={!selectedBox}
+                    onClick={() => {
+                      if (!boxSel) return;
+                      writeBox("Delete box", boxSel, null);
+                      setBoxSel(null);
+                    }}
+                  >
+                    Delete box
+                  </ActionButton>
+                  <ActionButton
+                    disabled={shown >= frames.length - 1}
+                    onClick={() => writeFrames("Copy boxes to next frame", copyBoxes(frames, shown, [shown + 1]))}
+                  >
+                    Copy boxes to next frame
+                  </ActionButton>
+                  <ActionButton
+                    disabled={frames.length < 2}
+                    onClick={() => writeFrames("Copy boxes to all frames", copyBoxes(frames, shown, frames.map((_, i) => i)))}
+                  >
+                    Copy boxes to all frames
+                  </ActionButton>
+                </PanelActions>
+              </>
+            )}
             {sheet && current && (
               <chakra.div px="3.5" pb="3">
                 <chakra.div
@@ -406,8 +550,17 @@ export function ClipEditorPanel() {
                   position="relative"
                   bg="studio.raised"
                   cursor="crosshair"
+                  touchAction="none"
                   style={{ width: current.region[2] * PREVIEW_ZOOM, height: current.region[3] * PREVIEW_ZOOM }}
+                  onPointerDown={(e) => {
+                    const ref: BoxRef = tool === "hurtbox" ? { type: "hurtbox" } : { type: "hitbox", index: hitboxes.length };
+                    startDrag(e, "draw", ref, null);
+                  }}
+                  onPointerMove={onPreviewMove}
+                  onPointerUp={onPreviewUp}
+                  onPointerCancel={() => setDrag(null)}
                   onClick={(e) => {
+                    if (tool !== "anchor") return;
                     const box = e.currentTarget.getBoundingClientRect();
                     const x = Math.floor((e.clientX - box.left) / PREVIEW_ZOOM);
                     const y = Math.floor((e.clientY - box.top) / PREVIEW_ZOOM);
@@ -448,6 +601,49 @@ export function ClipEditorPanel() {
                       style={{ left: current.anchor[0] * PREVIEW_ZOOM, top: current.anchor[1] * PREVIEW_ZOOM }}
                     />
                   )}
+                  {/* Boxes from the feet, as the engine reads them (the frame as drawn). */}
+                  {current.anchor &&
+                    shownBoxes.map(({ ref, box }) => {
+                      const selected = sameRef(boxSel, ref);
+                      const color = BOX_COLORS[ref.type];
+                      const id = ref.type === "hurtbox" ? "hurtbox" : `hitbox-${ref.index}`;
+                      // Only boxes of the tool's type are grabbed: a hitbox can be drawn over the hurtbox.
+                      const grabbable = boxing && ref.type === tool;
+                      return (
+                        <chakra.div
+                          key={id}
+                          data-testid={`box-${id}`}
+                          position="absolute"
+                          boxSizing="border-box"
+                          cursor={grabbable ? "move" : undefined}
+                          pointerEvents={grabbable ? "auto" : "none"}
+                          style={{
+                            left: (current.anchor![0] + box.x) * PREVIEW_ZOOM,
+                            top: (current.anchor![1] + box.y) * PREVIEW_ZOOM,
+                            width: box.w * PREVIEW_ZOOM,
+                            height: box.h * PREVIEW_ZOOM,
+                            border: `${selected ? 2 : 1}px ${selected ? "dashed" : "solid"} ${color}`,
+                            background: `${color}33`,
+                          }}
+                          onPointerDown={(e) => startDrag(e, "move", ref, boxAt(ref) ?? null)}
+                        >
+                          {selected && grabbable && (
+                            <chakra.div
+                              aria-hidden
+                              data-testid="box-resize"
+                              position="absolute"
+                              right="-4px"
+                              bottom="-4px"
+                              w="7px"
+                              h="7px"
+                              cursor="nwse-resize"
+                              style={{ background: color }}
+                              onPointerDown={(e) => startDrag(e, "resize", ref, boxAt(ref) ?? null)}
+                            />
+                          )}
+                        </chakra.div>
+                      );
+                    })}
                 </chakra.div>
               </chakra.div>
             )}

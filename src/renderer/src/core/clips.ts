@@ -1,5 +1,5 @@
 import { COMPILED_GAME_DATA, type CompiledGameData } from "@mmx/engine/data";
-import type { Region } from "@mmx/project-schema";
+import type { AnimationFrame, FrameBox, Region } from "@mmx/project-schema";
 
 /**
  * Clip names each player behaviour plays: the `animation = "…"` and
@@ -76,4 +76,56 @@ export function feetAnchor(px: Uint8ClampedArray, sheetWidth: number, region: Re
   }
   if (maxY < 0) return [Math.round(w / 2), h];
   return [Math.round((minX + maxX + 1) / 2) - rx, maxY + 1 - ry];
+}
+
+// --- Frame boxes (C-BOX): `{ x, y, w, h }` from the feet (the frame anchor), y down, as drawn. ---
+
+const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(value, max));
+
+/**
+ * The box spanned by two points `a`, `b` in region pixels (any order, fractions
+ * allowed), clamped to the `w`×`h` region and rounded to whole pixels, at least
+ * 1×1, then measured from `anchor`.
+ */
+export function boxFromPoints(
+  a: readonly [number, number],
+  b: readonly [number, number],
+  anchor: readonly [number, number],
+  [w, h]: readonly [number, number],
+): FrameBox {
+  const span = (p: number, q: number, size: number): [number, number] => {
+    const lo = clamp(Math.round(Math.min(p, q)), 0, size - 1);
+    return [lo, clamp(Math.round(Math.max(p, q)), lo + 1, size)];
+  };
+  const [left, right] = span(a[0], b[0], w);
+  const [top, bottom] = span(a[1], b[1], h);
+  return { x: left - anchor[0], y: top - anchor[1], w: right - left, h: bottom - top };
+}
+
+/** `box` moved by whole pixels `dx`, `dy`, kept inside the `w`×`h` region where it fits. */
+export function moveBox(
+  box: FrameBox,
+  dx: number,
+  dy: number,
+  anchor: readonly [number, number],
+  [w, h]: readonly [number, number],
+): FrameBox {
+  const left = clamp(anchor[0] + box.x + Math.round(dx), 0, Math.max(0, w - box.w));
+  const top = clamp(anchor[1] + box.y + Math.round(dy), 0, Math.max(0, h - box.h));
+  return { ...box, x: left - anchor[0], y: top - anchor[1] };
+}
+
+/** `frame` with these boxes; an absent hurtbox or empty hitbox list is left out. */
+export function withBoxes(frame: AnimationFrame, hurtbox: FrameBox | undefined, hitboxes: readonly FrameBox[]): AnimationFrame {
+  const { hurtbox: _hurt, hitboxes: _hit, ...rest } = frame;
+  return { ...rest, ...(hurtbox ? { hurtbox } : {}), ...(hitboxes.length > 0 ? { hitboxes: [...hitboxes] } : {}) };
+}
+
+/** `frames` with frame `from`'s boxes copied onto each of `targets` (boxes stay relative to each frame's feet). */
+export function copyBoxes(frames: readonly AnimationFrame[], from: number, targets: readonly number[]): AnimationFrame[] {
+  const source = frames[from];
+  if (!source) return [...frames];
+  return frames.map((frame, i) =>
+    i !== from && targets.includes(i) ? withBoxes(frame, source.hurtbox, source.hitboxes ?? []) : frame,
+  );
 }

@@ -1,5 +1,5 @@
 import { compileLevel, type EngineDiagnostic } from "@mmx/engine/content";
-import type { CompiledGameData } from "@mmx/engine/data";
+import { COMPILED_GAME_DATA, type CompiledGameData } from "@mmx/engine/data";
 import {
   validateDocument,
   type LevelDocument,
@@ -16,10 +16,31 @@ function mapDiagnostic(d: EngineDiagnostic): ValidationIssue {
   return issue;
 }
 
-/** `gameData`: what Play builds the scene from (the project's), so both agree on enemy kinds. */
-export function engineDiagnostics(doc: LevelDocument, gameData?: CompiledGameData): ValidationIssue[] {
+/**
+ * `gameData`: what Play builds the scene from (the project's), so both agree on enemy kinds.
+ * `enemySheets`: the enemy sheets Play has animations for; when given, a placed enemy whose
+ * sheet has none is an error (the scene could not load its clips).
+ */
+export function engineDiagnostics(
+  doc: LevelDocument,
+  gameData: CompiledGameData = COMPILED_GAME_DATA,
+  enemySheets?: ReadonlySet<string>,
+): ValidationIssue[] {
   try {
-    return compileLevel(documentToLevelData(doc), gameData).diagnostics.map(mapDiagnostic);
+    const result = compileLevel(documentToLevelData(doc), gameData);
+    const issues = result.diagnostics.map(mapDiagnostic);
+    if (!result.ok || !enemySheets) return issues;
+    for (const enemy of result.value.enemies) {
+      const sheet = gameData.enemies.get(enemy.kind)?.sheet;
+      if (sheet === undefined || enemySheets.has(sheet)) continue;
+      issues.push({
+        severity: "error",
+        code: "enemy.animation",
+        objectId: enemy.id,
+        message: `Enemy '${enemy.kind}' has no animation: bind sheet '${sheet}' in game/data.json enemyAnimations.`,
+      });
+    }
+    return issues;
   } catch {
     return [];
   }
@@ -53,8 +74,9 @@ export function validateLevelDocument(
   doc: LevelDocument,
   options?: ValidateDocumentOptions,
   gameData?: CompiledGameData,
+  enemySheets?: ReadonlySet<string>,
 ): ValidationResult {
-  const engine = outOfBounds(engineDiagnostics(doc, gameData));
+  const engine = outOfBounds(engineDiagnostics(doc, gameData, enemySheets));
   const outside = new Set(
     engine.filter((i) => i.code === "object.out-of-bounds").map((i) => i.objectId),
   );
