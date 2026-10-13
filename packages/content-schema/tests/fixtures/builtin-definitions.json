@@ -1,0 +1,376 @@
+[
+  {
+    "id": "spawn",
+    "name": "Spawn",
+    "category": "spawn",
+    "icon": "◎",
+    "engineId": "Spawn",
+    "components": {
+      "player": {}
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#38bdf8"
+    },
+    "properties": []
+  },
+  {
+    "id": "enemy.metool",
+    "name": "Metool",
+    "category": "enemy",
+    "icon": "▲",
+    "engineId": "Enemy",
+    "components": {
+      "enemy": {
+        "kind": "metool"
+      }
+    },
+    "fields": {
+      "Kind": "metool"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#f97316"
+    },
+    "properties": [
+      {
+        "key": "FacesRight",
+        "label": "Faces Right",
+        "type": "boolean",
+        "default": false,
+        "help": "Initial spawn facing (unchecked faces left)."
+      }
+    ]
+  },
+  {
+    "id": "enemy.bat",
+    "name": "Bat",
+    "category": "enemy",
+    "icon": "ᗢ",
+    "engineId": "Enemy",
+    "components": {
+      "enemy": {
+        "kind": "bat"
+      }
+    },
+    "fields": {
+      "Kind": "bat"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#f97316"
+    },
+    "properties": [
+      {
+        "key": "FacesRight",
+        "label": "Faces Right",
+        "type": "boolean",
+        "default": false
+      }
+    ]
+  },
+  {
+    "id": "enemy.pantheon",
+    "name": "Pantheon Hunter",
+    "category": "enemy",
+    "icon": "◆",
+    "engineId": "Enemy",
+    "components": {
+      "enemy": {
+        "kind": "pantheon"
+      }
+    },
+    "fields": {
+      "Kind": "pantheon"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 32
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#f97316"
+    },
+    "properties": [
+      {
+        "key": "FacesRight",
+        "label": "Faces Right",
+        "type": "boolean",
+        "default": false
+      }
+    ]
+  },
+  {
+    "id": "pickup.life.small",
+    "name": "Life Capsule (Small)",
+    "category": "pickup",
+    "icon": "＋",
+    "engineId": "LifeCapsule",
+    "components": {
+      "pickup": {
+        "kind": "life",
+        "size": "small"
+      }
+    },
+    "fields": {
+      "Kind": "small"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "pickup.life.large",
+    "name": "Life Capsule (Large)",
+    "category": "pickup",
+    "icon": "✚",
+    "engineId": "LifeCapsule",
+    "components": {
+      "pickup": {
+        "kind": "life",
+        "size": "large"
+      }
+    },
+    "fields": {
+      "Kind": "large"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "pickup.weapon.small",
+    "name": "Weapon Capsule (Small)",
+    "category": "pickup",
+    "icon": "◇",
+    "engineId": "WeaponCapsule",
+    "components": {
+      "pickup": {
+        "kind": "weapon",
+        "size": "small"
+      }
+    },
+    "fields": {
+      "Kind": "small"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "pickup.weapon.large",
+    "name": "Weapon Capsule (Large)",
+    "category": "pickup",
+    "icon": "◆",
+    "engineId": "WeaponCapsule",
+    "components": {
+      "pickup": {
+        "kind": "weapon",
+        "size": "large"
+      }
+    },
+    "fields": {
+      "Kind": "large"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "platform.moving",
+    "name": "Moving Platform",
+    "category": "platform",
+    "icon": "▭",
+    "engineId": "MovingPlatform",
+    "components": {
+      "platform": {
+        "moving": true
+      }
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 48,
+      "height": 8
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#eab308"
+    },
+    "properties": [
+      {
+        "key": "Travel",
+        "label": "Travel",
+        "type": "number",
+        "default": 96,
+        "nonNegative": true,
+        "help": "Horizontal travel distance in pixels."
+      },
+      {
+        "key": "Speed",
+        "label": "Speed",
+        "type": "number",
+        "default": 48,
+        "nonNegative": true,
+        "help": "Travel speed in pixels/second."
+      }
+    ]
+  },
+  {
+    "id": "conveyor",
+    "name": "Conveyor",
+    "category": "conveyor",
+    "icon": "⇥",
+    "engineId": "Conveyor",
+    "components": {
+      "conveyor": {}
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 64,
+      "height": 8
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#14b8a6"
+    },
+    "properties": [
+      {
+        "key": "Speed",
+        "label": "Speed",
+        "type": "number",
+        "default": 60,
+        "help": "Belt speed in pixels/second; negative pushes left."
+      }
+    ]
+  },
+  {
+    "id": "hazard",
+    "name": "Hazard",
+    "category": "hazard",
+    "icon": "☠",
+    "engineId": "Hazard",
+    "components": {
+      "hazard": {
+        "lethal": true
+      }
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#ef4444"
+    },
+    "properties": []
+  },
+  {
+    "id": "slope",
+    "name": "Slope",
+    "category": "slope",
+    "icon": "◿",
+    "engineId": "Slope",
+    "components": {
+      "slope": {}
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 32,
+      "height": 32
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#a855f7"
+    },
+    "properties": [
+      {
+        "key": "Dir",
+        "label": "Direction",
+        "type": "enum",
+        "options": ["UpRight", "UpLeft"],
+        "default": "UpRight",
+        "help": "Ramp direction. Terrain baking happens when converting to engine LevelData."
+      }
+    ]
+  },
+  {
+    "id": "camera-zone",
+    "name": "Camera Zone",
+    "category": "camera",
+    "icon": "▢",
+    "engineId": "CameraZone",
+    "components": {
+      "camera": {
+        "zone": true
+      }
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 398,
+      "height": 224
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#6366f1"
+    },
+    "properties": [
+      {
+        "key": "BindX",
+        "label": "Bind X",
+        "type": "boolean",
+        "default": true,
+        "help": "Lock the view horizontally to this zone."
+      },
+      {
+        "key": "BindY",
+        "label": "Bind Y",
+        "type": "boolean",
+        "default": true,
+        "help": "Lock the view vertically to this zone."
+      }
+    ]
+  }
+]

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   migrateDocument,
+  setCatalogGameData,
   setProjectDefinitions,
   TerrainTile,
   validateImageLayers,
@@ -200,7 +201,8 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
 
   const manifest = parsed.project;
   const issues: ProjectIssue[] = [...gameDataIssues, ...toIssues(parsed.issues)];
-  // Before any level is checked or compiled: instances may use project definitions.
+  // Before any level is checked or compiled: instances may use project enemies and definitions.
+  setCatalogGameData(projectGameData?.gameData ?? GAME_DATA);
   for (const issue of setProjectDefinitions(manifest.objects ?? [])) {
     issues.push({
       severity: "error",

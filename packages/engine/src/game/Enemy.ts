@@ -8,8 +8,6 @@ import type { Projectile } from "./Projectile.js";
 import { ENEMY_FLASH_TIME, enemyStats, type EnemyStats } from "../core/constants.js";
 import type { CompiledEnemy } from "../data/types.js";
 
-export type EnemyKind = "metool" | "bat" | "pantheon";
-
 /**
  * Enemy actor — port of Enemy.gd plus the per-enemy modules its scenes hang off
  * it (EnemyShield, EnemyDamage, EnemyDeath, DamageOnTouch).

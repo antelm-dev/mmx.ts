@@ -179,6 +179,9 @@ importers:
       '@mmx/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@mmx/engine':
+        specifier: workspace:*
+        version: link:../engine
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
