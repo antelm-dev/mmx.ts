@@ -35,7 +35,9 @@ import {
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
 import { projectSession } from "../core/projectSession.js";
+import type { GameDataOverlay } from "@mmx/engine/data";
 import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
+import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
 import { dispatchEditorKey, type KeyboardContext } from "./editorKeyboard.js";
@@ -118,7 +120,13 @@ export class EditorController {
     this.snapshot = this.build("open");
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
     // Manifest edits (e.g. the player loadout) live in the project session, not the store.
+    let rootPath = projectSession.getSnapshot().rootPath;
     projectSession.subscribe(() => {
+      // Another project's enemies: the Enemy panel no longer edits the last one's.
+      if (projectSession.getSnapshot().rootPath !== rootPath) {
+        rootPath = projectSession.getSnapshot().rootPath;
+        useUiStore.getState().setEnemyEditorId(null);
+      }
       // Tile layers draw and paint from the manifest's tilesets; keep the store's copy current.
       const tilesets = this.tilesetAssets();
       const prev = this.store.get().tilesets;
@@ -535,10 +543,24 @@ export class EditorController {
     const project = projectSession.getSnapshot().project;
     if (!project) return;
     const { overlay, id } = addEnemy(project.gameData, projectSession.gameData().data, input);
-    projectSession.setGameData(overlay);
-    // The viewport draws the new enemy from the rebuilt sprites.
-    void this.applyProjectAssets();
+    this.setGameData(overlay);
     this.store.setTool("place", id);
+  }
+
+  /** Replace the project's data/game.json records; saved with the project. */
+  setGameData(overlay: GameDataOverlay): void {
+    projectSession.setGameData(overlay);
+    // The viewport draws project enemies from the rebuilt sprites.
+    void this.applyProjectAssets();
+  }
+
+  /** Copy an enemy into the project under a new id and open the copy in the enemy editor. */
+  duplicateEnemy(enemyId: string): void {
+    const project = projectSession.getSnapshot().project;
+    if (!project) return;
+    const { overlay, id } = duplicateEnemy(project.gameData, projectSession.gameData().data, enemyId);
+    this.setGameData(overlay);
+    useUiStore.getState().setEnemyEditorId(id);
   }
 
   selectPalette(definitionId: string): void {

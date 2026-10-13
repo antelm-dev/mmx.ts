@@ -17,30 +17,32 @@ export type ProjectGameData = {
   compiled: CompiledGameData;
   /** Merge/compile errors (Problems); when any, `data`/`compiled` are the engine defaults. */
   issues: ProjectIssue[];
+  /** The same errors with their `fieldPath`, for inline display. */
+  diagnostics: GameDataDiagnostic[];
 };
 
 const GAME_DATA_PATH = "/data/game.json";
-const DEFAULT_GAME_DATA: ProjectGameData = { data: GAME_DATA, compiled: COMPILED_GAME_DATA, issues: [] };
+const DEFAULT_GAME_DATA: ProjectGameData = { data: GAME_DATA, compiled: COMPILED_GAME_DATA, issues: [], diagnostics: [] };
 const compiledOverlays = new WeakMap<GameDataOverlay, ProjectGameData>();
 
-function toIssues(diagnostics: GameDataDiagnostic[]): ProjectIssue[] {
-  return diagnostics
-    .filter((d) => d.severity === "error")
-    .map((d) => ({
-      severity: "error",
-      code: `game-data.${d.code}`,
-      path: GAME_DATA_PATH,
-      message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
-    }));
+function failed(all: GameDataDiagnostic[]): ProjectGameData {
+  const diagnostics = all.filter((d) => d.severity === "error");
+  const issues = diagnostics.map((d): ProjectIssue => ({
+    severity: "error",
+    code: `game-data.${d.code}`,
+    path: GAME_DATA_PATH,
+    message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
+  }));
+  return { ...DEFAULT_GAME_DATA, issues, diagnostics };
 }
 
 function compile(overlay: GameDataOverlay): ProjectGameData {
   const merged = mergeGameData(GAME_DATA, overlay);
-  if (!merged.ok) return { ...DEFAULT_GAME_DATA, issues: toIssues(merged.diagnostics) };
+  if (!merged.ok) return failed(merged.diagnostics);
   try {
     const compiled = compileGameData(merged.value, buildCompileRegistries());
-    if (!compiled.ok) return { ...DEFAULT_GAME_DATA, issues: toIssues(compiled.diagnostics) };
-    return { data: merged.value, compiled: compiled.value, issues: [] };
+    if (!compiled.ok) return failed(compiled.diagnostics);
+    return { data: merged.value, compiled: compiled.value, issues: [], diagnostics: [] };
   } catch (error) {
     // compileGameData trusts record shapes; a record missing a nested object throws.
     const message = error instanceof Error ? error.message : String(error);

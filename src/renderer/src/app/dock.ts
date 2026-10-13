@@ -133,6 +133,16 @@ export const SLICER_PANEL: PanelSpec = {
 /** Tool panel opened from File → Clip Editor…; not listed under View → Panels. */
 export const CLIP_PANEL: PanelSpec = { ...SLICER_PANEL, id: "clips", title: "Clip Editor", component: "clips" };
 
+/** Tool panel opened from an enemy's edit button in the Object Palette; not listed under View → Panels. */
+export const ENEMY_PANEL: PanelSpec = {
+  id: "enemy",
+  title: "Enemy",
+  component: "enemy",
+  ref: "inspector",
+  dir: "within",
+  fallbackDir: "right",
+};
+
 /** Open the panel if closed, or close it if open (the View-menu checkbox action). */
 export function togglePanel(id: string): void {
   if (!api) return;

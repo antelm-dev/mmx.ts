@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
-import { Search, Trash2, X } from "lucide-react";
+import { Pencil, Search, Trash2, X } from "lucide-react";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   allDefinitions,
   type GameObjectDefinition,
 } from "@mmx/content-schema";
+import { ENEMY_PANEL, openPanel } from "../app/dock.js";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -27,8 +28,10 @@ export function PalettePanel() {
   const snap = useEditorSnapshot();
   const query = useUiStore((s) => s.paletteQuery);
   const setQuery = useUiStore((s) => s.setPaletteQuery);
-  const projectOpen = useProjectSession().open;
+  const session = useProjectSession();
   const [newEnemy, setNewEnemy] = useState(false);
+  // New ids are picked against the merged data, which is the engine's alone while data/game.json has errors.
+  const broken = session.open && projectSession.gameData().issues.length > 0;
 
   return (
     <Panel>
@@ -48,9 +51,15 @@ export function PalettePanel() {
       </SearchBox>
       <PaletteList query={query} snap={snap} />
       {/* A project's enemies are saved in its data/game.json. */}
-      {projectOpen && (
+      {session.open && (
         <PanelActions>
-          <ActionButton onClick={() => setNewEnemy(true)}>New enemy…</ActionButton>
+          <ActionButton
+            disabled={broken}
+            title={broken ? "Fix the data/game.json errors in Problems first" : undefined}
+            onClick={() => setNewEnemy(true)}
+          >
+            New enemy…
+          </ActionButton>
           <NewEnemyDialog open={newEnemy} onClose={() => setNewEnemy(false)} />
         </PanelActions>
       )}
@@ -66,7 +75,7 @@ function PaletteList({
   snap: ReturnType<typeof useEditorSnapshot>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const project = useProjectSession().project;
+  const { project, open: projectOpen } = useProjectSession();
 
   const rows = useMemo<PaletteRow[]>(() => {
     const q = query.trim().toLowerCase();
@@ -131,13 +140,15 @@ function PaletteList({
           const def = row.def;
           // Project objects (derived from a built-in) can be deleted once nothing uses them.
           const uses = def.baseId ? definitionUseCount(def.id) : 0;
+          // Enemy types (not project presets of them) open in the Enemy panel.
+          const editable = projectOpen && def.category === "enemy" && !def.baseId;
           return (
             <div key={v.key} style={style}>
               <ListRow
                 active={isActive(def.id)}
                 title={`Place ${def.name}`}
                 onClick={() => editor.selectPalette(def.id)}
-                pr={def.baseId ? "10" : undefined}
+                pr={def.baseId || editable ? "10" : undefined}
               >
                 <SpritePreview definitionId={def.id} size={28} fallbackColor={def.editor.color} />
                 <chakra.span minW="0" flex="1" truncate>
@@ -175,6 +186,31 @@ function PaletteList({
                   }}
                 >
                   <Trash2 size={14} />
+                </chakra.button>
+              )}
+              {editable && (
+                <chakra.button
+                  type="button"
+                  position="absolute"
+                  top="50%"
+                  right="52px"
+                  transform="translateY(-50%)"
+                  display="grid"
+                  placeItems="center"
+                  w="6"
+                  h="6"
+                  rounded="md"
+                  color="studio.fgTertiary"
+                  cursor="pointer"
+                  _hover={{ color: "studio.fg", bg: "studio.hover" }}
+                  aria-label={`Edit ${def.name}`}
+                  title={`Edit ${def.name}`}
+                  onClick={() => {
+                    useUiStore.getState().setEnemyEditorId(def.id);
+                    openPanel(ENEMY_PANEL);
+                  }}
+                >
+                  <Pencil size={14} />
                 </chakra.button>
               )}
             </div>
