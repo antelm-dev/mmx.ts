@@ -1,0 +1,78 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "web: dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^__never_matches__$" },
+        "background": { "activesBegins": true, "beginsPattern": "VITE", "endsPattern": "Local:" }
+      }
+    },
+    {
+      "label": "studio: dev",
+      "type": "shell",
+      "command": "pnpm studio",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "demo: dev",
+      "type": "shell",
+      "command": "pnpm demo",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "pnpm build",
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "pnpm test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "studio: test",
+      "type": "shell",
+      "command": "pnpm --filter @mmx/studio test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "studio: e2e",
+      "type": "shell",
+      "command": "pnpm --filter @mmx/studio e2e",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "studio: typecheck",
+      "type": "shell",
+      "command": "pnpm --filter @mmx/studio typecheck",
+      "problemMatcher": {
+        "base": "$tsc",
+        "fileLocation": ["relative", "${workspaceFolder}/apps/studio"]
+      }
+    },
+    {
+      "label": "web: typecheck",
+      "type": "shell",
+      "command": "pnpm --filter @mmx/web typecheck",
+      "problemMatcher": {
+        "base": "$tsc",
+        "fileLocation": ["relative", "${workspaceFolder}/apps/web"]
+      }
+    },
+    { "label": "lint", "type": "shell", "command": "pnpm lint", "problemMatcher": [] },
+    { "label": "fmt", "type": "shell", "command": "pnpm fmt", "problemMatcher": [] }
+  ]
+}

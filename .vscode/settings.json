@@ -1,0 +1,50 @@
+{
+  // Use the workspace TypeScript (root devDependency) instead of VS Code's bundled one.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // oxfmt + oxlint via the Oxc extension (configs: .oxfmtrc.json, .oxlintrc.json).
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit"
+  },
+  "oxc.enable.oxlint": true,
+  "oxc.enable.oxfmt": true,
+
+  // .gitattributes forces LF.
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  "npm.packageManager": "pnpm",
+
+  "files.exclude": {
+    "**/.turbo": true,
+    "**/*.tsbuildinfo": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/dist-*": true,
+    "**/out": true,
+    "**/.turbo": true,
+    "**/.vite": true,
+    "**/.mmx-assets": true,
+    "**/playwright-report": true,
+    "**/test-results": true,
+    "**/src/preload/generated": true,
+    "pnpm-lock.yaml": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/dist-*/**": true,
+    "**/out/**": true,
+    "**/.turbo/**": true,
+    "**/.mmx-assets/**": true
+  }
+}
