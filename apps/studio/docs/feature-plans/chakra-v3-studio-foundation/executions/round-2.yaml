@@ -1,0 +1,69 @@
+execution_contract:
+  milestone: chakra-v3-studio-foundation
+  round: 2
+  state: milestone-complete
+  planning_ref: codex/plan-chakra-v3-studio-foundation
+  planning_commit: "b24aa60048b0d5218ab6315e79bf0b080aac733f"
+  source_base: "5171810c528ab2ba57e26588a6c7a022502e671f"
+  default_branch: main
+  started_at: "2026-10-08T14:00:00+02:00"
+  completed_at: "2026-10-08T15:30:00+02:00"
+  candidates:
+    - task: "01"
+      branch: codex/chakra-v3-foundation-01
+      launch_base: "5171810c528ab2ba57e26588a6c7a022502e671f"
+      rebased_onto: "bcdde53"
+      tip: "c49f6ff049860aa3c3d94d0e450362dd9fe58295"
+      status: merged
+      pr: "https://github.com/antelm-dev/mmx-studio/pull/41"
+      merge_commit: "1597875"
+      checks:
+        - { command: pnpm install --frozen-lockfile, result: passed }
+        - { command: pnpm typecheck, result: passed }
+        - { command: pnpm test, result: passed, detail: "125 vitest + 87 node tests" }
+        - { command: pnpm build, result: passed }
+        - { command: pnpm e2e, result: passed, detail: "11 Electron tests" }
+      acceptance: { AC-FOUNDATION: met, AC-THEME: met }
+      deviations:
+        - "Round 1's non-frozen install blocker (electron-ipc-module#main) no longer reproduces; main's lockfile pins the same patched commit."
+        - "pnpm install can fail with EPERM on esbuild.exe when another repo's dev server holds the hardlinked binary; moving the file into the gitignored out/ dir and re-running install works around it without killing the server."
+    - task: "02"
+      prompt: docs/feature-plans/chakra-v3-studio-foundation/02-toolbar-slice.md
+      launch_base: "1597875"
+      branch: codex/chakra-v3-toolbar-02
+      worktree: "E:/Adel/Documents/Orgs/mmx-studio-chakra-v3-toolbar-02"
+      worker: "Claude Opus subagent; reviewed by Claude Fable"
+      tip: "abed379"
+      status: merged
+      pr: "https://github.com/antelm-dev/mmx-studio/pull/42"
+      merge_commit: "8421beb812dc69899bd4ab11298b7fc752674d03"
+      commits:
+        - "e86b8a5 feat(ui): migrate the Toolbar to Chakra v3 button, tooltip, and menu"
+        - "6e9b746 test(e2e): cover Toolbar tooltip, keyboard level menu, and active toggle"
+        - "abed379 fix(ui): keep disabled toolbar buttons hover-free; e2e selects a level menu item (review)"
+      changed_paths:
+        - e2e/smoke.spec.ts
+        - src/renderer/src/App.tsx
+        - src/renderer/src/components/Toolbar.tsx
+        - src/renderer/src/components/Tooltip.tsx
+        - src/renderer/src/ui/editor/toolbar-button.tsx
+        - src/renderer/src/ui/primitives/menu.tsx
+      checks:
+        - { command: pnpm typecheck, result: passed }
+        - { command: pnpm test, result: passed, detail: "125 vitest + 87 node tests" }
+        - { command: pnpm build, result: passed }
+        - { command: pnpm e2e, result: passed, detail: "12 Electron tests; new test covers tooltip portalled above Dockview, aria-pressed toggle, keyboard level menu with focus return, pointer open/close, selecting New Level runs the command, zero page/console errors" }
+      acceptance: { AC-TOOLBAR: met, AC-OVERLAY: met }
+      deviations:
+        - "Tooltips open below the trigger (Chakra default) instead of above (Radix default); Radix skip-delay between neighbouring tooltips is not replicated."
+        - "components/Tooltip.tsx imports Chakra directly: it is itself the Studio wrapper."
+        - "The e2e waits two animation frames between ArrowDown and Escape; zag refocuses the menu on the next frame, so same-frame keys leave focus on body (test-only speed)."
+        - "Review added: disabled buttons no longer show the hover background (parity with the old enabled:hover classes)."
+      risks:
+        - "Theme toggle through the TitleBar is not e2e-covered yet (TitleBar is Task 03 of milestone 2)."
+        - "Level trigger passes four one-off style props instead of a variant."
+  remaining_radix:
+    - src/renderer/src/components/Inspector.tsx (checkbox, select)
+    - src/renderer/src/components/ScenePanel.tsx (context-menu)
+    - src/renderer/src/components/TitleBar.tsx (dropdown-menu)
+  next: docs/feature-plans/chakra-v3-studio-migration/README.md

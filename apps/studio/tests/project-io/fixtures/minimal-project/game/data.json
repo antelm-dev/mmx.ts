@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "bindings": {
+    "playerAnimation": "anim.player.fixture",
+    "sounds": {},
+    "enemyAnimations": {},
+    "pickupAnimations": {},
+    "shotAnimations": {
+      "lemon": "anim.effect.fixture"
+    },
+    "hudSprites": {
+      "xBar": "sprite.bg",
+      "hpFill": "sprite.bg",
+      "weaponBar": "sprite.bg"
+    }
+  }
+}

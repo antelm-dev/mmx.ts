@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "bindings": {
+    "playerAnimation": "anim.player.x",
+    "playerPointingSheet": "sprite.player.x-leftarm",
+    "fontUi": "font.ui.mega-man-x",
+    "sounds": {
+      "jump": "sfx.player.jump",
+      "land": "sfx.player.land",
+      "dash": "sfx.player.dash",
+      "wallslide": "sfx.player.wallslide",
+      "damage": "sfx.player.damage",
+      "charge": "sfx.weapon.charge",
+      "lemon": "sfx.weapon.lemon",
+      "mediumShot": "sfx.weapon.medium-shot",
+      "chargedShot": "sfx.weapon.charged-shot",
+      "darkArrow": "sfx.weapon.dark-arrow",
+      "enemyHit": "sfx.enemy.hit",
+      "shieldHit": "sfx.enemy.shield-hit",
+      "guardBreak": "sfx.enemy.guard-break",
+      "enemyDeath": "sfx.enemy.death",
+      "playerDeath": "sfx.player.death",
+      "heal": "sfx.pickup.heal",
+      "introAppear": "sfx.player.intro-appear",
+      "introThunder": "sfx.player.intro-thunder"
+    },
+    "enemyAnimations": {
+      "metool": "anim.enemy.metool",
+      "bat": "anim.enemy.bat"
+    },
+    "pickupAnimations": {
+      "large": "anim.pickup.large",
+      "small": "anim.pickup.small",
+      "ammo": "anim.pickup.ammo",
+      "sammo": "anim.pickup.sammo"
+    },
+    "shotAnimations": {
+      "lemon": "anim.effect.lemon",
+      "medium": "anim.effect.medium",
+      "charged": "anim.effect.charged",
+      "dark_arrow": "anim.effect.dark_arrow",
+      "lemon_hit": "anim.effect.lemon_hit",
+      "charge_hit": "anim.effect.charge_hit",
+      "charge_1": "anim.effect.charge_1",
+      "charge_2": "anim.effect.charge_2",
+      "dash": "anim.effect.dash",
+      "explosion": "anim.effect.explosion",
+      "remains": "anim.effect.remains"
+    },
+    "hudSprites": {
+      "xBar": "sprite.hud.x-bar",
+      "hpFill": "sprite.hud.hp-fill",
+      "weaponBar": "sprite.hud.weapon-bar",
+      "weaponIconDarkArrow": "sprite.hud.weapon-icon-dark-arrow"
+    }
+  }
+}

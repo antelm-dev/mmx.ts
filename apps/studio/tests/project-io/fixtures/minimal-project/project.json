@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture.project",
+  "name": "Fixture Project",
+  "gameVersion": "0.1.0",
+  "compatibleRuntime": {
+    "min": "1.0.0"
+  },
+  "entryLevelId": "level.main",
+  "levels": [
+    {
+      "id": "level.main",
+      "path": "levels/level.main.json"
+    }
+  ],
+  "assets": [
+    {
+      "id": "sprite.bg",
+      "kind": "sprite",
+      "path": "assets/sprites/bg.png",
+      "region": [0, 0, 16, 16],
+      "anchor": [0.5, 1]
+    },
+    {
+      "id": "sprite.player.fixture",
+      "kind": "image",
+      "path": "assets/sprites/player.png"
+    },
+    {
+      "id": "anim.player.fixture",
+      "kind": "animation",
+      "path": "assets/sprites/player.png",
+      "sheetAssetId": "sprite.player.fixture",
+      "animations": {
+        "idle": {
+          "loop": true,
+          "speed": 1,
+          "frames": [
+            {
+              "region": [0, 0, 32, 32],
+              "duration": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "anim.effect.fixture",
+      "kind": "animation",
+      "path": "assets/sprites/bg.png",
+      "sheetAssetId": "sprite.bg",
+      "animations": {
+        "lemon": {
+          "loop": true,
+          "speed": 1,
+          "frames": [
+            {
+              "region": [0, 0, 16, 16],
+              "duration": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sfx.jump",
+      "kind": "sound",
+      "path": "assets/sounds/jump.wav"
+    }
+  ]
+}

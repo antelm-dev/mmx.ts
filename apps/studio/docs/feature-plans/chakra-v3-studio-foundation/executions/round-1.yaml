@@ -1,0 +1,82 @@
+execution_contract:
+  milestone: chakra-v3-studio-foundation
+  round: 1
+  state: execution-failed
+  planning_ref: codex/plan-chakra-v3-studio-foundation
+  planning_commit: "b24aa60048b0d5218ab6315e79bf0b080aac733f"
+  source_base: "5171810c528ab2ba57e26588a6c7a022502e671f"
+  default_branch: main
+  integration_branch: codex/integrate-chakra-v3-studio-foundation
+  started_at: "2026-08-11T10:53:28+02:00"
+  completed_at: "2026-08-11T11:09:32+02:00"
+  candidates:
+    - task: "01"
+      prompt: docs/feature-plans/chakra-v3-studio-foundation/01-chakra-foundation.md
+      wave: 1
+      base_policy: latest-default
+      launch_base: "5171810c528ab2ba57e26588a6c7a022502e671f"
+      branch: codex/chakra-v3-foundation-01
+      worktree: "E:/Adel/Documents/Orgs/mmx-studio-chakra-v3-foundation-01"
+      tip: "61b67d6a0bd36ab25421e8290ffbefc99963511b"
+      status: execution-failed
+      commits:
+        - "61b67d6a0bd36ab25421e8290ffbefc99963511b"
+      changed_paths:
+        - package.json
+        - pnpm-lock.yaml
+        - src/renderer/src/main.tsx
+        - src/renderer/src/ui/provider.tsx
+        - src/renderer/src/ui/system.ts
+      checks:
+        - command: pnpm install --lockfile-only
+          result: failed
+          exit_code: 1
+          detail: "The existing floating electron-ipc-module#main dependency resolved an incompatible 1.0.0 package whose prepack could not find oxfmt; no failed-attempt lockfile result was retained."
+        - command: pnpm install --lockfile-only --frozen-lockfile --offline --ignore-scripts
+          result: passed
+          exit_code: 0
+          detail: "Validated the final lockfile while preserving the repository's previously locked and patched IPC commit."
+        - command: pnpm chakra:typegen
+          result: passed
+          exit_code: 0
+        - command: pnpm typecheck
+          result: passed
+          exit_code: 0
+        - command: pnpm build:renderer
+          result: passed
+          exit_code: 0
+          detail: "Built 6059 modules; only the existing large-chunk warning was emitted."
+        - command: pnpm build:libs
+          result: passed
+          exit_code: 0
+        - command: pnpm build:main
+          result: passed
+          exit_code: 0
+          detail: "Used validation-only restoration of ignored, already-built Git dependency artifacts."
+        - command: pnpm e2e
+          result: passed
+          exit_code: 0
+          detail: "All 5 Electron smoke tests passed."
+        - command: isolated Electron theme persistence probe
+          result: passed
+          exit_code: 0
+          detail: "Dark/light data-theme and localStorage persisted across reload; Chakra and Dockview resolved matching palette values; no page or console errors; isolated user-data directory used."
+        - command: git diff --check 5171810c528ab2ba57e26588a6c7a022502e671f..HEAD
+          result: passed
+          exit_code: 0
+      acceptance:
+        AC-FOUNDATION: addressed
+        AC-THEME: addressed
+      deviations:
+        - "The required non-frozen lockfile regeneration failed because an existing floating Git dependency changed upstream; the worker preserved its previously locked patched commit and recorded a passing frozen/offline lock validation instead."
+        - "Ignored local bin wrappers and built IPC artifacts were restored only inside the candidate worktree for validation after the failed install removed them; none are committed."
+      risks:
+        - "A normal non-frozen dependency install remains blocked until the pre-existing electron-ipc-module#main and patch mismatch is resolved."
+      preserved_state:
+        - "Original main worktree and its untracked .cursor/ directory were not modified."
+        - "Runtime validation used an isolated temporary Electron profile."
+  not_launched:
+    - task: "02"
+      branch: codex/chakra-v3-toolbar-02
+      reason: "Its latest-default prerequisite requires Task 01 to be reviewed, merged to main, and reachable from a freshly resolved default tip. Worker completion does not unlock Wave 2."
+      unlock_event: "Task 01 PR merged to main and refreshed origin/main contains the accepted commit."

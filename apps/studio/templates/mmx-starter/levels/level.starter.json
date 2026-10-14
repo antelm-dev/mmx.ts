@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "id": "level.starter",
+  "name": "Starter Stage",
+  "gridSize": 16,
+  "cols": 64,
+  "rows": 24,
+  "tiles": [],
+  "objects": [
+    {
+      "id": "spawn.main",
+      "definitionId": "spawn",
+      "x": 64,
+      "y": 256
+    }
+  ],
+  "decorations": []
+}

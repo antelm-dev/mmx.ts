@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023"],
+    "types": ["node", "electron"],
+    "outDir": "out",
+    "rootDir": "src",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mmx/project-io": ["src/project-io/index.ts"],
+      "@mmx/project-io/node": ["src/project-io/node.ts"],
+      "@mmx/starter-template": ["src/starter-template/index.ts"]
+    }
+  },
+  "include": [
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/project-io/**/*.ts",
+    "src/starter-template/**/*.ts"
+  ]
+}

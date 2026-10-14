@@ -1,0 +1,277 @@
+import { readFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
+import { dialog } from "electron";
+import { defineIpcModule, handle } from "electron-ipc-module";
+import type { AssetKind } from "@mmx/project-schema";
+import {
+  createProject,
+  exportProject,
+  GAME_DATA_FILE,
+  issue,
+  importAsset,
+  loadProject,
+  mergeImportedAsset,
+  saveProject,
+  type ProjectIssue,
+  type ProjectPayload,
+  type ProjectResult,
+  type StudioProject,
+} from "@mmx/project-io";
+import { createNodeFileSystem } from "@mmx/project-io/node";
+import { copyStarterProjectToDirectory } from "@mmx/starter-template";
+
+const DATA_URL_MIME: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".mp3": "audio/mpeg",
+};
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export function createProjectIpc() {
+  // Only a file the user just picked may be copied in from outside the project.
+  let pickedImportPath: string | null = null;
+
+  return defineIpcModule("project", {
+    "pick-directory": handle(async (_event, title: string): Promise<string | null> => {
+      const result = await dialog.showOpenDialog({
+        title,
+        properties: ["openDirectory", "createDirectory"],
+      });
+      if (result.canceled || result.filePaths.length === 0) return null;
+      return result.filePaths[0] ?? null;
+    }),
+
+    "pick-export-directory": handle(async (_event, title: string): Promise<string | null> => {
+      const result = await dialog.showOpenDialog({
+        title,
+        properties: ["openDirectory", "createDirectory"],
+      });
+      if (result.canceled || result.filePaths.length === 0) return null;
+      return result.filePaths[0] ?? null;
+    }),
+
+    "pick-import-file": handle(
+      async (
+        _event,
+        filters: { name: string; extensions: string[] }[],
+      ): Promise<{ path: string; name: string } | null> => {
+        const result = await dialog.showOpenDialog({
+          title: "Import Asset",
+          properties: ["openFile"],
+          filters,
+        });
+        if (result.canceled || result.filePaths.length === 0) return null;
+        const path = result.filePaths[0]!;
+        pickedImportPath = path;
+        return { path, name: basename(path) };
+      },
+    ),
+
+    create: handle(
+      async (
+        _event,
+        rootPath: string,
+        input: { id: string; name: string },
+      ): Promise<ProjectResult<ProjectPayload>> => {
+        const fs = createNodeFileSystem(rootPath);
+        const created = await createProject(fs, input);
+        if (!created.ok) return { ok: false, issues: created.issues };
+        return {
+          ok: true,
+          value: { rootPath, project: created.value },
+          issues: created.issues,
+        };
+      },
+    ),
+
+    "create-from-starter": handle(
+      async (
+        _event,
+        rootPath: string,
+        input: { id: string; name: string },
+      ): Promise<ProjectResult<ProjectPayload>> => {
+        const created = await copyStarterProjectToDirectory(rootPath, input);
+        if (!created.ok) return { ok: false, issues: created.issues };
+        return {
+          ok: true,
+          value: { rootPath, project: created.value },
+          issues: created.issues,
+        };
+      },
+    ),
+
+    load: handle(async (_event, rootPath: string): Promise<ProjectResult<ProjectPayload>> => {
+      const fs = createNodeFileSystem(rootPath);
+      const loaded = await loadProject(fs);
+      if (!loaded.ok) return { ok: false, issues: loaded.issues };
+      return {
+        ok: true,
+        value: { rootPath, project: loaded.value },
+        issues: loaded.issues,
+      };
+    }),
+
+    /**
+     * Reads what Play and the viewport need from an open project: `game/data.json`
+     * and every image/sound asset as a data URL. Data URLs keep absolute paths out
+     * of the renderer, and identical bytes give identical URLs, so sheets shared
+     * with the bundled starter do not clash in the renderer's sheet cache.
+     */
+    "read-play-assets": handle(
+      async (
+        _event,
+        rootPath: string,
+        // Inline shape: the bridge generator cannot reference external package types.
+        assets: { id: string; kind: string; path: string }[],
+      ): Promise<ProjectResult<{ gameData: unknown; urls: Record<string, string> }>> => {
+        const fs = createNodeFileSystem(rootPath);
+        const issues: ProjectIssue[] = [];
+        let gameData: unknown = null;
+        try {
+          gameData = JSON.parse(await fs.readText(GAME_DATA_FILE));
+        } catch (error) {
+          issues.push(
+            issue("play-assets.game-data", errorMessage(error), `/${GAME_DATA_FILE}`, "warning"),
+          );
+        }
+        const urls: Record<string, string> = {};
+        for (const [index, asset] of assets.entries()) {
+          if (!["image", "sprite", "sound", "tileset"].includes(asset.kind)) continue;
+          const mime = DATA_URL_MIME[extname(asset.path).toLowerCase()];
+          try {
+            if (!mime) throw new Error(`Unsupported file type '${asset.path}'.`);
+            const bytes = await fs.readBytes(asset.path);
+            urls[asset.id] = `data:${mime};base64,${Buffer.from(bytes).toString("base64")}`;
+          } catch (error) {
+            issues.push(
+              issue("play-assets.file", errorMessage(error), `/assets/${index}/path`, "warning"),
+            );
+          }
+        }
+        return { ok: true, value: { gameData, urls }, issues };
+      },
+    ),
+
+    save: handle(
+      async (
+        _event,
+        rootPath: string,
+        project: StudioProject,
+      ): Promise<ProjectResult<ProjectPayload>> => {
+        const fs = createNodeFileSystem(rootPath);
+        const saved = await saveProject(fs, project);
+        if (!saved.ok) return { ok: false, issues: saved.issues };
+        return {
+          ok: true,
+          value: { rootPath, project: saved.value },
+          issues: saved.issues,
+        };
+      },
+    ),
+
+    /** Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key. */
+    "write-player-animation": handle(
+      async (_event, rootPath: string, animationId: string): Promise<ProjectResult<null>> => {
+        const fs = createNodeFileSystem(rootPath);
+        try {
+          const data = JSON.parse(await fs.readText(GAME_DATA_FILE));
+          data.bindings = { ...data.bindings, playerAnimation: animationId };
+          await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);
+          return { ok: true, value: null, issues: [] };
+        } catch (error) {
+          return { ok: false, issues: [issue("game-data.write", errorMessage(error), `/${GAME_DATA_FILE}`)] };
+        }
+      },
+    ),
+
+    export: handle(
+      async (
+        _event,
+        sourceRoot: string,
+        destinationRoot: string,
+        project: StudioProject,
+      ): Promise<
+        ProjectResult<{
+          manifestPath: string;
+          exportedAssets: string[];
+          exportedLevels: string[];
+          excludedOrphans: string[];
+        }>
+      > => {
+        const sourceFs = createNodeFileSystem(sourceRoot);
+        const destFs = createNodeFileSystem(destinationRoot);
+        const exported = await exportProject(sourceFs, destFs, project);
+        if (!exported.ok) return { ok: false, issues: exported.issues };
+        return { ok: true, value: exported.value, issues: exported.issues };
+      },
+    ),
+
+    /**
+     * Copies a file into the project and returns the manifest with the new asset.
+     * Nothing else is written: the renderer marks the project dirty and the user saves.
+     */
+    "import-asset": handle(
+      async (
+        _event,
+        rootPath: string,
+        project: StudioProject,
+        input: { sourcePath: string; kind: AssetKind; logicalId?: string },
+      ): Promise<ProjectResult<{ project: StudioProject; assetId: string; copiedTo: string }>> => {
+        if (input.sourcePath !== pickedImportPath) {
+          return {
+            ok: false,
+            issues: [issue("asset.source", "Pick the file to import first.", "/sourcePath")],
+          };
+        }
+        const projectFs = createNodeFileSystem(rootPath);
+        // The project fs is root-scoped; the picked source is outside it, so read it directly.
+        const fs = {
+          ...projectFs,
+          copyFile: async (from: string, to: string) => projectFs.writeBytes(to, await readFile(from)),
+        };
+        const imported = await importAsset(fs, project.manifest.assets, {
+          sourcePath: input.sourcePath,
+          kind: input.kind,
+          collision: "rename",
+          logicalId: input.logicalId,
+        });
+        if (!imported.ok) return { ok: false, issues: imported.issues };
+
+        let assets;
+        try {
+          assets = mergeImportedAsset(project.manifest.assets, imported.value.asset);
+        } catch (error) {
+          return {
+            ok: false,
+            issues: [
+              {
+                severity: "error",
+                code: "asset.merge",
+                path: "/assets",
+                message: error instanceof Error ? error.message : String(error),
+              },
+            ],
+          };
+        }
+
+        return {
+          ok: true,
+          value: {
+            project: { ...project, manifest: { ...project.manifest, assets } },
+            assetId: imported.value.asset.id,
+            copiedTo: imported.value.copiedTo,
+          },
+          issues: imported.issues,
+        };
+      },
+    ),
+  });
+}
