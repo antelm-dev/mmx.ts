@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { defineIpcEvents, defineIpcModule, handle } from "electron-ipc-module";
+import { createIpcHelpers, defineIpcModule } from "electron-ipc-module";
 import { fail, issue, loadProject, type ProjectPayload, type ProjectResult } from "@mmx/project-io";
 import {
   createNodeFileSystem,
@@ -15,7 +15,8 @@ type ImportEvents = {
   "import-progress": [step: string];
 };
 
-export const importEvents = defineIpcEvents<ImportEvents>();
+// Typed helpers: `event.sender.send` is checked, and the bridge gets `onImportProgress`.
+const { handle } = createIpcHelpers<ImportEvents>();
 
 /** Empty, or a previous Zero import: never write over someone else's files. */
 async function isWritableTarget(rootPath: string): Promise<boolean> {

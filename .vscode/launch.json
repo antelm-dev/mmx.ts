@@ -41,7 +41,7 @@
       "preLaunchTask": "web: dev"
     },
     {
-      // Start the "studio: dev" task first; rollup's electron-run launches main with --inspect (9229).
+      // Start the "studio: dev" task first; rollup's vite-plugin-electron-run launches main with --inspect (9229).
       "name": "Studio: attach main process",
       "type": "node",
       "request": "attach",

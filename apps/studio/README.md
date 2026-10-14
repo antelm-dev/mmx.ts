@@ -58,21 +58,21 @@ repository root, then `pnpm studio` (or `pnpm --filter @mmx/studio dev`).
 
 ## Tech stack
 
-| Concern                                                 | Choice                                                                                                                 |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Shell                                                   | **Electron** — `main` + `preload` bundled by **Rollup** (dev live-reload via **electron-run**), `renderer` by **Vite** |
-| IPC                                                     | **electron-ipc-module** — typed `*.ipc.ts` modules + a generated preload bridge                                        |
-| Packaging                                               | **electron-builder** (`pack:dir` / `dist`)                                                                             |
-| UI                                                      | **React 19 + TypeScript + Vite**                                                                                       |
-| Docking / tabs / floating panels                        | **Dockview** (`dockview-react`)                                                                                        |
-| Menus, tooltips, selects, checkboxes, panels            | **Chakra UI v3** (`src/renderer/src/ui/` wrappers) over `--studio-*` CSS variables                                     |
-| Ephemeral UI state (tabs, search, toasts, context menu) | **Zustand**                                                                                                            |
-| Editing viewport & Play mode                            | **Pixi.js** via `@mmx/renderer-pixi` + playtest via `@mmx/editor-runtime` → `@mmx/runtime/tooling`                     |
-| Document JSON editing                                   | **Monaco Editor** (self-hosted, no CDN)                                                                                |
-| Large scene tree & palette                              | **TanStack Virtual**                                                                                                   |
-| Problems panel                                          | **TanStack Table**                                                                                                     |
-| Icons                                                   | **Lucide**                                                                                                             |
-| Tests                                                   | **Vitest** (unit) + **Playwright** (Electron e2e)                                                                      |
+| Concern                                                 | Choice                                                                                                                             |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Shell                                                   | **Electron** — `main` + `preload` bundled by **Rollup** (dev live-reload via **vite-plugin-electron-run**), `renderer` by **Vite** |
+| IPC                                                     | **electron-ipc-module** — typed `*.ipc.ts` modules + a generated preload bridge                                                    |
+| Packaging                                               | **electron-builder** (`pack:dir` / `dist`)                                                                                         |
+| UI                                                      | **React 19 + TypeScript + Vite**                                                                                                   |
+| Docking / tabs / floating panels                        | **Dockview** (`dockview-react`)                                                                                                    |
+| Menus, tooltips, selects, checkboxes, panels            | **Chakra UI v3** (`src/renderer/src/ui/` wrappers) over `--studio-*` CSS variables                                                 |
+| Ephemeral UI state (tabs, search, toasts, context menu) | **Zustand**                                                                                                                        |
+| Editing viewport & Play mode                            | **Pixi.js** via `@mmx/renderer-pixi` + playtest via `@mmx/editor-runtime` → `@mmx/runtime/tooling`                                 |
+| Document JSON editing                                   | **Monaco Editor** (self-hosted, no CDN)                                                                                            |
+| Large scene tree & palette                              | **TanStack Virtual**                                                                                                               |
+| Problems panel                                          | **TanStack Table**                                                                                                                 |
+| Icons                                                   | **Lucide**                                                                                                                         |
+| Tests                                                   | **Vitest** (unit) + **Playwright** (Electron e2e)                                                                                  |
 
 ## Architecture
 
@@ -95,7 +95,7 @@ React sits on top through a thin bridge:
 ## Running it
 
 ```bash
-pnpm dev             # renderer (Vite) + main/preload (Rollup watch) via electron-run
+pnpm dev             # renderer (Vite) + main/preload (Rollup watch) via vite-plugin-electron-run
 pnpm gen:ipc         # (re)generate the typed preload bridge from the *.ipc.ts modules
 pnpm build           # gen:ipc, then build renderer (Vite) + main/preload (Rollup)
 pnpm start           # run the built app (electron .)

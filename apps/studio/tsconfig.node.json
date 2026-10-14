@@ -4,6 +4,7 @@
     "module": "ES2022",
     "moduleResolution": "Bundler",
     "lib": ["ES2023"],
+    "strict": true,
     "types": ["node", "electron"],
     "outDir": "out",
     "rootDir": "src",

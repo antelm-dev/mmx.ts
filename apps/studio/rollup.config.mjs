@@ -1,7 +1,6 @@
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
-import electronRun from "electron-run/rollup-plugin";
+import electronRun from "vite-plugin-electron-run/rollup-plugin";
 import ipcBridge from "electron-ipc-module/rollup-plugin";
 import alias from "@rollup/plugin-alias";
 import nodeResolve from "@rollup/plugin-node-resolve";
@@ -79,13 +78,8 @@ export default defineConfig([
       }),
       replace({ preventAssignment: true, __ELECTRON_DEV__: JSON.stringify(!production) }),
       production && terser(),
-      process.env.ROLLUP_WATCH &&
-        electronRun({
-          entry: "index.js",
-          electronPath: createRequire(import.meta.url)("electron"),
-          additionalArgs: ["--inspect"],
-          stdinControls: false,
-        }),
+      // Inert outside `rollup --watch`, so production builds never spawn Electron.
+      electronRun({ entry: "index.js", additionalArgs: ["--inspect"], stdinControls: false }),
     ],
   },
 ]);

@@ -1,11 +1,12 @@
 import { app, BrowserWindow } from "electron";
-import { defineIpcEvents, defineIpcModule, handle } from "electron-ipc-module";
+import { createIpcEmitter, defineIpcEvents, defineIpcModule, handle } from "electron-ipc-module";
 
 type WindowEvents = {
   "fullscreen-changed": [fullscreen: boolean];
 };
 
 export const windowEvents = defineIpcEvents<WindowEvents>();
+const emitter = createIpcEmitter<WindowEvents>();
 
 /**
  * The `window` IPC module: title-bar controls for the frameless window.
@@ -57,8 +58,9 @@ export function createWindowIpc() {
     {
       ready: () => {
         const notify = (win: BrowserWindow) => {
+          // Reading `webContents` on a destroyed window throws; the emitter guards the rest.
           if (win.isDestroyed()) return;
-          win.webContents.send("fullscreen-changed", win.isFullScreen());
+          emitter.emitTo(win.webContents, "fullscreen-changed", win.isFullScreen());
         };
         const attach = (win: BrowserWindow) => {
           win.on("enter-full-screen", () => notify(win));

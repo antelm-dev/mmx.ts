@@ -5,7 +5,7 @@ import { spawn, spawnSync } from "node:child_process";
  *
  * Runs two watchers side by side and tears both down together:
  *  - `vite`   — the renderer dev server on :5175.
- *  - `rollup` — main + preload in watch mode; its `electron-run` plugin
+ *  - `rollup` — main + preload in watch mode; its `vite-plugin-electron-run` plugin
  *    (re)launches Electron on each rebuild.
  *
  * The main process retries loading the dev-server URL until Vite is up, so the
