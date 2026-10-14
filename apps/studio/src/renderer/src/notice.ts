@@ -1,5 +1,5 @@
 /** C-NOTICE: the single fan-content notice, shown by Studio and copied verbatim into the READMEs. */
-export const REPO_URL = "https://github.com/antelm-dev/mmx-studio";
+export const REPO_URL = "https://github.com/antelm-dev/mmx-engine";
 export const TAKEDOWN_URL = `${REPO_URL}/issues/new?template=takedown.md`;
 
 export const FAN_NOTICE = {

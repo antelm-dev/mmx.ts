@@ -4,4 +4,11 @@ packages:
 
 onlyBuiltDependencies:
   - "@parcel/watcher"
+  - electron
+  - electron-ipc-module
+  - electron-winstaller
   - esbuild
+  - rollup-plugin-electron-run
+
+patchedDependencies:
+  electron-ipc-module@0.1.0: apps/studio/patches/electron-ipc-module@0.1.0.patch

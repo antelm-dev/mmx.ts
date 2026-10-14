@@ -14,6 +14,8 @@ const ALLOWED_REL_PREFIXES = [
   "scripts/check-game-resources.mjs",
   "scripts/game-resource-guard.test.mjs",
   "docs/asset-project-migration/",
+  // Studio owns the starter/demo game assets; the guard protects the engine side only.
+  "apps/studio/",
 ];
 
 const FORBIDDEN_PATTERNS = [

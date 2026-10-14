@@ -78,8 +78,8 @@ granted by this repository.
 ## Game assets
 
 Bundled Mega Man X gameplay assets (sprites, sounds, fonts, animation metadata) are
-owned by the Studio starter project in `mmx-studio`, not by this repository. See
-`mmx-studio/templates/mmx-starter/ATTRIBUTION.md` for third-party notices.
+owned by the Studio starter project in `apps/studio`. See
+`apps/studio/templates/mmx-starter/ATTRIBUTION.md` for third-party notices.
 
 `assets/fonts/mega-man-x.ttf` in the starter template has no accompanying license or
 attribution file in that repository. Its provenance and redistribution terms should

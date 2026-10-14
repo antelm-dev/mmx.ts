@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const templateRoot = join(here, "../../templates/mmx-starter");
-const assets = join(templateRoot, "assets");
 
 const readJson = (relativePath) =>
   JSON.parse(readFileSync(join(templateRoot, relativePath), "utf8"));

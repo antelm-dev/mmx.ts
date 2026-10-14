@@ -1,10 +1,10 @@
 # MMX Core Demo Project
 
-Runnable demo project for `mmx-core-ts`. It contains the Stage 1 regression
+Runnable demo project for the MMX engine. It contains the Stage 1 regression
 level, the larger mechanics demo, and the gameplay assets, animation metadata,
 sounds, and UI font needed by the browser client.
 
-Run it from the sibling `mmx-core-ts` checkout with:
+Run it from the repository root with:
 
 ```powershell
 pnpm demo
@@ -31,7 +31,7 @@ generators live in `scripts/starter-template/`. Refresh the starter assets first
 then copy the resulting files into this project.
 
 ```powershell
-cd mmx-studio
+cd apps/studio
 node scripts/starter-template/build-anims.mjs [path-to-godot-project]
 node scripts/starter-template/build-enemies.mjs [path-to-godot-project]
 node scripts/starter-template/build-pickups.mjs [path-to-godot-project]

@@ -11,7 +11,6 @@ import {
   cellRect,
   floodFill,
   type Box,
-  type Handle,
   HANDLES,
   dragTravel,
   environmentGeometry,

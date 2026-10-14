@@ -13,7 +13,7 @@ export function readArc(b: Buffer): ArcEntry[] {
   if (b.length < 8 || b.toString("latin1", 0, 4) !== "ARC\0") throw new Error("not an MT Framework ARC archive");
   return Array.from({ length: b.readUInt16LE(6) }, (_, i) => {
     const e = 8 + i * 80;
-    const name = b.toString("latin1", e, e + 64).replace(/\0.*$/s, "");
+    const name = b.toString("latin1", e, e + 64).split("\0", 1)[0];
     const blob = b.subarray(b.readUInt32LE(e + 76), b.readUInt32LE(e + 76) + b.readUInt32LE(e + 68));
     let data = blob;
     if (blob[0] === 0x78) {

@@ -36,7 +36,7 @@ import {
 } from "./cross-repo-e2e-harness.mjs";
 
 const coreRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const defaultStudioRoot = path.resolve(coreRoot, "../.worktrees/mmx-studio-assets-08");
+const defaultStudioRoot = path.join(coreRoot, "apps", "studio");
 const studioRoot = path.resolve(process.env.MMX_STUDIO_ROOT ?? defaultStudioRoot);
 const e2eRoot = path.resolve(
   process.env.MMX_E2E_ROOT ?? path.join(coreRoot, ".tmp", "mmx-cross-repo-e2e"),

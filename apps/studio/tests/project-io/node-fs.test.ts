@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { createLevelDocument } from "@mmx/content-schema";
-import { PROJECT_SCHEMA_VERSION, serializeProject } from "@mmx/project-schema";
+import { serializeProject } from "@mmx/project-schema";
 
 import { createNodeFileSystem } from "../../src/project-io/node.js";
 import {

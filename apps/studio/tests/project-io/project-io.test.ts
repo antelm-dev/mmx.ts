@@ -17,11 +17,6 @@ import {
 } from "../../src/project-io/index.js";
 import { createMemoryFileSystem } from "./memfs.js";
 
-function minimalLevelJson(id = "level.main") {
-  const level = createLevelDocument({ name: "Intro", id });
-  return JSON.stringify(level, null, 2);
-}
-
 test("normalizeRelativePath rejects traversal and absolute paths", () => {
   assert.throws(() => normalizeRelativePath("../secret"), PathTraversalError);
   assert.throws(() => normalizeRelativePath("assets/../secret"), PathTraversalError);

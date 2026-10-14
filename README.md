@@ -30,8 +30,8 @@ The engine is **pure TypeScript** with no runtime dependencies. It runs two ways
 - Credits are mandatory: every pack and every contribution names the origin and
   author of what it uses.
 
-**Takedown:** open an issue on MMX Studio with the
-[takedown template](https://github.com/antelm-dev/mmx-studio/issues/new?template=takedown.md).
+**Takedown:** open an issue with the
+[takedown template](https://github.com/antelm-dev/mmx-engine/issues/new?template=takedown.md).
 Maintainers answer on the issue and remove the content concerned, in either
 repository, when the request is valid.
 
@@ -43,8 +43,9 @@ repository, when the request is valid.
 pnpm install
 pnpm playwright:install   # Chromium for the required cross-repo browser boot test
 
-pnpm demo         # run the sibling Studio demo project in the browser
-pnpm sim -- --project ../mmx-studio/templates/mmx-demo
+pnpm demo         # run the Studio demo project in the browser
+pnpm studio       # run MMX Studio (apps/studio, Electron editor)
+pnpm sim -- --project apps/studio/templates/mmx-demo
 pnpm test         # unit tests (node:test) for gameplay behaviour
 pnpm build        # compile/typecheck packages (no production web artifact)
 ```
@@ -53,12 +54,12 @@ pnpm build        # compile/typecheck packages (no production web artifact)
 
 Game sprites, sounds, fonts, and levels are **not** shipped inside this
 repository. They come from a Studio project export (for example
-`mmx-studio/templates/mmx-demo`). Core injects them at build time through
+`apps/studio/templates/mmx-demo`). Core injects them at build time through
 `@mmx/build-tools` when `MMX_PROJECT` points at that export.
 
 | Command                                             | `MMX_PROJECT`                  | Behavior                                                                                                                                          |
 | --------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm demo`                                         | set by command                 | Runs the sibling `mmx-studio/templates/mmx-demo` project with both converted levels.                                                              |
+| `pnpm demo`                                         | set by command                 | Runs the `apps/studio/templates/mmx-demo` project with both converted levels.                                                                      |
 | `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message.                   |
 | `pnpm build`                                        | not required                   | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`.                                 |
 | `pnpm build:web`                                    | **required**                   | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |
@@ -77,11 +78,11 @@ CI (`pnpm build`) validates libraries without a game project. The `web-dist`
 artifact is uploaded only when `MMX_PROJECT` is set for that workflow run, so a
 knowingly non-bootable bundle is never labeled as a production web build.
 
-### Cross-repo browser boot
+### Studio browser boot
 
 `pnpm test:cross-repo` builds a Studio starter export and boots it in Chromium.
-It requires a Studio checkout (`MMX_STUDIO_ROOT`, defaulting to
-`../.worktrees/mmx-studio-assets-08`) plus Playwright Chromium from
+It uses the in-repo Studio (`MMX_STUDIO_ROOT`, defaulting to `apps/studio`)
+plus Playwright Chromium from
 `pnpm playwright:install`. Missing Playwright or Chromium fails the run; set
 `MMX_SKIP_BROWSER_E2E=1` only when you intentionally want the optional skip path.
 
@@ -90,18 +91,13 @@ Strict local command:
 ```powershell
 pnpm install --frozen-lockfile
 pnpm playwright:install
-$env:MMX_STUDIO_ROOT = 'E:\Adel\Documents\Orgs\.worktrees\mmx-studio-assets-08'
 pnpm test:cross-repo
 ```
 
-CI runs the same strict path in the `Cross-repo browser E2E` job when the
-repository variable `MMX_STUDIO_REPO` is set (for example `org/mmx-studio`).
-Optional companion settings:
+CI runs the same strict path in the `Studio browser E2E` job when the
+repository variable `MMX_STUDIO_E2E` is `true`.
 
-- `MMX_STUDIO_REF` — Studio git ref (defaults to the repository default branch)
-- secret `MMX_STUDIO_TOKEN` — checkout token when Studio is private
-
-Without `MMX_STUDIO_REPO`, the cross-repo job is skipped; the required Test &
+Otherwise the job is skipped; the required Test &
 build job still runs. When the job does run, missing Playwright/Chromium fails.
 
 ### Versioning
@@ -301,7 +297,7 @@ ability answers which event.
 ### Enemy sprites
 
 Enemy animation metadata is generated from the Godot project's **Aseprite** sidecars
-in `mmx-studio/packages/starter-template/scripts/build-enemies.mjs`, not from `.res`
+in `apps/studio/scripts/starter-template/build-enemies.mjs`, not from `.res`
 SpriteFrames — the enemies still have their source `.json` checked in, and it carries
 per-frame atlas rects, per-frame durations in milliseconds, and `meta.frameTags`
 naming the clips. The one thing it cannot carry is whether a clip loops, which lives
@@ -320,7 +316,7 @@ subclasses exactly as the original does.
 
 ## Project layout
 
-The sibling `mmx-studio/templates/mmx-demo` project contains the active
+The `apps/studio/templates/mmx-demo` project contains the active
 `MechanicsDemo` and compact `Stage1` regression levels. The 160x48 mechanics
 demo combines the complete movement kit with moving bridges, conveyor runs, a
 lethal spike pit, ramp gradients, wall-jump shafts, upper air-dash routes,
@@ -344,7 +340,7 @@ documents; core only compiles their portable project representation.
 | `scripts`                                                        | Import-boundary, packaging, and game-resource guard tests                            |
 
 Game sprites, sounds, fonts, and animation metadata live in Studio project exports
-(`mmx-studio/templates/mmx-demo`). Set `MMX_PROJECT` to that export directory
+(`apps/studio/templates/mmx-demo`). Set `MMX_PROJECT` to that export directory
 before `pnpm build:web`, or use `pnpm factory:dev -- --project <dir>` for local
 play. See [Web project contract](#web-project-contract).
 

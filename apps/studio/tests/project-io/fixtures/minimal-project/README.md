@@ -3,7 +3,7 @@
 Portable sample project for prompts 06 and 08. Validate with:
 
 ```powershell
-cd mmx-studio
+cd apps/studio
 pnpm test
 ```
 

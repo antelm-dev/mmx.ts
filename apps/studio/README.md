@@ -42,26 +42,18 @@ Studio shows this notice on first launch and in **Help → About MMX Studio**
   author of what it uses.
 
 **Takedown:** open an issue with the
-[takedown template](https://github.com/antelm-dev/mmx-studio/issues/new?template=takedown.md)
-([`.github/ISSUE_TEMPLATE/takedown.md`](.github/ISSUE_TEMPLATE/takedown.md)).
+[takedown template](https://github.com/antelm-dev/mmx-engine/issues/new?template=takedown.md)
+([`.github/ISSUE_TEMPLATE/takedown.md`](../../.github/ISSUE_TEMPLATE/takedown.md)).
 Maintainers answer on the issue and remove the content concerned when the
 request is valid.
 
 Contribution rules and the PR checklist are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Local core dependency
+## Core dependency
 
-For now, the `@mmx/*` packages are local `file:` dependencies from the sibling
-`../mmx-core-ts/packages` directory. Keep both repositories beside one another:
-
-```text
-Orgs/
-├── mmx-core-ts/
-└── mmx-studio/
-```
-
-Run `pnpm install` again after changing a linked core package so pnpm refreshes
-the local package snapshot used by Studio.
+Studio lives in the core monorepo at `apps/studio`. The `@mmx/*` packages are
+`workspace:*` dependencies on `packages/*`; run `pnpm install` once from the
+repository root, then `pnpm studio` (or `pnpm --filter @mmx/studio dev`).
 
 ## Tech stack
 

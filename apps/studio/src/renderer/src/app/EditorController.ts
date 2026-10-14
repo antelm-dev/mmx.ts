@@ -6,8 +6,6 @@ import {
 } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
 import {
-  emptySelection,
-  type EditorSelection,
   type ChangeReason,
   type EditorState,
   EditorStore,

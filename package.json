@@ -7,8 +7,9 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @mmx/web dev",
+    "studio": "pnpm --filter @mmx/studio dev",
     "play": "pnpm dev",
-    "demo": "pnpm factory:dev -- --project ../mmx-studio/templates/mmx-demo",
+    "demo": "pnpm factory:dev -- --project apps/studio/templates/mmx-demo",
     "build": "turbo run build --filter=!@mmx/web && pnpm --filter @mmx/web run typecheck",
     "build:web": "turbo run build --filter=@mmx/web",
     "preview": "pnpm --filter @mmx/web preview",

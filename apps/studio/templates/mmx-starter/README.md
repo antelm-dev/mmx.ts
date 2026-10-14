@@ -25,7 +25,7 @@ Animation metadata generators live in `scripts/starter-template/`.
 After refreshing animation JSON from a Godot export:
 
 ```powershell
-cd mmx-studio
+cd apps/studio
 node scripts/build-anims.mjs [path-to-godot-project]
 node scripts/build-enemies.mjs [path-to-godot-project]
 node scripts/build-pickups.mjs [path-to-godot-project]

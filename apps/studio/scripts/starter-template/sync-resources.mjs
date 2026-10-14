@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const templateAssets = join(here, "../../templates/mmx-starter/assets");
-const coreResources = resolve(here, "../../../mmx-core-ts/resources");
+const coreResources = resolve(here, "../../../../resources");
 
 if (!existsSync(coreResources)) {
   throw new Error(`Core resources not found at ${coreResources}`);
