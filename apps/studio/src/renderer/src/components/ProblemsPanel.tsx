@@ -78,8 +78,7 @@ export function ProblemsPanel({ api }: { api?: DockviewPanelApi }): ReactElement
   const errorCount =
     validation.errorCount + project.issues.filter((issue) => issue.severity === "error").length;
   const warningCount =
-    validation.warningCount +
-    project.issues.filter((issue) => issue.severity === "warning").length;
+    validation.warningCount + project.issues.filter((issue) => issue.severity === "warning").length;
 
   const problemsTitle = useMemo(() => {
     if (errorCount + warningCount === 0) return "Problems";

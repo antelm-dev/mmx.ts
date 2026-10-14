@@ -5,7 +5,10 @@ import type { EditorStore } from "./EditorStore.js";
 import { EditorViewportRenderer } from "./EditorViewportRenderer.js";
 import { EditorViewportInteraction } from "./EditorViewportInteraction.js";
 
-export type { EmptyCellContextMenu, EmptyCellContextMenuHandler } from "./EditorViewportRenderer.js";
+export type {
+  EmptyCellContextMenu,
+  EmptyCellContextMenuHandler,
+} from "./EditorViewportRenderer.js";
 
 const COLOR_BG = 0x05070d;
 
@@ -21,8 +24,9 @@ export class EditorViewport {
   private readonly interaction: EditorViewportInteraction;
   private resizeObserver: ResizeObserver | null = null;
   private destroyed = false;
-  private onEmptyContextMenu: import("./EditorViewportRenderer.js").EmptyCellContextMenuHandler | null =
-    null;
+  private onEmptyContextMenu:
+    | import("./EditorViewportRenderer.js").EmptyCellContextMenuHandler
+    | null = null;
 
   private constructor(
     private readonly app: Application,

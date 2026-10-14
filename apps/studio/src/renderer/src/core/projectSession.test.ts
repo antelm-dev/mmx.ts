@@ -19,8 +19,13 @@ vi.mock("../assets/studioAssets.js", () => {
       calls.push("build:starter");
       return fakeAssets("starter");
     },
-    buildStudioAssets: (_project: unknown, gameData: { bindings?: { playerAnimation?: string } }) => {
-      calls.push(`build:project${gameData.bindings?.playerAnimation ? `:${gameData.bindings.playerAnimation}` : ""}`);
+    buildStudioAssets: (
+      _project: unknown,
+      gameData: { bindings?: { playerAnimation?: string } },
+    ) => {
+      calls.push(
+        `build:project${gameData.bindings?.playerAnimation ? `:${gameData.bindings.playerAnimation}` : ""}`,
+      );
       return fakeAssets("project");
     },
   };
@@ -78,7 +83,11 @@ describe("ProjectSession player animation binding", () => {
       ...bridge,
       readPlayAssets: async () => {
         calls.push("read");
-        return { ok: true, issues: [], value: { gameData: { bindings: { playerAnimation: "anim.a" } }, urls: {} } };
+        return {
+          ok: true,
+          issues: [],
+          value: { gameData: { bindings: { playerAnimation: "anim.a" } }, urls: {} },
+        };
       },
       save: async () => {
         writes.push("save");
@@ -117,7 +126,11 @@ describe("ProjectSession object definitions", () => {
       studio: {
         project: {
           ...bridge,
-          load: async () => ({ ok: true, issues: [], value: { rootPath: "/p", project: withObjects } }),
+          load: async () => ({
+            ok: true,
+            issues: [],
+            value: { rootPath: "/p", project: withObjects },
+          }),
         },
       },
     });
@@ -151,13 +164,26 @@ describe("ProjectSession game data", () => {
       health: 3,
       touchDamage: 2,
     });
-    const right = { id: "obj.crab.right", name: "Crab (right)", base: "enemy.crab", values: { FacesRight: true } };
-    const crabProject = { ...project, manifest: { ...project.manifest, objects: [right] }, gameData: overlay };
+    const right = {
+      id: "obj.crab.right",
+      name: "Crab (right)",
+      base: "enemy.crab",
+      values: { FacesRight: true },
+    };
+    const crabProject = {
+      ...project,
+      manifest: { ...project.manifest, objects: [right] },
+      gameData: overlay,
+    };
     vi.stubGlobal("window", {
       studio: {
         project: {
           ...bridge,
-          load: async () => ({ ok: true, issues: [], value: { rootPath: "/p", project: crabProject } }),
+          load: async () => ({
+            ok: true,
+            issues: [],
+            value: { rootPath: "/p", project: crabProject },
+          }),
         },
       },
     });
@@ -172,7 +198,11 @@ describe("ProjectSession game data", () => {
     session.setGameData({ ...overlay, weapons: {} } as never);
     expect(session.getSnapshot().dirty).toBe(true);
     expect(session.getSnapshot().issues).toContainEqual(
-      expect.objectContaining({ severity: "error", code: "game-data.overlay.category", path: "/data/game.json" }),
+      expect.objectContaining({
+        severity: "error",
+        code: "game-data.overlay.category",
+        path: "/data/game.json",
+      }),
     );
     expect(session.gameData().issues).not.toEqual([]);
     expect(session.gameData().compiled.enemies.has("crab")).toBe(false);
@@ -198,7 +228,13 @@ describe("ProjectSession definition history", () => {
     await session.openProject();
     expect(session.undoDefinitions()).toBe(false);
 
-    const { overlay } = addEnemy(undefined, GAME_DATA, { name: "Crab", base: "metool", sheet: "anim.crab", health: 3, touchDamage: 2 });
+    const { overlay } = addEnemy(undefined, GAME_DATA, {
+      name: "Crab",
+      base: "metool",
+      sheet: "anim.crab",
+      health: 3,
+      touchDamage: 2,
+    });
     session.setGameData(overlay);
     session.setGameData(renameEnemy(overlay, "enemy.crab", "Spiky Crab"));
     const right = { id: "obj.enemy.crab.1", name: "Crab (right)", base: "enemy.crab" };
@@ -218,7 +254,9 @@ describe("ProjectSession definition history", () => {
     session.undoDefinitions();
     session.undoDefinitions();
     expect(getDefinition("enemy.crab")).toBeUndefined();
-    expect(session.getSnapshot().project?.gameData).toEqual({ schemaVersion: GAME_DATA.schemaVersion });
+    expect(session.getSnapshot().project?.gameData).toEqual({
+      schemaVersion: GAME_DATA.schemaVersion,
+    });
     expect(session.getSnapshot().project?.manifest.objects).toBeUndefined();
     expect(session.undoDefinitions()).toBe(false);
 

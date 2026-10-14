@@ -280,9 +280,7 @@ export function Inspector() {
             <ObjectDefinitionSection inst={single.inst} def={single.def} />
 
             <PanelActions>
-              <ActionButton onClick={() => editor.duplicateSelection()}>
-                Duplicate
-              </ActionButton>
+              <ActionButton onClick={() => editor.duplicateSelection()}>Duplicate</ActionButton>
               <ActionButton danger onClick={() => editor.deleteSelection()}>
                 Delete
               </ActionButton>
@@ -298,9 +296,7 @@ export function Inspector() {
               <EmptyCopy>Duplicate or delete the current selection.</EmptyCopy>
             </EmptyState>
             <PanelActions>
-              <ActionButton onClick={() => editor.duplicateSelection()}>
-                Duplicate
-              </ActionButton>
+              <ActionButton onClick={() => editor.duplicateSelection()}>Duplicate</ActionButton>
               <ActionButton danger onClick={() => editor.deleteSelection()}>
                 Delete
               </ActionButton>
@@ -318,9 +314,7 @@ export function Inspector() {
               <EmptyCopy>Duplicate or delete the current selection.</EmptyCopy>
             </EmptyState>
             <PanelActions>
-              <ActionButton onClick={() => editor.duplicateSelection()}>
-                Duplicate
-              </ActionButton>
+              <ActionButton onClick={() => editor.duplicateSelection()}>Duplicate</ActionButton>
               <ActionButton danger onClick={() => editor.deleteSelection()}>
                 Delete
               </ActionButton>
@@ -375,35 +369,35 @@ export function Inspector() {
           </>
         ) : (
           <>
-          <ProjectSettings />
-          <EmptyState>
-            <EmptyIcon>
-              <MousePointer2 size={20} />
-            </EmptyIcon>
-            <EmptyTitle>Nothing selected</EmptyTitle>
-            <EmptyCopy>
-              Choose an object or solid tile on the canvas, or browse the Scene tab.
-            </EmptyCopy>
-            <chakra.button
-              display="inline-flex"
-              alignItems="center"
-              gap="2"
-              h="8"
-              mt="4"
-              px="3"
-              rounded="lg"
-              border="1px solid"
-              borderColor="studio.borderStrong"
-              bg="studio.raised"
-              fontSize="11.5px"
-              fontWeight="semibold"
-              color="studio.fgSecondary"
-              _hover={{ bg: "studio.hover", color: "studio.fg" }}
-              onClick={() => focusPanel("scene")}
-            >
-              <ListTree size={14} /> Browse scene objects
-            </chakra.button>
-          </EmptyState>
+            <ProjectSettings />
+            <EmptyState>
+              <EmptyIcon>
+                <MousePointer2 size={20} />
+              </EmptyIcon>
+              <EmptyTitle>Nothing selected</EmptyTitle>
+              <EmptyCopy>
+                Choose an object or solid tile on the canvas, or browse the Scene tab.
+              </EmptyCopy>
+              <chakra.button
+                display="inline-flex"
+                alignItems="center"
+                gap="2"
+                h="8"
+                mt="4"
+                px="3"
+                rounded="lg"
+                border="1px solid"
+                borderColor="studio.borderStrong"
+                bg="studio.raised"
+                fontSize="11.5px"
+                fontWeight="semibold"
+                color="studio.fgSecondary"
+                _hover={{ bg: "studio.hover", color: "studio.fg" }}
+                onClick={() => focusPanel("scene")}
+              >
+                <ListTree size={14} /> Browse scene objects
+              </chakra.button>
+            </EmptyState>
           </>
         )}
       </PanelScroll>
@@ -428,7 +422,10 @@ function ProjectSettings() {
       <Row display="flex" flexDirection="column">
         <Select
           label="Player loadout"
-          options={[...projectSession.gameData().compiled.loadouts.keys()].map((id) => ({ label: loadoutLabel(id), value: id }))}
+          options={[...projectSession.gameData().compiled.loadouts.keys()].map((id) => ({
+            label: loadoutLabel(id),
+            value: id,
+          }))}
           value={loadout}
           onValueChange={(id) => projectSession.setPlayerLoadout(id)}
         />
@@ -543,9 +540,7 @@ function DecorationInspector({ inst }: { inst: DecorationInstance }) {
       </Row>
 
       <PanelActions>
-        <ActionButton onClick={() => editor.duplicateSelection()}>
-          Duplicate
-        </ActionButton>
+        <ActionButton onClick={() => editor.duplicateSelection()}>Duplicate</ActionButton>
         <ActionButton danger onClick={() => editor.deleteSelection()}>
           Delete
         </ActionButton>

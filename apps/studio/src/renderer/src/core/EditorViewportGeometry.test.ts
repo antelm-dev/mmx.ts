@@ -317,7 +317,15 @@ describe("environment travel gizmo", () => {
 
   it("draws nothing for a falling platform, a non-environment or an unknown definition", () => {
     const at = { x: 0, y: 0 };
-    expect(environmentGeometry({ id: "f", definitionId: "platform.falling", ...at, width: 32, height: 8 })).toEqual([]);
+    expect(
+      environmentGeometry({
+        id: "f",
+        definitionId: "platform.falling",
+        ...at,
+        width: 32,
+        height: 8,
+      }),
+    ).toEqual([]);
     expect(environmentGeometry({ id: "e", definitionId: "enemy.metool", ...at })).toEqual([]);
     expect(environmentGeometry({ id: "m", definitionId: "obj.removed", ...at })).toEqual([]);
   });
@@ -333,7 +341,13 @@ describe("environment travel gizmo", () => {
 
   it("draws the path but offers no grip when a project object fixes Travel", () => {
     setProjectDefinitions([
-      { id: "obj.fixed", name: "Fixed", base: "platform.moving", values: { Travel: 64 }, exposed: ["Speed"] },
+      {
+        id: "obj.fixed",
+        name: "Fixed",
+        base: "platform.moving",
+        values: { Travel: 64 },
+        exposed: ["Speed"],
+      },
     ]);
     try {
       const fixed: LevelObjectInstance = { ...platform(), definitionId: "obj.fixed" };

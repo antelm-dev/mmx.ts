@@ -22,17 +22,24 @@ export type ProjectGameData = {
 };
 
 const GAME_DATA_PATH = "/data/game.json";
-const DEFAULT_GAME_DATA: ProjectGameData = { data: GAME_DATA, compiled: COMPILED_GAME_DATA, issues: [], diagnostics: [] };
+const DEFAULT_GAME_DATA: ProjectGameData = {
+  data: GAME_DATA,
+  compiled: COMPILED_GAME_DATA,
+  issues: [],
+  diagnostics: [],
+};
 const compiledOverlays = new WeakMap<GameDataOverlay, ProjectGameData>();
 
 function failed(all: GameDataDiagnostic[]): ProjectGameData {
   const diagnostics = all.filter((d) => d.severity === "error");
-  const issues = diagnostics.map((d): ProjectIssue => ({
-    severity: "error",
-    code: `game-data.${d.code}`,
-    path: GAME_DATA_PATH,
-    message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
-  }));
+  const issues = diagnostics.map(
+    (d): ProjectIssue => ({
+      severity: "error",
+      code: `game-data.${d.code}`,
+      path: GAME_DATA_PATH,
+      message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
+    }),
+  );
   return { ...DEFAULT_GAME_DATA, issues, diagnostics };
 }
 
@@ -48,7 +55,14 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
     const message = error instanceof Error ? error.message : String(error);
     return {
       ...DEFAULT_GAME_DATA,
-      issues: [{ severity: "error", code: "game-data.invalid", path: GAME_DATA_PATH, message: `data/game.json is malformed: ${message}` }],
+      issues: [
+        {
+          severity: "error",
+          code: "game-data.invalid",
+          path: GAME_DATA_PATH,
+          message: `data/game.json is malformed: ${message}`,
+        },
+      ],
     };
   }
 }
@@ -120,7 +134,13 @@ export function addEnemy(
     actors: { ...overlay?.actors, [id]: { ...baseActor, id, maxHealth: input.health } },
     enemies: {
       ...overlay?.enemies,
-      [slug]: { ...baseEnemy, id: slug, actor: id, sheet: input.sheet, touchDamage: input.touchDamage },
+      [slug]: {
+        ...baseEnemy,
+        id: slug,
+        actor: id,
+        sheet: input.sheet,
+        touchDamage: input.touchDamage,
+      },
     },
     prefabs: {
       ...overlay?.prefabs,

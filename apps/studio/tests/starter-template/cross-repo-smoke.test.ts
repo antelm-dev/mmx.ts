@@ -5,14 +5,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { createNodeFileSystem } from "../../src/project-io/node.js";
-import {
-  copyStarterProjectToDirectory,
-} from "../../src/starter-template/copy.js";
-import {
-  exportProject,
-  saveProject,
-  updateLevelDocument,
-} from "../../src/project-io/index.js";
+import { copyStarterProjectToDirectory } from "../../src/starter-template/copy.js";
+import { exportProject, saveProject, updateLevelDocument } from "../../src/project-io/index.js";
 
 test("studio cross-repo prepare exports portable project with game data", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "mmx-studio-cross-repo-"));

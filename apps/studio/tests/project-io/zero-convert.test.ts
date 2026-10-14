@@ -19,9 +19,20 @@ import {
 const region = (f: number): Region => [f * 10, 0, 10, 10];
 
 test("turns a loop-to-step-k script into one looping clip with loopStart", () => {
-  const script: Step[] = [[0, 2], [1, 2], [2, 4], [3, 4], [2, 0xfe]];
+  const script: Step[] = [
+    [0, 2],
+    [1, 2],
+    [2, 4],
+    [3, 4],
+    [2, 0xfe],
+  ];
   assert.deepEqual(splitScript(script), {
-    steps: [{ frame: 0, duration: 2 }, { frame: 1, duration: 2 }, { frame: 2, duration: 4 }, { frame: 3, duration: 4 }],
+    steps: [
+      { frame: 0, duration: 2 },
+      { frame: 1, duration: 2 },
+      { frame: 2, duration: 4 },
+      { frame: 3, duration: 4 },
+    ],
     loop: true,
     loopStart: 2,
   });
@@ -36,24 +47,64 @@ test("turns a loop-to-step-k script into one looping clip with loopStart", () =>
       { duration: 4, region: [30, 0, 10, 10] },
     ],
   });
-  assert.equal("loopStart" in toClip([[0, 2], [1, 2], [0, 0xfe]], region), false);
+  assert.equal(
+    "loopStart" in
+      toClip(
+        [
+          [0, 2],
+          [1, 2],
+          [0, 0xfe],
+        ],
+        region,
+      ),
+    false,
+  );
   assert.deepEqual(toClip(script, region, "intro"), {
     loop: false,
     speed: 60,
-    frames: [{ duration: 2, region: [0, 0, 10, 10] }, { duration: 2, region: [10, 0, 10, 10] }],
+    frames: [
+      { duration: 2, region: [0, 0, 10, 10] },
+      { duration: 2, region: [10, 0, 10, 10] },
+    ],
   });
-  assert.deepEqual(toClip(script, region, "first").frames, [{ duration: 2, region: [0, 0, 10, 10] }]);
+  assert.deepEqual(toClip(script, region, "first").frames, [
+    { duration: 2, region: [0, 0, 10, 10] },
+  ]);
 });
 
 test("turns a hold script into a one-shot", () => {
-  const clip = toClip([[6, 2], [7, 4], [0, 0xff]], region);
+  const clip = toClip(
+    [
+      [6, 2],
+      [7, 4],
+      [0, 0xff],
+    ],
+    region,
+  );
   assert.equal(clip.loop, false);
-  assert.deepEqual(clip.frames.map((f) => f.duration), [2, 4]);
+  assert.deepEqual(
+    clip.frames.map((f) => f.duration),
+    [2, 4],
+  );
 });
 
 test("rejects zero-length steps and out-of-range loop targets", () => {
-  assert.throws(() => splitScript([[0, 0], [0, 0xff]]), /zero-length/);
-  assert.throws(() => splitScript([[0, 2], [3, 0xfe]]), /out of range/);
+  assert.throws(
+    () =>
+      splitScript([
+        [0, 0],
+        [0, 0xff],
+      ]),
+    /zero-length/,
+  );
+  assert.throws(
+    () =>
+      splitScript([
+        [0, 2],
+        [3, 0xfe],
+      ]),
+    /out of range/,
+  );
 });
 
 test("maps collision bytes to terrain tiles and slope profiles", () => {
@@ -67,7 +118,10 @@ test("maps collision bytes to terrain tiles and slope profiles", () => {
 });
 
 test("places the mirrored anchor at the fixed feet spot of the cell", () => {
-  const frames: Frame[] = [[0, 0, 34, 39, 19, 35], [0, 0, 44, 34, 29, 30]];
+  const frames: Frame[] = [
+    [0, 0, 34, 39, 19, 35],
+    [0, 0, 44, 34, 29, 30],
+  ];
   const cell = cellSize(frames);
   assert.deepEqual(cell, { w: 58, h: 46 });
   for (const f of frames) {
@@ -81,7 +135,14 @@ test("places the mirrored anchor at the fixed feet spot of the cell", () => {
 test("puts the stage world-locked and the background at half speed over the backdrop", () => {
   assert.deepEqual(introHighwayArt([80, 56, 8]), {
     imageLayers: [
-      { id: "art-background", assetId: "image.background", x: 0, y: 0, parallax: 0.5, layer: "background" },
+      {
+        id: "art-background",
+        assetId: "image.background",
+        x: 0,
+        y: 0,
+        parallax: 0.5,
+        layer: "background",
+      },
       { id: "art-stage", assetId: "image.stage", x: 0, y: 0, parallax: 1, layer: "world-back" },
     ],
     backdrop: "#503808",
@@ -98,11 +159,28 @@ const cameras = [
 
 test("bounds the 398x224 view by the camera limits, one zone per run of equal limits, clipped to the world", () => {
   assert.deepEqual(cameraZones(cameras, 8192, 1024), [
-    { id: "camera-checkpoint-0", definitionId: "camera-zone", x: 0, y: 256, width: 6912 + 398, height: 224 },
-    { id: "camera-checkpoint-3", definitionId: "camera-zone", x: 0, y: 768, width: 8192, height: 224 },
+    {
+      id: "camera-checkpoint-0",
+      definitionId: "camera-zone",
+      x: 0,
+      y: 256,
+      width: 6912 + 398,
+      height: 224,
+    },
+    {
+      id: "camera-checkpoint-3",
+      definitionId: "camera-zone",
+      x: 0,
+      y: 768,
+      width: 8192,
+      height: 224,
+    },
   ]);
 });
 
 test("rejects overlapping camera sections", () => {
-  assert.throws(() => cameraZones([cameras[0], { ...cameras[3], min_y: 300, max_y: 300 }], 8192, 1024), /overlap/);
+  assert.throws(
+    () => cameraZones([cameras[0], { ...cameras[3], min_y: 300, max_y: 300 }], 8192, 1024),
+    /overlap/,
+  );
 });

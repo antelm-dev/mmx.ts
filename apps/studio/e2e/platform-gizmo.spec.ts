@@ -1,7 +1,13 @@
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Page,
+} from "@playwright/test";
 import electronPath from "electron";
 
 const appRoot = resolve(__dirname, "..");
@@ -12,7 +18,14 @@ const projectRoot = mkdtempSync(join(tmpdir(), "mmx-platform-gizmo-"));
 cpSync(fixtureRoot, projectRoot, { recursive: true });
 const levelPath = join(projectRoot, "levels/level.main.json");
 const level = JSON.parse(readFileSync(levelPath, "utf8"));
-const PLATFORM = { id: "platform.gizmo", definitionId: "platform.moving", x: 64, y: 96, width: 48, height: 8 };
+const PLATFORM = {
+  id: "platform.gizmo",
+  definitionId: "platform.moving",
+  x: 64,
+  y: 96,
+  width: 48,
+  height: 8,
+};
 level.objects.push(PLATFORM);
 writeFileSync(levelPath, JSON.stringify(level, null, 2));
 
@@ -26,13 +39,22 @@ test.afterAll(async () => {
 /** Screen point of a world point, from the viewport's zoom/position. */
 async function screenPoint(page: Page, wx: number, wy: number): Promise<{ x: number; y: number }> {
   const canvas = page.locator("#viewport-canvas");
-  const [zoom, vx, vy] = (await canvas.getAttribute("data-view"))!.split(",").map(Number) as [number, number, number];
+  const [zoom, vx, vy] = (await canvas.getAttribute("data-view"))!.split(",").map(Number) as [
+    number,
+    number,
+    number,
+  ];
   const box = (await canvas.boundingBox())!;
   return { x: box.x + (wx - vx) * zoom, y: box.y + (wy - vy) * zoom };
 }
 
 /** Drag from one world point by a world-pixel delta. */
-async function drag(page: Page, from: { x: number; y: number }, dx: number, dy: number): Promise<void> {
+async function drag(
+  page: Page,
+  from: { x: number; y: number },
+  dx: number,
+  dy: number,
+): Promise<void> {
   const a = await screenPoint(page, from.x, from.y);
   const b = await screenPoint(page, from.x + dx, from.y + dy);
   await page.mouse.move(a.x, a.y);
@@ -57,7 +79,9 @@ test("a moving platform's travel gizmo draws on both axes and its grip sets Trav
   page.on("dialog", (dialog) => void dialog.accept());
   const canvas = page.locator("#viewport-canvas");
   await expect(canvas).toBeVisible({ timeout: 30_000 });
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 800));
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+  );
   await expect.poll(() => page.evaluate(() => [innerWidth, innerHeight])).toEqual([1280, 800]);
 
   await app.evaluate(({ dialog }, root) => {
@@ -77,9 +101,18 @@ test("a moving platform's travel gizmo draws on both axes and its grip sets Trav
   // to the level around them: the viewport's themed toolbars stay out of the baseline.
   await page.mouse.move(0, 0);
   const topLeft = await screenPoint(page, PLATFORM.x - 16, PLATFORM.y - 32);
-  const bottomRight = await screenPoint(page, PLATFORM.x + 96 + PLATFORM.width + 16, PLATFORM.y + 32);
+  const bottomRight = await screenPoint(
+    page,
+    PLATFORM.x + 96 + PLATFORM.width + 16,
+    PLATFORM.y + 32,
+  );
   await expect(page).toHaveScreenshot("moving-platform-gizmo.png", {
-    clip: { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y },
+    clip: {
+      x: topLeft.x,
+      y: topLeft.y,
+      width: bottomRight.x - topLeft.x,
+      height: bottomRight.y - topLeft.y,
+    },
   });
 
   // The grip sits at the centre of the end rect; dragging it 3 cells right adds 48 px of Travel.

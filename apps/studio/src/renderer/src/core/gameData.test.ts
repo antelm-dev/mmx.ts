@@ -39,11 +39,20 @@ describe("project game data", () => {
     const unsupported = projectGameData({ weapons: {} } as never);
     expect(unsupported.data).toBe(GAME_DATA);
     expect(unsupported.issues).toEqual([
-      expect.objectContaining({ severity: "error", code: "game-data.overlay.category", path: "/data/game.json" }),
+      expect.objectContaining({
+        severity: "error",
+        code: "game-data.overlay.category",
+        path: "/data/game.json",
+      }),
     ]);
     const { overlay } = addEnemy(undefined, GAME_DATA, crab);
-    const badAbility = { ...overlay, enemies: { crab: { ...overlay.enemies!.crab!, abilities: ["Nope"] } } };
+    const badAbility = {
+      ...overlay,
+      enemies: { crab: { ...overlay.enemies!.crab!, abilities: ["Nope"] } },
+    };
     expect(projectGameData(badAbility).issues.length).toBeGreaterThan(0);
-    expect(projectGameData(badAbility).issues.every((issue) => issue.code.startsWith("game-data."))).toBe(true);
+    expect(
+      projectGameData(badAbility).issues.every((issue) => issue.code.startsWith("game-data.")),
+    ).toBe(true);
   });
 });

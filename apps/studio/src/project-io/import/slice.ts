@@ -48,7 +48,11 @@ function components(rgba: Pixels, w: number, area: Rect, background: SliceBackgr
   const isForeground = (i: number): boolean => {
     if (rgba[i * 4 + 3] === 0) return false;
     if (background === "alpha") return true;
-    return rgba[i * 4] !== background[0] || rgba[i * 4 + 1] !== background[1] || rgba[i * 4 + 2] !== background[2];
+    return (
+      rgba[i * 4] !== background[0] ||
+      rgba[i * 4 + 1] !== background[1] ||
+      rgba[i * 4 + 2] !== background[2]
+    );
   };
   const seen = new Uint8Array(aw * ah);
   const out: Rect[] = [];
@@ -56,17 +60,23 @@ function components(rgba: Pixels, w: number, area: Rect, background: SliceBackgr
   for (let sy = 0; sy < ah; sy++) {
     for (let sx = 0; sx < aw; sx++) {
       if (seen[sy * aw + sx] || !isForeground((ay + sy) * w + ax + sx)) continue;
-      let minX = sx, minY = sy, maxX = sx, maxY = sy;
+      let minX = sx,
+        minY = sy,
+        maxX = sx,
+        maxY = sy;
       seen[sy * aw + sx] = 1;
       stack.push(sx, sy);
       while (stack.length > 0) {
         const y = stack.pop()!;
         const x = stack.pop()!;
-        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
-            const nx = x + dx, ny = y + dy;
+            const nx = x + dx,
+              ny = y + dy;
             if (nx < 0 || ny < 0 || nx >= aw || ny >= ah || seen[ny * aw + nx]) continue;
             if (!isForeground((ay + ny) * w + ax + nx)) continue;
             seen[ny * aw + nx] = 1;
@@ -124,7 +134,11 @@ export function sliceAuto(
 export function sliceGrid(
   w: number,
   h: number,
-  { cell, margin = 0, spacing = 0 }: { cell: readonly [number, number]; margin?: number; spacing?: number },
+  {
+    cell,
+    margin = 0,
+    spacing = 0,
+  }: { cell: readonly [number, number]; margin?: number; spacing?: number },
 ): Rect[] {
   const [cw, ch] = cell;
   if (cw < 1 || ch < 1) return [];
@@ -136,22 +150,34 @@ export function sliceGrid(
 }
 
 /** Split a region into its connected parts; a single part is cut in two along its longer side. */
-export function splitRect(rgba: Pixels, w: number, rect: Rect, background: SliceBackground = "alpha"): Rect[] {
+export function splitRect(
+  rgba: Pixels,
+  w: number,
+  rect: Rect,
+  background: SliceBackground = "alpha",
+): Rect[] {
   const parts = components(rgba, w, rect, background);
   if (parts.length > 1) return readingRows(parts).flat();
   const [x, y, rw, rh] = rect;
   if (rw >= rh) {
     if (rw < 2) return [rect];
     const half = Math.floor(rw / 2);
-    return [[x, y, half, rh], [x + half, y, rw - half, rh]];
+    return [
+      [x, y, half, rh],
+      [x + half, y, rw - half, rh],
+    ];
   }
   const half = Math.floor(rh / 2);
-  return [[x, y, rw, half], [x, y + half, rw, rh - half]];
+  return [
+    [x, y, rw, half],
+    [x, y + half, rw, rh - half],
+  ];
 }
 
 /** Ids for rects in reading order: `frame.N`, or `rowR.C` when grouped by row. */
 export function toRegions(rects: readonly Rect[], byRow = false): SpriteRegion[] {
   const rows = readingRows(rects);
-  if (byRow) return rows.flatMap((row, r) => row.map((region, c) => ({ id: `row${r}.${c}`, region })));
+  if (byRow)
+    return rows.flatMap((row, r) => row.map((region, c) => ({ id: `row${r}.${c}`, region })));
   return rows.flat().map((region, i) => ({ id: `frame.${i}`, region }));
 }

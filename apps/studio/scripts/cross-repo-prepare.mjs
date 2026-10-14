@@ -5,14 +5,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import {
-  copyStarterProjectToDirectory,
-} from "../dist/starter-template/index.js";
-import {
-  exportProject,
-  saveProject,
-  updateLevelDocument,
-} from "../dist/project-io/index.js";
+import { copyStarterProjectToDirectory } from "../dist/starter-template/index.js";
+import { exportProject, saveProject, updateLevelDocument } from "../dist/project-io/index.js";
 import { createNodeFileSystem } from "../dist/project-io/node.js";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -27,9 +21,7 @@ const { values } = parseArgs({
 });
 
 async function prepareCleanProject(exportDir) {
-  const workspace =
-    values.workspace ??
-    (await mkdtemp(join(tmpdir(), "mmx-e2e-project-")));
+  const workspace = values.workspace ?? (await mkdtemp(join(tmpdir(), "mmx-e2e-project-")));
 
   const created = await copyStarterProjectToDirectory(workspace, {
     id: "e2e.demo",
@@ -88,9 +80,7 @@ async function prepareCleanProject(exportDir) {
 async function main() {
   const scenario = values.scenario ?? "clean";
   const exportDir =
-    values.out != null
-      ? resolve(values.out)
-      : await mkdtemp(join(tmpdir(), "mmx-e2e-export-"));
+    values.out != null ? resolve(values.out) : await mkdtemp(join(tmpdir(), "mmx-e2e-export-"));
 
   if (scenario !== "clean") {
     throw new Error(`Unsupported scenario '${scenario}'.`);

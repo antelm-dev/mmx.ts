@@ -252,7 +252,10 @@ describe("image layer actions", () => {
       y: -4,
     });
     store.undo();
-    expect(store.get().document.imageLayers![0]).toMatchObject({ layer: "world-back", parallax: 1 });
+    expect(store.get().document.imageLayers![0]).toMatchObject({
+      layer: "world-back",
+      parallax: 1,
+    });
 
     removeImageLayer(store, a);
     expect(ids(store)).toEqual([b]);
@@ -290,7 +293,12 @@ describe("tile layer actions", () => {
     kind: "tileset" as const,
     path: "assets/sprites/ground.png",
     tileSize: 16,
-    collision: { 0: TerrainTile.Solid, 1: TerrainTile.Solid, 2: TerrainTile.OneWay, 3: TerrainTile.SlopeUpRight },
+    collision: {
+      0: TerrainTile.Solid,
+      1: TerrainTile.Solid,
+      2: TerrainTile.OneWay,
+      3: TerrainTile.SlopeUpRight,
+    },
     slopes: { 3: [0, 8] as const },
   };
   function storeWithLayer(): { store: EditorStore; id: string; cols: number } {
@@ -304,7 +312,12 @@ describe("tile layer actions", () => {
   it("adds an empty world layer as the paint target; undo drops the key", () => {
     const { store, id } = storeWithLayer();
     const { cols, rows } = store.get().document;
-    expect(layerOf(store)).toMatchObject({ id, tilesetId: tileset.id, layer: "world-back", parallax: 1 });
+    expect(layerOf(store)).toMatchObject({
+      id,
+      tilesetId: tileset.id,
+      layer: "world-back",
+      parallax: 1,
+    });
     expect(layerOf(store).cells).toEqual(new Array(cols * rows).fill(-1));
     expect(store.get().tilePaint.layerId).toBe(id);
     store.undo();
@@ -314,7 +327,16 @@ describe("tile layer actions", () => {
   it("writes cells and collision (and slope profiles) in one undoable stroke", () => {
     const { store, id } = storeWithLayer();
     const before = store.get().document;
-    paintTileLayer(store, id, new Map([[0, 0], [1, 2], [2, 3], [3, 7]]));
+    paintTileLayer(
+      store,
+      id,
+      new Map([
+        [0, 0],
+        [1, 2],
+        [2, 3],
+        [3, 7],
+      ]),
+    );
     const doc = store.get().document;
     expect(layerOf(store).cells.slice(0, 4)).toEqual([0, 2, 3, 7]);
     expect(doc.tiles.slice(0, 4)).toEqual([
@@ -434,7 +456,8 @@ describe("clip commands", () => {
     return {
       assets,
       animationAsset: (id: string) => assets.get(id) ?? null,
-      setAnimationAsset: (id: string, next: AnimationAsset | null) => void (next ? assets.set(id, next) : assets.delete(id)),
+      setAnimationAsset: (id: string, next: AnimationAsset | null) =>
+        void (next ? assets.set(id, next) : assets.delete(id)),
       playerAnimation: () => player,
       setPlayerAnimation: (id: string) => void (player = id),
     };
@@ -457,8 +480,22 @@ describe("clip commands", () => {
     const walk = { loop: true, speed: 60, frames: [frame(0), frame(32), frame(64), frame(96)] };
     setAnimationAsset(store, session, "anim.sheet", asset({ idle, walk }), "Create clip");
     // Reorder, durations, loop start and anchor are each one replacement of the asset.
-    const edited = { ...walk, loopStart: 1, frames: [walk.frames[1]!, walk.frames[0]!, ...walk.frames.slice(2)].map((f) => ({ ...f, duration: 6, anchor: [16, 32] as const })) };
-    setAnimationAsset(store, session, "anim.sheet", asset({ idle, walk: edited }), "Set frame duration");
+    const edited = {
+      ...walk,
+      loopStart: 1,
+      frames: [walk.frames[1]!, walk.frames[0]!, ...walk.frames.slice(2)].map((f) => ({
+        ...f,
+        duration: 6,
+        anchor: [16, 32] as const,
+      })),
+    };
+    setAnimationAsset(
+      store,
+      session,
+      "anim.sheet",
+      asset({ idle, walk: edited }),
+      "Set frame duration",
+    );
     expect(store.undoLabel).toBe("Set frame duration");
 
     store.undo();
@@ -472,7 +509,9 @@ describe("clip commands", () => {
     store.redo();
     expect(session.assets.get("anim.sheet")?.animations.walk).toEqual(edited);
     // The untouched clip keeps its frames as they were: no anchor added.
-    expect(session.assets.get("anim.sheet")?.animations.idle.frames[0]).not.toHaveProperty("anchor");
+    expect(session.assets.get("anim.sheet")?.animations.idle.frames[0]).not.toHaveProperty(
+      "anchor",
+    );
   });
 
   it("binds the player animation and restores the previous binding on undo", () => {

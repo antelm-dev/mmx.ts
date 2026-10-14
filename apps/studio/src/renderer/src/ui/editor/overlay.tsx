@@ -30,7 +30,11 @@ export const OverlayButton = chakra(
       fontWeight: "semibold",
       cursor: "pointer",
       transition: "colors",
-      _hover: { bg: "#1b2636", color: "#edf3fc", _disabled: { bg: "transparent", color: "#b4c1d4" } },
+      _hover: {
+        bg: "#1b2636",
+        color: "#edf3fc",
+        _disabled: { bg: "transparent", color: "#b4c1d4" },
+      },
       _disabled: { opacity: 0.4, cursor: "default" },
     },
     variants: {
@@ -53,7 +57,12 @@ export const OverlayLabel = chakra("span", {
 
 /** Monospaced HUD value. */
 export const OverlayValue = chakra("span", {
-  base: { fontFamily: "mono", fontSize: "11px", color: "#edf3fc", fontVariantNumeric: "tabular-nums" },
+  base: {
+    fontFamily: "mono",
+    fontSize: "11px",
+    color: "#edf3fc",
+    fontVariantNumeric: "tabular-nums",
+  },
 });
 
 /** Keyboard key chip in the viewport hint bar. */

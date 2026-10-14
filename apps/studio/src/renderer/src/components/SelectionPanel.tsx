@@ -86,7 +86,12 @@ export function SelectionPanel(): ReactElement {
             key={row.k}
           >
             <chakra.span color="studio.muted">{row.k}</chakra.span>
-            <chakra.span fontFamily="mono" color="studio.fg" textAlign="right" wordBreak="break-all">
+            <chakra.span
+              fontFamily="mono"
+              color="studio.fg"
+              textAlign="right"
+              wordBreak="break-all"
+            >
               {row.v}
             </chakra.span>
           </chakra.div>

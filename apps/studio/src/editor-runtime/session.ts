@@ -53,7 +53,10 @@ class PlaytestSession implements EditorPlaytestSession {
         gameData: this.options.gameData,
         // Visual Play hands the engine the manifest's clips, as the web export does,
         // so timing and frame boxes (and the replay hash) match it. Headless stays clip-less.
-        clips: visual && this.options.rendererManifest ? visual.sceneClipsFromManifest(this.options.rendererManifest) : undefined,
+        clips:
+          visual && this.options.rendererManifest
+            ? visual.sceneClipsFromManifest(this.options.rendererManifest)
+            : undefined,
         level: documentToLevelData(this.document),
       },
       audio,

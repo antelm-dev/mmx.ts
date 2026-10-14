@@ -12,6 +12,7 @@ Le détail de l'import Steam (formats, oracles, questions ouvertes) reste dans
 ## Vision
 
 **Ce que « Maker » veut dire ici.** Studio permet de construire et de jouer :
+
 - des **niveaux** : tuiles, collision, couches d'image, objets, zones caméra,
   checkpoints ;
 - des **personnages** : un loadout (abilities, armes, physique) et ses
@@ -29,11 +30,11 @@ reçoit d'autres utilisateurs.
 
 ## Trois chemins de contenu
 
-| Chemin | Ce qu'il fournit | Ce qu'il ne fournit pas | Où il écrit |
-| --- | --- | --- | --- |
-| **Import Steam** (référence) | Les données exactes des jeux possédés : planches et clips d'origine, sons, musique, art et collision de niveau, limites caméra. Aujourd'hui : Zero (MMZ1), Pantheon, Intro Highway (MMX1). | Tout jeu que l'utilisateur ne possède pas ; la logique de stage (scripts, boss) ; un projet partageable (il reste dérivé de Capcom). | Un nouveau projet, dans un dossier vide choisi par l'utilisateur, avec son `.gitignore` `*` (voir [zero-import.md](zero-import.md#the-generated-project)). |
-| **Planches apportées** (P7, [#77](https://github.com/antelm-dev/mmx-studio/issues/77)) | N'importe quelle planche PNG (dessin perso ou rip communautaire), découpée en régions puis assemblée en clips ancrés jouables. | Les données de jeu (durées, ancres, hitboxes d'origine) : l'utilisateur les pose à la main ; aucune garantie sur la provenance du PNG. | Le projet ouvert : un asset `sprite` (avec `regions`) et un asset `animation`, fichiers sous `assets/`. |
-| **Packs communautaires** (P9, [#79](https://github.com/antelm-dev/mmx-studio/issues/79)) | Un zip `pack.json` + fichiers : des assets (et éventuellement des niveaux) avec des crédits obligatoires. | Un annuaire, un hébergement ou un téléchargement dans l'application ; une signature ; des dépendances entre packs. | Le projet ouvert : les assets du pack, ids renommés en cas de collision ; retirer le pack retire ses assets. |
+| Chemin                                                                                   | Ce qu'il fournit                                                                                                                                                                           | Ce qu'il ne fournit pas                                                                                                                | Où il écrit                                                                                                                                                |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Import Steam** (référence)                                                             | Les données exactes des jeux possédés : planches et clips d'origine, sons, musique, art et collision de niveau, limites caméra. Aujourd'hui : Zero (MMZ1), Pantheon, Intro Highway (MMX1). | Tout jeu que l'utilisateur ne possède pas ; la logique de stage (scripts, boss) ; un projet partageable (il reste dérivé de Capcom).   | Un nouveau projet, dans un dossier vide choisi par l'utilisateur, avec son `.gitignore` `*` (voir [zero-import.md](zero-import.md#the-generated-project)). |
+| **Planches apportées** (P7, [#77](https://github.com/antelm-dev/mmx-studio/issues/77))   | N'importe quelle planche PNG (dessin perso ou rip communautaire), découpée en régions puis assemblée en clips ancrés jouables.                                                             | Les données de jeu (durées, ancres, hitboxes d'origine) : l'utilisateur les pose à la main ; aucune garantie sur la provenance du PNG. | Le projet ouvert : un asset `sprite` (avec `regions`) et un asset `animation`, fichiers sous `assets/`.                                                    |
+| **Packs communautaires** (P9, [#79](https://github.com/antelm-dev/mmx-studio/issues/79)) | Un zip `pack.json` + fichiers : des assets (et éventuellement des niveaux) avec des crédits obligatoires.                                                                                  | Un annuaire, un hébergement ou un téléchargement dans l'application ; une signature ; des dépendances entre packs.                     | Le projet ouvert : les assets du pack, ids renommés en cas de collision ; retirer le pack retire ses assets.                                               |
 
 L'import Steam est la source de référence quand le jeu est possédé. Les deux
 autres chemins servent ce qu'il ne couvre pas : sagas non importées, contenu
@@ -44,6 +45,7 @@ original, contenu partagé.
 ### Projet
 
 Un projet Studio est un dossier :
+
 - `project.json` : le manifeste (assets déclarés, `player.loadout`) ;
 - `game/data.json` : les bindings (animation du joueur, sons, tirs, HUD, police,
   musique, animations d'ennemis) ;
@@ -53,14 +55,14 @@ Un projet Studio est un dossier :
 
 ### Assets
 
-| Kind | Rôle | Contrat |
-| --- | --- | --- |
-| `image` | art de niveau, fond | existant |
-| `sprite` | une planche PNG ; `regions?: { id, region: [x, y, w, h] }[]` issues du découpage, ignorées par le moteur | C-REGIONS (P7) |
-| `animation` | `animations[name] = { frames: [{ region, duration, anchor? }], loop, loopStart? }` sur `sheetAssetId` ; `duration` en 1/60 s, `speed: 60` | C-CLIP (P7) |
-| `sound` | effet ou musique | existant |
-| `font` | police du HUD et des menus | existant |
-| `tileset` | `{ id, kind: "tileset", path, tileSize, columns?, collision: Record<index, TerrainTile>, slopes? }` | C-TILESET (P8) |
+| Kind        | Rôle                                                                                                                                      | Contrat        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `image`     | art de niveau, fond                                                                                                                       | existant       |
+| `sprite`    | une planche PNG ; `regions?: { id, region: [x, y, w, h] }[]` issues du découpage, ignorées par le moteur                                  | C-REGIONS (P7) |
+| `animation` | `animations[name] = { frames: [{ region, duration, anchor? }], loop, loopStart? }` sur `sheetAssetId` ; `duration` en 1/60 s, `speed: 60` | C-CLIP (P7)    |
+| `sound`     | effet ou musique                                                                                                                          | existant       |
+| `font`      | police du HUD et des menus                                                                                                                | existant       |
+| `tileset`   | `{ id, kind: "tileset", path, tileSize, columns?, collision: Record<index, TerrainTile>, slopes? }`                                       | C-TILESET (P8) |
 
 **Ancre par frame (C-ANCHOR, P7).** `FrameData.anchor?: [x, y]`, en pixels depuis
 le coin haut-gauche de `region`, est le point posé sur les pieds du corps et
@@ -70,6 +72,7 @@ qui rend utilisables les planches de n'importe quelle saga sans réempaquetage.
 ### Niveau
 
 Un `LevelDocument` porte :
+
 - **collision** : `tiles`, la seule vérité de collision (Empty, Solid, pentes ;
   `OneWay` ajouté par C-ONEWAY, P8 : solide par le dessus, « bas + saut » passe
   à travers) ;
@@ -88,6 +91,7 @@ Un `LevelDocument` porte :
 Un loadout (`packages/engine/src/data/loadouts.ts` dans mmx-core-ts) choisit
 l'acteur, la liste ordonnée d'abilities et les armes ; le projet le sélectionne
 par `player.loadout`.
+
 - `player.x` : idle, walk, fall, wall-slide, dash, air-dash, jump, dash-jump,
   wall-jump, dash-wall-jump, intro, damage, death, shot, charge ; armes `buster`
   et `dark_arrow`.
@@ -114,12 +118,12 @@ crédits est refusé ([#74](https://github.com/antelm-dev/mmx-studio/issues/74))
 
 ## État par saga
 
-| Saga | Machine d'origine | Écran |
-| --- | --- | --- |
-| Classic | NES | 256×240, scrolling écran par écran, échelles, pas de dash |
-| X | SNES, puis PSX | 256×224 |
-| Zero | GBA | 240×160 |
-| ZX | DS | 256×192 |
+| Saga    | Machine d'origine | Écran                                                     |
+| ------- | ----------------- | --------------------------------------------------------- |
+| Classic | NES               | 256×240, scrolling écran par écran, échelles, pas de dash |
+| X       | SNES, puis PSX    | 256×224                                                   |
+| Zero    | GBA               | 240×160                                                   |
+| ZX      | DS                | 256×192                                                   |
 
 Le moteur a aujourd'hui une seule vue, 398×224 (`VIEW_WIDTH` × `VIEW_HEIGHT`).
 
@@ -157,6 +161,7 @@ frames d'origine avec leur ancre au lieu de `packFrames`
 ### Classic
 
 Rien n'existe encore. Manques :
+
 - la physique NES (sans dash ni wall-jump) et un loadout Classic ;
 - les échelles (terrain et ability) ;
 - le scrolling écran par écran (le moteur suit le joueur en continu) ;

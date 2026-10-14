@@ -29,10 +29,10 @@ This is intentionally not the complete Studio refactor. The source base is `5171
 
 ## Tasks and execution waves
 
-| Task | Outcome | Depends on | Branch | Delivery | Base policy |
-| --- | --- | --- | --- | --- | --- |
-| 01 | Static Chakra system, provider, semantic token bridge, and typegen | none | `codex/chakra-v3-foundation-01` | `default-branch-pr` to `main` | `latest-default` |
-| 02 | Toolbar button, tooltip, and menu vertical slice | 01 merged to `main` | `codex/chakra-v3-toolbar-02` | `default-branch-pr` to `main` | `latest-default` |
+| Task | Outcome                                                            | Depends on          | Branch                          | Delivery                      | Base policy      |
+| ---- | ------------------------------------------------------------------ | ------------------- | ------------------------------- | ----------------------------- | ---------------- |
+| 01   | Static Chakra system, provider, semantic token bridge, and typegen | none                | `codex/chakra-v3-foundation-01` | `default-branch-pr` to `main` | `latest-default` |
+| 02   | Toolbar button, tooltip, and menu vertical slice                   | 01 merged to `main` | `codex/chakra-v3-toolbar-02`    | `default-branch-pr` to `main` | `latest-default` |
 
 Wave 1 contains Task 01. It may be reviewed and merged independently because it preserves the current UI and creates no incomplete user-facing contract. Wave 2 starts only after Task 01 is merged and the coordinator refreshes `main`; record that exact commit as Task 02's immutable launch base. Task 02 is independently deployable only as a complete Toolbar slice—do not merge a partial menu/tooltip conversion.
 

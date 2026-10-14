@@ -35,13 +35,22 @@ export type ClipMode = "intro" | "first" | "once";
  * [k, 0xfe] (loop back to step k) or [_, 0xff] (hold the last step).
  * `loopStart` is k for a looping script, else 0.
  */
-export function splitScript(script: Step[]): { steps: { frame: number; duration: number }[]; loop: boolean; loopStart: number } {
+export function splitScript(script: Step[]): {
+  steps: { frame: number; duration: number }[];
+  loop: boolean;
+  loopStart: number;
+} {
   const end = script.findIndex(([, d]) => d === LOOP || d === HOLD);
-  const steps = (end < 0 ? script : script.slice(0, end)).map(([frame, duration]) => ({ frame, duration }));
-  if (steps.some((s) => s.duration <= 0)) throw new Error(`script has a zero-length step: ${JSON.stringify(script)}`);
+  const steps = (end < 0 ? script : script.slice(0, end)).map(([frame, duration]) => ({
+    frame,
+    duration,
+  }));
+  if (steps.some((s) => s.duration <= 0))
+    throw new Error(`script has a zero-length step: ${JSON.stringify(script)}`);
   if (end < 0 || script[end][1] === HOLD) return { steps, loop: false, loopStart: 0 };
   const k = script[end][0];
-  if (k >= steps.length) throw new Error(`loop target ${k} out of range: ${JSON.stringify(script)}`);
+  if (k >= steps.length)
+    throw new Error(`loop target ${k} out of range: ${JSON.stringify(script)}`);
   return { steps, loop: true, loopStart: k };
 }
 
@@ -53,7 +62,8 @@ export function splitScript(script: Step[]): { steps: { frame: number; duration:
  */
 export function toClip(script: Step[], regionOf: (frame: number) => Region, mode?: ClipMode): Clip {
   const { steps: all, loop: loops, loopStart } = splitScript(script);
-  const steps = mode === "intro" ? all.slice(0, loopStart) : mode === "first" ? all.slice(0, 1) : all;
+  const steps =
+    mode === "intro" ? all.slice(0, loopStart) : mode === "first" ? all.slice(0, 1) : all;
   if (steps.length === 0) throw new Error(`no steps for mode ${mode}: ${JSON.stringify(script)}`);
   const loop = mode === undefined && loops;
   return {
@@ -85,7 +95,9 @@ export function tileOf(byte: number): [number, [number, number]?] {
 
 /** Smallest even cell that holds every frame with its anchor `feetBelow` px under the cell centre (mirrored or not). */
 export function cellSize(frames: Frame[], feetBelow = FEET_BELOW_CENTRE): { w: number; h: number } {
-  let half = 0, up = 0, down = 0;
+  let half = 0,
+    up = 0,
+    down = 0;
   for (const [, , w, h, ax, ay] of frames) {
     half = Math.max(half, ax, w - ax);
     up = Math.max(up, ay);
@@ -98,12 +110,22 @@ export function cellSize(frames: Frame[], feetBelow = FEET_BELOW_CENTRE): { w: n
  * Where a frame's top-left goes inside its cell so its anchor lands at (cell.w / 2, cell.h / 2 + feetBelow).
  * GBA frames face left: `mirror` flips the frame (and its anchor) for sheets the engine expects facing right.
  */
-export function placeInCell([, , w, , ax, ay]: Frame, cell: { w: number; h: number }, feetBelow = FEET_BELOW_CENTRE, mirror = true): { dx: number; dy: number } {
+export function placeInCell(
+  [, , w, , ax, ay]: Frame,
+  cell: { w: number; h: number },
+  feetBelow = FEET_BELOW_CENTRE,
+  mirror = true,
+): { dx: number; dy: number } {
   return { dx: cell.w / 2 - (mirror ? w - ax : ax), dy: cell.h / 2 + feetBelow - ay };
 }
 
 /** Every frame copied from the atlas into one fixed cell, 16 cells per row; regions in frame order. */
-export function packFrames(atlas: Rgba, frames: Frame[], feetBelow: number, mirror: boolean): { sheet: Rgba; regions: Region[]; cell: { w: number; h: number } } {
+export function packFrames(
+  atlas: Rgba,
+  frames: Frame[],
+  feetBelow: number,
+  mirror: boolean,
+): { sheet: Rgba; regions: Region[]; cell: { w: number; h: number } } {
   const cell = cellSize(frames, feetBelow);
   const COLS = 16;
   const width = COLS * cell.w;
@@ -134,8 +156,22 @@ export function introHighwayArt(backdrop: number[]) {
   const hex = backdrop.map((c) => c.toString(16).padStart(2, "0")).join("");
   return {
     imageLayers: [
-      { id: "art-background", assetId: "image.background", x: 0, y: 0, parallax: 0.5, layer: "background" as const },
-      { id: "art-stage", assetId: "image.stage", x: 0, y: 0, parallax: 1, layer: "world-back" as const },
+      {
+        id: "art-background",
+        assetId: "image.background",
+        x: 0,
+        y: 0,
+        parallax: 0.5,
+        layer: "background" as const,
+      },
+      {
+        id: "art-stage",
+        assetId: "image.stage",
+        x: 0,
+        y: 0,
+        parallax: 1,
+        layer: "world-back" as const,
+      },
     ],
     backdrop: `#${hex}`,
   };
@@ -158,8 +194,16 @@ export interface CameraLimits {
  * seam. Zones must not overlap, else the engine's hysteresis, not the stage, decides.
  */
 export function cameraZones(cameras: CameraLimits[], worldW: number, worldH: number) {
-  const same = (a: CameraLimits, b: CameraLimits) => a.min_x === b.min_x && a.max_x === b.max_x && a.min_y === b.min_y && a.max_y === b.max_y;
-  const zones: { id: string; definitionId: "camera-zone"; x: number; y: number; width: number; height: number }[] = [];
+  const same = (a: CameraLimits, b: CameraLimits) =>
+    a.min_x === b.min_x && a.max_x === b.max_x && a.min_y === b.min_y && a.max_y === b.max_y;
+  const zones: {
+    id: string;
+    definitionId: "camera-zone";
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[] = [];
   cameras.forEach((c, i) => {
     if (i > 0 && same(c, cameras[i - 1])) return;
     zones.push({
@@ -173,7 +217,11 @@ export function cameraZones(cameras: CameraLimits[], worldW: number, worldH: num
   });
   for (const [i, a] of zones.entries()) {
     for (const b of zones.slice(i + 1)) {
-      const apart = a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+      const apart =
+        a.x + a.width <= b.x ||
+        b.x + b.width <= a.x ||
+        a.y + a.height <= b.y ||
+        b.y + b.height <= a.y;
       if (!apart) throw new Error(`camera zones ${a.id} and ${b.id} overlap`);
     }
   }
@@ -202,4 +250,10 @@ export const X_CLIPS: Record<string, [string, ClipMode?]> = {
  * Sound role -> engine sound id (@mmx/browser-audio GAMEPLAY_SOUND_IDS, plus the optional
  * `slash`). Roles with no engine id (enemy_shot, wall_kick) are left out.
  */
-export const SOUND_ROLES: Record<string, string> = { slash: "slash", dash: "dash", land: "land", buster_shot: "lemon", hurt: "damage" };
+export const SOUND_ROLES: Record<string, string> = {
+  slash: "slash",
+  dash: "dash",
+  land: "land",
+  buster_shot: "lemon",
+  hurt: "damage",
+};

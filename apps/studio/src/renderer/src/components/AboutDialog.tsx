@@ -31,7 +31,11 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
               <p lang="en">{FAN_NOTICE.en}</p>
               <p lang="fr">{FAN_NOTICE.fr}</p>
               {/* Plain text, not links: the window must never navigate away from the editor. */}
-              <chakra.dl color="studio.fgSecondary" userSelect="text" css={{ "& dd": { mb: "1.5" } }}>
+              <chakra.dl
+                color="studio.fgSecondary"
+                userSelect="text"
+                css={{ "& dd": { mb: "1.5" } }}
+              >
                 <dt>Repository</dt>
                 <dd>{REPO_URL}</dd>
                 <dt>Takedown request</dt>
@@ -52,7 +56,13 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
               </Dialog.ActionTrigger>
             </Dialog.Footer>
             <Dialog.CloseTrigger asChild>
-              <chakra.button aria-label="Close" position="absolute" top="3" right="3" color="studio.fgTertiary">
+              <chakra.button
+                aria-label="Close"
+                position="absolute"
+                top="3"
+                right="3"
+                color="studio.fgTertiary"
+              >
                 <X size={14} />
               </chakra.button>
             </Dialog.CloseTrigger>

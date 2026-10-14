@@ -10,6 +10,7 @@ The import is the reference content path of the Mega Man Maker roadmap: see [mak
 ## Why Studio and mmx-engine, not the Bevy engine
 
 zero-x-mashup proved the idea in three steps:
+
 1. Python readers plus a pygame prototype.
 2. A Rust/Bevy engine, `zero_engine` (`engine/`), with native readers. It had
    plugins for physics, combat, Pantheon AI and sound, and it reached sample
@@ -18,6 +19,7 @@ zero-x-mashup proved the idea in three steps:
    camera zones) and its readers into this Studio import.
 
 The Bevy engine is dropped in favour of mmx-engine + Studio:
+
 - **One engine:** mmx-engine already has the deterministic simulation, replays,
   the browser build and Studio's Play. A second engine meant porting every
   feature twice.
@@ -38,6 +40,7 @@ superseded.
 
 The import follows universal-modder "Pattern 4": reimplement, and read the
 user's own files.
+
 - Studio ships code only. It reads the games the user owns, in place, under the
   located install roots, and never writes there. No ROM or game file is ever
   extracted to disk; the MMX1 image lives only in memory.
@@ -125,22 +128,22 @@ Every move of `ZERO_MOVES` (`import/sheets.ts`, moved from zero-x-mashup `zero_m
 `hurt`, `wall_slide`, `wall_jump`, `wall_dash_jump`, `wall_slash`). The clips X's
 abilities play are then added:
 
-| X clip | Zero source | Note |
-| --- | --- | --- |
-| `idle` | `idle` | |
-| `walk` | `run` | loop body |
+| X clip       | Zero source                         | Note                                                                                                                                                                                                   |
+| ------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `idle`       | `idle`                              |                                                                                                                                                                                                        |
+| `walk`       | `run`                               | loop body                                                                                                                                                                                              |
 | `walk_start` | `run`, steps before the loop target | one-shot, Walk waits for it to finish. Kept because the engine's Walk still plays `walk_start` then `walk` itself (so the wind-up shows twice); it could derive this from `walk`'s `loopStart` instead |
-| `jump` | `jump` | |
-| `fall` | `fall` | |
-| `dash` | `dash` | |
-| `slide` | `wall_slide` | WallSlide plays `slide` |
-| `walljump` | `wall_jump` | |
-| `damage` | `hurt` | |
-| `recover` | **fallback**: first step of `idle` | X lowers his buster; Zero has no such pose. One-shot, Idle waits for it |
-| `weak` | **fallback**: `idle` | no low-health stance |
-| `beam` | **fallback**: `fall` | no teleport beam |
-| `beam_in` | **fallback**: `land`, one-shot | no beam landing |
-| `beam_equip` | **fallback**: `idle`, one-shot | no equip pose; one-shot so Intro ends |
+| `jump`       | `jump`                              |                                                                                                                                                                                                        |
+| `fall`       | `fall`                              |                                                                                                                                                                                                        |
+| `dash`       | `dash`                              |                                                                                                                                                                                                        |
+| `slide`      | `wall_slide`                        | WallSlide plays `slide`                                                                                                                                                                                |
+| `walljump`   | `wall_jump`                         |                                                                                                                                                                                                        |
+| `damage`     | `hurt`                              |                                                                                                                                                                                                        |
+| `recover`    | **fallback**: first step of `idle`  | X lowers his buster; Zero has no such pose. One-shot, Idle waits for it                                                                                                                                |
+| `weak`       | **fallback**: `idle`                | no low-health stance                                                                                                                                                                                   |
+| `beam`       | **fallback**: `fall`                | no teleport beam                                                                                                                                                                                       |
+| `beam_in`    | **fallback**: `land`, one-shot      | no beam landing                                                                                                                                                                                        |
+| `beam_equip` | **fallback**: `idle`, one-shot      | no equip pose; one-shot so Intro ends                                                                                                                                                                  |
 
 Death hides the player sprite and plays no clip. AirDash and DashJump reuse `dash` and
 `jump`; X's other clips (`airdash`, `crouch`, `shot_*`, ...) are not played by any ability.
@@ -149,6 +152,7 @@ Death hides the player sprite and plays no clip. AirDash and DashJump reuse `das
 
 `pantheonSheets(objects)` packs object 25's 20 frames into fixed cells, 16
 per row (`packFrames`):
+
 - The frames are **not** mirrored: the engine's enemy sheets face left, like
   the GBA frames (renderer-pixi draws enemies with scale `-facing`).
 - The feet anchor sits 15 px under the cell centre, because renderer-pixi
@@ -164,13 +168,13 @@ centre, into the looping clip `pantheon_shot`.
 
 ### Level
 
-| Collision byte | Tile | Slope profile `[left, right]` |
-| --- | --- | --- |
-| `0x00` | Empty (0) | |
-| `0x05`..`0x08` | SlopeUpRight (2) | `[0,4]`, `[4,8]`, `[8,12]`, `[12,16]` |
-| `0x09`..`0x0c` | SlopeUpLeft (3) | `[4,0]`, `[8,4]`, `[12,8]`, `[16,12]` |
-| `0x34`/`0x35` (walkable top) | OneWay (4) | |
-| anything else (`0x39`/`0x3a`, `0x3b` solid) | Solid (1) | |
+| Collision byte                              | Tile             | Slope profile `[left, right]`         |
+| ------------------------------------------- | ---------------- | ------------------------------------- |
+| `0x00`                                      | Empty (0)        |                                       |
+| `0x05`..`0x08`                              | SlopeUpRight (2) | `[0,4]`, `[4,8]`, `[8,12]`, `[12,16]` |
+| `0x09`..`0x0c`                              | SlopeUpLeft (3)  | `[4,0]`, `[8,4]`, `[12,8]`, `[16,12]` |
+| `0x34`/`0x35` (walkable top)                | OneWay (4)       |                                       |
+| anything else (`0x39`/`0x3a`, `0x3b` solid) | Solid (1)        |                                       |
 
 The slopes are 4-tile ramps rising 16 px (read from where the bytes sit in the grid:
 `05 06 07 08` climbs one row left to right, `0c 0b 0a 09` descends). Walkable tops are
@@ -198,10 +202,10 @@ the player is in, so cutting equal limits at each checkpoint X would only shove 
 at every seam. The converter throws if two zones overlap, since the engine would then
 pick by hysteresis rather than by stage. Intro Highway today:
 
-| Zone | Checkpoints | Rect | Effect |
-| --- | --- | --- | --- |
-| `camera-checkpoint-0` | 0-2 | (0, 256) 7310x224 | Y locked at 256, X follows Zero |
-| `camera-checkpoint-3` | 3 | (0, 768) 8192x224 | the lower band, Y locked at 768 (checkpoint 3's X, 8208, lies past the 8192 px grid) |
+| Zone                  | Checkpoints | Rect              | Effect                                                                               |
+| --------------------- | ----------- | ----------------- | ------------------------------------------------------------------------------------ |
+| `camera-checkpoint-0` | 0-2         | (0, 256) 7310x224 | Y locked at 256, X follows Zero                                                      |
+| `camera-checkpoint-3` | 3           | (0, 768) 8192x224 | the lower band, Y locked at 768 (checkpoint 3's X, 8208, lies past the 8192 px grid) |
 
 So the view holds Y = 256 along the road and does not follow jumps, and falling into the
 gap at x = 800 kills at y > 512 and respawns. Zero's screen X settles near 217, not
@@ -209,10 +213,10 @@ MMX's 128: the engine's view is 398 wide and it adds its dead zone and look-ahea
 
 The art becomes two `imageLayers`, both at (0, 0), plus the level `backdrop`:
 
-| Layer id | Asset | `layer` | `parallax` | Why |
-| --- | --- | --- | --- | --- |
-| `art-background` | `image.background` | `background` | 0.5 | MMX1 scrolls it at camX / 2; its y stays 0 on the highway |
-| `art-stage` | `image.stage` | `world-back` | 1 | the foreground painting, locked to the tiles |
+| Layer id         | Asset              | `layer`      | `parallax` | Why                                                       |
+| ---------------- | ------------------ | ------------ | ---------- | --------------------------------------------------------- |
+| `art-background` | `image.background` | `background` | 0.5        | MMX1 scrolls it at camX / 2; its y stays 0 on the highway |
+| `art-stage`      | `image.stage`      | `world-back` | 1          | the foreground painting, locked to the tiles              |
 
 `backdrop` is palette colour 0 (`stage.json` `backdrop`) as `#rrggbb`; it fills
 whatever both images leave transparent.
@@ -269,15 +273,15 @@ Both come from the Mega Man Zero/ZX Legacy Collection:
 Role mapping, role -> engine sound id (`SOUND_ROLES`; ids from
 `@mmx/browser-audio` `GAMEPLAY_SOUND_IDS` plus the optional `slash`):
 
-| Role | Entry | Sound id | Note |
-| --- | --- | --- | --- |
-| `slash` | 16 | `slash` | optional id, Zero's saber swing |
-| `dash` | 19 | `dash` | |
-| `land` | 13 | `land` | |
-| `buster_shot` | 17 | `lemon` | X's small buster shot id |
-| `hurt` | 21 | `damage` | |
-| `enemy_shot` | 71 | - | no engine id for enemy shots |
-| `wall_kick` | 19 | - | no id of its own: the engine plays `jump` on WallJump |
+| Role          | Entry | Sound id | Note                                                  |
+| ------------- | ----- | -------- | ----------------------------------------------------- |
+| `slash`       | 16    | `slash`  | optional id, Zero's saber swing                       |
+| `dash`        | 19    | `dash`   |                                                       |
+| `land`        | 13    | `land`   |                                                       |
+| `buster_shot` | 17    | `lemon`  | X's small buster shot id                              |
+| `hurt`        | 21    | `damage` |                                                       |
+| `enemy_shot`  | 71    | -        | no engine id for enemy shots                          |
+| `wall_kick`   | 19    | -        | no id of its own: the engine plays `jump` on WallJump |
 
 The roles are still **guessed by ear** (matched against a recording of the real game,
 not verified); fix them in `ZERO_SOUNDS` and re-import. Every other id
@@ -286,10 +290,10 @@ jumps are silent, but an unbound required id would break the build.
 
 ## Steam installs (`import/steam.ts`)
 
-| Game | Folder in `steamapps/common` | Checked marker | Override |
-| --- | --- | --- | --- |
-| Mega Man X Legacy Collection (MMX1 ROM inside) | `Mega Man X Legacy Collection` | `RXC1.exe` | `MMXLC_DIR` |
-| Mega Man Zero/ZX Legacy Collection (ARC archives) | `MZZXLC` | `nativePCx64/` | `MZZXLC_DIR` |
+| Game                                              | Folder in `steamapps/common`   | Checked marker | Override     |
+| ------------------------------------------------- | ------------------------------ | -------------- | ------------ |
+| Mega Man X Legacy Collection (MMX1 ROM inside)    | `Mega Man X Legacy Collection` | `RXC1.exe`     | `MMXLC_DIR`  |
+| Mega Man Zero/ZX Legacy Collection (ARC archives) | `MZZXLC`                       | `nativePCx64/` | `MZZXLC_DIR` |
 
 `findSteamGame(game)` returns `{ ok: true, root }` or `{ ok: false, error }`
 with a message the UI can show as is. An env override wins when set and must
@@ -323,14 +327,14 @@ Addresses are SNES LoROM: `pc = (bank & 0x7F) * 0x8000 + (addr & 0x7FFF)`.
 level 0 they resolve to layout `090140`, scenes `096180`, blocks `0B4428`,
 maps `0C8000`, collision `0AE1E1` (PC).
 
-| Data | Format |
-| --- | --- |
-| Layout | `w, h, used` (in 256 px scenes), then `{ctrl, scene}` runs until `0xFF`: `ctrl & 0x7F` scenes, repeated if bit 7 else counting up |
-| Scene | 8x8 u16 block indices (`0x80` bytes) |
-| Block | 2x2 u16 map indices (8 bytes) |
-| Map (16 px) | 2x2 u16 tile words `vhopppcc cccccccc` (flip V/H, palette `ppp`, tile `0..0x3FF`); `collision[map]` is its collision byte |
-| Tile | 8x8 4bpp SNES planar, 32 bytes, from a 32 KB BG VRAM |
-| Colour | BGR555, expanded `<< 3` per channel |
+| Data        | Format                                                                                                                            |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Layout      | `w, h, used` (in 256 px scenes), then `{ctrl, scene}` runs until `0xFF`: `ctrl & 0x7F` scenes, repeated if bit 7 else counting up |
+| Scene       | 8x8 u16 block indices (`0x80` bytes)                                                                                              |
+| Block       | 2x2 u16 map indices (8 bytes)                                                                                                     |
+| Map (16 px) | 2x2 u16 tile words `vhopppcc cccccccc` (flip V/H, palette `ppp`, tile `0..0x3FF`); `collision[map]` is its collision byte         |
+| Tile        | 8x8 4bpp SNES planar, 32 bytes, from a 32 KB BG VRAM                                                                              |
+| Colour      | BGR555, expanded `<< 3` per channel                                                                                               |
 
 **Checkpoints** (`0x86A780`, two levels of u16 offsets: level, then point):
 `objLoad, tileLoad, palLoad` (u8) then u16 `chX, chY, camX, camY, bkgX, bkgY,
@@ -369,17 +373,18 @@ the cropped frame. A duration is in 1/60 s; `0xFE` loops to step `frame`, and
 `0xFF` holds.
 
 **Banks.** Both banks start with a 161-entry u32 index, one entry per object.
+
 - **Streamed characters** (Zero is 0..56): the distinct, sorted offsets of
   obj_fnt object 0 entries 64..484 (140 records).
   - Each record holds n parts, each with a 20-byte header `{u32 data off,
-    u32 size (low 16 bits), ...}`, then the parts' 4bpp tiles back to back.
+u32 size (low 16 bits), ...}`, then the parts' 4bpp tiles back to back.
   - The matching layout blocks are found in obj_dat, starting at `dofs[64]` (the
     first byte after the indexed layouts), one per record in order. A block is
     `{u32 header length, section offsets...}`.
   - Frame table at the header length: `{u32 4, (u16 piece offset, u8 count,
-    u8 part)}`. Scripts at section 1.
+u8 part)}`. Scripts at section 1.
   - An optional palette section among sections 2..: `{u16 n, u16 n, n x 16
-    BGR555 colours}`. Only block 0 has one (Zero's palettes); the later blocks
+BGR555 colours}`. Only block 0 has one (Zero's palettes); the later blocks
     reuse it.
 - **Static objects:**
   - obj_fnt: `{u32 header length, u32 size, ...}`, then the tiles, then 16-colour
@@ -400,21 +405,22 @@ the cropped frame. A duration is in 1/60 s; `0xFE` loops to step `frame`, and
 
 **Pantheon clips** (engine contract, mmx.ts#31; `PANTHEON_CLIPS`):
 
-| Clip | Source | Loops |
-| --- | --- | --- |
-| `idle` | object 25, script 0 | yes |
-| `walk` | object 25, script 1 | yes |
-| `aim` | object 25, script 2 | no |
-| `shoot` | object 25, script 3 | yes |
-| `hit` | object 25, frames 15-16, 6/60 s each (the Stun lasts 12 frames); 17-19 and 14 are death debris | no |
-| `pantheon_shot` | object 1, script 4: frames 22, 23, 25, 24 at 4/60 s | yes |
+| Clip            | Source                                                                                         | Loops |
+| --------------- | ---------------------------------------------------------------------------------------------- | ----- |
+| `idle`          | object 25, script 0                                                                            | yes   |
+| `walk`          | object 25, script 1                                                                            | yes   |
+| `aim`           | object 25, script 2                                                                            | no    |
+| `shoot`         | object 25, script 3                                                                            | yes   |
+| `hit`           | object 25, frames 15-16, 6/60 s each (the Stun lasts 12 frames); 17-19 and 14 are death debris | no    |
+| `pantheon_shot` | object 1, script 4: frames 22, 23, 25, 24 at 4/60 s                                            | yes   |
 
 GBA frames face left (gotcha 3).
 
 **ARC v7** (`readArc`, used for the MMZ1 sound banks, e.g. `RZZC/romPC/Zero1SE.arc`):
+
 - header: `"ARC\0"`, u16 version 7, u16 count;
 - then count 80-byte entries `{name[64], u32 type hash, u32 compressed size,
-  u32 size (low 29 bits), u32 offset}`;
+u32 size (low 29 bits), u32 offset}`;
 - the data is zlib (first byte `0x78`) or stored as is.
 
 **Oracle.** `tests/project-io/mmz1.test.ts`: `zero.json` is byte-identical to
@@ -428,6 +434,7 @@ entries. Each is a RIFF WAV in Microsoft ADPCM (format 2, about 48 kHz
 stereo). `msAdpcmToPcmWav` decodes one into a 16-bit PCM WAV (`pcmWav`).
 
 Each block holds a header, then 4-bit samples:
+
 - header: `predictor[ch]` (u8, an index into the `fmt ` coefficient pairs),
   then `delta[ch]`, `sample1[ch]` and `sample2[ch]` (i16 each);
 - samples: high nibble first, interleaved by channel, as signed values;
@@ -463,12 +470,12 @@ real installs and checks the generated project. They also run in `pnpm test`.
 
 What the oracle compares:
 
-| Reader | Compared with the Python cache |
-| --- | --- |
-| MMX1 | `stage.json` byte-identical (collision, spawn, cameras, backdrop); `stage.png` / `background.png` pixel-identical |
-| MMZ1 Zero | `zero.json` byte-identical (frames, anchors, scripts); `zero.png` pixel-identical |
+| Reader            | Compared with the Python cache                                                                                          |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| MMX1              | `stage.json` byte-identical (collision, spawn, cameras, backdrop); `stage.png` / `background.png` pixel-identical       |
+| MMZ1 Zero         | `zero.json` byte-identical (frames, anchors, scripts); `zero.png` pixel-identical                                       |
 | MMZ1 objects 1/25 | not in the cache: matched once against `xz/tools/mmz_obj.py` (JSON and pixels identical); tests check the clip contract |
-| MS-ADPCM | ffmpeg on a synthetic chirp (`adpcm.test.ts`) |
+| MS-ADPCM          | ffmpeg on a synthetic chirp (`adpcm.test.ts`)                                                                           |
 
 `ZERO_X_MASHUP_ROOT` defaults to `../zero-x-mashup`, relative to the repo
 root. Without an install or the cache (CI, other machines), each oracle test
@@ -492,6 +499,7 @@ Gotchas 1–4 are the numbers used in zero-x-mashup's MODLOG.
    floors negative values and drifts (`msAdpcmToPcmWav`).
 
 Others:
+
 - **Camera limit order.** The MMX1 checkpoint record stores the camera limits
   after chX/chY, camX, camY, bkgX, bkgY in the order minX, maxX, minY, maxY.
   MegaEdX's struct names suggest minX, minY, maxX, maxY, which is wrong.
@@ -513,6 +521,7 @@ Others:
 ## Research notes (from zero-x-mashup MODLOG)
 
 **Installs** (under Steam `steamapps/common`):
+
 - Mega Man X Legacy Collection: `RXC1.exe` (24,229,288 bytes). Data is in
   `nativeDX10/` (Common, RXC1, X4, XChallenge, XEmu, …). The collection's
   `.arc` files hold native data only for X4–X6, X Challenge, the UI and sound;
@@ -527,21 +536,23 @@ Others:
 
 **MMX1 collision bytes** seen in level 0:
 
-| Byte | Meaning |
-| --- | --- |
-| `0x00` | empty |
-| `0x34`, `0x35` | walkable top |
-| `0x3B` | solid |
-| `0x05`–`0x0C` | slopes |
+| Byte           | Meaning                    |
+| -------------- | -------------------------- |
+| `0x00`         | empty                      |
+| `0x34`, `0x35` | walkable top               |
+| `0x3B`         | solid                      |
+| `0x05`–`0x0C`  | slopes                     |
 | `0x39`, `0x3A` | rare, also mapped to Solid |
 
 **MMX1 checkpoints of the Intro Highway:**
+
 - Checkpoints 0–2: camera Y locked at 256, X from 0 to 6912.
 - Checkpoint 3: Y locked at 768.
 - The background scrolls at camX / 2 (bkgX in the record) with bkgY 0. The
   backdrop is palette colour 0 (dusk purple).
 
 **MMZ1 static objects** (z1):
+
 - Object 1: shared effects. Script 1 is the explosion, 2 a hit spark, 4 the
   looping yellow shot.
 - Objects 2–160: the MMZ1 cast. Examples: 25 = Pantheon Hunter (scripts 0 idle,
@@ -552,32 +563,33 @@ Others:
 
 **MMZ1 streamed characters:**
 
-| Characters | Content |
-| --- | --- |
-| 0–56 | Zero's animations |
-| 57–69 | saber arcs |
-| 70 and up | cutscene and boss effects |
+| Characters | Content                   |
+| ---------- | ------------------------- |
+| 0–56       | Zero's animations         |
+| 57–69      | saber arcs                |
+| 70 and up  | cutscene and boss effects |
 
 Zero's animations used by `ZERO_MOVES`, plus ones not used yet:
 
-| Anim | Content |
-| --- | --- |
-| 0 | idle |
-| 2 | run |
-| 3 | dash (script 1 = dash end) |
-| 4 | jump (scripts 1 fall, 2 land) |
-| 5 | wall slide (s0 enter + loop, s1 arm-forward variant, s2 hold) |
-| 6 | wall jump (s0 kick, s1 dash kick) |
-| 7 | ladder (not used) |
-| 8, 10, 11 | saber combo 1–3 |
-| 13 | run + buster (not used) |
-| 14 | dash slash |
-| 16 | jump slash |
-| 17 | wall slash |
-| 18 | ladder slash (not used) |
-| 49 | hurt |
+| Anim      | Content                                                       |
+| --------- | ------------------------------------------------------------- |
+| 0         | idle                                                          |
+| 2         | run                                                           |
+| 3         | dash (script 1 = dash end)                                    |
+| 4         | jump (scripts 1 fall, 2 land)                                 |
+| 5         | wall slide (s0 enter + loop, s1 arm-forward variant, s2 hold) |
+| 6         | wall jump (s0 kick, s1 dash kick)                             |
+| 7         | ladder (not used)                                             |
+| 8, 10, 11 | saber combo 1–3                                               |
+| 13        | run + buster (not used)                                       |
+| 14        | dash slash                                                    |
+| 16        | jump slash                                                    |
+| 17        | wall slash                                                    |
+| 18        | ladder slash (not used)                                       |
+| 49        | hurt                                                          |
 
 **Music:**
+
 - MMZ1: `nativePCx64/sound/bgm/wav/zero1_bgm/*.sngw` are 29 plain Ogg Vorbis
   tracks; `zero1_bgm005` plays in the first stage.
 - MMX1: `Common/sound/bgm/wav/X1/04_OPENING_STAGE.sngw` (the Intro Highway) is

@@ -5,11 +5,7 @@ import {
   type ValidationResult,
 } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
-import {
-  type ChangeReason,
-  type EditorState,
-  EditorStore,
-} from "../core/EditorStore.js";
+import { type ChangeReason, type EditorState, EditorStore } from "../core/EditorStore.js";
 import {
   addImageLayer,
   addTileLayer,
@@ -38,7 +34,12 @@ import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
-import { dispatchEditorKey, undoScopeOf, type KeyboardContext, type UndoScope } from "./editorKeyboard.js";
+import {
+  dispatchEditorKey,
+  undoScopeOf,
+  type KeyboardContext,
+  type UndoScope,
+} from "./editorKeyboard.js";
 
 const ZOOM_STEP = 1.2;
 
@@ -162,7 +163,9 @@ export class EditorController {
     return () => this.listeners.delete(fn);
   };
   getSnapshot = (): EditorSnapshot => this.snapshot;
-  private emit(): void { for (const fn of this.listeners) fn(); }
+  private emit(): void {
+    for (const fn of this.listeners) fn();
+  }
 
   // ---------- Playtest React binding ----------
 
@@ -231,7 +234,11 @@ export class EditorController {
           if (!url) return;
           const img = new Image();
           img.onload = () => {
-            this.tilesetSizes.set(t.id, { path: t.path, w: img.naturalWidth, h: img.naturalHeight });
+            this.tilesetSizes.set(t.id, {
+              path: t.path,
+              w: img.naturalWidth,
+              h: img.naturalHeight,
+            });
             this.snapshot = this.build("ui");
             this.emit();
           };
@@ -296,7 +303,9 @@ export class EditorController {
     try {
       await this.viewport?.setAssets(assets.catalog);
     } catch (error) {
-      this.toast(`Could not load sprites: ${error instanceof Error ? error.message : String(error)}`);
+      this.toast(
+        `Could not load sprites: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -322,7 +331,9 @@ export class EditorController {
     this.viewport = null;
     this.host = null;
   }
-  closeEmptyContextMenu(): void { useUiStore.getState().setContextMenu(null); }
+  closeEmptyContextMenu(): void {
+    useUiStore.getState().setContextMenu(null);
+  }
 
   openEmptyContextMenuAt(clientX: number, clientY: number): void {
     const payload = this.viewport?.emptyContextAt(clientX, clientY) ?? null;
@@ -359,7 +370,9 @@ export class EditorController {
     this.toast("New level created.");
   }
 
-  save(): void { void this.saveAsync(); }
+  save(): void {
+    void this.saveAsync();
+  }
 
   private async saveAsync(): Promise<void> {
     const doc = this.store.get().document;
@@ -517,13 +530,17 @@ export class EditorController {
     this.viewport?.redraw();
   }
 
-  private syncPageTitle(title: string): void { document.title = `${title} · MMX Studio`; }
+  private syncPageTitle(title: string): void {
+    document.title = `${title} · MMX Studio`;
+  }
 
   // ---------- History ----------
 
   /** Where Ctrl+Z/Ctrl+Y go: the surface last clicked or focused (a blurred field leaves it unchanged). */
   private undoScope: UndoScope = "level";
-  noteUndoScope(target: EventTarget | null): void { this.undoScope = undoScopeOf(target); }
+  noteUndoScope(target: EventTarget | null): void {
+    this.undoScope = undoScopeOf(target);
+  }
 
   /**
    * Undo a level edit, or (scope "definitions") a project object or game-data edit.
@@ -531,11 +548,21 @@ export class EditorController {
    */
   undo(scope: UndoScope = "level"): void {
     if (scope === "level") this.store.undo();
-    else this.stepDefinitions(projectSession.undoDefinitions(), "Undid object edit.", "No object edit to undo.");
+    else
+      this.stepDefinitions(
+        projectSession.undoDefinitions(),
+        "Undid object edit.",
+        "No object edit to undo.",
+      );
   }
   redo(scope: UndoScope = "level"): void {
     if (scope === "level") this.store.redo();
-    else this.stepDefinitions(projectSession.redoDefinitions(), "Redid object edit.", "No object edit to redo.");
+    else
+      this.stepDefinitions(
+        projectSession.redoDefinitions(),
+        "Redid object edit.",
+        "No object edit to redo.",
+      );
   }
   private stepDefinitions(done: boolean, doneMessage: string, noneMessage: string): void {
     this.toast(done ? doneMessage : noneMessage);
@@ -544,22 +571,38 @@ export class EditorController {
 
   // ---------- View ----------
 
-  zoomBy(factor: number): void { this.viewport?.zoomByCentered(factor); }
-  zoomIn(): void { this.zoomBy(ZOOM_STEP); }
-  zoomOut(): void { this.zoomBy(1 / ZOOM_STEP); }
+  zoomBy(factor: number): void {
+    this.viewport?.zoomByCentered(factor);
+  }
+  zoomIn(): void {
+    this.zoomBy(ZOOM_STEP);
+  }
+  zoomOut(): void {
+    this.zoomBy(1 / ZOOM_STEP);
+  }
   setZoom(zoom: number): void {
     const current = this.store.get().zoom;
     if (current <= 0 || current === zoom) return;
     this.zoomBy(zoom / current);
   }
-  fit(): void { this.viewport?.fitToDocument(); }
-  toggleGrid(): void { this.store.toggleGrid(); }
-  toggleSnap(): void { this.store.toggleSnap(); }
+  fit(): void {
+    this.viewport?.fitToDocument();
+  }
+  toggleGrid(): void {
+    this.store.toggleGrid();
+  }
+  toggleSnap(): void {
+    this.store.toggleSnap();
+  }
 
   // ---------- Objects ----------
 
-  duplicateSelection(): void { duplicateSelection(this.store); }
-  deleteSelection(): void { deleteSelection(this.store); }
+  duplicateSelection(): void {
+    duplicateSelection(this.store);
+  }
+  deleteSelection(): void {
+    deleteSelection(this.store);
+  }
 
   /** Add a project enemy (data/game.json) and pick it for placing; saved with the project. */
   createEnemy(input: NewEnemyInput): void {
@@ -581,7 +624,12 @@ export class EditorController {
   duplicateEnemy(enemyId: string, name: string): void {
     const project = projectSession.getSnapshot().project;
     if (!project) return;
-    const { overlay, id } = duplicateEnemy(project.gameData, projectSession.gameData().data, enemyId, name);
+    const { overlay, id } = duplicateEnemy(
+      project.gameData,
+      projectSession.gameData().data,
+      enemyId,
+      name,
+    );
     this.setGameData(overlay);
     useUiStore.getState().setEnemyEditorId(id);
   }
@@ -633,23 +681,51 @@ export class EditorController {
 
   // ---------- Play ----------
 
-  togglePlay(): void { this.playtest.togglePlay(); }
+  togglePlay(): void {
+    this.playtest.togglePlay();
+  }
 
   // ---------- Playtest debugger commands ----------
 
-  playtestTogglePause(): void { this.playtest.togglePause(); }
-  playtestStep(): void { this.playtest.step(); }
-  playtestSetCheckpoint(): void { this.playtest.setCheckpoint(); }
-  playtestRestartCheckpoint(): void { this.playtest.restartCheckpoint(); }
-  playtestRestartLevel(): void { this.playtest.restartLevel(); }
-  playtestSeek(frame: number): void { this.playtest.seek(frame); }
-  playtestNudgeTimeScale(delta: number): void { this.playtest.nudgeTimeScale(delta); }
-  playtestSetInvulnerable(enabled: boolean): void { this.playtest.setInvulnerable(enabled); }
-  playtestSaveReplay(): void { this.playtest.saveReplay(); }
-  playtestLoadReplay(): void { this.playtest.loadReplay(); }
-  playtestCopyDiagnostics(): void { this.playtest.copyDiagnostics(); }
-  playtestSelect(runtimeId: string | null): void { this.playtest.select(runtimeId); }
-  playtestFocusSource(): void { this.playtest.focusSelectedSource(); }
+  playtestTogglePause(): void {
+    this.playtest.togglePause();
+  }
+  playtestStep(): void {
+    this.playtest.step();
+  }
+  playtestSetCheckpoint(): void {
+    this.playtest.setCheckpoint();
+  }
+  playtestRestartCheckpoint(): void {
+    this.playtest.restartCheckpoint();
+  }
+  playtestRestartLevel(): void {
+    this.playtest.restartLevel();
+  }
+  playtestSeek(frame: number): void {
+    this.playtest.seek(frame);
+  }
+  playtestNudgeTimeScale(delta: number): void {
+    this.playtest.nudgeTimeScale(delta);
+  }
+  playtestSetInvulnerable(enabled: boolean): void {
+    this.playtest.setInvulnerable(enabled);
+  }
+  playtestSaveReplay(): void {
+    this.playtest.saveReplay();
+  }
+  playtestLoadReplay(): void {
+    this.playtest.loadReplay();
+  }
+  playtestCopyDiagnostics(): void {
+    this.playtest.copyDiagnostics();
+  }
+  playtestSelect(runtimeId: string | null): void {
+    this.playtest.select(runtimeId);
+  }
+  playtestFocusSource(): void {
+    this.playtest.focusSelectedSource();
+  }
 
   // ---------- Keyboard ----------
 
@@ -674,21 +750,51 @@ export class EditorController {
     e.preventDefault();
 
     switch (cmd.kind) {
-      case "undo": this.undo(cmd.scope); break;
-      case "redo": this.redo(cmd.scope); break;
-      case "save": this.save(); break;
-      case "newLevel": this.newLevel(); break;
-      case "openLevel": void this.openLevel(); break;
-      case "zoomIn": this.zoomIn(); break;
-      case "zoomOut": this.zoomOut(); break;
-      case "zoomReset": this.setZoom(1); break;
-      case "duplicate": this.duplicateSelection(); break;
-      case "delete": this.deleteSelection(); break;
-      case "fit": this.fit(); break;
-      case "toggleGrid": this.toggleGrid(); break;
-      case "toggleSnap": this.toggleSnap(); break;
-      case "toolSelect": this.store.setTool("select"); break;
-      case "toolTile": this.toggleTileTool(); break;
+      case "undo":
+        this.undo(cmd.scope);
+        break;
+      case "redo":
+        this.redo(cmd.scope);
+        break;
+      case "save":
+        this.save();
+        break;
+      case "newLevel":
+        this.newLevel();
+        break;
+      case "openLevel":
+        void this.openLevel();
+        break;
+      case "zoomIn":
+        this.zoomIn();
+        break;
+      case "zoomOut":
+        this.zoomOut();
+        break;
+      case "zoomReset":
+        this.setZoom(1);
+        break;
+      case "duplicate":
+        this.duplicateSelection();
+        break;
+      case "delete":
+        this.deleteSelection();
+        break;
+      case "fit":
+        this.fit();
+        break;
+      case "toggleGrid":
+        this.toggleGrid();
+        break;
+      case "toggleSnap":
+        this.toggleSnap();
+        break;
+      case "toolSelect":
+        this.store.setTool("select");
+        break;
+      case "toolTile":
+        this.toggleTileTool();
+        break;
       case "escapeTool":
         if (
           state.activeTool === "place" ||
@@ -699,21 +805,51 @@ export class EditorController {
           this.store.setTool("select");
         else this.store.clearSelection();
         break;
-      case "closeContextMenu": this.closeEmptyContextMenu(); break;
-      case "exitFullscreen": void window.studio?.window.toggleFullscreen(); break;
-      case "nudge": nudgeSelection(this.store, cmd.dx, cmd.dy); break;
-      case "togglePlay": this.togglePlay(); break;
-      case "playtestExit": this.playtest.stopPlay(); break;
-      case "playtestTogglePause": this.playtestTogglePause(); break;
-      case "playtestSetCheckpoint": this.playtestSetCheckpoint(); break;
-      case "playtestRestartCheckpoint": this.playtestRestartCheckpoint(); break;
-      case "playtestStep": this.playtestStep(); break;
-      case "playtestToggleInspector": uiState.togglePlaytestInspector(); break;
-      case "playtestNudgeTimeScale": this.playtestNudgeTimeScale(cmd.delta); break;
-      case "playtestSetInvulnerable": this.playtestSetInvulnerable(cmd.enabled); break;
-      case "playtestCopyDiagnostics": this.playtestCopyDiagnostics(); break;
-      case "playtestSaveReplay": this.playtestSaveReplay(); break;
-      case "playtestLoadReplay": this.playtestLoadReplay(); break;
+      case "closeContextMenu":
+        this.closeEmptyContextMenu();
+        break;
+      case "exitFullscreen":
+        void window.studio?.window.toggleFullscreen();
+        break;
+      case "nudge":
+        nudgeSelection(this.store, cmd.dx, cmd.dy);
+        break;
+      case "togglePlay":
+        this.togglePlay();
+        break;
+      case "playtestExit":
+        this.playtest.stopPlay();
+        break;
+      case "playtestTogglePause":
+        this.playtestTogglePause();
+        break;
+      case "playtestSetCheckpoint":
+        this.playtestSetCheckpoint();
+        break;
+      case "playtestRestartCheckpoint":
+        this.playtestRestartCheckpoint();
+        break;
+      case "playtestStep":
+        this.playtestStep();
+        break;
+      case "playtestToggleInspector":
+        uiState.togglePlaytestInspector();
+        break;
+      case "playtestNudgeTimeScale":
+        this.playtestNudgeTimeScale(cmd.delta);
+        break;
+      case "playtestSetInvulnerable":
+        this.playtestSetInvulnerable(cmd.enabled);
+        break;
+      case "playtestCopyDiagnostics":
+        this.playtestCopyDiagnostics();
+        break;
+      case "playtestSaveReplay":
+        this.playtestSaveReplay();
+        break;
+      case "playtestLoadReplay":
+        this.playtestLoadReplay();
+        break;
     }
   }
 

@@ -63,7 +63,9 @@ const ToolbarButtonBase = chakra("button", {
   },
 });
 
-type ToolbarButtonProps = Omit<ComponentProps<typeof ToolbarButtonBase>, "active"> & { active?: boolean };
+type ToolbarButtonProps = Omit<ComponentProps<typeof ToolbarButtonBase>, "active"> & {
+  active?: boolean;
+};
 
 /** Compact 28px Toolbar button; `active` toggles expose `aria-pressed`. */
 export function ToolbarButton({ active, ...props }: ToolbarButtonProps) {

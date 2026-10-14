@@ -126,7 +126,15 @@ test("falling platforms and every built-in enemy kind import as their own defini
   const doc: LevelDocument = {
     ...stage1Document,
     objects: [
-      { id: "f", definitionId: "platform.falling", x: 32, y: 64, width: 32, height: 8, overrides: { Delay: 1 } },
+      {
+        id: "f",
+        definitionId: "platform.falling",
+        x: 32,
+        y: 64,
+        width: 32,
+        height: 8,
+        overrides: { Delay: 1 },
+      },
       { id: "p", definitionId: "enemy.pantheon", x: 96, y: 64 },
     ],
   };

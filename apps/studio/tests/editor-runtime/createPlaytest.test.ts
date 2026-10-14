@@ -1,11 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createLevelDocument } from "@mmx/content-schema";
-import {
-  createPlaytest,
-  PlaytestInput,
-  STOPPED_PLAYTEST,
-} from "../../src/editor-runtime/index.js";
+import { createPlaytest, PlaytestInput, STOPPED_PLAYTEST } from "../../src/editor-runtime/index.js";
 
 test("createPlaytest advances one fixed step and exposes a public snapshot", async () => {
   const session = createPlaytest(createLevelDocument({ cols: 20, rows: 12 }));

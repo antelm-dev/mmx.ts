@@ -93,7 +93,8 @@ export function handleHitTest(
   viewportY: number,
 ): Handle | null {
   for (const h of HANDLES) {
-    if (pointHitTest(handlePos(b, h), clientX, clientY, canvasRect, zoom, viewportX, viewportY)) return h;
+    if (pointHitTest(handlePos(b, h), clientX, clientY, canvasRect, zoom, viewportX, viewportY))
+      return h;
   }
   return null;
 }
@@ -116,7 +117,15 @@ export function environmentGeometry(
   const behavior = GAME_DATA.environments[source.ref]?.behavior;
   if (!behavior || !environmentBehaviorRegistry.has(behavior)) return [];
   const provider = environmentBehaviorRegistry.get(behavior).debugGeometry;
-  return provider?.(entityFields(inst), { x: box.x, y: box.y, facing: 1, width: box.w, height: box.h }) ?? [];
+  return (
+    provider?.(entityFields(inst), {
+      x: box.x,
+      y: box.y,
+      facing: 1,
+      width: box.w,
+      height: box.h,
+    }) ?? []
+  );
 }
 
 /** The grip that drags Travel: the centre of the geometry's travel `end` rect. */
@@ -254,7 +263,10 @@ export function hexToNum(hex: string): number {
 /** Row-major indices of the cell rectangle between two corner cells, inclusive. */
 export function cellRect(cols: number, a: number, b: number): number[] {
   const [c0, c1] = [a % cols, b % cols].sort((x, y) => x - y) as [number, number];
-  const [r0, r1] = [Math.floor(a / cols), Math.floor(b / cols)].sort((x, y) => x - y) as [number, number];
+  const [r0, r1] = [Math.floor(a / cols), Math.floor(b / cols)].sort((x, y) => x - y) as [
+    number,
+    number,
+  ];
   const out: number[] = [];
   for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) out.push(r * cols + c);
   return out;

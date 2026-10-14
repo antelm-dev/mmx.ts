@@ -1,7 +1,13 @@
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Page,
+} from "@playwright/test";
 import electronPath from "electron";
 import { encodePng } from "../src/project-io/import/png";
 
@@ -21,7 +27,8 @@ function writeSheet(): void {
   for (let f = 0; f < 8; f++) {
     const cx = (f % 4) * 32 + 6;
     const cy = Math.floor(f / 4) * 32 + 4;
-    for (let y = cy; y < cy + 24; y++) for (let x = cx; x < cx + 20; x++) px.set([40, 160, 220, 255], (y * width + x) * 4);
+    for (let y = cy; y < cy + 24; y++)
+      for (let x = cx; x < cx + 20; x++) px.set([40, 160, 220, 255], (y * width + x) * 4);
   }
   writeFileSync(sheetPath, encodePng({ width, height, px }));
 }
@@ -102,7 +109,8 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
   });
 
   // walk: four frames, 6/60 s each, looping from frame 1.
-  for (const n of [1, 2, 3, 4]) await panel.getByRole("button", { name: `Region ${n}`, exact: true }).click();
+  for (const n of [1, 2, 3, 4])
+    await panel.getByRole("button", { name: `Region ${n}`, exact: true }).click();
   await panel.getByLabel("Clip name").fill("walk");
   await panel.getByRole("button", { name: "Create clip" }).click();
   await expect(clipSelect).toHaveValue("walk");
@@ -190,7 +198,9 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
   await panel.getByRole("button", { name: "Use as player animation" }).click();
   await expect(panel.getByRole("button", { name: "Player animation" })).toBeDisabled();
   await undoRedo(page, async (undone) => {
-    await expect(panel.getByRole("button", { name: undone ? "Use as player animation" : "Player animation" })).toBeVisible();
+    await expect(
+      panel.getByRole("button", { name: undone ? "Use as player animation" : "Player animation" }),
+    ).toBeVisible();
   });
 
   // The bound asset keeps its last clip: deleting idle leaves walk undeletable.
@@ -205,7 +215,10 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
   await page.getByRole("button", { name: /^Play$/ }).click();
   await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/Could not start Play|Fix the project/)).toHaveCount(0);
-  await expect(page.locator("[data-player-sheet]")).toHaveAttribute("data-player-sheet", "sprite.sheet");
+  await expect(page.locator("[data-player-sheet]")).toHaveAttribute(
+    "data-player-sheet",
+    "sprite.sheet",
+  );
   await page.getByRole("button", { name: /^Stop$/ }).click();
   await expect(page.locator("#viewport-canvas")).toBeVisible();
 
@@ -234,7 +247,9 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
     expect(frame.hitboxes).toEqual([{ x: 6, y: -14, w: 8, h: 4 }]);
   }
   // The fixture's own animation is untouched: still no anchor.
-  const fixture = manifest.assets.find((asset: { id: string }) => asset.id === "anim.player.fixture");
+  const fixture = manifest.assets.find(
+    (asset: { id: string }) => asset.id === "anim.player.fixture",
+  );
   expect(fixture.animations.idle.frames[0]).not.toHaveProperty("anchor");
   const data = JSON.parse(readFileSync(join(projectRoot, "game/data.json"), "utf8"));
   expect(data.bindings.playerAnimation).toBe("anim.sheet");

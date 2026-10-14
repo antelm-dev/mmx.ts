@@ -11,7 +11,12 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
-import { DECORATION_LAYERS, TerrainTile, type DecorationLayer, type TileLayer } from "@mmx/content-schema";
+import {
+  DECORATION_LAYERS,
+  TerrainTile,
+  type DecorationLayer,
+  type TileLayer,
+} from "@mmx/content-schema";
 import type { TilesetAsset } from "@mmx/project-schema";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import {
@@ -32,7 +37,9 @@ import { TilePalette } from "./TilePalette.js";
 const Grid2 = chakra("div", {
   base: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2" },
 });
-const Hint = chakra("div", { base: { fontSize: "10.5px", lineHeight: "1.5", color: "studio.fgTertiary" } });
+const Hint = chakra("div", {
+  base: { fontSize: "10.5px", lineHeight: "1.5", color: "studio.fgTertiary" },
+});
 
 const COLLISIONS: { kind: TerrainTile; label: string }[] = [
   { kind: TerrainTile.Empty, label: "Empty" },
@@ -59,7 +66,14 @@ export function TileLayersSection() {
   return (
     <>
       <SectionTitle divider>Tile layers</SectionTitle>
-      <chakra.div display="flex" flexDirection="column" gap="2" px="3.5" py="3px" data-testid="tile-layers">
+      <chakra.div
+        display="flex"
+        flexDirection="column"
+        gap="2"
+        px="3.5"
+        py="3px"
+        data-testid="tile-layers"
+      >
         {(doc.tileLayers ?? []).map((layer, index, all) => (
           <TileLayerRow
             key={layer.id}
@@ -71,7 +85,11 @@ export function TileLayersSection() {
         ))}
         {addFrom && (
           <chakra.div display="flex" alignItems="center" gap="1.5">
-            <FieldSelect aria-label="Tileset" value={addFrom} onChange={(e) => setPicked(e.target.value)}>
+            <FieldSelect
+              aria-label="Tileset"
+              value={addFrom}
+              onChange={(e) => setPicked(e.target.value)}
+            >
               {ids.map((id) => (
                 <option key={id} value={id}>
                   {id}
@@ -114,7 +132,15 @@ function TileLayerRow({
       data-tile-layer={layer.id}
     >
       <chakra.div mb="1.5" display="flex" alignItems="center" gap="1">
-        <chakra.span minW="0" flex="1" truncate fontFamily="mono" fontSize="11px" color="studio.fg" title={layer.tilesetId}>
+        <chakra.span
+          minW="0"
+          flex="1"
+          truncate
+          fontFamily="mono"
+          fontSize="11px"
+          color="studio.fg"
+          title={layer.tilesetId}
+        >
           {layer.tilesetId}
         </chakra.span>
         <ToolbarButton
@@ -125,13 +151,27 @@ function TileLayerRow({
         >
           <Paintbrush size={14} />
         </ToolbarButton>
-        <ToolbarButton icon aria-label="Move tile layer back" disabled={first} onClick={() => reorderTileLayer(editor.store, layer.id, -1)}>
+        <ToolbarButton
+          icon
+          aria-label="Move tile layer back"
+          disabled={first}
+          onClick={() => reorderTileLayer(editor.store, layer.id, -1)}
+        >
           <ArrowUp size={14} />
         </ToolbarButton>
-        <ToolbarButton icon aria-label="Move tile layer forward" disabled={last} onClick={() => reorderTileLayer(editor.store, layer.id, 1)}>
+        <ToolbarButton
+          icon
+          aria-label="Move tile layer forward"
+          disabled={last}
+          onClick={() => reorderTileLayer(editor.store, layer.id, 1)}
+        >
           <ArrowDown size={14} />
         </ToolbarButton>
-        <ToolbarButton icon aria-label="Remove tile layer" onClick={() => removeTileLayer(editor.store, layer.id)}>
+        <ToolbarButton
+          icon
+          aria-label="Remove tile layer"
+          onClick={() => removeTileLayer(editor.store, layer.id)}
+        >
           <Trash2 size={14} />
         </ToolbarButton>
       </chakra.div>
@@ -139,7 +179,9 @@ function TileLayerRow({
         <Field label="Layer">
           <FieldSelect
             value={layer.layer}
-            onChange={(e) => updateTileLayer(editor.store, layer.id, { layer: e.target.value as DecorationLayer })}
+            onChange={(e) =>
+              updateTileLayer(editor.store, layer.id, { layer: e.target.value as DecorationLayer })
+            }
           >
             {DECORATION_LAYERS.map((l) => (
               <option key={l} value={l}>
@@ -226,7 +268,10 @@ export function TilesetPanel() {
   const count = grid ? grid.columns * grid.rows : 0;
   const ts = tileset.tileSize;
 
-  const save = (collision: TilesetAsset["collision"], slopes: NonNullable<TilesetAsset["slopes"]>) => {
+  const save = (
+    collision: TilesetAsset["collision"],
+    slopes: NonNullable<TilesetAsset["slopes"]>,
+  ) => {
     const next: TilesetAsset = { ...tileset, collision, slopes };
     if (Object.keys(slopes).length === 0) delete next.slopes;
     projectSession.updateAsset(next);
@@ -261,7 +306,14 @@ export function TilesetPanel() {
   return (
     <>
       <SectionTitle divider>Tileset</SectionTitle>
-      <chakra.div display="flex" flexDirection="column" gap="2" px="3.5" py="3px" data-testid="tileset">
+      <chakra.div
+        display="flex"
+        flexDirection="column"
+        gap="2"
+        px="3.5"
+        py="3px"
+        data-testid="tileset"
+      >
         <Field label="Tile size (px)">
           <FieldInput
             type="number"
@@ -286,7 +338,9 @@ export function TilesetPanel() {
         )}
 
         {image && <TilePalette tileset={tileset} image={image} selected={selected} onPick={pick} />}
-        <Hint>Click a tile to paint with it; Shift-click selects several to set their collision.</Hint>
+        <Hint>
+          Click a tile to paint with it; Shift-click selects several to set their collision.
+        </Hint>
 
         <chakra.div display="flex" flexWrap="wrap" gap="1">
           {MODES.map(({ mode, label, icon: Icon }) => (
@@ -305,12 +359,25 @@ export function TilesetPanel() {
 
         <chakra.div display="flex" flexWrap="wrap" gap="1" role="group" aria-label="Tile collision">
           {COLLISIONS.map(({ kind, label }) => (
-            <ToolbarButton key={kind} onClick={() => assign(kind, selected.filter((t) => t < count))}>
+            <ToolbarButton
+              key={kind}
+              onClick={() =>
+                assign(
+                  kind,
+                  selected.filter((t) => t < count),
+                )
+              }
+            >
               {label}
             </ToolbarButton>
           ))}
           <ToolbarButton
-            onClick={() => assign(TerrainTile.Solid, Array.from({ length: count }, (_, i) => i))}
+            onClick={() =>
+              assign(
+                TerrainTile.Solid,
+                Array.from({ length: count }, (_, i) => i),
+              )
+            }
           >
             All solid
           </ToolbarButton>

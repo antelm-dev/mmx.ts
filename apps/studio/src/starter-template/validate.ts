@@ -4,7 +4,12 @@ import { join } from "node:path";
 import { parseProject, validateProject, type ProjectDocument } from "@mmx/project-schema";
 import type { FileSystem } from "../project-io/index.js";
 
-import { STARTER_ATTRIBUTION, STARTER_GAME_DATA, STARTER_MANIFEST, resolveStarterTemplateRoot } from "./paths.js";
+import {
+  STARTER_ATTRIBUTION,
+  STARTER_GAME_DATA,
+  STARTER_MANIFEST,
+  resolveStarterTemplateRoot,
+} from "./paths.js";
 
 export type StarterValidationCounts = {
   sprites: number;
@@ -22,7 +27,14 @@ export type StarterValidationResult = {
 };
 
 function countAssets(manifest: ProjectDocument): StarterValidationCounts {
-  const counts = { sprites: 0, animations: 0, sounds: 0, fonts: 0, images: 0, total: manifest.assets.length };
+  const counts = {
+    sprites: 0,
+    animations: 0,
+    sounds: 0,
+    fonts: 0,
+    images: 0,
+    total: manifest.assets.length,
+  };
   for (const asset of manifest.assets) {
     switch (asset.kind) {
       case "sprite":
@@ -50,7 +62,8 @@ export async function validateStarterTemplate(fs: FileSystem): Promise<StarterVa
   const parsed = parseProject(raw);
   if (!parsed.ok || !parsed.project) {
     throw new Error(
-      parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join("\n") || "Invalid starter manifest",
+      parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join("\n") ||
+        "Invalid starter manifest",
     );
   }
 
@@ -115,7 +128,9 @@ export async function validateStarterTemplateOnDisk(
   return validateStarterTemplate(createNodeFileSystem(root));
 }
 
-export async function readStarterManifest(root = resolveStarterTemplateRoot()): Promise<ProjectDocument> {
+export async function readStarterManifest(
+  root = resolveStarterTemplateRoot(),
+): Promise<ProjectDocument> {
   const raw = JSON.parse(await readFile(join(root, STARTER_MANIFEST), "utf8"));
   const parsed = parseProject(raw);
   if (!parsed.ok || !parsed.project) {

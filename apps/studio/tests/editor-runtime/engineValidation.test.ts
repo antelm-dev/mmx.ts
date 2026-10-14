@@ -103,14 +103,25 @@ test("the engine accepts a default instance of every definition (schema and engi
 
 test("instances of project object definitions compile to engine entities the engine accepts", () => {
   setProjectDefinitions([
-    { id: "obj.fast", name: "Fast", base: "platform.moving", values: { Speed: 120 }, exposed: ["Travel"] },
+    {
+      id: "obj.fast",
+      name: "Fast",
+      base: "platform.moving",
+      values: { Speed: 120 },
+      exposed: ["Travel"],
+    },
   ]);
   try {
-    const doc = docWith([{ id: "f1", definitionId: "obj.fast", x: 96, y: 96, width: 48, height: 8 }]);
+    const doc = docWith([
+      { id: "f1", definitionId: "obj.fast", x: 96, y: 96, width: 48, height: 8 },
+    ]);
     const entity = documentToLevelData(doc).entities.find((e) => e.iid === "f1");
     assert.equal(entity?.id, "MovingPlatform");
     assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96, Axis: "horizontal" });
-    assert.deepEqual(engineDiagnostics(doc).filter((d) => d.severity === "error"), []);
+    assert.deepEqual(
+      engineDiagnostics(doc).filter((d) => d.severity === "error"),
+      [],
+    );
   } finally {
     setProjectDefinitions([]);
   }
@@ -132,7 +143,10 @@ test("a project enemy is checked against the compiled game data Play uses", (t) 
   const result = validateLevelDocument(doc, undefined, compiled);
   assert.equal(result.ok, true, JSON.stringify(result.issues));
   const unknown = engineDiagnostics(doc).filter((i) => i.severity === "error");
-  assert.ok(unknown.some((i) => i.objectId === "crab-1"), JSON.stringify(unknown));
+  assert.ok(
+    unknown.some((i) => i.objectId === "crab-1"),
+    JSON.stringify(unknown),
+  );
 });
 
 test("a placed enemy whose sheet Play has no animation for is an error, before Play", () => {

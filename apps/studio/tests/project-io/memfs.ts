@@ -3,9 +3,7 @@ import { dirname } from "node:path";
 import type { FileSystem, FileStat } from "../../src/project-io/fs.js";
 import { normalizeRelativePath } from "../../src/project-io/paths.js";
 
-type Entry =
-  | { kind: "file"; content: Uint8Array }
-  | { kind: "dir"; children: Map<string, Entry> };
+type Entry = { kind: "file"; content: Uint8Array } | { kind: "dir"; children: Map<string, Entry> };
 
 function splitPath(path: string): string[] {
   if (!path || path === ".") return [];
@@ -51,7 +49,9 @@ function resolveFile(store: Map<string, Entry>, path: string, create: boolean): 
   return created;
 }
 
-export function createMemoryFileSystem(initial: Record<string, string | Uint8Array> = {}): FileSystem {
+export function createMemoryFileSystem(
+  initial: Record<string, string | Uint8Array> = {},
+): FileSystem {
   const store = new Map<string, Entry>();
 
   for (const [path, value] of Object.entries(initial)) {

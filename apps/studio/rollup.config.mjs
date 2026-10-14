@@ -25,9 +25,18 @@ import terser from "@rollup/plugin-terser";
 const production = process.env.NODE_ENV === "production";
 const internalAliases = alias({
   entries: [
-    { find: "@mmx/project-io/node", replacement: fileURLToPath(new URL("./src/project-io/node.ts", import.meta.url)) },
-    { find: "@mmx/project-io", replacement: fileURLToPath(new URL("./src/project-io/index.ts", import.meta.url)) },
-    { find: "@mmx/starter-template", replacement: fileURLToPath(new URL("./src/starter-template/index.ts", import.meta.url)) },
+    {
+      find: "@mmx/project-io/node",
+      replacement: fileURLToPath(new URL("./src/project-io/node.ts", import.meta.url)),
+    },
+    {
+      find: "@mmx/project-io",
+      replacement: fileURLToPath(new URL("./src/project-io/index.ts", import.meta.url)),
+    },
+    {
+      find: "@mmx/starter-template",
+      replacement: fileURLToPath(new URL("./src/starter-template/index.ts", import.meta.url)),
+    },
   ],
 });
 

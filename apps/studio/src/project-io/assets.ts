@@ -26,7 +26,11 @@ export type ImportAssetResult = {
 function defaultLogicalId(sourcePath: string, kind: AssetKind): string {
   const stem = sanitizeLogicalIdCandidate(stemPortable(sourcePath));
   const prefix =
-    kind === "font" || kind === "image" || kind === "tileset" ? kind : kind === "sound" ? "sfx" : "sprite";
+    kind === "font" || kind === "image" || kind === "tileset"
+      ? kind
+      : kind === "sound"
+        ? "sfx"
+        : "sprite";
   return `${prefix}.${stem}`;
 }
 
@@ -103,10 +107,7 @@ export async function importAsset(
   return succeed({ asset, copiedTo: targetPath });
 }
 
-export function mergeImportedAsset(
-  assets: ProjectAsset[],
-  imported: ProjectAsset,
-): ProjectAsset[] {
+export function mergeImportedAsset(assets: ProjectAsset[], imported: ProjectAsset): ProjectAsset[] {
   if (assets.some((asset) => asset.id === imported.id)) {
     throw new Error(`Refusing to merge asset '${imported.id}' because it already exists.`);
   }

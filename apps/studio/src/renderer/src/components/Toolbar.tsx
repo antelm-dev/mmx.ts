@@ -100,18 +100,12 @@ export function Toolbar() {
 
         <Group>
           <Tooltip label="Toggle grid (G)">
-            <ToolbarButton
-              active={snap.state.gridVisible}
-              onClick={() => editor.toggleGrid()}
-            >
+            <ToolbarButton active={snap.state.gridVisible} onClick={() => editor.toggleGrid()}>
               <Grid3x3 size={13} /> Grid
             </ToolbarButton>
           </Tooltip>
           <Tooltip label="Toggle snapping (Shift+G)">
-            <ToolbarButton
-              active={snap.state.snapEnabled}
-              onClick={() => editor.toggleSnap()}
-            >
+            <ToolbarButton active={snap.state.snapEnabled} onClick={() => editor.toggleSnap()}>
               <Magnet size={13} /> Snap
             </ToolbarButton>
           </Tooltip>
@@ -121,11 +115,7 @@ export function Toolbar() {
 
         <Group css={{ "@media (width < 1500px)": { display: "none" } }}>
           <Tooltip label="Zoom out (Ctrl+-)">
-            <ToolbarButton
-              icon
-              onClick={() => editor.zoomOut()}
-              aria-label="Zoom out"
-            >
+            <ToolbarButton icon onClick={() => editor.zoomOut()} aria-label="Zoom out">
               <ZoomOut size={14} />
             </ToolbarButton>
           </Tooltip>
@@ -139,11 +129,7 @@ export function Toolbar() {
             {zoomPercent}%
           </chakra.span>
           <Tooltip label="Zoom in (Ctrl+=)">
-            <ToolbarButton
-              icon
-              onClick={() => editor.zoomIn()}
-              aria-label="Zoom in"
-            >
+            <ToolbarButton icon onClick={() => editor.zoomIn()} aria-label="Zoom in">
               <ZoomIn size={14} />
             </ToolbarButton>
           </Tooltip>

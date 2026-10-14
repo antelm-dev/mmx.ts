@@ -187,7 +187,10 @@ export function createProjectIpc() {
           await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);
           return { ok: true, value: null, issues: [] };
         } catch (error) {
-          return { ok: false, issues: [issue("game-data.write", errorMessage(error), `/${GAME_DATA_FILE}`)] };
+          return {
+            ok: false,
+            issues: [issue("game-data.write", errorMessage(error), `/${GAME_DATA_FILE}`)],
+          };
         }
       },
     ),
@@ -235,7 +238,8 @@ export function createProjectIpc() {
         // The project fs is root-scoped; the picked source is outside it, so read it directly.
         const fs = {
           ...projectFs,
-          copyFile: async (from: string, to: string) => projectFs.writeBytes(to, await readFile(from)),
+          copyFile: async (from: string, to: string) =>
+            projectFs.writeBytes(to, await readFile(from)),
         };
         const imported = await importAsset(fs, project.manifest.assets, {
           sourcePath: input.sourcePath,

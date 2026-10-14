@@ -27,10 +27,10 @@ ${paths
 `;
 
 test("parseLibraryFolders reads every path and unescapes backslashes", () => {
-  assert.deepEqual(parseLibraryFolders(vdf(["C:\\Program Files (x86)\\Steam", "D:\\SteamLibrary"])), [
-    "C:\\Program Files (x86)\\Steam",
-    "D:\\SteamLibrary",
-  ]);
+  assert.deepEqual(
+    parseLibraryFolders(vdf(["C:\\Program Files (x86)\\Steam", "D:\\SteamLibrary"])),
+    ["C:\\Program Files (x86)\\Steam", "D:\\SteamLibrary"],
+  );
   assert.deepEqual(parseLibraryFolders('"libraryfolders"\r\n{\r\n}\r\n'), []);
 });
 
@@ -48,12 +48,18 @@ test("findSteamGame locates both collections through libraryfolders.vdf", async 
     await mkdir(join(mmz, "nativePCx64"), { recursive: true });
 
     const opts = { env: {}, steamRoots: [steam, join(tmp, "Missing")] };
-    assert.deepEqual(await steamLibraries(opts.steamRoots), [join(steam, "steamapps", "common"), join(lib, "steamapps", "common")]);
+    assert.deepEqual(await steamLibraries(opts.steamRoots), [
+      join(steam, "steamapps", "common"),
+      join(lib, "steamapps", "common"),
+    ]);
     assert.deepEqual(await findSteamGame("mmxlc", opts), { ok: true, root: mmx });
     assert.deepEqual(await findSteamGame("mzzxlc", opts), { ok: true, root: mmz });
 
     // env override wins, and is validated
-    assert.deepEqual(await findSteamGame("mmxlc", { ...opts, env: { MMXLC_DIR: mmx } }), { ok: true, root: mmx });
+    assert.deepEqual(await findSteamGame("mmxlc", { ...opts, env: { MMXLC_DIR: mmx } }), {
+      ok: true,
+      root: mmx,
+    });
     const bad = await findSteamGame("mzzxlc", { ...opts, env: { MZZXLC_DIR: tmp } });
     assert.equal(bad.ok, false);
     assert.match(!bad.ok ? bad.error : "", /MZZXLC_DIR=.* has no nativePCx64/);
@@ -68,7 +74,8 @@ test("findSteamGame reports a missing install clearly", async () => {
     const result = await findSteamGame("mmxlc", { env: {}, steamRoots: [tmp] });
     assert.deepEqual(result, {
       ok: false,
-      error: "Mega Man X Legacy Collection is not installed in your Steam libraries. Install it from Steam, or set MMXLC_DIR to its folder.",
+      error:
+        "Mega Man X Legacy Collection is not installed in your Steam libraries. Install it from Steam, or set MMXLC_DIR to its folder.",
     });
   } finally {
     await rm(tmp, { recursive: true, force: true });

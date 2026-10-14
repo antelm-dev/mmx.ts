@@ -35,7 +35,11 @@ export function Checkbox({ label, checked, onCheckedChange, ...props }: Checkbox
         rounded="5px"
         bg="studio.raised"
         _checked={{ bg: "studio.accent", borderColor: "studio.accent", color: "white" }}
-        _focusVisible={{ outline: "2px solid", outlineColor: "studio.accent", outlineOffset: "1px" }}
+        _focusVisible={{
+          outline: "2px solid",
+          outlineColor: "studio.accent",
+          outlineOffset: "1px",
+        }}
       >
         <ChakraCheckbox.Indicator checked={<Check size={14} />} />
       </ChakraCheckbox.Control>

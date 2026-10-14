@@ -32,8 +32,12 @@ const Row = chakra("div", { base: { py: "3px", px: "3.5" } });
 const Grid2 = chakra("div", {
   base: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "2" },
 });
-const Note = chakra("div", { base: { color: "studio.muted", fontSize: "10px", px: "3.5", mb: "1" } });
-const ErrorText = chakra("div", { base: { color: "studio.dangerFg", fontSize: "10.5px", mt: "3px", mb: "1" } });
+const Note = chakra("div", {
+  base: { color: "studio.muted", fontSize: "10px", px: "3.5", mb: "1" },
+});
+const ErrorText = chakra("div", {
+  base: { color: "studio.dangerFg", fontSize: "10.5px", mt: "3px", mb: "1" },
+});
 const Chip = chakra("button", {
   base: {
     px: "2",
@@ -59,12 +63,21 @@ const IconButton = chakra("button", {
     color: "studio.fgTertiary",
     cursor: "pointer",
     _hover: { color: "studio.fg", bg: "studio.hover" },
-    _disabled: { opacity: 0.35, cursor: "default", _hover: { color: "studio.fgTertiary", bg: "transparent" } },
+    _disabled: {
+      opacity: 0.35,
+      cursor: "default",
+      _hover: { color: "studio.fgTertiary", bg: "transparent" },
+    },
   },
 });
 
 const num = (key: string, label: string): PropertyMeta => ({ key, label, type: "number" });
-const BOX_FIELDS = [num("hw", "Half width"), num("hh", "Half height"), num("ox", "Offset X"), num("oy", "Offset Y")];
+const BOX_FIELDS = [
+  num("hw", "Half width"),
+  num("hh", "Half height"),
+  num("ox", "Offset X"),
+  num("oy", "Offset Y"),
+];
 const SHIELDS = ["none", "unbreakable", "breakable"];
 const shieldOf = (enemy: EnemyDefinition): string =>
   !enemy.shield ? "none" : enemy.shield.breakable ? "breakable" : "unbreakable";
@@ -85,11 +98,20 @@ function Chips({
     <chakra.div role="group" aria-label={label}>
       <chakra.div {...labelStyle}>{label}</chakra.div>
       <chakra.div display="flex" flexWrap="wrap" gap="1">
-        {options.length === 0 && <chakra.span color="studio.muted" fontSize="10px">No abilities</chakra.span>}
+        {options.length === 0 && (
+          <chakra.span color="studio.muted" fontSize="10px">
+            No abilities
+          </chakra.span>
+        )}
         {options.map((option) => {
           const on = selected.includes(option);
           return (
-            <Chip key={option} type="button" aria-pressed={on} onClick={() => onToggle(option, !on)}>
+            <Chip
+              key={option}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onToggle(option, !on)}
+            >
               {option}
             </Chip>
           );
@@ -109,7 +131,8 @@ export function EnemyEditorPanel() {
   const prefabId = useUiStore((s) => s.enemyEditorId);
   // Re-render on level edits: placed instances block Delete.
   useEditorSnapshot();
-  if (!project) return <PanelNote {...DEFINITIONS_SCOPE}>Open a project to edit its enemies.</PanelNote>;
+  if (!project)
+    return <PanelNote {...DEFINITIONS_SCOPE}>Open a project to edit its enemies.</PanelNote>;
   const found = prefabId ? enemyForPrefab(project.gameData, prefabId) : null;
   const def = prefabId ? getDefinition(prefabId) : undefined;
   if (!found || !prefabId) {
@@ -140,12 +163,18 @@ export function EnemyEditorPanel() {
   const own = isProjectEnemy(project.gameData, prefabId);
   const blocker = own ? definitionDeleteBlocker(prefabId) : null;
   const remove = (): void => {
-    if (!project.gameData || !window.confirm(`Delete the enemy '${name}' from the project?`)) return;
+    if (!project.gameData || !window.confirm(`Delete the enemy '${name}' from the project?`))
+      return;
     editor.setGameData(deleteEnemy(project.gameData, prefabId));
   };
 
   /** One property of the enemy (or its actor) at `fieldPath`, with that field's compile errors. */
-  const control = (prop: PropertyMeta, value: unknown, fieldPath: string, commit: (next: never) => void) => (
+  const control = (
+    prop: PropertyMeta,
+    value: unknown,
+    fieldPath: string,
+    commit: (next: never) => void,
+  ) => (
     <>
       <PropertyControl
         prop={prop}
@@ -157,17 +186,23 @@ export function EnemyEditorPanel() {
       {errors(fieldPath)}
     </>
   );
-  const field = (prop: PropertyMeta, value: unknown, fieldPath: string, commit: (next: never) => void) => (
-    <Row key={fieldPath}>{control(prop, value, fieldPath, commit)}</Row>
-  );
+  const field = (
+    prop: PropertyMeta,
+    value: unknown,
+    fieldPath: string,
+    commit: (next: never) => void,
+  ) => <Row key={fieldPath}>{control(prop, value, fieldPath, commit)}</Row>;
   const box = (label: string, value: Hitbox, fieldPath: string, commit: (next: Hitbox) => void) => (
     <chakra.div role="group" aria-label={label}>
       <SectionTitle divider>{label}</SectionTitle>
       <Grid2 px="3.5">
         {BOX_FIELDS.map((prop) => (
           <chakra.div key={prop.key} minW="0" py="3px">
-            {control(prop, value[prop.key as keyof Hitbox] ?? 0, `${fieldPath}.${prop.key}`, (next: number) =>
-              commit({ ...value, [prop.key]: next }),
+            {control(
+              prop,
+              value[prop.key as keyof Hitbox] ?? 0,
+              `${fieldPath}.${prop.key}`,
+              (next: number) => commit({ ...value, [prop.key]: next }),
             )}
           </chakra.div>
         ))}
@@ -175,7 +210,9 @@ export function EnemyEditorPanel() {
     </chakra.div>
   );
 
-  const sheets = (project.manifest.assets ?? []).filter((a) => a.kind === "animation").map((a) => a.id);
+  const sheets = (project.manifest.assets ?? [])
+    .filter((a) => a.kind === "animation")
+    .map((a) => a.id);
   const projectiles = Object.keys(gameData.data.projectiles);
   const owned = enemy.abilities;
   const setAbilities = (abilities: string[]): void => save(withAbilities(enemy, abilities));
@@ -190,7 +227,9 @@ export function EnemyEditorPanel() {
       {/* The containing block of the checkboxes' hidden inputs, so focusing one never scrolls the dock. */}
       <PanelScroll position="relative">
         <SectionTitle>Enemy · {enemy.id}</SectionTitle>
-        {!editable && <Note>Built-in enemy, read-only. Duplicate it to edit a copy in this project.</Note>}
+        {!editable && (
+          <Note>Built-in enemy, read-only. Duplicate it to edit a copy in this project.</Note>
+        )}
         <PanelActions pt="1">
           <ActionButton
             disabled={broken}
@@ -209,21 +248,38 @@ export function EnemyEditorPanel() {
           {/* The display name only: ids, placed instances and objects based on it are unchanged. */}
           <Row>
             <chakra.fieldset disabled={!own} border="0" m="0" p="0" minW="0">
-              {control({ key: "name", label: "Name", type: "string" }, name, `prefabs.${prefabId}.name`, (next: string) => {
-                const trimmed = next.trim();
-                if (trimmed && trimmed !== name && project.gameData) editor.setGameData(renameEnemy(project.gameData, prefabId, trimmed));
-              })}
+              {control(
+                { key: "name", label: "Name", type: "string" },
+                name,
+                `prefabs.${prefabId}.name`,
+                (next: string) => {
+                  const trimmed = next.trim();
+                  if (trimmed && trimmed !== name && project.gameData)
+                    editor.setGameData(renameEnemy(project.gameData, prefabId, trimmed));
+                },
+              )}
             </chakra.fieldset>
           </Row>
           {actor &&
-            field(num("maxHealth", "Health"), actor.maxHealth, `actors.${actor.id}.maxHealth`, (maxHealth: number) =>
-              save(enemy, { ...actor, maxHealth }),
+            field(
+              num("maxHealth", "Health"),
+              actor.maxHealth,
+              `actors.${actor.id}.maxHealth`,
+              (maxHealth: number) => save(enemy, { ...actor, maxHealth }),
             )}
-          {field(num("touchDamage", "Touch damage"), enemy.touchDamage, `${base}.touchDamage`, (touchDamage: number) =>
-            save({ ...enemy, touchDamage }),
+          {field(
+            num("touchDamage", "Touch damage"),
+            enemy.touchDamage,
+            `${base}.touchDamage`,
+            (touchDamage: number) => save({ ...enemy, touchDamage }),
           )}
           {field(
-            { key: "sheet", label: "Animation", type: "enum", options: sheets.includes(enemy.sheet) ? sheets : [enemy.sheet, ...sheets] },
+            {
+              key: "sheet",
+              label: "Animation",
+              type: "enum",
+              options: sheets.includes(enemy.sheet) ? sheets : [enemy.sheet, ...sheets],
+            },
             enemy.sheet,
             `${base}.sheet`,
             (sheet: string) => save({ ...enemy, sheet }),
@@ -240,23 +296,48 @@ export function EnemyEditorPanel() {
             `${base}.movement`,
             (movement: MovementModel) => save({ ...enemy, movement }),
           )}
-          {field({ key: "shield", label: "Shield", type: "enum", options: SHIELDS }, shieldOf(enemy), `${base}.shield`, (shield: string) => {
-            const { shield: _old, ...rest } = enemy;
-            save(shield === "none" ? rest : { ...rest, shield: { breakable: shield === "breakable" } });
-          })}
-          {actor && box("Body", actor.body, `actors.${actor.id}.body`, (body) => save(enemy, { ...actor, body }))}
-          {box("Hurtbox", enemy.hurtbox, `${base}.hurtbox`, (hurtbox) => save({ ...enemy, hurtbox }))}
-          {box("Perception", enemy.perception, `${base}.perception`, (perception) => save({ ...enemy, perception }))}
+          {field(
+            { key: "shield", label: "Shield", type: "enum", options: SHIELDS },
+            shieldOf(enemy),
+            `${base}.shield`,
+            (shield: string) => {
+              const { shield: _old, ...rest } = enemy;
+              save(
+                shield === "none"
+                  ? rest
+                  : { ...rest, shield: { breakable: shield === "breakable" } },
+              );
+            },
+          )}
+          {actor &&
+            box("Body", actor.body, `actors.${actor.id}.body`, (body) =>
+              save(enemy, { ...actor, body }),
+            )}
+          {box("Hurtbox", enemy.hurtbox, `${base}.hurtbox`, (hurtbox) =>
+            save({ ...enemy, hurtbox }),
+          )}
+          {box("Perception", enemy.perception, `${base}.perception`, (perception) =>
+            save({ ...enemy, perception }),
+          )}
 
           <SectionTitle divider>Abilities</SectionTitle>
           <Note>In order: the first is where the AI starts.</Note>
           {owned.map((ability, i) => (
             <Row key={ability} display="flex" alignItems="center" gap="1">
               <chakra.div flex="1" minW="0">
-                <Checkbox label={ability} checked onCheckedChange={() => setAbilities(owned.filter((a) => a !== ability))} />
+                <Checkbox
+                  label={ability}
+                  checked
+                  onCheckedChange={() => setAbilities(owned.filter((a) => a !== ability))}
+                />
                 {errors(`${base}.abilities[${i}]`)}
               </chakra.div>
-              <IconButton type="button" aria-label={`Move ${ability} up`} disabled={i === 0} onClick={() => move(i, -1)}>
+              <IconButton
+                type="button"
+                aria-label={`Move ${ability} up`}
+                disabled={i === 0}
+                onClick={() => move(i, -1)}
+              >
                 <ArrowUp size={14} />
               </IconButton>
               <IconButton
@@ -271,7 +352,11 @@ export function EnemyEditorPanel() {
           ))}
           {ENEMY_ABILITIES.filter((ability) => !owned.includes(ability)).map((ability) => (
             <Row key={ability}>
-              <Checkbox label={ability} checked={false} onCheckedChange={() => setAbilities([...owned, ability])} />
+              <Checkbox
+                label={ability}
+                checked={false}
+                onCheckedChange={() => setAbilities([...owned, ability])}
+              />
             </Row>
           ))}
 
@@ -284,8 +369,12 @@ export function EnemyEditorPanel() {
                 <SectionTitle divider>{ability}</SectionTitle>
                 <chakra.div px="3.5">{errors(configPath)}</chakra.div>
                 {abilityFields(ability, projectiles).map((prop) =>
-                  field(prop, config[prop.key], `${configPath}.${prop.key}`, (next: number | string | boolean) =>
-                    save(withConfig(enemy, ability, prop.key, next)),
+                  field(
+                    prop,
+                    config[prop.key],
+                    `${configPath}.${prop.key}`,
+                    (next: number | string | boolean) =>
+                      save(withConfig(enemy, ability, prop.key, next)),
                   ),
                 )}
                 {Array.isArray(conflicts) && (
@@ -294,7 +383,9 @@ export function EnemyEditorPanel() {
                       label="Conflicts with"
                       options={owned.filter((a) => a !== ability)}
                       selected={conflicts}
-                      onToggle={(other, on) => save(withConfig(enemy, ability, "conflicts", toggled(conflicts, other, on)))}
+                      onToggle={(other, on) =>
+                        save(withConfig(enemy, ability, "conflicts", toggled(conflicts, other, on)))
+                      }
                     />
                     {errors(`${configPath}.conflicts`)}
                   </Row>

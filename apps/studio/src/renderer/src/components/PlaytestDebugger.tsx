@@ -262,7 +262,13 @@ function TimingReadout({
   summary: FrameStatsSnapshot["simulation"];
 }): ReactElement {
   return (
-    <chakra.div display="flex" alignItems="center" gap="1.5" px="0.5" title="median / p95 / worst (ms)">
+    <chakra.div
+      display="flex"
+      alignItems="center"
+      gap="1.5"
+      px="0.5"
+      title="median / p95 / worst (ms)"
+    >
       <OverlayLabel>{label}</OverlayLabel>
       <OverlayValue>
         {fmtMs(summary.median)} / {fmtMs(summary.p95)} / {fmtMs(summary.worst)}
@@ -384,7 +390,13 @@ function Field({
   mono?: boolean;
 }): ReactElement {
   return (
-    <chakra.div display="flex" alignItems="baseline" justifyContent="space-between" gap="2" py="1.5px">
+    <chakra.div
+      display="flex"
+      alignItems="baseline"
+      justifyContent="space-between"
+      gap="2"
+      py="1.5px"
+    >
       <OverlayLabel fontSize="10px" letterSpacing="0.4px" flex="none">
         {label}
       </OverlayLabel>

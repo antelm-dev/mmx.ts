@@ -118,7 +118,9 @@ test("toolbar tooltip, level menu, and toggles work above Dockview", async () =>
   await page.keyboard.press("ArrowDown");
   await expect(page.locator("[role=menuitem][data-highlighted]")).toHaveCount(1);
   // Arrow navigation refocuses the menu on the next frame; let it land before closing.
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
   await page.keyboard.press("Escape");
   await expect(newLevel).toBeHidden();
   await expect(levelMenu).toBeFocused();
@@ -159,21 +161,32 @@ test("renders non-empty palette sprite previews", async () => {
   const spawn = page.locator('[title="spawn"]').first();
   const b = (await spawn.boundingBox())!;
   // Middle third: clear of the rounded corners and ring, which differ from the background on their own.
-  const clip = { x: b.x + b.width / 3, y: b.y + b.height / 3, width: b.width / 3, height: b.height / 3 };
+  const clip = {
+    x: b.x + b.width / 3,
+    y: b.y + b.height / 3,
+    width: b.width / 3,
+    height: b.height / 3,
+  };
   await expect.poll(async () => distinctColors(await page.screenshot({ clip }))).toBeGreaterThan(1);
 });
 
 /** Distinct colours in a PNG (a blank box has one). */
 async function distinctColors(png: Buffer): Promise<number> {
-  return page.evaluate(async (bytes) => {
-    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/png" }));
-    const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext("2d")!;
-    ctx.drawImage(bitmap, 0, 0);
-    const data = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
-    const seen = new Set<number>();
-    for (let i = 0; i < data.length; i += 4) seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
-    return seen.size;
-  }, [...png]);
+  return page.evaluate(
+    async (bytes) => {
+      const bitmap = await createImageBitmap(
+        new Blob([new Uint8Array(bytes)], { type: "image/png" }),
+      );
+      const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext("2d")!;
+      ctx.drawImage(bitmap, 0, 0);
+      const data = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
+      const seen = new Set<number>();
+      for (let i = 0; i < data.length; i += 4)
+        seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
+      return seen.size;
+    },
+    [...png],
+  );
 }
 
 test("switches to the Scene tab and lists placed objects", async () => {
@@ -298,7 +311,9 @@ test("title bar menus work by pointer and keyboard and return focus", async () =
   for (let i = 0; i < initialIndex; i++) await page.keyboard.press("ArrowDown");
   await expect(themeItems.nth(initialIndex)).toHaveAttribute("data-highlighted", "");
   // Arrow navigation refocuses the menu on the next frame; a select before that frame loses focus to body.
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
   await page.keyboard.press("Enter");
   await expect.poll(theme).toBe(initialTheme);
   await expect(checkedTheme).toHaveText(initialPreference);
@@ -313,7 +328,9 @@ test("title bar menus work by pointer and keyboard and return focus", async () =
   for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowDown");
   await expect(zoomIn).toHaveAttribute("data-highlighted", "");
   // Arrow navigation refocuses the menu on the next frame; a select before that frame loses focus to body.
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
   await page.keyboard.press("Enter");
   await expect(zoomIn).toBeHidden();
   await expect(viewMenu).toBeFocused();
@@ -360,7 +377,10 @@ test("System theme follows the OS live for Chakra, Dockview and Monaco and survi
   pageErrors.length = 0;
   const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
   const background = (selector: string) =>
-    page.locator(selector).first().evaluate((el) => getComputedStyle(el).backgroundColor);
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
   const surface = () =>
     page.evaluate(() => {
       const probe = document.createElement("div");
@@ -440,7 +460,9 @@ test("System theme follows the OS live for Chakra, Dockview and Monaco and survi
   await expect.poll(colors).toEqual(light);
   await emulateOs("light");
   await emulateOs("dark");
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
   expect(await theme()).toBe("light");
   expect(await colors()).toEqual(light);
 

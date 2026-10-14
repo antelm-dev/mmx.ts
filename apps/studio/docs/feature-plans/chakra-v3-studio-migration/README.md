@@ -28,13 +28,13 @@ Source base: the `main` commit that contains Task 02 (Toolbar slice). That is `8
 
 ## Tasks and execution waves
 
-| Task | Outcome | Depends on | Branch | Delivery | Base policy |
-| --- | --- | --- | --- | --- | --- |
-| 03 | TitleBar dropdown menus on the shared Chakra Menu wrapper | 02 merged | `codex/chakra-v3-menus-03` | `default-branch-pr` | `latest-default` |
-| 04 | Scene and viewport context menus on Chakra Menu | 02 merged | `codex/chakra-v3-context-menus-04` | `default-branch-pr` | `latest-default` |
-| 05 | Inspector + Room panel form controls (Field, Input, Checkbox, Select) | 02 merged | `codex/chakra-v3-forms-05` | `default-branch-pr` | `latest-default` |
-| 06 | Panel shells, list rows, section titles, action buttons, toasts, PlaytestDebugger chrome | 04, 05 merged | `codex/chakra-v3-panels-06` | `default-branch-pr` | `latest-default` |
-| 07 | Remove Radix, `ui.ts`, Tailwind; token ownership | 03, 06 merged | `codex/chakra-v3-cleanup-07` | `default-branch-pr` | `latest-default` |
+| Task | Outcome                                                                                  | Depends on    | Branch                             | Delivery            | Base policy      |
+| ---- | ---------------------------------------------------------------------------------------- | ------------- | ---------------------------------- | ------------------- | ---------------- |
+| 03   | TitleBar dropdown menus on the shared Chakra Menu wrapper                                | 02 merged     | `codex/chakra-v3-menus-03`         | `default-branch-pr` | `latest-default` |
+| 04   | Scene and viewport context menus on Chakra Menu                                          | 02 merged     | `codex/chakra-v3-context-menus-04` | `default-branch-pr` | `latest-default` |
+| 05   | Inspector + Room panel form controls (Field, Input, Checkbox, Select)                    | 02 merged     | `codex/chakra-v3-forms-05`         | `default-branch-pr` | `latest-default` |
+| 06   | Panel shells, list rows, section titles, action buttons, toasts, PlaytestDebugger chrome | 04, 05 merged | `codex/chakra-v3-panels-06`        | `default-branch-pr` | `latest-default` |
+| 07   | Remove Radix, `ui.ts`, Tailwind; token ownership                                         | 03, 06 merged | `codex/chakra-v3-cleanup-07`       | `default-branch-pr` | `latest-default` |
 
 Wave 1 runs 03, 04 and 05 in parallel: their owned files are disjoint (`TitleBar.tsx` / `ScenePanel.tsx` + `Viewport.tsx` / `Inspector.tsx` + `RoomPanel.tsx`) and each adds its own new wrapper files. Wave 2 is Task 06 after 04 and 05 merge (it edits `ScenePanel.tsx` list rows and the Inspector footer). Wave 3 is Task 07 alone, launched from the `main` tip that contains 03–06. Each worker launches from the refreshed `main` tip the coordinator records as its immutable launch base.
 
@@ -110,7 +110,8 @@ review_contract:
       branch: codex/chakra-v3-cleanup-07
       depends_on: ["03", "06"]
       acceptance: [AC-CLEANUP]
-      checks: ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test", "pnpm build", "pnpm e2e"]
+      checks:
+        ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test", "pnpm build", "pnpm e2e"]
       delivery: default-branch-pr
       base_policy: latest-default
   integration_checks: ["pnpm typecheck", "pnpm test", "pnpm build", "pnpm e2e"]

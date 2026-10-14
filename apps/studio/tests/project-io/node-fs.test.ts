@@ -8,11 +8,7 @@ import { createLevelDocument } from "@mmx/content-schema";
 import { serializeProject } from "@mmx/project-schema";
 
 import { createNodeFileSystem } from "../../src/project-io/node.js";
-import {
-  createProject,
-  exportProject,
-  loadProject,
-} from "../../src/project-io/index.js";
+import { createProject, exportProject, loadProject } from "../../src/project-io/index.js";
 
 async function writeTextFile(path: string, content: string) {
   const { writeFile, mkdir } = await import("node:fs/promises");

@@ -52,7 +52,11 @@ execution_contract:
         - { command: pnpm typecheck, result: passed }
         - { command: pnpm test, result: passed, detail: "125 vitest + 87 node tests" }
         - { command: pnpm build, result: passed }
-        - { command: pnpm e2e, result: passed, detail: "12 Electron tests; new test covers tooltip portalled above Dockview, aria-pressed toggle, keyboard level menu with focus return, pointer open/close, selecting New Level runs the command, zero page/console errors" }
+        - {
+            command: pnpm e2e,
+            result: passed,
+            detail: "12 Electron tests; new test covers tooltip portalled above Dockview, aria-pressed toggle, keyboard level menu with focus return, pointer open/close, selecting New Level runs the command, zero page/console errors",
+          }
       acceptance: { AC-TOOLBAR: met, AC-OVERLAY: met }
       deviations:
         - "Tooltips open below the trigger (Chakra default) instead of above (Radix default); Radix skip-delay between neighbouring tooltips is not replicated."

@@ -1,7 +1,13 @@
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Page,
+} from "@playwright/test";
 import electronPath from "electron";
 import { encodePng } from "../src/project-io/import/png";
 
@@ -13,7 +19,10 @@ cpSync(fixtureRoot, projectRoot, { recursive: true });
 const levelPath = join(projectRoot, "levels/level.main.json");
 // No floor: the player can only stand on what the test paints.
 const fixtureLevel = JSON.parse(readFileSync(levelPath, "utf8"));
-writeFileSync(levelPath, JSON.stringify({ ...fixtureLevel, tiles: fixtureLevel.tiles.map(() => 0) }, null, 2));
+writeFileSync(
+  levelPath,
+  JSON.stringify({ ...fixtureLevel, tiles: fixtureLevel.tiles.map(() => 0) }, null, 2),
+);
 
 // Synthetic 4x2 tileset of 16 px tiles, one flat colour per tile, outside the project.
 const sourceDir = mkdtempSync(join(tmpdir(), "mmx-tileset-src-"));
@@ -42,7 +51,11 @@ test.afterAll(async () => {
 /** Screen point at the centre of a level cell, from the viewport's zoom/position. */
 async function cellPoint(page: Page, col: number, row: number): Promise<{ x: number; y: number }> {
   const canvas = page.locator("#viewport-canvas");
-  const [zoom, vx, vy] = (await canvas.getAttribute("data-view"))!.split(",").map(Number) as [number, number, number];
+  const [zoom, vx, vy] = (await canvas.getAttribute("data-view"))!.split(",").map(Number) as [
+    number,
+    number,
+    number,
+  ];
   const box = (await canvas.boundingBox())!;
   return { x: box.x + ((col + 0.5) * 16 - vx) * zoom, y: box.y + ((row + 0.5) * 16 - vy) * zoom };
 }
@@ -130,7 +143,9 @@ test("AC-PAINT: a painted tileset floor writes art and collision together and ho
     const cells: number[] = level.tileLayers[0].cells;
     expect(cells.length).toBe(level.cols * level.rows);
     expect(floor.map((i) => [cells[i], level.tiles[i]])).toEqual(floor.map(() => [0, 1]));
-    expect(block.map((i) => [cells[i], level.tiles[i]])).toEqual(block.map(() => [blockTile, blockCollision]));
+    expect(block.map((i) => [cells[i], level.tiles[i]])).toEqual(
+      block.map(() => [blockTile, blockCollision]),
+    );
     expect(cells.filter((c) => c !== -1).length).toBe(blockTile === -1 ? 10 : 19);
     const asset = project.assets.find((a: { kind: string }) => a.kind === "tileset");
     expect(asset).toMatchObject({ tileSize: 16, collision: { 0: 1, 1: 1, 2: 4 } });

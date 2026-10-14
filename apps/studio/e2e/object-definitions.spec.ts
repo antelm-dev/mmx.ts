@@ -1,7 +1,13 @@
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Page,
+} from "@playwright/test";
 import electronPath from "electron";
 
 const appRoot = resolve(__dirname, "..");
@@ -29,7 +35,13 @@ test("project objects: create from an instance, edit, save, and delete once unus
   const manifestPath = join(projectRoot, "project.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   manifest.objects = [
-    { id: "obj.fast", name: "Fast Platform", base: "platform.moving", values: { Speed: 120 }, exposed: ["Travel"] },
+    {
+      id: "obj.fast",
+      name: "Fast Platform",
+      base: "platform.moving",
+      values: { Speed: 120 },
+      exposed: ["Travel"],
+    },
   ];
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   const levelPath = join(projectRoot, "levels/level.main.json");
@@ -145,6 +157,8 @@ test("a level instance of a removed project object shows as missing instead of c
   await page.keyboard.press("Control+z");
   await expect(page.getByText("Missing Objects")).toBeVisible();
   await page.getByRole("tab", { name: /^Problems/ }).click();
-  await expect(page.getByText(/Unknown object definition 'obj\.platform\.moving\.\d+'/).first()).toBeVisible();
+  await expect(
+    page.getByText(/Unknown object definition 'obj\.platform\.moving\.\d+'/).first(),
+  ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

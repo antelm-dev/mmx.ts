@@ -27,13 +27,21 @@ export function parseLibraryFolders(vdf: string): string[] {
   return paths;
 }
 
-const exists = (path: string) => stat(path).then(() => true, () => false);
+const exists = (path: string) =>
+  stat(path).then(
+    () => true,
+    () => false,
+  );
 
 /** `steamapps/common` folders of every library found under the Steam roots (the roots themselves if no vdf). */
-export async function steamLibraries(steamRoots: readonly string[] = DEFAULT_STEAM_ROOTS): Promise<string[]> {
+export async function steamLibraries(
+  steamRoots: readonly string[] = DEFAULT_STEAM_ROOTS,
+): Promise<string[]> {
   const libs: string[] = [];
   for (const root of steamRoots) {
-    const vdf = await readFile(join(root, "steamapps", "libraryfolders.vdf"), "utf8").catch(() => null);
+    const vdf = await readFile(join(root, "steamapps", "libraryfolders.vdf"), "utf8").catch(
+      () => null,
+    );
     if (vdf !== null) libs.push(...parseLibraryFolders(vdf));
   }
   return (libs.length > 0 ? libs : [...steamRoots]).map((lib) => join(lib, "steamapps", "common"));
@@ -42,18 +50,27 @@ export async function steamLibraries(steamRoots: readonly string[] = DEFAULT_STE
 /** The game's install folder: the env override if set, else the first Steam library that has it. */
 export async function findSteamGame(
   game: SteamGame,
-  { env = process.env, steamRoots = DEFAULT_STEAM_ROOTS }: { env?: NodeJS.ProcessEnv; steamRoots?: readonly string[] } = {},
+  {
+    env = process.env,
+    steamRoots = DEFAULT_STEAM_ROOTS,
+  }: { env?: NodeJS.ProcessEnv; steamRoots?: readonly string[] } = {},
 ): Promise<SteamGameResult> {
   const { env: envName, folder, marker } = STEAM_GAMES[game];
   const override = env[envName];
   if (override) {
     return (await exists(join(override, marker)))
       ? { ok: true, root: override }
-      : { ok: false, error: `${envName}=${override} has no ${marker}. Point it at the "${folder}" install folder.` };
+      : {
+          ok: false,
+          error: `${envName}=${override} has no ${marker}. Point it at the "${folder}" install folder.`,
+        };
   }
   for (const common of await steamLibraries(steamRoots)) {
     const root = join(common, folder);
     if (await exists(join(root, marker))) return { ok: true, root };
   }
-  return { ok: false, error: `${folder} is not installed in your Steam libraries. Install it from Steam, or set ${envName} to its folder.` };
+  return {
+    ok: false,
+    error: `${folder} is not installed in your Steam libraries. Install it from Steam, or set ${envName} to its folder.`,
+  };
 }

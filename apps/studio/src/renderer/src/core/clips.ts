@@ -24,7 +24,10 @@ const BEHAVIOR_CLIPS: Record<string, string[]> = {
 };
 
 /** Clip names a player loadout of `gameData` expects in its animation asset (default loadout X). */
-export function requiredPlayerClips(loadoutId = "player.x", gameData: CompiledGameData = COMPILED_GAME_DATA): string[] {
+export function requiredPlayerClips(
+  loadoutId = "player.x",
+  gameData: CompiledGameData = COMPILED_GAME_DATA,
+): string[] {
   const names = new Set<string>();
   for (const ability of gameData.loadouts.get(loadoutId)?.abilities ?? []) {
     for (const name of BEHAVIOR_CLIPS[ability.behavior] ?? []) names.add(name);
@@ -61,7 +64,11 @@ export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
  * bottom-centre of the opaque pixels' bounding box; bottom-centre of the region
  * when it is fully transparent.
  */
-export function feetAnchor(px: Uint8ClampedArray, sheetWidth: number, region: Region): [number, number] {
+export function feetAnchor(
+  px: Uint8ClampedArray,
+  sheetWidth: number,
+  region: Region,
+): [number, number] {
   const [rx, ry, w, h] = region;
   let minX = Infinity;
   let maxX = -1;
@@ -80,7 +87,8 @@ export function feetAnchor(px: Uint8ClampedArray, sheetWidth: number, region: Re
 
 // --- Frame boxes (C-BOX): `{ x, y, w, h }` from the feet (the frame anchor), y down, as drawn. ---
 
-const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(value, max));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(value, max));
 
 /**
  * The box spanned by two points `a`, `b` in region pixels (any order, fractions
@@ -116,16 +124,30 @@ export function moveBox(
 }
 
 /** `frame` with these boxes; an absent hurtbox or empty hitbox list is left out. */
-export function withBoxes(frame: AnimationFrame, hurtbox: FrameBox | undefined, hitboxes: readonly FrameBox[]): AnimationFrame {
+export function withBoxes(
+  frame: AnimationFrame,
+  hurtbox: FrameBox | undefined,
+  hitboxes: readonly FrameBox[],
+): AnimationFrame {
   const { hurtbox: _hurt, hitboxes: _hit, ...rest } = frame;
-  return { ...rest, ...(hurtbox ? { hurtbox } : {}), ...(hitboxes.length > 0 ? { hitboxes: [...hitboxes] } : {}) };
+  return {
+    ...rest,
+    ...(hurtbox ? { hurtbox } : {}),
+    ...(hitboxes.length > 0 ? { hitboxes: [...hitboxes] } : {}),
+  };
 }
 
 /** `frames` with frame `from`'s boxes copied onto each of `targets` (boxes stay relative to each frame's feet). */
-export function copyBoxes(frames: readonly AnimationFrame[], from: number, targets: readonly number[]): AnimationFrame[] {
+export function copyBoxes(
+  frames: readonly AnimationFrame[],
+  from: number,
+  targets: readonly number[],
+): AnimationFrame[] {
   const source = frames[from];
   if (!source) return [...frames];
   return frames.map((frame, i) =>
-    i !== from && targets.includes(i) ? withBoxes(frame, source.hurtbox, source.hitboxes ?? []) : frame,
+    i !== from && targets.includes(i)
+      ? withBoxes(frame, source.hurtbox, source.hitboxes ?? [])
+      : frame,
   );
 }

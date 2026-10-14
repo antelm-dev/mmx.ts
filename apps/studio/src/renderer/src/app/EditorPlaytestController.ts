@@ -5,11 +5,7 @@ import {
   type EditorPlaytestSession,
   type PlaytestSnapshot,
 } from "@mmx/editor-runtime";
-import {
-  emptySelection,
-  type EditorSelection,
-  type EditorStore,
-} from "../core/EditorStore.js";
+import { emptySelection, type EditorSelection, type EditorStore } from "../core/EditorStore.js";
 import { type FileAccess } from "../core/persistence.js";
 import { ensureStudioClientSettings } from "../settings/studioClientSettings.js";
 import type { StudioAssets } from "../assets/studioAssets.js";

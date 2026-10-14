@@ -14,7 +14,8 @@ const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 export function encodePng({ width, height, px }: Rgba): Buffer {
   const stride = width * 4;
   const raw = Buffer.alloc((stride + 1) * height); // filter byte 0 (None) per row
-  for (let y = 0; y < height; y++) raw.set(px.subarray(y * stride, (y + 1) * stride), y * (stride + 1) + 1);
+  for (let y = 0; y < height; y++)
+    raw.set(px.subarray(y * stride, (y + 1) * stride), y * (stride + 1) + 1);
   const chunk = (type: string, data: Buffer) => {
     const head = Buffer.alloc(8);
     head.writeUInt32BE(data.length, 0);
@@ -27,7 +28,12 @@ export function encodePng({ width, height, px }: Rgba): Buffer {
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr.set([8, 6, 0, 0, 0], 8);
-  return Buffer.concat([SIGNATURE, chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+  return Buffer.concat([
+    SIGNATURE,
+    chunk("IHDR", ihdr),
+    chunk("IDAT", deflateSync(raw)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
 }
 
 export function decodePng(buf: Buffer): Rgba {
@@ -42,7 +48,8 @@ export function decodePng(buf: Buffer): Rgba {
     if (type === "IHDR") {
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
-      if (data[8] !== 8 || data[9] !== 6 || data[12] !== 0) throw new Error("only 8-bit RGBA non-interlaced PNG is supported");
+      if (data[8] !== 8 || data[9] !== 6 || data[12] !== 0)
+        throw new Error("only 8-bit RGBA non-interlaced PNG is supported");
     } else if (type === "IDAT") idat.push(data);
     pos += 12 + len;
   }
@@ -57,7 +64,9 @@ export function decodePng(buf: Buffer): Rgba {
       const b = y > 0 ? px[(y - 1) * stride + i] : 0;
       const c = i >= 4 && y > 0 ? px[(y - 1) * stride + i - 4] : 0;
       const p = a + b - c;
-      const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+      const pa = Math.abs(p - a),
+        pb = Math.abs(p - b),
+        pc = Math.abs(p - c);
       const pred = [0, a, b, (a + b) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? b : c][filter];
       px[y * stride + i] = (raw[src + i] + pred) & 0xff;
     }

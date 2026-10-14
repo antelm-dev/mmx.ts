@@ -186,7 +186,11 @@ function FileMenu() {
         >
           <Scissors size={13} /> Slice Sheet…
         </MenuItem>
-        <MenuItem value="clip-editor" disabled={!project.open} onSelect={() => openPanel(CLIP_PANEL)}>
+        <MenuItem
+          value="clip-editor"
+          disabled={!project.open}
+          onSelect={() => openPanel(CLIP_PANEL)}
+        >
           <Film size={13} /> Clip Editor…
         </MenuItem>
       </MenuGroup>
@@ -421,7 +425,11 @@ function ControlButton({
       color="studio.fgTertiary"
       transition="colors"
       transitionDuration="100ms"
-      _hover={danger ? { bg: "studio.danger", color: "white" } : { bg: "studio.hover", color: "studio.fg" }}
+      _hover={
+        danger
+          ? { bg: "studio.danger", color: "white" }
+          : { bg: "studio.hover", color: "studio.fg" }
+      }
     >
       {children}
     </chakra.button>

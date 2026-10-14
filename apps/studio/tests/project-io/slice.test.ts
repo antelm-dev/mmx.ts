@@ -23,7 +23,8 @@ function syntheticSheet(background: [number, number, number, number] = [0, 0, 0,
   const px = new Uint8Array(width * height * 4);
   for (let i = 0; i < width * height; i++) px.set(background, i * 4);
   const fill = (x: number, y: number, w: number, h: number) => {
-    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) px.set([200, 40, 40, 255], (yy * width + xx) * 4);
+    for (let yy = y; yy < y + h; yy++)
+      for (let xx = x; xx < x + w; xx++) px.set([200, 40, 40, 255], (yy * width + xx) * 4);
   };
   for (let f = 0; f < 6; f++) fill((f % 4) * 32 + 4, Math.floor(f / 4) * 32 + 4, 20, 20);
   fill(2 * 32 + 4 + 20 + 2, 10, 3, 3);
@@ -51,24 +52,42 @@ test("an opaque background colour is treated as empty", () => {
 });
 
 test("grid honours margin and spacing; merge and split are inverse on separate parts", () => {
-  assert.deepEqual(sliceGrid(20, 10, { cell: [8, 8], margin: 1, spacing: 2 }), [[1, 1, 8, 8], [11, 1, 8, 8]]);
+  assert.deepEqual(sliceGrid(20, 10, { cell: [8, 8], margin: 1, spacing: 2 }), [
+    [1, 1, 8, 8],
+    [11, 1, 8, 8],
+  ]);
   const { width, px } = syntheticSheet();
-  const pair = mergeRects([[4, 4, 20, 20], [36, 4, 20, 20]]);
+  const pair = mergeRects([
+    [4, 4, 20, 20],
+    [36, 4, 20, 20],
+  ]);
   assert.deepEqual(pair, [4, 4, 52, 20]);
-  assert.deepEqual(splitRect(px, width, pair), [[4, 4, 20, 20], [36, 4, 20, 20]]);
+  assert.deepEqual(splitRect(px, width, pair), [
+    [4, 4, 20, 20],
+    [36, 4, 20, 20],
+  ]);
   // One solid part is cut in half along its longer side.
-  assert.deepEqual(splitRect(px, width, [4, 4, 20, 20]), [[4, 4, 10, 20], [14, 4, 10, 20]]);
+  assert.deepEqual(splitRect(px, width, [4, 4, 20, 20]), [
+    [4, 4, 10, 20],
+    [14, 4, 10, 20],
+  ]);
 });
 
 test("region ids follow reading order, optionally per row", () => {
   const rects = sliceGrid(64, 64, { cell: [32, 32] }).reverse();
-  assert.deepEqual(toRegions(rects).map((r) => r.id), ["frame.0", "frame.1", "frame.2", "frame.3"]);
-  assert.deepEqual(toRegions(rects, true).map((r) => [r.id, r.region[0], r.region[1]]), [
-    ["row0.0", 0, 0],
-    ["row0.1", 32, 0],
-    ["row1.0", 0, 32],
-    ["row1.1", 32, 32],
-  ]);
+  assert.deepEqual(
+    toRegions(rects).map((r) => r.id),
+    ["frame.0", "frame.1", "frame.2", "frame.3"],
+  );
+  assert.deepEqual(
+    toRegions(rects, true).map((r) => [r.id, r.region[0], r.region[1]]),
+    [
+      ["row0.0", 0, 0],
+      ["row0.1", 32, 0],
+      ["row1.0", 0, 32],
+      ["row1.1", 32, 32],
+    ],
+  );
 });
 
 test("sprite regions survive save and load; the schema refuses malformed ones on save", async () => {
@@ -81,7 +100,14 @@ test("sprite regions survive save and load; the schema refuses malformed ones on
     ...created.value,
     manifest: {
       ...created.value.manifest,
-      assets: [{ id: "sprite.sheet", kind: "sprite" as const, path: "assets/sprites/sheet.png", regions: value }],
+      assets: [
+        {
+          id: "sprite.sheet",
+          kind: "sprite" as const,
+          path: "assets/sprites/sheet.png",
+          regions: value,
+        },
+      ],
     },
   });
   await fs.writeBytes("assets/sprites/sheet.png", new Uint8Array([0]));
@@ -95,8 +121,18 @@ test("sprite regions survive save and load; the schema refuses malformed ones on
 
   const badRect = await saveProject(fs, withSheet([{ id: "x", region: [0, 0, -1, 2] }]));
   assert.equal(badRect.ok, false);
-  assert.ok(badRect.issues.some((i) => i.code === "region.invalid" && i.path === "/assets/0/regions/0/region"));
-  const dupId = await saveProject(fs, withSheet([{ id: "x", region: [0, 0, 1, 1] }, { id: "x", region: [1, 0, 1, 1] }]));
+  assert.ok(
+    badRect.issues.some(
+      (i) => i.code === "region.invalid" && i.path === "/assets/0/regions/0/region",
+    ),
+  );
+  const dupId = await saveProject(
+    fs,
+    withSheet([
+      { id: "x", region: [0, 0, 1, 1] },
+      { id: "x", region: [1, 0, 1, 1] },
+    ]),
+  );
   assert.equal(dupId.ok, false);
   assert.ok(dupId.issues.some((i) => i.code === "sprite.regions"));
 });

@@ -87,14 +87,18 @@ export function tile4bpp(vram: Uint8Array, i: number): Uint8Array {
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
       const bit = (o: number) => (vram[t + o] >> (7 - x)) & 1;
-      out[y * 8 + x] = bit(y * 2) | (bit(y * 2 + 1) << 1) | (bit(y * 2 + 16) << 2) | (bit(y * 2 + 17) << 3);
+      out[y * 8 + x] =
+        bit(y * 2) | (bit(y * 2 + 1) << 1) | (bit(y * 2 + 16) << 2) | (bit(y * 2 + 17) << 3);
     }
   }
   return out;
 }
 
 /** Scene layout: w, h (in 256 px scenes), used, then {ctrl, scene} runs until 0xFF; ctrl bit 7 = repeat, else count up. */
-export function decodeLayout(b: Uint8Array, lp: number): { w: number; h: number; layout: number[] } {
+export function decodeLayout(
+  b: Uint8Array,
+  lp: number,
+): { w: number; h: number; layout: number[] } {
   const [w, h] = [b[lp], b[lp + 1]];
   const layout: number[] = [];
   for (lp += 3; b[lp] !== 0xff; lp += 2) {
@@ -144,7 +148,11 @@ function loadLayer(rom: Uint8Array, level: number, point: number, background: bo
   const cfg = snes2pc(sw(P_PALETT + level * 2 + 0x60) | 0x860000);
   const ppal = snes2pc(w(cfg + 1) | 0x850000);
   for (let i = 0; i < rom[cfg]; i++) pal[i] = snesColor(w(ppal + i * 2));
-  for (let idx = w(DYN_PAL + w(DYN_PAL + level * 2) + palLoad * 2); w(DYN_PAL + idx) !== 0xffff; idx += 3) {
+  for (
+    let idx = w(DYN_PAL + w(DYN_PAL + level * 2) + palLoad * 2);
+    w(DYN_PAL + idx) !== 0xffff;
+    idx += 3
+  ) {
     const src = w(DYN_PAL + idx);
     const to = w(DYN_PAL + idx + 2) & 0xff;
     for (let i = 0; i < 16; i++) pal[to + i] = snesColor(w(snes2pc(0x850000 | (src + i * 2))));
@@ -164,8 +172,18 @@ function loadLayer(rom: Uint8Array, level: number, point: number, background: bo
   }
 
   const ptr = (table: number) => snes2pc(sl(table + level * 3));
-  const [lt, st, bt] = background ? [P_BG_LAYOUT, P_BG_SCENES, P_BG_BLOCKS] : [P_LAYOUT, P_SCENES, P_BLOCKS];
-  return { ...decodeLayout(rom, ptr(lt)), pal, vram, scenes: ptr(st), blocks: ptr(bt), maps: ptr(P_MAPS), collis: ptr(P_COLLIS) };
+  const [lt, st, bt] = background
+    ? [P_BG_LAYOUT, P_BG_SCENES, P_BG_BLOCKS]
+    : [P_LAYOUT, P_SCENES, P_BLOCKS];
+  return {
+    ...decodeLayout(rom, ptr(lt)),
+    pal,
+    vram,
+    scenes: ptr(st),
+    blocks: ptr(bt),
+    maps: ptr(P_MAPS),
+    collis: ptr(P_COLLIS),
+  };
 }
 
 /** 16 px map index of every 16 px cell of the layer, rows of columns. */
@@ -178,7 +196,10 @@ function mapGrid(rom: Uint8Array, layer: Layer): number[][] {
       for (let by = 0; by < 8; by++) {
         for (let bx = 0; bx < 8; bx++) {
           const blk = w(layer.scenes + scene * 0x80 + by * 0x10 + bx * 2);
-          for (let k = 0; k < 4; k++) grid[sy * 16 + by * 2 + (k >> 1)][sx * 16 + bx * 2 + (k & 1)] = w(layer.blocks + blk * 8 + k * 2);
+          for (let k = 0; k < 4; k++)
+            grid[sy * 16 + by * 2 + (k >> 1)][sx * 16 + bx * 2 + (k & 1)] = w(
+              layer.blocks + blk * 8 + k * 2,
+            );
         }
       }
     }
@@ -248,6 +269,9 @@ export function readMmx1Stage(rom: Uint8Array): Mmx1Stage {
 /** Read RXC1.exe from a located Mega Man X Legacy Collection install (see findSteamGame("mmxlc")). */
 export async function readMmx1Install(root: string): Promise<Mmx1Stage> {
   const rom = findMmx1Rom(await readFile(join(root, "RXC1.exe")));
-  if (!rom) throw new Error("MMX1 (US v1.0) was not found inside RXC1.exe: unexpected Legacy Collection version.");
+  if (!rom)
+    throw new Error(
+      "MMX1 (US v1.0) was not found inside RXC1.exe: unexpected Legacy Collection version.",
+    );
   return readMmx1Stage(rom);
 }

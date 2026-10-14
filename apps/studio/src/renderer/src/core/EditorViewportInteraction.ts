@@ -112,21 +112,34 @@ export class EditorViewportInteraction {
     this.bindPointer();
   }
 
-  getLive(): LivePreview { return this.live; }
+  getLive(): LivePreview {
+    return this.live;
+  }
   getTileStroke(): TileStrokePreview | null {
     const art = this.tileArt;
     if (!art) return this.tileStroke;
     const shown = art.value < 0 ? TerrainTile.Empty : TerrainTile.Solid;
-    return { erase: art.value < 0, changed: new Map([...art.changed.keys()].map((i) => [i, shown])) };
+    return {
+      erase: art.value < 0,
+      changed: new Map([...art.changed.keys()].map((i) => [i, shown])),
+    };
   }
   getMarquee(): MarqueePreview | null {
     if (!this.marquee) return null;
     return { start: this.marquee.start, current: this.marquee.current, active: this.marqueeActive };
   }
-  isPanning(): boolean { return this.panning; }
-  isSpaceDown(): boolean { return this.spaceDown; }
-  isMarqueeActive(): boolean { return this.marqueeActive; }
-  setSpace(down: boolean): void { this.spaceDown = down; }
+  isPanning(): boolean {
+    return this.panning;
+  }
+  isSpaceDown(): boolean {
+    return this.spaceDown;
+  }
+  isMarqueeActive(): boolean {
+    return this.marqueeActive;
+  }
+  setSpace(down: boolean): void {
+    this.spaceDown = down;
+  }
 
   private screenToWorld(clientX: number, clientY: number): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
@@ -147,7 +160,12 @@ export class EditorViewportInteraction {
     const row = Math.floor(world.y / grid);
     const inBounds = col >= 0 && row >= 0 && col < doc.cols && row < doc.rows;
     return {
-      clientX, clientY, worldX: world.x, worldY: world.y, col, row,
+      clientX,
+      clientY,
+      worldX: world.x,
+      worldY: world.y,
+      col,
+      row,
       tileSolid: inBounds && doc.tiles[row * doc.cols + col] === TerrainTile.Solid,
     };
   }
@@ -179,8 +197,11 @@ export class EditorViewportInteraction {
   }
 
   private decorationsIntersecting(box: Box): string[] {
-    const { decorationLayerVisible: vis, decorationLayerLocked: locks, document: doc } =
-      this.store.get();
+    const {
+      decorationLayerVisible: vis,
+      decorationLayerLocked: locks,
+      document: doc,
+    } = this.store.get();
     return doc.decorations
       .filter((d) => {
         if (!vis[d.layer] || locks[d.layer]) return false;
@@ -191,8 +212,9 @@ export class EditorViewportInteraction {
   }
 
   private objectsIntersecting(box: Box): string[] {
-    return this.store.get().document.objects
-      .filter((o) => this.boxesIntersect(boxOf(o), box))
+    return this.store
+      .get()
+      .document.objects.filter((o) => this.boxesIntersect(boxOf(o), box))
       .map((o) => o.id);
   }
 
@@ -217,20 +239,23 @@ export class EditorViewportInteraction {
     const objectIds = this.objectsIntersecting(box);
     let next: EditorSelection;
     if (objectIds.length > 0) {
-      next = m.additive && m.base.kind === "objects"
-        ? { kind: "objects", ids: [...new Set([...m.base.ids, ...objectIds])] }
-        : { kind: "objects", ids: objectIds };
+      next =
+        m.additive && m.base.kind === "objects"
+          ? { kind: "objects", ids: [...new Set([...m.base.ids, ...objectIds])] }
+          : { kind: "objects", ids: objectIds };
     } else {
       const decoIds = this.decorationsIntersecting(box);
       if (decoIds.length > 0) {
-        next = m.additive && m.base.kind === "decorations"
-          ? { kind: "decorations", ids: [...new Set([...m.base.ids, ...decoIds])] }
-          : { kind: "decorations", ids: decoIds };
+        next =
+          m.additive && m.base.kind === "decorations"
+            ? { kind: "decorations", ids: [...new Set([...m.base.ids, ...decoIds])] }
+            : { kind: "decorations", ids: decoIds };
       } else {
         const indices = this.tilesAt(box);
-        next = m.additive && m.base.kind === "tiles"
-          ? { kind: "tiles", indices: [...new Set([...m.base.indices, ...indices])] }
-          : { kind: "tiles", indices };
+        next =
+          m.additive && m.base.kind === "tiles"
+            ? { kind: "tiles", indices: [...new Set([...m.base.indices, ...indices])] }
+            : { kind: "tiles", indices };
       }
     }
     if (!selectionsEqual(this.store.get().selection, next)) this.store.setSelection(next);
@@ -238,13 +263,20 @@ export class EditorViewportInteraction {
 
   private handleAt(clientX: number, clientY: number): Handle | null {
     const state = this.store.get();
-    const target = singleResizableObject(state.document.objects, selectedObjectIds(state.selection));
+    const target = singleResizableObject(
+      state.document.objects,
+      selectedObjectIds(state.selection),
+    );
     if (!target) return null;
     const { zoom, viewportPosition } = state;
     return handleHitTest(
-      boxOf(target), clientX, clientY,
+      boxOf(target),
+      clientX,
+      clientY,
       this.canvas.getBoundingClientRect(),
-      zoom, viewportPosition.x, viewportPosition.y,
+      zoom,
+      viewportPosition.x,
+      viewportPosition.y,
     );
   }
 
@@ -254,7 +286,15 @@ export class EditorViewportInteraction {
     if (!target) return null;
     const { zoom, viewportPosition } = state;
     const rect = this.canvas.getBoundingClientRect();
-    return pointHitTest(target.grip, clientX, clientY, rect, zoom, viewportPosition.x, viewportPosition.y)
+    return pointHitTest(
+      target.grip,
+      clientX,
+      clientY,
+      rect,
+      zoom,
+      viewportPosition.x,
+      viewportPosition.y,
+    )
       ? target.inst
       : null;
   }
@@ -273,19 +313,28 @@ export class EditorViewportInteraction {
     const rs = this.resizeState;
     if (!rs) return;
     const o = rs.orig;
-    let x = o.x; let y = o.y; let right = o.x + o.w; let bottom = o.y + o.h;
+    let x = o.x;
+    let y = o.y;
+    let right = o.x + o.w;
+    let bottom = o.y + o.h;
     if (rs.handle.includes("w")) x = this.store.snap(world.x);
     if (rs.handle.includes("e")) right = this.store.snap(world.x);
     if (rs.handle.includes("n")) y = this.store.snap(world.y);
     if (rs.handle.includes("s")) bottom = this.store.snap(world.y);
-    this.live = { type: "resize", id: rs.id, box: { x, y, w: Math.max(1, right - x), h: Math.max(1, bottom - y) } };
+    this.live = {
+      type: "resize",
+      id: rs.id,
+      box: { x, y, w: Math.max(1, right - x), h: Math.max(1, bottom - y) },
+    };
   }
 
   private commitTileDrag(): void {
     const live = this.live;
     if (!live || live.type !== "moveTiles") return;
     const { dCol, dRow } = live;
-    this.live = null; this.dragging = false; this.dragStart = null;
+    this.live = null;
+    this.dragging = false;
+    this.dragStart = null;
     if (dCol !== 0 || dRow !== 0) moveSelectedTiles(this.store, dCol, dRow);
     else this.redraw();
   }
@@ -295,7 +344,9 @@ export class EditorViewportInteraction {
     if (!live || live.type !== "moveDecorations") return;
     const { dx, dy } = live;
     const ids = this.dragStart?.kind === "decorations" ? this.dragStart.ids : [];
-    this.live = null; this.dragging = false; this.dragStart = null;
+    this.live = null;
+    this.dragging = false;
+    this.dragStart = null;
     if (dx !== 0 || dy !== 0) this.store.execute(moveDecorations(ids, dx, dy));
     else this.redraw();
   }
@@ -305,7 +356,9 @@ export class EditorViewportInteraction {
     if (!live || live.type !== "move") return;
     const { dx, dy } = live;
     const ids = this.dragStart?.kind === "objects" ? this.dragStart.ids : [];
-    this.live = null; this.dragging = false; this.dragStart = null;
+    this.live = null;
+    this.dragging = false;
+    this.dragStart = null;
     if (dx !== 0 || dy !== 0) this.store.execute(moveObjects(ids, dx, dy));
     else this.redraw();
   }
@@ -319,8 +372,20 @@ export class EditorViewportInteraction {
     const { signal } = this.windowListeners;
     window.addEventListener("pointerup", (e) => this.onPointerUp(e), { signal });
     c.addEventListener("wheel", (e) => this.onWheel(e), { passive: false });
-    window.addEventListener("keydown", (e) => { if (e.code === "Space") this.spaceDown = true; }, { signal });
-    window.addEventListener("keyup", (e) => { if (e.code === "Space") this.spaceDown = false; }, { signal });
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.code === "Space") this.spaceDown = true;
+      },
+      { signal },
+    );
+    window.addEventListener(
+      "keyup",
+      (e) => {
+        if (e.code === "Space") this.spaceDown = false;
+      },
+      { signal },
+    );
   }
 
   /** Drop the window listeners; the canvas ones go with the canvas. */
@@ -339,7 +404,10 @@ export class EditorViewportInteraction {
     const factor = Math.exp(-e.deltaY * 0.0015);
     const zoom = Math.max(0.2, Math.min(16, state.zoom * factor));
     const rect = this.canvas.getBoundingClientRect();
-    const vp = { x: before.x - (e.clientX - rect.left) / zoom, y: before.y - (e.clientY - rect.top) / zoom };
+    const vp = {
+      x: before.x - (e.clientX - rect.left) / zoom,
+      y: before.y - (e.clientY - rect.top) / zoom,
+    };
     this.store.setView(zoom, vp);
   }
 
@@ -349,7 +417,10 @@ export class EditorViewportInteraction {
     const world = this.screenToWorld(e.clientX, e.clientY);
     this.lastPointer = { x: e.clientX, y: e.clientY };
 
-    if (e.button === 1 || (e.button === 0 && (this.spaceDown || this.store.get().activeTool === "pan"))) {
+    if (
+      e.button === 1 ||
+      (e.button === 0 && (this.spaceDown || this.store.get().activeTool === "pan"))
+    ) {
       this.panning = true;
       return;
     }
@@ -374,7 +445,13 @@ export class EditorViewportInteraction {
         paintTileLayer(this.store, layer.id, new Map(region.map((i) => [i, value])), "Fill tiles");
         return;
       }
-      this.tileArt = { layerId: layer.id, value, rect: mode === "rect", start: index, changed: new Map([[index, value]]) };
+      this.tileArt = {
+        layerId: layer.id,
+        value,
+        rect: mode === "rect",
+        start: index,
+        changed: new Map([[index, value]]),
+      };
       this.redraw();
       return;
     }
@@ -392,8 +469,14 @@ export class EditorViewportInteraction {
 
     const handle = this.handleAt(e.clientX, e.clientY);
     if (handle) {
-      const target = singleResizableObject(state.document.objects, selectedObjectIds(state.selection));
-      if (target) { this.resizeState = { id: target.id, handle, orig: boxOf(target) }; return; }
+      const target = singleResizableObject(
+        state.document.objects,
+        selectedObjectIds(state.selection),
+      );
+      if (target) {
+        this.resizeState = { id: target.id, handle, orig: boxOf(target) };
+        return;
+      }
     }
 
     const traveller = this.travelGripAt(e.clientX, e.clientY);
@@ -411,7 +494,10 @@ export class EditorViewportInteraction {
 
     const hit = this.topObjectAt(world.x, world.y);
     if (hit) {
-      if (e.shiftKey) { this.pendingToggle = hit.id; return; }
+      if (e.shiftKey) {
+        this.pendingToggle = hit.id;
+        return;
+      }
       const selectedIds = selectedObjectIds(state.selection);
       if (!selectedIds.includes(hit.id)) this.store.selectObjects([hit.id]);
       const ids = selectedObjectIds(this.store.get().selection);
@@ -423,7 +509,10 @@ export class EditorViewportInteraction {
 
     const hitDec = this.topDecorationAt(world.x, world.y);
     if (hitDec) {
-      if (e.shiftKey) { this.pendingDecorationToggle = hitDec.id; return; }
+      if (e.shiftKey) {
+        this.pendingDecorationToggle = hitDec.id;
+        return;
+      }
       const selDecIds = selectedDecorationIds(state.selection);
       if (!selDecIds.includes(hitDec.id)) this.store.selectDecorations([hitDec.id]);
       const ids = selectedDecorationIds(this.store.get().selection);
@@ -438,7 +527,8 @@ export class EditorViewportInteraction {
     const tileIndex = this.tileAt(world);
     const terrain = tileIndex !== null && this.isTerrainCell(tileIndex);
     if (terrain && !e.shiftKey) {
-      const already = state.selection.kind === "tiles" && state.selection.indices.includes(tileIndex);
+      const already =
+        state.selection.kind === "tiles" && state.selection.indices.includes(tileIndex);
       if (!already) this.store.selectTiles([tileIndex]);
       const next = this.store.get().selection;
       const indices = next.kind === "tiles" ? [...next.indices] : [tileIndex];
@@ -446,7 +536,9 @@ export class EditorViewportInteraction {
     } else {
       this.pendingTileToggle = e.shiftKey && terrain ? tileIndex : null;
       this.marquee = {
-        start: world, current: world, additive: e.shiftKey,
+        start: world,
+        current: world,
+        additive: e.shiftKey,
         base: e.shiftKey ? cloneSelection(state.selection) : emptySelection(),
       };
       this.marqueeActive = false;
@@ -465,22 +557,38 @@ export class EditorViewportInteraction {
       this.store.setView(zoom, { x: viewportPosition.x - dx, y: viewportPosition.y - dy });
       return;
     }
-    if (this.tileStroke) { this.paintTileAt(world); this.redraw(); return; }
+    if (this.tileStroke) {
+      this.paintTileAt(world);
+      this.redraw();
+      return;
+    }
     if (this.tileArt) {
       const art = this.tileArt;
       const index = this.tileAt(world);
       if (index !== null && art.rect) {
-        art.changed = new Map(cellRect(this.store.get().document.cols, art.start, index).map((i) => [i, art.value]));
+        art.changed = new Map(
+          cellRect(this.store.get().document.cols, art.start, index).map((i) => [i, art.value]),
+        );
       } else if (index !== null) {
         art.changed.set(index, art.value);
       }
       this.redraw();
       return;
     }
-    if (this.resizeState) { this.applyResize(world); this.redraw(); return; }
+    if (this.resizeState) {
+      this.applyResize(world);
+      this.redraw();
+      return;
+    }
     if (this.travelDrag) {
       const td = this.travelDrag;
-      const travel = dragTravel(td.travel, world.x - td.start.x, world.y - td.start.y, td.vertical, (v) => this.store.snap(v));
+      const travel = dragTravel(
+        td.travel,
+        world.x - td.start.x,
+        world.y - td.start.y,
+        td.vertical,
+        (v) => this.store.snap(v),
+      );
       this.live = { type: "travel", id: td.id, travel };
       this.redraw();
       return;
@@ -488,8 +596,14 @@ export class EditorViewportInteraction {
 
     if (this.marquee) {
       this.marquee.current = world;
-      const dist = Math.hypot(world.x - this.marquee.start.x, world.y - this.marquee.start.y) * this.store.get().zoom;
-      if (dist >= 3) { this.marqueeActive = true; this.applyMarqueeSelection(); this.redraw(); }
+      const dist =
+        Math.hypot(world.x - this.marquee.start.x, world.y - this.marquee.start.y) *
+        this.store.get().zoom;
+      if (dist >= 3) {
+        this.marqueeActive = true;
+        this.applyMarqueeSelection();
+        this.redraw();
+      }
       return;
     }
 
@@ -501,7 +615,10 @@ export class EditorViewportInteraction {
       if (this.dragStart.kind === "tiles") {
         const { gridSize, cols, rows } = this.store.get().document;
         const raw = { dCol: Math.round(rawDx / gridSize), dRow: Math.round(rawDy / gridSize) };
-        this.live = { type: "moveTiles", ...clampTileDelta(this.dragStart.indices, cols, rows, raw.dCol, raw.dRow) };
+        this.live = {
+          type: "moveTiles",
+          ...clampTileDelta(this.dragStart.indices, cols, rows, raw.dCol, raw.dRow),
+        };
       } else if (this.dragStart.kind === "decorations") {
         const primary = this.dragStart.orig.get(this.dragStart.ids[0]);
         const dx = primary ? this.store.snap(primary.x + rawDx) - primary.x : rawDx;
@@ -519,11 +636,21 @@ export class EditorViewportInteraction {
 
     if (this.store.get().mode !== "play") {
       const tool = this.store.get().activeTool;
-      if (tool === "tile" || tool === "tilePaint") { this.store.setHover(undefined); this.redraw(); return; }
+      if (tool === "tile" || tool === "tilePaint") {
+        this.store.setHover(undefined);
+        this.redraw();
+        return;
+      }
       const hit = this.topObjectAt(world.x, world.y);
-      if (hit) { this.store.setHover({ kind: "object", id: hit.id }); return; }
+      if (hit) {
+        this.store.setHover({ kind: "object", id: hit.id });
+        return;
+      }
       const hitDec = this.topDecorationAt(world.x, world.y);
-      if (hitDec) { this.store.setHover({ kind: "decoration", id: hitDec.id }); return; }
+      if (hitDec) {
+        this.store.setHover({ kind: "decoration", id: hitDec.id });
+        return;
+      }
       const index = this.tileAt(world);
       if (index !== null && this.isTerrainCell(index)) this.store.setHover({ kind: "tile", index });
       else this.store.setHover(undefined);
@@ -531,7 +658,10 @@ export class EditorViewportInteraction {
   }
 
   private onPointerUp(e: PointerEvent): void {
-    if (this.panning) { this.panning = false; return; }
+    if (this.panning) {
+      this.panning = false;
+      return;
+    }
 
     if (this.marquee) {
       if (this.marqueeActive) {
@@ -553,7 +683,11 @@ export class EditorViewportInteraction {
     if (this.tileStroke) {
       const { erase, changed } = this.tileStroke;
       this.tileStroke = null;
-      paintTiles(this.store, [...changed].map(([index, value]) => ({ index, value })), erase);
+      paintTiles(
+        this.store,
+        [...changed].map(([index, value]) => ({ index, value })),
+        erase,
+      );
       this.redraw();
       return;
     }
@@ -561,7 +695,12 @@ export class EditorViewportInteraction {
     if (this.tileArt) {
       const { layerId, changed, rect, value } = this.tileArt;
       this.tileArt = null;
-      paintTileLayer(this.store, layerId, changed, value < 0 ? "Erase tiles" : rect ? "Paint tile rectangle" : "Paint tiles");
+      paintTileLayer(
+        this.store,
+        layerId,
+        changed,
+        value < 0 ? "Erase tiles" : rect ? "Paint tile rectangle" : "Paint tiles",
+      );
       this.redraw();
       return;
     }
@@ -569,11 +708,15 @@ export class EditorViewportInteraction {
     if (this.resizeState && this.live?.type === "resize") {
       const rs = this.resizeState;
       const box = this.live.box;
-      this.live = null; this.resizeState = null;
-      this.store.execute(setTransform(rs.id,
-        { x: rs.orig.x, y: rs.orig.y, width: rs.orig.w, height: rs.orig.h },
-        { x: box.x, y: box.y, width: box.w, height: box.h },
-      ));
+      this.live = null;
+      this.resizeState = null;
+      this.store.execute(
+        setTransform(
+          rs.id,
+          { x: rs.orig.x, y: rs.orig.y, width: rs.orig.w, height: rs.orig.h },
+          { x: box.x, y: box.y, width: box.w, height: box.h },
+        ),
+      );
       return;
     }
     this.resizeState = null;
@@ -581,15 +724,26 @@ export class EditorViewportInteraction {
     if (this.travelDrag) {
       const td = this.travelDrag;
       const travel = this.live?.type === "travel" ? this.live.travel : td.travel;
-      this.travelDrag = null; this.live = null;
-      if (travel !== td.travel) this.store.execute(setProperty(td.id, "Travel", "override", td.before, travel));
+      this.travelDrag = null;
+      this.live = null;
+      if (travel !== td.travel)
+        this.store.execute(setProperty(td.id, "Travel", "override", td.before, travel));
       else this.redraw();
       return;
     }
 
-    if (this.dragging && this.live?.type === "moveTiles") { this.commitTileDrag(); return; }
-    if (this.dragging && this.live?.type === "moveDecorations") { this.commitDecorationDrag(); return; }
-    if (this.dragging && this.live?.type === "move") { this.commitObjectDrag(); return; }
+    if (this.dragging && this.live?.type === "moveTiles") {
+      this.commitTileDrag();
+      return;
+    }
+    if (this.dragging && this.live?.type === "moveDecorations") {
+      this.commitDecorationDrag();
+      return;
+    }
+    if (this.dragging && this.live?.type === "move") {
+      this.commitObjectDrag();
+      return;
+    }
 
     if (this.pendingToggle && e.shiftKey) this.store.toggleObjectInSelection(this.pendingToggle);
     if (this.pendingDecorationToggle && e.shiftKey)

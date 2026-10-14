@@ -10,15 +10,24 @@ import { findSteamGame, type SteamGame } from "../../src/project-io/node.js";
 export const ZERO_X_MASHUP_ROOT = resolve(process.env.ZERO_X_MASHUP_ROOT ?? "../zero-x-mashup");
 
 /** The located install and zero-x-mashup root, or null after a visible skip naming what is missing. */
-export async function oracle(t: TestContext, game: SteamGame, cacheFiles: string[] = []): Promise<{ install: string; root: string; cache: string } | null> {
+export async function oracle(
+  t: TestContext,
+  game: SteamGame,
+  cacheFiles: string[] = [],
+): Promise<{ install: string; root: string; cache: string } | null> {
   const install = await findSteamGame(game);
   const cache = join(ZERO_X_MASHUP_ROOT, "game", "cache");
   const missing = cacheFiles.filter((f) => !existsSync(join(cache, f)));
   const reasons = [
     ...(install.ok ? [] : [install.error]),
-    ...(missing.length ? [`oracle cache missing ${missing.join(", ")} in ${cache} (ZERO_X_MASHUP_ROOT=${process.env.ZERO_X_MASHUP_ROOT ?? "unset"}; run python game/build_cache.py there)`] : []),
+    ...(missing.length
+      ? [
+          `oracle cache missing ${missing.join(", ")} in ${cache} (ZERO_X_MASHUP_ROOT=${process.env.ZERO_X_MASHUP_ROOT ?? "unset"}; run python game/build_cache.py there)`,
+        ]
+      : []),
   ];
-  if (install.ok && !reasons.length) return { install: install.root, root: ZERO_X_MASHUP_ROOT, cache };
+  if (install.ok && !reasons.length)
+    return { install: install.root, root: ZERO_X_MASHUP_ROOT, cache };
   const reason = reasons.join("; ");
   console.warn(`[oracle] SKIPPED "${t.name}": ${reason}`);
   t.skip(reason);

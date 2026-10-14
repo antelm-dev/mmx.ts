@@ -5,9 +5,10 @@ const ADAPT = [230, 230, 230, 230, 307, 409, 512, 614, 768, 614, 512, 409, 307, 
 
 /** RIFF chunks by id. */
 function riffChunks(wav: Buffer): Record<string, Buffer> {
-  if (wav.toString("latin1", 0, 4) !== "RIFF" || wav.toString("latin1", 8, 12) !== "WAVE") throw new Error("not a RIFF WAVE file");
+  if (wav.toString("latin1", 0, 4) !== "RIFF" || wav.toString("latin1", 8, 12) !== "WAVE")
+    throw new Error("not a RIFF WAVE file");
   const chunks: Record<string, Buffer> = {};
-  for (let p = 12; p + 8 <= wav.length; ) {
+  for (let p = 12; p + 8 <= wav.length;) {
     const size = wav.readUInt32LE(p + 4);
     chunks[wav.toString("latin1", p, p + 4)] = wav.subarray(p + 8, p + 8 + size);
     p += 8 + size + (size & 1);
@@ -45,12 +46,19 @@ export function msAdpcmToPcmWav(wav: Buffer): Buffer {
   const rate = fmt.readUInt32LE(4);
   const align = fmt.readUInt16LE(12);
   const perBlock = fmt.readUInt16LE(18);
-  const coef = Array.from({ length: fmt.readUInt16LE(20) }, (_, i) => [fmt.readInt16LE(22 + i * 4), fmt.readInt16LE(24 + i * 4)]);
+  const coef = Array.from({ length: fmt.readUInt16LE(20) }, (_, i) => [
+    fmt.readInt16LE(22 + i * 4),
+    fmt.readInt16LE(24 + i * 4),
+  ]);
   const pcm: number[] = [];
   for (let b = 0; b + 7 * ch <= data.length; b += align) {
     const block = data.subarray(b, b + align);
     // header: predictor[ch], delta[ch], sample1[ch], sample2[ch]
-    const c1: number[] = [], c2: number[] = [], delta: number[] = [], s1: number[] = [], s2: number[] = [];
+    const c1: number[] = [],
+      c2: number[] = [],
+      delta: number[] = [],
+      s1: number[] = [],
+      s2: number[] = [];
     for (let c = 0; c < ch; c++) {
       const pair = coef[block[c]];
       if (!pair) throw new Error(`MS-ADPCM predictor ${block[c]} out of range`);
@@ -63,7 +71,9 @@ export function msAdpcmToPcmWav(wav: Buffer): Buffer {
     let c = 0;
     for (const byte of block.subarray(7 * ch)) {
       for (const nib of [byte >> 4, byte & 15]) {
-        const pred = Math.trunc((s1[c] * c1[c] + s2[c] * c2[c]) / 256) + (nib >= 8 ? nib - 16 : nib) * delta[c];
+        const pred =
+          Math.trunc((s1[c] * c1[c] + s2[c] * c2[c]) / 256) +
+          (nib >= 8 ? nib - 16 : nib) * delta[c];
         const v = Math.min(Math.max(pred, -32768), 32767);
         s2[c] = s1[c];
         s1[c] = v;

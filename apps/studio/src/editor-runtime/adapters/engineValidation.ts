@@ -64,9 +64,7 @@ function dedupe(issues: ValidationIssue[]): ValidationIssue[] {
  */
 function outOfBounds(engine: ValidationIssue[]): ValidationIssue[] {
   return engine.map((issue) =>
-    issue.code === "bounds"
-      ? { ...issue, severity: "error", code: "object.out-of-bounds" }
-      : issue,
+    issue.code === "bounds" ? { ...issue, severity: "error", code: "object.out-of-bounds" } : issue,
   );
 }
 

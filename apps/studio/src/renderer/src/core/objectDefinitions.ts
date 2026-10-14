@@ -10,7 +10,10 @@ export function freeObjectId(base: string, objects: readonly ProjectObjectDefini
 }
 
 /** `objects` with a copy of project object `id` ("<name> copy", a new id) right after it. */
-export function duplicateObject(objects: readonly ProjectObjectDefinition[], id: string): ProjectObjectDefinition[] {
+export function duplicateObject(
+  objects: readonly ProjectObjectDefinition[],
+  id: string,
+): ProjectObjectDefinition[] {
   const index = objects.findIndex((o) => o.id === id);
   const source = objects[index];
   if (!source) throw new Error(`Unknown project object '${id}'.`);
@@ -27,10 +30,14 @@ export function deleteBlocker(
   documents: readonly LevelDocument[],
   objects: readonly ProjectObjectDefinition[],
 ): string | null {
-  const uses = documents.reduce((n, doc) => n + doc.objects.filter((o) => o.definitionId === id).length, 0);
+  const uses = documents.reduce(
+    (n, doc) => n + doc.objects.filter((o) => o.definitionId === id).length,
+    0,
+  );
   if (uses > 0) return `Used by ${uses} placed object${uses === 1 ? "" : "s"}; delete them first`;
   const presets = objects.filter((o) => o.base === id).map((o) => o.name);
   const one = presets.length === 1;
-  if (presets.length > 0) return `Base of the object${one ? "" : "s"} ${presets.join(", ")}; delete ${one ? "it" : "them"} first`;
+  if (presets.length > 0)
+    return `Base of the object${one ? "" : "s"} ${presets.join(", ")}; delete ${one ? "it" : "them"} first`;
   return null;
 }

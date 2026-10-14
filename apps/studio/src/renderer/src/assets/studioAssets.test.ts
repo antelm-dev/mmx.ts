@@ -34,7 +34,12 @@ describe("buildStudioAssets", () => {
     const enemies = { crab: { sheet: "anim.player.fixture" }, ghost: { sheet: "sprite.bg" } };
     const { manifest } = buildStudioAssets(project, gameData, resolveUrl, enemies);
     expect(manifest.enemyActorIds).toEqual({ "anim.player.fixture": "anim.player.fixture" });
-    const bound = { bindings: { ...gameData.bindings, enemyAnimations: { "anim.player.fixture": "anim.effect.fixture" } } };
+    const bound = {
+      bindings: {
+        ...gameData.bindings,
+        enemyAnimations: { "anim.player.fixture": "anim.effect.fixture" },
+      },
+    };
     expect(buildStudioAssets(project, bound, resolveUrl, enemies).manifest.enemyActorIds).toEqual({
       "anim.player.fixture": "anim.effect.fixture",
     });

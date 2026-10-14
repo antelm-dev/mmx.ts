@@ -216,7 +216,18 @@ test("data/game.json round-trips through load and save, and export keeps its ene
   assert.equal(created.ok, true);
   if (!created.ok) return;
   assert.equal(created.value.gameData, undefined);
-  const sheet = { id: "anim.crab", kind: "animation" as const, path: "assets/sprites/crab.png", animations: { idle: { loop: true, speed: 1, frames: [{ region: [0, 0, 16, 16] as [number, number, number, number], duration: 1 }] } } };
+  const sheet = {
+    id: "anim.crab",
+    kind: "animation" as const,
+    path: "assets/sprites/crab.png",
+    animations: {
+      idle: {
+        loop: true,
+        speed: 1,
+        frames: [{ region: [0, 0, 16, 16] as [number, number, number, number], duration: 1 }],
+      },
+    },
+  };
   await fs.writeText(sheet.path, "png");
   const gameData = { schemaVersion: 1, enemies: { crab: { id: "crab", sheet: "anim.crab" } } };
   const withCrab = {

@@ -1,5 +1,11 @@
 import { resolve } from "node:path";
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Page,
+} from "@playwright/test";
 import electronPath from "electron";
 
 const appRoot = resolve(__dirname, "..");
@@ -33,15 +39,21 @@ test.afterAll(async () => {
 /** Distinct colours in a screenshot of the viewport canvas (a cleared canvas has one). */
 async function canvasColors(): Promise<number> {
   const png = await page.locator("#viewport-canvas").screenshot();
-  return page.evaluate(async (bytes) => {
-    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/png" }));
-    const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext("2d")!;
-    ctx.drawImage(bitmap, 0, 0);
-    const data = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
-    const seen = new Set<number>();
-    for (let i = 0; i < data.length; i += 4) seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
-    return seen.size;
-  }, [...png]);
+  return page.evaluate(
+    async (bytes) => {
+      const bitmap = await createImageBitmap(
+        new Blob([new Uint8Array(bytes)], { type: "image/png" }),
+      );
+      const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext("2d")!;
+      ctx.drawImage(bitmap, 0, 0);
+      const data = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
+      const seen = new Set<number>();
+      for (let i = 0; i < data.length; i += 4)
+        seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
+      return seen.size;
+    },
+    [...png],
+  );
 }
 
 test("View → Reset Layout twice keeps a working viewport and Play", async () => {
@@ -59,7 +71,9 @@ test("View → Reset Layout twice keeps a working viewport and Play", async () =
     const [w, h] = win.getSize();
     win.setSize(w - 120, h - 80);
   });
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
   await expect.poll(canvasColors).toBeGreaterThan(1);
 
   await page.getByRole("button", { name: /^Play$/ }).click();

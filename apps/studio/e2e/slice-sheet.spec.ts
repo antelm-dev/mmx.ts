@@ -21,7 +21,8 @@ function writeSheet(): void {
   for (let f = 0; f < 6; f++) {
     const cx = (f % 4) * 32 + 4;
     const cy = Math.floor(f / 4) * 32 + 4;
-    for (let y = cy; y < cy + 20; y++) for (let x = cx; x < cx + 20; x++) px.set([40, 160, 220, 255], (y * width + x) * 4);
+    for (let y = cy; y < cy + 20; y++)
+      for (let x = cx; x < cx + 20; x++) px.set([40, 160, 220, 255], (y * width + x) * 4);
   }
   writeFileSync(sheetPath, encodePng({ width, height, px }));
 }

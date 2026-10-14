@@ -1,7 +1,13 @@
 import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
 import { chakra } from "@chakra-ui/react";
 import { AnimationCursor } from "@mmx/engine";
-import type { AnimationAsset, AnimationClip, AnimationFrame, FrameBox, Region } from "@mmx/project-schema";
+import type {
+  AnimationAsset,
+  AnimationClip,
+  AnimationFrame,
+  FrameBox,
+  Region,
+} from "@mmx/project-schema";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { setAnimationAsset, setPlayerAnimation } from "../core/actions.js";
 import {
@@ -23,9 +29,17 @@ import { SectionTitle } from "../ui/editor/section-title.js";
 import { loadSheet, type Sheet } from "./SheetSlicerPanel.js";
 
 const Grid2 = chakra("div", {
-  base: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2", py: "3px", px: "3.5" },
+  base: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "2",
+    py: "3px",
+    px: "3.5",
+  },
 });
-const Strip = chakra("div", { base: { display: "flex", flexWrap: "wrap", gap: "1", px: "3.5", py: "1" } });
+const Strip = chakra("div", {
+  base: { display: "flex", flexWrap: "wrap", gap: "1", px: "3.5", py: "1" },
+});
 const Tile = chakra("button", {
   base: {
     display: "flex",
@@ -53,7 +67,13 @@ type PreviewTool = "anchor" | "hurtbox" | "hitbox";
 /** A box of the shown frame: its hurtbox, or hitbox `index`. */
 type BoxRef = { type: "hurtbox" } | { type: "hitbox"; index: number };
 /** A box being drawn, moved or resized: written once, on release (one undo step). */
-type BoxDrag = { mode: "draw" | "move" | "resize"; ref: BoxRef; start: [number, number]; from: FrameBox | null; box: FrameBox };
+type BoxDrag = {
+  mode: "draw" | "move" | "resize";
+  ref: BoxRef;
+  start: [number, number];
+  from: FrameBox | null;
+  box: FrameBox;
+};
 
 /** Hurtbox blue, hitboxes red. */
 const BOX_COLORS = { hurtbox: "#3b82f6", hitbox: "#ef4444" } as const;
@@ -64,7 +84,17 @@ const DRAW_MIN_DRAG = 2;
 const boxText = (box: FrameBox): string => `${box.x}, ${box.y} ${box.w}×${box.h}`;
 
 /** One region of the sheet drawn at `zoom`, cropped with a CSS background. */
-function RegionView({ sheet, region, zoom, style }: { sheet: Sheet; region: Region; zoom: number; style?: CSSProperties }) {
+function RegionView({
+  sheet,
+  region,
+  zoom,
+  style,
+}: {
+  sheet: Sheet;
+  region: Region;
+  zoom: number;
+  style?: CSSProperties;
+}) {
   const [x, y, w, h] = region;
   return (
     <chakra.div
@@ -92,7 +122,9 @@ const int = (raw: string, min: number): number | null => {
 export function ClipEditorPanel() {
   const session = useProjectSession();
   const assets = session.project?.manifest.assets ?? [];
-  const sheets = assets.filter((asset) => asset.kind === "sprite" && (asset.regions?.length ?? 0) > 0);
+  const sheets = assets.filter(
+    (asset) => asset.kind === "sprite" && (asset.regions?.length ?? 0) > 0,
+  );
   const [sheetId, setSheetId] = useState("");
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [pickedAnimId, setAnimId] = useState("");
@@ -111,16 +143,22 @@ export function ClipEditorPanel() {
   const sheetAsset = sheets.find((asset) => asset.id === sheetId);
   const regions = projectSession.spriteRegions(sheetId);
   const bound = assets.filter(
-    (asset): asset is AnimationAsset => asset.kind === "animation" && asset.sheetAssetId === sheetId,
+    (asset): asset is AnimationAsset =>
+      asset.kind === "animation" && asset.sheetAssetId === sheetId,
   );
   const newAnimId = `anim.${sheetId.replace(/^sprite\./, "")}`;
-  const animId = bound.some((asset) => asset.id === pickedAnimId) ? pickedAnimId : (bound[0]?.id ?? newAnimId);
+  const animId = bound.some((asset) => asset.id === pickedAnimId)
+    ? pickedAnimId
+    : (bound[0]?.id ?? newAnimId);
   const anim = projectSession.animationAsset(animId);
   const clips = anim?.animations ?? {};
   const clip: AnimationClip | undefined = clips[clipName];
   const frames = clip?.frames ?? [];
   const isPlayer = projectSession.playerAnimation() === animId;
-  const required = requiredPlayerClips(session.project?.manifest.player?.loadout, projectSession.gameData().compiled);
+  const required = requiredPlayerClips(
+    session.project?.manifest.player?.loadout,
+    projectSession.gameData().compiled,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -131,7 +169,11 @@ export function ClipEditorPanel() {
       .readAssetUrl(sheetId)
       .then((url) => (url ? loadSheet(url) : null))
       .then((loaded) => !cancelled && setSheet(loaded))
-      .catch((error: unknown) => editor.toast(`Could not read sheet: ${error instanceof Error ? error.message : String(error)}`));
+      .catch((error: unknown) =>
+        editor.toast(
+          `Could not read sheet: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
     return () => {
       cancelled = true;
     };
@@ -164,14 +206,25 @@ export function ClipEditorPanel() {
     if (!sheetAsset) return;
     const next: AnimationAsset | null =
       Object.keys(animations).length > 0
-        ? { id: animId, kind: "animation", path: anim?.path ?? sheetAsset.path, sheetAssetId: sheetId, animations }
+        ? {
+            id: animId,
+            kind: "animation",
+            path: anim?.path ?? sheetAsset.path,
+            sheetAssetId: sheetId,
+            animations,
+          }
         : null;
     setAnimationAsset(editor.store, projectSession, animId, next, label);
   };
-  const writeClip = (label: string, next: AnimationClip): void => writeAll(label, { ...clips, [clipName]: next });
+  const writeClip = (label: string, next: AnimationClip): void =>
+    writeAll(label, { ...clips, [clipName]: next });
   const writeFrames = (label: string, next: AnimationFrame[]): void => {
     const { loopStart, ...rest } = clip!;
-    writeClip(label, { ...rest, frames: next, ...(loopStart !== undefined && loopStart < next.length ? { loopStart } : {}) });
+    writeClip(label, {
+      ...rest,
+      frames: next,
+      ...(loopStart !== undefined && loopStart < next.length ? { loopStart } : {}),
+    });
   };
 
   const newFrame = (region: Region): AnimationFrame => ({
@@ -184,7 +237,10 @@ export function ClipEditorPanel() {
   const createClip = (): void => {
     const name = newName.trim();
     if (!name || clips[name] || regionSel.length === 0) return;
-    writeAll("Create clip", { ...clips, [name]: { loop: true, speed: 60, frames: pickedFrames() } });
+    writeAll("Create clip", {
+      ...clips,
+      [name]: { loop: true, speed: 60, frames: pickedFrames() },
+    });
     setClipName(name);
     setNewName("");
     setRegionSel([]);
@@ -195,12 +251,19 @@ export function ClipEditorPanel() {
   const previous = frames[shown - 1];
   const targets = frameSel.length > 0 ? frameSel : current ? [shown] : [];
   const setAnchors = (label: string, anchorOf: (frame: AnimationFrame) => [number, number]): void =>
-    writeFrames(label, frames.map((frame, i) => (targets.includes(i) ? { ...frame, anchor: anchorOf(frame) } : frame)));
-  const anchorAt = (frame: AnimationFrame | undefined): [number, number] => frame?.anchor ? [frame.anchor[0], frame.anchor[1]] : [0, 0];
+    writeFrames(
+      label,
+      frames.map((frame, i) =>
+        targets.includes(i) ? { ...frame, anchor: anchorOf(frame) } : frame,
+      ),
+    );
+  const anchorAt = (frame: AnimationFrame | undefined): [number, number] =>
+    frame?.anchor ? [frame.anchor[0], frame.anchor[1]] : [0, 0];
 
   // Boxes of the shown frame, with the box being dragged in place of its stored one.
   const hitboxes = current?.hitboxes ?? [];
-  const boxAt = (ref: BoxRef): FrameBox | undefined => (ref.type === "hurtbox" ? current?.hurtbox : hitboxes[ref.index]);
+  const boxAt = (ref: BoxRef): FrameBox | undefined =>
+    ref.type === "hurtbox" ? current?.hurtbox : hitboxes[ref.index];
   const shownBoxes: { ref: BoxRef; box: FrameBox }[] = [
     ...(current?.hurtbox ? [{ ref: { type: "hurtbox" } as BoxRef, box: current.hurtbox }] : []),
     ...hitboxes.map((box, index) => ({ ref: { type: "hitbox", index } as BoxRef, box })),
@@ -221,14 +284,22 @@ export function ClipEditorPanel() {
           ? [...hitboxes.slice(0, ref.index), box, ...hitboxes.slice(ref.index + 1)]
           : hitboxes.filter((_, i) => i !== ref.index);
     const nextHurt = ref.type === "hurtbox" ? (box ?? undefined) : current.hurtbox;
-    writeFrames(label, frames.map((frame, i) => (i === shown ? withBoxes(frame, nextHurt, nextHit) : frame)));
+    writeFrames(
+      label,
+      frames.map((frame, i) => (i === shown ? withBoxes(frame, nextHurt, nextHit) : frame)),
+    );
   };
   /** Pointer position in the shown frame's region pixels (fractional). */
   const regionPoint = (e: PointerEvent<HTMLElement>, preview: HTMLElement): [number, number] => {
     const rect = preview.getBoundingClientRect();
     return [(e.clientX - rect.left) / PREVIEW_ZOOM, (e.clientY - rect.top) / PREVIEW_ZOOM];
   };
-  const startDrag = (e: PointerEvent<HTMLElement>, mode: BoxDrag["mode"], ref: BoxRef, from: FrameBox | null): void => {
+  const startDrag = (
+    e: PointerEvent<HTMLElement>,
+    mode: BoxDrag["mode"],
+    ref: BoxRef,
+    from: FrameBox | null,
+  ): void => {
     const preview = e.currentTarget.closest<HTMLElement>("[data-testid=clip-preview]");
     if (e.button !== 0 || !boxing || !preview || !current?.anchor) return;
     e.stopPropagation();
@@ -236,7 +307,13 @@ export function ClipEditorPanel() {
     const start = regionPoint(e, preview);
     const size: [number, number] = [current.region[2], current.region[3]];
     setBoxSel(ref);
-    setDrag({ mode, ref, start, from, box: from ?? boxFromPoints(start, start, current.anchor, size) });
+    setDrag({
+      mode,
+      ref,
+      start,
+      from,
+      box: from ?? boxFromPoints(start, start, current.anchor, size),
+    });
   };
   const onPreviewMove = (e: PointerEvent<HTMLElement>): void => {
     if (!drag || !current?.anchor) return;
@@ -245,7 +322,13 @@ export function ClipEditorPanel() {
     const [ax, ay] = current.anchor;
     const box =
       drag.mode === "move" && drag.from
-        ? moveBox(drag.from, point[0] - drag.start[0], point[1] - drag.start[1], current.anchor, size)
+        ? moveBox(
+            drag.from,
+            point[0] - drag.start[0],
+            point[1] - drag.start[1],
+            current.anchor,
+            size,
+          )
         : drag.mode === "resize" && drag.from
           ? boxFromPoints([ax + drag.from.x, ay + drag.from.y], point, current.anchor, size)
           : boxFromPoints(drag.start, point, current.anchor, size);
@@ -256,12 +339,20 @@ export function ClipEditorPanel() {
     setDrag(null);
     // A bare click (under DRAW_MIN_DRAG region pixels) draws nothing: it only selects.
     const [x, y] = regionPoint(e, e.currentTarget);
-    if (drag.mode === "draw" && Math.max(Math.abs(x - drag.start[0]), Math.abs(y - drag.start[1])) < DRAW_MIN_DRAG) {
+    if (
+      drag.mode === "draw" &&
+      Math.max(Math.abs(x - drag.start[0]), Math.abs(y - drag.start[1])) < DRAW_MIN_DRAG
+    ) {
       setBoxSel(null);
       return;
     }
     if (drag.from && boxText(drag.from) === boxText(drag.box)) return;
-    const label = drag.mode === "draw" ? `Draw ${drag.ref.type}` : drag.mode === "move" ? "Move box" : "Resize box";
+    const label =
+      drag.mode === "draw"
+        ? `Draw ${drag.ref.type}`
+        : drag.mode === "move"
+          ? "Move box"
+          : "Resize box";
     writeBox(label, drag.ref, drag.box);
   };
 
@@ -291,7 +382,9 @@ export function ClipEditorPanel() {
             </FieldSelect>
           </Field>
         </Grid2>
-        {sheets.length === 0 && <PanelNote>Slice a sprite sheet first (File → Slice Sheet…).</PanelNote>}
+        {sheets.length === 0 && (
+          <PanelNote>Slice a sprite sheet first (File → Slice Sheet…).</PanelNote>
+        )}
         <PanelActions>
           <ActionButton
             disabled={!anim || isPlayer}
@@ -313,7 +406,9 @@ export function ClipEditorPanel() {
                     type="button"
                     aria-label={`Region ${i + 1}`}
                     aria-pressed={on}
-                    onClick={() => setRegionSel(on ? regionSel.filter((r) => r !== i) : [...regionSel, i])}
+                    onClick={() =>
+                      setRegionSel(on ? regionSel.filter((r) => r !== i) : [...regionSel, i])
+                    }
                   >
                     <RegionView sheet={sheet} region={entry.region} zoom={1} />
                     {i + 1}
@@ -323,7 +418,11 @@ export function ClipEditorPanel() {
             </Strip>
             <Grid2>
               <Field label="Clip name">
-                <FieldInput list="clip-names" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                <FieldInput
+                  list="clip-names"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
               </Field>
               <Field label="Default duration">
                 <FieldSelect value={preset} onChange={(e) => setPreset(Number(e.target.value))}>
@@ -336,12 +435,17 @@ export function ClipEditorPanel() {
               </Field>
             </Grid2>
             <datalist id="clip-names">
-              {required.filter((name) => !clips[name]).map((name) => (
-                <option key={name} value={name} />
-              ))}
+              {required
+                .filter((name) => !clips[name])
+                .map((name) => (
+                  <option key={name} value={name} />
+                ))}
             </datalist>
             <PanelActions>
-              <ActionButton disabled={!newName.trim() || !!clips[newName.trim()] || regionSel.length === 0} onClick={createClip}>
+              <ActionButton
+                disabled={!newName.trim() || !!clips[newName.trim()] || regionSel.length === 0}
+                onClick={createClip}
+              >
                 Create clip
               </ActionButton>
               <ActionButton
@@ -377,7 +481,8 @@ export function ClipEditorPanel() {
               value={clip?.loopStart ?? 0}
               onChange={(e) => {
                 const value = int(e.target.value, 0);
-                if (clip && value !== null && value < frames.length) writeClip("Set loop start", { ...clip, loopStart: value });
+                if (clip && value !== null && value < frames.length)
+                  writeClip("Set loop start", { ...clip, loopStart: value });
               }}
             />
           </Field>
@@ -385,7 +490,13 @@ export function ClipEditorPanel() {
         {clip && (
           <>
             <chakra.div display="flex" gap="3" alignItems="center" py="1" px="3.5">
-              <Checkbox label="Loop" checked={clip.loop} onCheckedChange={(loop) => writeClip(loop ? "Loop clip" : "Play clip once", { ...clip, loop })} />
+              <Checkbox
+                label="Loop"
+                checked={clip.loop}
+                onCheckedChange={(loop) =>
+                  writeClip(loop ? "Loop clip" : "Play clip once", { ...clip, loop })
+                }
+              />
               <ActionButton
                 disabled={!canDeleteClip(Object.keys(clips).length, isPlayer)}
                 title={
@@ -416,7 +527,13 @@ export function ClipEditorPanel() {
                       aria-pressed={on}
                       borderColor={playing && playFrame === i ? "studio.warning" : undefined}
                       onClick={(e) =>
-                        setFrameSel(e.shiftKey || e.ctrlKey ? (on ? frameSel.filter((f) => f !== i) : [...frameSel, i]) : [i])
+                        setFrameSel(
+                          e.shiftKey || e.ctrlKey
+                            ? on
+                              ? frameSel.filter((f) => f !== i)
+                              : [...frameSel, i]
+                            : [i],
+                        )
                       }
                     >
                       {sheet && <RegionView sheet={sheet} region={frame.region} zoom={1} />}
@@ -430,7 +547,11 @@ export function ClipEditorPanel() {
                       value={frame.duration}
                       onChange={(e) => {
                         const duration = int(e.target.value, 1);
-                        if (duration !== null) writeFrames("Set frame duration", frames.map((f, j) => (j === i ? { ...f, duration } : f)));
+                        if (duration !== null)
+                          writeFrames(
+                            "Set frame duration",
+                            frames.map((f, j) => (j === i ? { ...f, duration } : f)),
+                          );
                       }}
                     />
                   </chakra.div>
@@ -458,14 +579,22 @@ export function ClipEditorPanel() {
               </ActionButton>
               <ActionButton
                 disabled={frameSel.length === 0}
-                onClick={() => writeFrames("Duplicate frames", frames.flatMap((f, i) => (frameSel.includes(i) ? [f, { ...f }] : [f])))}
+                onClick={() =>
+                  writeFrames(
+                    "Duplicate frames",
+                    frames.flatMap((f, i) => (frameSel.includes(i) ? [f, { ...f }] : [f])),
+                  )
+                }
               >
                 Duplicate
               </ActionButton>
               <ActionButton
                 disabled={frameSel.length === 0 || frameSel.length === frames.length}
                 onClick={() => {
-                  writeFrames("Remove frames", frames.filter((_, i) => !frameSel.includes(i)));
+                  writeFrames(
+                    "Remove frames",
+                    frames.filter((_, i) => !frameSel.includes(i)),
+                  );
                   setFrameSel([]);
                 }}
               >
@@ -485,10 +614,17 @@ export function ClipEditorPanel() {
                 </FieldSelect>
               </Field>
               <chakra.div display="flex" alignItems="flex-end" gap="2">
-                <ActionButton onClick={() => setPlaying(!playing)}>{playing ? "Stop preview" : "Preview"}</ActionButton>
+                <ActionButton onClick={() => setPlaying(!playing)}>
+                  {playing ? "Stop preview" : "Preview"}
+                </ActionButton>
                 <ActionButton
                   disabled={!sheet || targets.length === 0}
-                  onClick={() => sheet && setAnchors("Align feet", (frame) => feetAnchor(sheet.px, sheet.width, frame.region))}
+                  onClick={() =>
+                    sheet &&
+                    setAnchors("Align feet", (frame) =>
+                      feetAnchor(sheet.px, sheet.width, frame.region),
+                    )
+                  }
                 >
                   Align feet
                 </ActionButton>
@@ -504,7 +640,11 @@ export function ClipEditorPanel() {
               </Field>
             </Grid2>
             <chakra.div px="3.5" py="1" fontSize="xs" color="studio.fgTertiary">
-              Anchor <span data-testid="frame-anchor">{current?.anchor ? current.anchor.join(", ") : "none"}</span> ·{" "}
+              Anchor{" "}
+              <span data-testid="frame-anchor">
+                {current?.anchor ? current.anchor.join(", ") : "none"}
+              </span>{" "}
+              ·{" "}
               {tool === "anchor"
                 ? "click the preview to set the feet of the selected frames"
                 : current && !current.anchor
@@ -514,8 +654,14 @@ export function ClipEditorPanel() {
             {tool !== "anchor" && current && (
               <>
                 <chakra.div px="3.5" py="1" fontSize="xs" color="studio.fgTertiary">
-                  Hurtbox <span data-testid="frame-hurtbox">{current.hurtbox ? boxText(current.hurtbox) : "none"}</span> · Hitboxes{" "}
-                  <span data-testid="frame-hitboxes">{hitboxes.length > 0 ? hitboxes.map(boxText).join(" | ") : "none"}</span>
+                  Hurtbox{" "}
+                  <span data-testid="frame-hurtbox">
+                    {current.hurtbox ? boxText(current.hurtbox) : "none"}
+                  </span>{" "}
+                  · Hitboxes{" "}
+                  <span data-testid="frame-hitboxes">
+                    {hitboxes.length > 0 ? hitboxes.map(boxText).join(" | ") : "none"}
+                  </span>
                 </chakra.div>
                 <PanelActions flexWrap="wrap">
                   <ActionButton
@@ -530,13 +676,24 @@ export function ClipEditorPanel() {
                   </ActionButton>
                   <ActionButton
                     disabled={shown >= frames.length - 1}
-                    onClick={() => writeFrames("Copy boxes to next frame", copyBoxes(frames, shown, [shown + 1]))}
+                    onClick={() =>
+                      writeFrames("Copy boxes to next frame", copyBoxes(frames, shown, [shown + 1]))
+                    }
                   >
                     Copy boxes to next frame
                   </ActionButton>
                   <ActionButton
                     disabled={frames.length < 2}
-                    onClick={() => writeFrames("Copy boxes to all frames", copyBoxes(frames, shown, frames.map((_, i) => i)))}
+                    onClick={() =>
+                      writeFrames(
+                        "Copy boxes to all frames",
+                        copyBoxes(
+                          frames,
+                          shown,
+                          frames.map((_, i) => i),
+                        ),
+                      )
+                    }
                   >
                     Copy boxes to all frames
                   </ActionButton>
@@ -551,9 +708,15 @@ export function ClipEditorPanel() {
                   bg="studio.raised"
                   cursor="crosshair"
                   touchAction="none"
-                  style={{ width: current.region[2] * PREVIEW_ZOOM, height: current.region[3] * PREVIEW_ZOOM }}
+                  style={{
+                    width: current.region[2] * PREVIEW_ZOOM,
+                    height: current.region[3] * PREVIEW_ZOOM,
+                  }}
                   onPointerDown={(e) => {
-                    const ref: BoxRef = tool === "hurtbox" ? { type: "hurtbox" } : { type: "hitbox", index: hitboxes.length };
+                    const ref: BoxRef =
+                      tool === "hurtbox"
+                        ? { type: "hurtbox" }
+                        : { type: "hitbox", index: hitboxes.length };
                     startDrag(e, "draw", ref, null);
                   }}
                   onPointerMove={onPreviewMove}
@@ -585,7 +748,12 @@ export function ClipEditorPanel() {
                       }}
                     />
                   )}
-                  <RegionView sheet={sheet} region={current.region} zoom={PREVIEW_ZOOM} style={{ position: "absolute", pointerEvents: "none" }} />
+                  <RegionView
+                    sheet={sheet}
+                    region={current.region}
+                    zoom={PREVIEW_ZOOM}
+                    style={{ position: "absolute", pointerEvents: "none" }}
+                  />
                   {current.anchor && (
                     <chakra.div
                       aria-hidden
@@ -598,7 +766,10 @@ export function ClipEditorPanel() {
                       borderColor="studio.accent"
                       rounded="full"
                       pointerEvents="none"
-                      style={{ left: current.anchor[0] * PREVIEW_ZOOM, top: current.anchor[1] * PREVIEW_ZOOM }}
+                      style={{
+                        left: current.anchor[0] * PREVIEW_ZOOM,
+                        top: current.anchor[1] * PREVIEW_ZOOM,
+                      }}
                     />
                   )}
                   {/* Boxes from the feet, as the engine reads them (the frame as drawn). */}

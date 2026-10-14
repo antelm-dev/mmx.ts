@@ -198,7 +198,15 @@ function SceneList({
 
   return (
     <>
-      <chakra.div display="flex" alignItems="center" justifyContent="flex-end" px="3" pt="2" pb="1" flex="none">
+      <chakra.div
+        display="flex"
+        alignItems="center"
+        justifyContent="flex-end"
+        px="3"
+        pt="2"
+        pb="1"
+        flex="none"
+      >
         <chakra.button
           display="inline-flex"
           alignItems="center"

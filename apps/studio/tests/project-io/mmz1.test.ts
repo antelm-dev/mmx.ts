@@ -41,10 +41,18 @@ function arc(files: [string, Buffer, boolean][]): Buffer {
 }
 
 test("readArc lists v7 entries and inflates zlib ones", () => {
-  const entries = readArc(arc([["sound\\wav\\se_000", Buffer.from("RIFF zipped"), true], ["raw", Buffer.from("stored"), false]]));
+  const entries = readArc(
+    arc([
+      ["sound\\wav\\se_000", Buffer.from("RIFF zipped"), true],
+      ["raw", Buffer.from("stored"), false],
+    ]),
+  );
   assert.deepEqual(
     entries.map((e) => [e.name, e.typeHash, e.data.toString()]),
-    [["sound\\wav\\se_000", 0x1234, "RIFF zipped"], ["raw", 0x1235, "stored"]],
+    [
+      ["sound\\wav\\se_000", 0x1234, "RIFF zipped"],
+      ["raw", 0x1235, "stored"],
+    ],
   );
   assert.throws(() => readArc(Buffer.from("NOPE0000")), /not an MT Framework ARC/);
 });
@@ -52,18 +60,37 @@ test("readArc lists v7 entries and inflates zlib ones", () => {
 test("readScripts stops each script at 0xFE (loop) or 0xFF (hold)", () => {
   // section: u32 4 -> table at 4: offsets 4, 10 (relative to the table)
   const d = Uint8Array.from([4, 0, 0, 0, 4, 0, 10, 0, 0, 6, 1, 6, 0, 0xfe, 2, 3, 2, 0xff]);
-  assert.deepEqual(readScripts(d, 0), [[[0, 6], [1, 6], [0, 0xfe]], [[2, 3], [2, 0xff]]]);
+  assert.deepEqual(readScripts(d, 0), [
+    [
+      [0, 6],
+      [1, 6],
+      [0, 0xfe],
+    ],
+    [
+      [2, 3],
+      [2, 0xff],
+    ],
+  ]);
 });
 
 test("readFrames reads streamed (u8 count, part) and object (u16 count) tables", () => {
   // two frames: frame 0 = 1 piece at +8, frame 1 = 0 pieces; piece tile 2, attr 0x10, x -8, y -16
   const streamed = Uint8Array.from([8, 0, 1, 3, 12, 0, 0, 0, 2, 0x10, 0xf8, 0xf0]);
-  assert.deepEqual(readFrames(streamed, 0, true), [{ part: 3, pieces: [{ tile: 2, attr: 0x10, x: -8, y: -16 }] }, { part: 0, pieces: [] }]);
+  assert.deepEqual(readFrames(streamed, 0, true), [
+    { part: 3, pieces: [{ tile: 2, attr: 0x10, x: -8, y: -16 }] },
+    { part: 0, pieces: [] },
+  ]);
   const object = Uint8Array.from([8, 0, 1, 0, 12, 0, 0, 0, 2, 0x10, 0xf8, 0xf0]);
-  assert.deepEqual(readFrames(object, 0, false)[0], { part: 0, pieces: [{ tile: 2, attr: 0x10, x: -8, y: -16 }] });
+  assert.deepEqual(readFrames(object, 0, false)[0], {
+    part: 0,
+    pieces: [{ tile: 2, attr: 0x10, x: -8, y: -16 }],
+  });
 });
 
-const pal = Array.from({ length: 16 }, (_, i) => [i * 16, 0, 0, 255] as [number, number, number, number]);
+const pal = Array.from(
+  { length: 16 },
+  (_, i) => [i * 16, 0, 0, 255] as [number, number, number, number],
+);
 const at = (img: Uint8Array, x: number, y: number) => img[(y * 192 + x) * 4];
 
 test("drawPieces places 4bpp tiles at the feet origin, flips, and keeps the first piece on top", () => {
@@ -83,9 +110,17 @@ test("packAtlas crops frames, wraps rows at 1024 px and keeps anchors", () => {
   const tiles = new Uint8Array(32 * 64).fill(0x11); // every pixel colour 1
   const big: Character = {
     parts: [tiles],
-    frames: Array.from({ length: 17 }, () => ({ part: 0, pieces: [{ tile: 0, attr: 0x30, x: -32, y: -64 }] })), // 64x64 square
+    frames: Array.from({ length: 17 }, () => ({
+      part: 0,
+      pieces: [{ tile: 0, attr: 0x30, x: -32, y: -64 }],
+    })), // 64x64 square
     pals: [pal],
-    scripts: [[[0, 4], [0, 0xfe]]],
+    scripts: [
+      [
+        [0, 4],
+        [0, 0xfe],
+      ],
+    ],
   };
   const { atlas, json } = packAtlas([[7, big]]);
   assert.equal(atlas.width, 1024);
@@ -99,7 +134,9 @@ test("oracle: Zero sprites match the Python cache; Pantheon and its shot resolve
   const o = await oracle(t, "mzzxlc", ["zero.json", "zero.png", "../sheets/zero_moves.json"]);
   if (!o) return;
   const { root, cache } = o;
-  const anims = JSON.parse(readFileSync(join(root, "game", "sheets", "zero_moves.json"), "utf8")).moves.map((m: { anim: number }) => m.anim);
+  const anims = JSON.parse(
+    readFileSync(join(root, "game", "sheets", "zero_moves.json"), "utf8"),
+  ).moves.map((m: { anim: number }) => m.anim);
   const { zero, objects } = await readMmz1Install(o.install, anims);
   assert.equal(JSON.stringify(zero.json), readFileSync(join(cache, "zero.json"), "utf8"));
   const want = decodePng(readFileSync(join(cache, "zero.png")));
@@ -112,5 +149,11 @@ test("oracle: Zero sprites match the Python cache; Pantheon and its shot resolve
     else for (const f of clip.frames) assert.ok(pantheon.frames[f], `frame ${f}`);
   }
   // the shot: 4 frames x 4/60 s, looping (what mmx.ts projectiles.pantheon_shot.animation assumes)
-  assert.deepEqual(objects.json["1"].scripts[PANTHEON_SHOT_CLIP.script], [[22, 4], [23, 4], [25, 4], [24, 4], [0, 0xfe]]);
+  assert.deepEqual(objects.json["1"].scripts[PANTHEON_SHOT_CLIP.script], [
+    [22, 4],
+    [23, 4],
+    [25, 4],
+    [24, 4],
+    [0, 0xfe],
+  ]);
 });

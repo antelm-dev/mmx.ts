@@ -217,7 +217,11 @@ function editImageLayers(
 ): void {
   const doc = store.get().document;
   store.execute(
-    setLevelArt(doc, { imageLayers: edit([...(doc.imageLayers ?? [])]), backdrop: doc.backdrop }, label),
+    setLevelArt(
+      doc,
+      { imageLayers: edit([...(doc.imageLayers ?? [])]), backdrop: doc.backdrop },
+      label,
+    ),
   );
 }
 
@@ -264,7 +268,11 @@ export function setBackdrop(store: EditorStore, backdrop: string | undefined): v
   const doc = store.get().document;
   if (doc.backdrop === backdrop) return;
   store.execute(
-    setLevelArt(doc, { imageLayers: doc.imageLayers, backdrop }, backdrop ? "Set backdrop" : "Clear backdrop"),
+    setLevelArt(
+      doc,
+      { imageLayers: doc.imageLayers, backdrop },
+      backdrop ? "Set backdrop" : "Clear backdrop",
+    ),
   );
 }
 
@@ -314,7 +322,13 @@ export function addTileLayer(store: EditorStore, tilesetId: string): string {
   const id = newId();
   editTileLayers(store, "Add tile layer", (layers) => [
     ...layers,
-    { id, tilesetId, layer: "world-back", parallax: 1, cells: new Array<number>(cols * rows).fill(-1) },
+    {
+      id,
+      tilesetId,
+      layer: "world-back",
+      parallax: 1,
+      cells: new Array<number>(cols * rows).fill(-1),
+    },
   ]);
   store.setTilePaint({ layerId: id });
   return id;
@@ -376,7 +390,8 @@ export function paintTileLayer(
       changed = true;
     }
     if (!collides) continue;
-    const kind = ((tile < 0 ? undefined : tileset?.collision[tile]) ?? TerrainTile.Empty) as TerrainTile;
+    const kind = ((tile < 0 ? undefined : tileset?.collision[tile]) ??
+      TerrainTile.Empty) as TerrainTile;
     if (tiles[index] !== kind) {
       tiles[index] = kind;
       changed = true;
@@ -428,13 +443,18 @@ export function setSpriteRegions(
 }
 
 /** Crop/pad a row-major cell grid to new dimensions, keeping each cell's (col, row); new cells are -1. */
-function reshapeCells(cells: readonly number[], oldCols: number, oldRows: number, newCols: number, newRows: number): number[] {
+function reshapeCells(
+  cells: readonly number[],
+  oldCols: number,
+  oldRows: number,
+  newCols: number,
+  newRows: number,
+): number[] {
   const out = new Array<number>(newCols * newRows).fill(-1);
   const copyCols = Math.min(oldCols, newCols);
   const copyRows = Math.min(oldRows, newRows);
   for (let r = 0; r < copyRows; r++)
-    for (let c = 0; c < copyCols; c++)
-      out[r * newCols + c] = cells[r * oldCols + c] ?? -1;
+    for (let c = 0; c < copyCols; c++) out[r * newCols + c] = cells[r * oldCols + c] ?? -1;
   return out;
 }
 
@@ -447,7 +467,10 @@ export function setRoomSettings(doc: LevelDocument, next: LevelSettings): Editor
   const before = doc.tileLayers;
   const after =
     before && (next.cols !== doc.cols || next.rows !== doc.rows)
-      ? before.map((l) => ({ ...l, cells: reshapeCells(l.cells, doc.cols, doc.rows, next.cols, next.rows) }))
+      ? before.map((l) => ({
+          ...l,
+          cells: reshapeCells(l.cells, doc.cols, doc.rows, next.cols, next.rows),
+        }))
       : before;
   const withLayers = (d: LevelDocument, tileLayers: TileLayer[] | undefined): LevelDocument =>
     tileLayers ? { ...d, tileLayers } : d;

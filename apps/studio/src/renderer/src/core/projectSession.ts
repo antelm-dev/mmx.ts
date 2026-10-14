@@ -1,4 +1,8 @@
-import { projectDefinitionIssues, setCatalogGameData, setProjectDefinitions } from "@mmx/content-schema";
+import {
+  projectDefinitionIssues,
+  setCatalogGameData,
+  setProjectDefinitions,
+} from "@mmx/content-schema";
 import { GAME_DATA, type GameData, type GameDataOverlay } from "@mmx/engine/data";
 import {
   validateProject,
@@ -88,7 +92,10 @@ const bindingIssue = (error: unknown): ProjectIssue => ({
 type PlayData = { gameData: StudioGameData; urls: Record<string, string> };
 
 /** The project's definitions: its manifest objects and data/game.json records. */
-type Definitions = { objects: ProjectObjectDefinition[] | undefined; gameData: GameDataOverlay | undefined };
+type Definitions = {
+  objects: ProjectObjectDefinition[] | undefined;
+  gameData: GameDataOverlay | undefined;
+};
 
 /** Definition edits kept for undo; snapshots share unchanged records, so each is small. */
 const DEFINITION_HISTORY_DEPTH = 100;
@@ -198,10 +205,18 @@ export class ProjectSession {
       const playerAnimation = this.playerAnimation();
       try {
         const data = this.state.playerAnimation
-          ? { ...gameData, bindings: { ...gameData.bindings, playerAnimation: this.state.playerAnimation } }
+          ? {
+              ...gameData,
+              bindings: { ...gameData.bindings, playerAnimation: this.state.playerAnimation },
+            }
           : gameData;
         const { data: engineData, compiled } = projectGameData(project.gameData);
-        assets = buildStudioAssets(project.manifest, data, (asset) => urls[asset.id] ?? "", engineData.enemies);
+        assets = buildStudioAssets(
+          project.manifest,
+          data,
+          (asset) => urls[asset.id] ?? "",
+          engineData.enemies,
+        );
         await assets.catalog.load();
         const clips = this.animationAsset(playerAnimation ?? "")?.animations ?? {};
         const missing = requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
@@ -434,7 +449,10 @@ export class ProjectSession {
         ...this.state,
         project: result.value.project,
         dirty: true,
-        issues: [...validateOpenProject(result.value.project), ...this.state.issues.filter(isPlayAssetIssue)],
+        issues: [
+          ...validateOpenProject(result.value.project),
+          ...this.state.issues.filter(isPlayAssetIssue),
+        ],
       },
       true,
     );
@@ -444,7 +462,14 @@ export class ProjectSession {
   async createProject(): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
     if (!bridge) {
-      return [{ severity: "error", code: "project.unavailable", path: "/", message: "Project I/O is only available in the Electron shell." }];
+      return [
+        {
+          severity: "error",
+          code: "project.unavailable",
+          path: "/",
+          message: "Project I/O is only available in the Electron shell.",
+        },
+      ];
     }
 
     const rootPath = await bridge.pickDirectory("Create Project");
@@ -477,7 +502,14 @@ export class ProjectSession {
   async createFromStarter(): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
     if (!bridge) {
-      return [{ severity: "error", code: "project.unavailable", path: "/", message: "Project I/O is only available in the Electron shell." }];
+      return [
+        {
+          severity: "error",
+          code: "project.unavailable",
+          path: "/",
+          message: "Project I/O is only available in the Electron shell.",
+        },
+      ];
     }
 
     const rootPath = await bridge.pickDirectory("Create MMX Starter Project");
@@ -510,7 +542,14 @@ export class ProjectSession {
   async openProject(): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
     if (!bridge) {
-      return [{ severity: "error", code: "project.unavailable", path: "/", message: "Project I/O is only available in the Electron shell." }];
+      return [
+        {
+          severity: "error",
+          code: "project.unavailable",
+          path: "/",
+          message: "Project I/O is only available in the Electron shell.",
+        },
+      ];
     }
 
     const rootPath = await bridge.pickDirectory("Open Project");
@@ -536,7 +575,14 @@ export class ProjectSession {
     const bridge = window.studio?.project;
     const importer = window.studio?.import;
     if (!bridge || !importer) {
-      return [{ severity: "error", code: "project.unavailable", path: "/", message: "Project I/O is only available in the Electron shell." }];
+      return [
+        {
+          severity: "error",
+          code: "project.unavailable",
+          path: "/",
+          message: "Project I/O is only available in the Electron shell.",
+        },
+      ];
     }
 
     const rootPath = await bridge.pickDirectory("Import from Steam installs: output folder");
@@ -599,7 +645,14 @@ export class ProjectSession {
     const bridge = window.studio?.project;
     const { rootPath, project } = this.state;
     if (!bridge || !rootPath || !project) {
-      return [{ severity: "error", code: "project.closed", path: "/", message: "Open a project before exporting." }];
+      return [
+        {
+          severity: "error",
+          code: "project.closed",
+          path: "/",
+          message: "Open a project before exporting.",
+        },
+      ];
     }
 
     const destinationRoot = await bridge.pickExportDirectory("Export Project");

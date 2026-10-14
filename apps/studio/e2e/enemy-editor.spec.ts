@@ -1,7 +1,13 @@
 import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Page,
+} from "@playwright/test";
 import electronPath from "electron";
 
 const appRoot = resolve(__dirname, "..");
@@ -67,13 +73,17 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   await page.getByRole("checkbox", { name: "Hide" }).locator("..").click();
   await expect(page.getByRole("group", { name: "Hide" })).toHaveCount(0);
   await page.getByRole("checkbox", { name: "Recoil" }).locator("..").click();
-  await expect(page.getByRole("group", { name: "Recoil" }).getByLabel("Duration")).toHaveValue("0.7");
+  await expect(page.getByRole("group", { name: "Recoil" }).getByLabel("Duration")).toHaveValue(
+    "0.7",
+  );
 
   // A compile error shows by its field and blocks creating enemies until fixed.
   const hurtboxWidth = page.getByRole("group", { name: "Hurtbox" }).getByLabel("Half width");
   await hurtboxWidth.fill("0");
   await hurtboxWidth.press("Enter");
-  await expect(page.getByRole("group", { name: "Hurtbox" }).getByText("enemies.crab.hurtbox.hw must be > 0.")).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Hurtbox" }).getByText("enemies.crab.hurtbox.hw must be > 0."),
+  ).toBeVisible();
   await expect(newEnemy).toBeDisabled();
   await expect(page.getByRole("button", { name: "Duplicate", exact: true })).toBeDisabled();
   await hurtboxWidth.fill("9");
@@ -92,16 +102,26 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   // A built-in enemy is read-only; Duplicate copies it into the project and edits the copy.
   await page.getByRole("button", { name: "Edit Metool" }).click();
   await expect(page.getByText("Built-in enemy, read-only.", { exact: false })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed")).toBeDisabled();
+  await expect(
+    page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed"),
+  ).toBeDisabled();
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   await expect(page.getByText("Enemy · metool-copy")).toBeVisible();
-  await expect(page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed")).toBeEnabled();
+  await expect(
+    page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed"),
+  ).toBeEnabled();
   await expect(page.getByTitle("Place Metool copy", { exact: true })).toBeVisible();
 
   await save(page);
   const gameData = readGameData();
-  expect(gameData.enemies["metool-copy"]).toMatchObject({ actor: "enemy.metool-copy", abilities: ["Patrol", "Hide", "Stun", "Death"] });
-  expect(gameData.prefabs["enemy.metool-copy"].source).toEqual({ kind: "enemy", ref: "metool-copy" });
+  expect(gameData.enemies["metool-copy"]).toMatchObject({
+    actor: "enemy.metool-copy",
+    abilities: ["Patrol", "Hide", "Stun", "Death"],
+  });
+  expect(gameData.prefabs["enemy.metool-copy"].source).toEqual({
+    kind: "enemy",
+    ref: "metool-copy",
+  });
   expect(gameData.enemies.metool).toBeUndefined();
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

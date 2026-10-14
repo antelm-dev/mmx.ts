@@ -68,7 +68,10 @@ export function MenuLabel(props: ComponentProps<typeof Box>) {
 }
 
 /** Titled block of items (`role="group"` labelled by its heading). */
-export function MenuGroup({ label, children }: Readonly<{ label: ReactNode; children: ReactNode }>) {
+export function MenuGroup({
+  label,
+  children,
+}: Readonly<{ label: ReactNode; children: ReactNode }>) {
   return (
     <Menu.ItemGroup>
       <Menu.ItemGroupLabel

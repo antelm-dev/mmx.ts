@@ -1,10 +1,7 @@
 import { useMemo } from "react";
 import { chakra } from "@chakra-ui/react";
 import { getDefinition } from "@mmx/content-schema";
-import {
-  getDecorationPreview,
-  getSpritePreview,
-} from "@mmx/renderer-pixi";
+import { getDecorationPreview, getSpritePreview } from "@mmx/renderer-pixi";
 import { starterAssets } from "../assets/studioAssets.js";
 import { projectSession, useProjectSession } from "../app/useEditor.js";
 
@@ -55,7 +52,13 @@ export function SpritePreview({
           position="absolute"
           overflow="hidden"
           imageRendering="pixelated"
-          style={{ left: (size - rw) / 2, top: (size - rh) / 2, width: rw, height: rh, transform: `scale(${scale})` }}
+          style={{
+            left: (size - rw) / 2,
+            top: (size - rh) / 2,
+            width: rw,
+            height: rh,
+            transform: `scale(${scale})`,
+          }}
         >
           <chakra.img
             position="absolute"

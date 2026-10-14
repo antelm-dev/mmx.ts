@@ -22,7 +22,9 @@ async function isWritableTarget(rootPath: string): Promise<boolean> {
   const entries = await readdir(rootPath);
   if (entries.length === 0) return true;
   try {
-    return JSON.parse(await readFile(join(rootPath, "project.json"), "utf8")).id === ZERO_PROJECT_ID;
+    return (
+      JSON.parse(await readFile(join(rootPath, "project.json"), "utf8")).id === ZERO_PROJECT_ID
+    );
   } catch {
     return false;
   }
@@ -35,24 +37,42 @@ async function isWritableTarget(rootPath: string): Promise<boolean> {
  */
 export function createImportIpc() {
   return defineIpcModule("import", {
-    "from-steam": handle(async (event, rootPath: string): Promise<ProjectResult<ProjectPayload>> => {
-      const progress = (step: string) => event.sender.send("import-progress", step);
-      try {
-        if (!(await isWritableTarget(rootPath))) {
-          return fail([issue("zero-import.folder", "Choose an empty folder (or a previous Zero import) for the imported project.", "/")]);
+    "from-steam": handle(
+      async (event, rootPath: string): Promise<ProjectResult<ProjectPayload>> => {
+        const progress = (step: string) => event.sender.send("import-progress", step);
+        try {
+          if (!(await isWritableTarget(rootPath))) {
+            return fail([
+              issue(
+                "zero-import.folder",
+                "Choose an empty folder (or a previous Zero import) for the imported project.",
+                "/",
+              ),
+            ]);
+          }
+          // e2e only: a zero-x-mashup cache folder stands in for the Steam installs.
+          const cache = process.env.MMX_STUDIO_ZERO_IMPORT_CACHE;
+          const sources = cache
+            ? await readZeroSourcesFromCache(cache)
+            : await readZeroSources(progress);
+          const template = createNodeFileSystem(
+            join(dirname(resolveStarterTemplateRoot()), "mmx-demo"),
+          );
+          await writeZeroProject(createNodeFileSystem(rootPath), template, sources, progress);
+          progress("Opening the project");
+          const loaded = await loadProject(createNodeFileSystem(rootPath));
+          if (!loaded.ok) return fail(loaded.issues);
+          return { ok: true, value: { rootPath, project: loaded.value }, issues: loaded.issues };
+        } catch (error) {
+          return fail([
+            issue(
+              "zero-import.failed",
+              error instanceof Error ? error.message : String(error),
+              "/",
+            ),
+          ]);
         }
-        // e2e only: a zero-x-mashup cache folder stands in for the Steam installs.
-        const cache = process.env.MMX_STUDIO_ZERO_IMPORT_CACHE;
-        const sources = cache ? await readZeroSourcesFromCache(cache) : await readZeroSources(progress);
-        const template = createNodeFileSystem(join(dirname(resolveStarterTemplateRoot()), "mmx-demo"));
-        await writeZeroProject(createNodeFileSystem(rootPath), template, sources, progress);
-        progress("Opening the project");
-        const loaded = await loadProject(createNodeFileSystem(rootPath));
-        if (!loaded.ok) return fail(loaded.issues);
-        return { ok: true, value: { rootPath, project: loaded.value }, issues: loaded.issues };
-      } catch (error) {
-        return fail([issue("zero-import.failed", error instanceof Error ? error.message : String(error), "/")]);
-      }
-    }),
+      },
+    ),
   });
 }

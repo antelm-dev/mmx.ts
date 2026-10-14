@@ -1,4 +1,9 @@
-import { TerrainTile, createLevelDocument, migrateDocument, type LevelDocument } from "@mmx/content-schema";
+import {
+  TerrainTile,
+  createLevelDocument,
+  migrateDocument,
+  type LevelDocument,
+} from "@mmx/content-schema";
 import {
   PROJECT_SCHEMA_VERSION,
   parseProject,
@@ -15,7 +20,10 @@ import { fail, issue, succeed, type ProjectResult, type StudioProject } from "./
 
 /** Compiled player loadout ids a project's `player.loadout` may reference (default `player.x`). */
 export const LOADOUT_IDS: readonly string[] = [...COMPILED_GAME_DATA.loadouts.keys()];
-export const PROJECT_VALIDATION = { loadoutIds: LOADOUT_IDS, terrainTiles: Object.values(TerrainTile) };
+export const PROJECT_VALIDATION = {
+  loadoutIds: LOADOUT_IDS,
+  terrainTiles: Object.values(TerrainTile),
+};
 
 export type CreateProjectInput = {
   id: string;
@@ -74,7 +82,11 @@ export async function createProject(
 export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioProject>> {
   if (!(await fs.exists(PROJECT_MANIFEST))) {
     return fail([
-      issue("project.missing", `Project manifest not found at ${PROJECT_MANIFEST}.`, PROJECT_MANIFEST),
+      issue(
+        "project.missing",
+        `Project manifest not found at ${PROJECT_MANIFEST}.`,
+        PROJECT_MANIFEST,
+      ),
     ]);
   }
 
@@ -189,8 +201,11 @@ export async function saveProject(
   }
   await fs.writeText(PROJECT_MANIFEST, serializeProject(project.manifest));
   if (project.gameData) {
-    await fs.writeText(CANONICAL_GAME_DATA_FILE, `${JSON.stringify(project.gameData, null, 2)}
-`);
+    await fs.writeText(
+      CANONICAL_GAME_DATA_FILE,
+      `${JSON.stringify(project.gameData, null, 2)}
+`,
+    );
   }
   return succeed(project);
 }
@@ -209,8 +224,6 @@ export function updateLevelDocument(
 ): StudioProject {
   return {
     ...project,
-    levels: project.levels.map((level) =>
-      level.id === levelId ? { ...level, document } : level,
-    ),
+    levels: project.levels.map((level) => (level.id === levelId ? { ...level, document } : level)),
   };
 }

@@ -233,7 +233,14 @@ const SWATCH_RING = "0 0 0 1px rgba(255,255,255,0.15)";
 function Swatch({ style }: { style: CSSProperties }) {
   return (
     <span
-      style={{ width: 12, height: 12, borderRadius: 3, flex: "none", boxSizing: "border-box", ...style }}
+      style={{
+        width: 12,
+        height: 12,
+        borderRadius: 3,
+        flex: "none",
+        boxSizing: "border-box",
+        ...style,
+      }}
     />
   );
 }

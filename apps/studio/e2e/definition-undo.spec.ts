@@ -72,7 +72,9 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
 
   // Duplicate, delete the copy, undo the delete.
   await panel.getByRole("button", { name: "Duplicate" }).click();
-  const copyPanel = page.locator('[data-undo-scope="definitions"]').filter({ hasText: "Enemy · spiky-crab-copy" });
+  const copyPanel = page
+    .locator('[data-undo-scope="definitions"]')
+    .filter({ hasText: "Enemy · spiky-crab-copy" });
   await expect(copyPanel).toBeVisible();
   await expect(row("Spiky Crab copy")).toBeVisible();
   await copyPanel.getByRole("button", { name: "Delete" }).click();
@@ -91,7 +93,8 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
 
   // A placed Spiky Crab blocks its deletion; Ctrl+Z after clicking the viewport undoes the placement instead.
   await page.getByRole("button", { name: "Edit Spiky Crab", exact: true }).click();
-  if ((await row("Spiky Crab").getAttribute("aria-current")) !== "true") await row("Spiky Crab").click();
+  if ((await row("Spiky Crab").getAttribute("aria-current")) !== "true")
+    await row("Spiky Crab").click();
   const canvas = page.locator("#viewport-canvas");
   const box = (await canvas.boundingBox())!;
   await canvas.click({ position: { x: box.width / 2, y: box.height / 2 } });
@@ -103,7 +106,11 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
   await page.keyboard.press("Control+s");
   await expect(page.getByText("Project saved.").last()).toBeVisible();
   const gameData = JSON.parse(readFileSync(join(projectRoot, "data/game.json"), "utf8"));
-  expect(gameData.prefabs["enemy.crab"]).toMatchObject({ id: "enemy.crab", name: "Spiky Crab", source: { ref: "crab" } });
+  expect(gameData.prefabs["enemy.crab"]).toMatchObject({
+    id: "enemy.crab",
+    name: "Spiky Crab",
+    source: { ref: "crab" },
+  });
   expect(gameData.prefabs["enemy.spiky-crab-copy"]).toMatchObject({ name: "Spiky Crab copy" });
   expect(Object.keys(gameData.enemies).sort()).toEqual(["crab", "spiky-crab-copy"]);
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);

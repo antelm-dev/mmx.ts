@@ -59,7 +59,7 @@ repository. They come from a Studio project export (for example
 
 | Command                                             | `MMX_PROJECT`                  | Behavior                                                                                                                                          |
 | --------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm demo`                                         | set by command                 | Runs the `apps/studio/templates/mmx-demo` project with both converted levels.                                                                      |
+| `pnpm demo`                                         | set by command                 | Runs the `apps/studio/templates/mmx-demo` project with both converted levels.                                                                     |
 | `pnpm play` / `pnpm factory:dev -- --project <dir>` | optional / required by factory | Dev server. Without a project, `virtual:mmx-project` stubs to `null` and bootstrap fails at runtime with an actionable message.                   |
 | `pnpm build`                                        | not required                   | Package/library validation only. Typechecks `@mmx/web` but does **not** run `vite build` or emit `apps/web/dist`.                                 |
 | `pnpm build:web`                                    | **required**                   | Production web artifact. Fails at build time if `MMX_PROJECT` is unset or invalid. A successful build embeds a validated non-null project bundle. |

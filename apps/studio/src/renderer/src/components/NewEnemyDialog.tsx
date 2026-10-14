@@ -17,9 +17,14 @@ function baseStats(base: string): { health: number; touchDamage: number } {
 }
 
 /** Palette → New enemy…: a project enemy copied from a built-in one, drawn from an animation asset. */
-export function NewEnemyDialog({ open, onClose }: Readonly<{ open: boolean; onClose: () => void }>) {
+export function NewEnemyDialog({
+  open,
+  onClose,
+}: Readonly<{ open: boolean; onClose: () => void }>) {
   const project = useProjectSession().project;
-  const sheets = (project?.manifest.assets ?? []).filter((asset) => asset.kind === "animation").map((a) => a.id);
+  const sheets = (project?.manifest.assets ?? [])
+    .filter((asset) => asset.kind === "animation")
+    .map((a) => a.id);
   const [name, setName] = useState("");
   const [base, setBase] = useState(BUILTIN_ENEMIES[0]!);
   const [sheet, setSheet] = useState("");
@@ -27,7 +32,8 @@ export function NewEnemyDialog({ open, onClose }: Readonly<{ open: boolean; onCl
 
   const id = `enemy.${uniqueEnemySlug(projectSession.gameData().data, name)}`;
   const chosenSheet = sheets.includes(sheet) ? sheet : (sheets[0] ?? "");
-  const valid = name.trim() !== "" && chosenSheet !== "" && stats.health >= 1 && stats.touchDamage >= 0;
+  const valid =
+    name.trim() !== "" && chosenSheet !== "" && stats.health >= 1 && stats.touchDamage >= 0;
 
   const create = () => {
     editor.createEnemy({ name, base, sheet: chosenSheet, ...stats });
@@ -109,7 +115,9 @@ export function NewEnemyDialog({ open, onClose }: Readonly<{ open: boolean; onCl
                 </Field>
               </chakra.div>
               {sheets.length === 0 && (
-                <chakra.div color="studio.dangerFg">Add an animation asset to the project first.</chakra.div>
+                <chakra.div color="studio.dangerFg">
+                  Add an animation asset to the project first.
+                </chakra.div>
               )}
             </Dialog.Body>
             <Dialog.Footer>

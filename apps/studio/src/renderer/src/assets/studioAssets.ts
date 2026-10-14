@@ -37,10 +37,11 @@ export type StudioAssets = {
   resolveUrl: (asset: ProjectAsset) => string;
 };
 
-const bundledAssetUrls = import.meta.glob(
-  "../../../../templates/mmx-starter/assets/**/*",
-  { eager: true, query: "?url", import: "default" },
-) as Record<string, string>;
+const bundledAssetUrls = import.meta.glob("../../../../templates/mmx-starter/assets/**/*", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
 
 function resolveStarterAssetUrl(asset: ProjectAsset): string {
   const suffix = `/templates/mmx-starter/${asset.path}`.replaceAll("\\", "/");
@@ -96,7 +97,9 @@ export function buildStudioAssets(
     enemyActors: {
       ...Object.fromEntries(
         Object.values(enemies)
-          .filter(({ sheet }) => project.assets.some((asset) => asset.id === sheet && asset.kind === "animation"))
+          .filter(({ sheet }) =>
+            project.assets.some((asset) => asset.id === sheet && asset.kind === "animation"),
+          )
           .map(({ sheet }) => [sheet, sheet]),
       ),
       ...bindings.enemyAnimations,

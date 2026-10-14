@@ -36,7 +36,10 @@ test("vramDest wraps to 16 bits like the SNES", () => {
 
 test("gfxRle mixes literals and fill bytes", () => {
   // ctrl 0b1010_0000: literal, fill, literal, then fill x5
-  assert.deepEqual([...gfxRle(Uint8Array.from([0xa0, 0x77, 1, 2]), 0, 8)], [1, 0x77, 2, 0x77, 0x77, 0x77, 0x77, 0x77]);
+  assert.deepEqual(
+    [...gfxRle(Uint8Array.from([0xa0, 0x77, 1, 2]), 0, 8)],
+    [1, 0x77, 2, 0x77, 0x77, 0x77, 0x77, 0x77],
+  );
 });
 
 test("tile4bpp reads the four bitplanes", () => {
@@ -48,12 +51,19 @@ test("tile4bpp reads the four bitplanes", () => {
   const t = tile4bpp(vram, 1);
   assert.equal(t[0], 9);
   assert.equal(t[7], 2);
-  assert.equal(t.reduce((a, b) => a + b, 0), 11);
+  assert.equal(
+    t.reduce((a, b) => a + b, 0),
+    11,
+  );
 });
 
 test("decodeLayout expands counting and repeating runs", () => {
   // w=3 h=2 used=9; 0x03 from 5 counts up; 0x83 of 9 repeats; end
-  assert.deepEqual(decodeLayout(Uint8Array.from([3, 2, 9, 0x03, 5, 0x83, 9, 0xff]), 0), { w: 3, h: 2, layout: [5, 6, 7, 9, 9, 9] });
+  assert.deepEqual(decodeLayout(Uint8Array.from([3, 2, 9, 0x03, 5, 0x83, 9, 0xff]), 0), {
+    w: 3,
+    h: 2,
+    layout: [5, 6, 7, 9, 9, 9],
+  });
 });
 
 test("findMmx1Rom picks the LoROM v1.0 header and skips others", () => {
@@ -83,7 +93,10 @@ test("oracle: Intro Highway matches the Python cache", async (t) => {
   const { cache } = o;
   const { stage, background, json } = await readMmx1Install(o.install);
   assert.equal(JSON.stringify(json), readFileSync(join(cache, "stage.json"), "utf8"));
-  for (const [name, img] of [["stage", stage], ["background", background]] as const) {
+  for (const [name, img] of [
+    ["stage", stage],
+    ["background", background],
+  ] as const) {
     const want = decodePng(readFileSync(join(cache, `${name}.png`)));
     assert.equal(`${img.width}x${img.height}`, `${want.width}x${want.height}`, name);
     assert.ok(Buffer.from(img.px).equals(Buffer.from(want.px)), `${name} pixels differ`);

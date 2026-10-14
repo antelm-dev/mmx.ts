@@ -28,7 +28,9 @@ test.beforeAll(async () => {
   page = await app.firstWindow();
   await expect(page.locator("#viewport-canvas")).toBeVisible({ timeout: 30_000 });
   storedTheme = await page.evaluate(() => localStorage.getItem("mmx-studio-theme"));
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 800));
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+  );
   await expect.poll(() => page.evaluate(() => [innerWidth, innerHeight])).toEqual([1280, 800]);
 });
 
@@ -48,7 +50,9 @@ type Theme = (typeof themes)[number];
 
 /** Picks the theme from View → Appearance; leaves the menu open (radio items keep it open). */
 async function pickTheme(theme: Theme): Promise<void> {
-  const item = page.getByRole("menuitemradio", { name: theme === "dark" ? "Dark theme" : "Light theme" });
+  const item = page.getByRole("menuitemradio", {
+    name: theme === "dark" ? "Dark theme" : "Light theme",
+  });
   if (!(await item.isVisible())) await page.getByRole("button", { name: "View menu" }).click();
   await item.click();
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
@@ -58,7 +62,11 @@ async function pickTheme(theme: Theme): Promise<void> {
 async function loaded(): Promise<void> {
   await page.evaluate(() => document.fonts.ready);
   await expect
-    .poll(() => page.evaluate(() => [...document.images].every((img) => img.complete && img.naturalWidth > 0)))
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.images].every((img) => img.complete && img.naturalWidth > 0),
+      ),
+    )
     .toBe(true);
 }
 
@@ -116,7 +124,9 @@ test("Play mode with the Playtest Debugger paused", async () => {
   await expect(page.getByText("0/1", { exact: true })).toBeVisible();
   await expect(page.getByText("restarting level")).toBeHidden({ timeout: 10_000 });
   // FPS and timing readouts.
-  await shootThemes("play-paused", [page.getByText("timing median / p95 / worst (ms)").locator("..")]);
+  await shootThemes("play-paused", [
+    page.getByText("timing median / p95 / worst (ms)").locator(".."),
+  ]);
   await page.getByRole("button", { name: /^Stop$/ }).click();
   await expect(page.locator("#viewport-canvas")).toBeVisible();
 });

@@ -28,7 +28,15 @@ export const ZERO_MOVES: { move: string; anim: number; script: number }[] = [
  */
 export const ZERO_SOUNDS = {
   music: "zero1_bgm/zero1_bgm005.sngw",
-  sfx: { slash: 16, dash: 19, land: 13, buster_shot: 17, enemy_shot: 71, hurt: 21, wall_kick: 19 } as Record<string, number>,
+  sfx: {
+    slash: 16,
+    dash: 19,
+    land: 13,
+    buster_shot: 17,
+    enemy_shot: 71,
+    hurt: 21,
+    wall_kick: 19,
+  } as Record<string, number>,
 };
 
 /**

@@ -17,11 +17,7 @@ import {
 import type { DebugPrimitive } from "@mmx/engine/behaviors";
 import { EditableTerrain } from "./EditableTerrain.js";
 import { tileLayerWritesCollision } from "./actions.js";
-import {
-  selectedDecorationIds,
-  selectedObjectIds,
-  type EditorStore,
-} from "./EditorStore.js";
+import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
 import {
   boxOf,
   environmentGeometry,
@@ -143,7 +139,6 @@ export class EditorViewportRenderer {
       layer.removeChildren().forEach((c) => c.destroy());
     }
   }
-
 
   redraw(
     live: LivePreview,
@@ -409,11 +404,16 @@ export class EditorViewportRenderer {
     }
 
     if (state.hover?.kind === "tile") {
-      const selectedTiles = state.selection.kind === "tiles" ? new Set(state.selection.indices) : null;
+      const selectedTiles =
+        state.selection.kind === "tiles" ? new Set(state.selection.indices) : null;
       if (!selectedTiles?.has(state.hover.index)) {
         const col = state.hover.index % state.document.cols;
         const row = Math.floor(state.hover.index / state.document.cols);
-        g.rect(col * grid, row * grid, grid, grid).stroke({ width: 1 / zoom, color: COLOR_HOVER, alpha: 0.5 });
+        g.rect(col * grid, row * grid, grid, grid).stroke({
+          width: 1 / zoom,
+          color: COLOR_HOVER,
+          alpha: 0.5,
+        });
       }
     }
 
@@ -421,11 +421,14 @@ export class EditorViewportRenderer {
       const inst = byId.get(id);
       if (!inst) continue;
       const b = this.objectDrawBox(inst, live);
-      g.rect(b.x - 1 / zoom, b.y - 1 / zoom, b.w + 2 / zoom, b.h + 2 / zoom)
-        .stroke({ width: 2 / zoom, color: COLOR_SELECT });
-      const shown = live?.type === "travel" && live.id === id
-        ? { ...inst, overrides: { ...inst.overrides, Travel: live.travel } }
-        : inst;
+      g.rect(b.x - 1 / zoom, b.y - 1 / zoom, b.w + 2 / zoom, b.h + 2 / zoom).stroke({
+        width: 2 / zoom,
+        color: COLOR_SELECT,
+      });
+      const shown =
+        live?.type === "travel" && live.id === id
+          ? { ...inst, overrides: { ...inst.overrides, Travel: live.travel } }
+          : inst;
       const geometry = environmentGeometry(shown, b);
       this.drawGeometry(g, geometry, zoom);
       const grip = selectedIds.length === 1 && travelEditable(inst) ? travelGrip(geometry) : null;
@@ -466,15 +469,16 @@ export class EditorViewportRenderer {
           g.rect(ox, oy, grid, grid).fill({ color: COLOR_BG, alpha: 0.45 });
           g.rect(col * grid, row * grid, grid, grid).fill({ color: COLOR_TILE_FILL, alpha: 0.75 });
         }
-        g.rect(col * grid - 1 / zoom, row * grid - 1 / zoom, grid + 2 / zoom, grid + 2 / zoom)
-          .stroke({ width: 2 / zoom, color: COLOR_SELECT });
+        g.rect(
+          col * grid - 1 / zoom,
+          row * grid - 1 / zoom,
+          grid + 2 / zoom,
+          grid + 2 / zoom,
+        ).stroke({ width: 2 / zoom, color: COLOR_SELECT });
       }
     }
 
-    const handleTarget = singleResizableObject(
-      state.document.objects,
-      selectedIds,
-    );
+    const handleTarget = singleResizableObject(state.document.objects, selectedIds);
     if (handleTarget) {
       const b = this.objectDrawBox(handleTarget, live);
       const s = HANDLE_HIT_PX / zoom;
@@ -521,9 +525,12 @@ export class EditorViewportRenderer {
         const tx = (p.from.x + p.to.x) / 2 + (ux * head) / 2;
         const ty = (p.from.y + p.to.y) / 2 + (uy * head) / 2;
         g.poly([
-          tx, ty,
-          tx - ux * head - uy * head * 0.5, ty - uy * head + ux * head * 0.5,
-          tx - ux * head + uy * head * 0.5, ty - uy * head - ux * head * 0.5,
+          tx,
+          ty,
+          tx - ux * head - uy * head * 0.5,
+          ty - uy * head + ux * head * 0.5,
+          tx - ux * head + uy * head * 0.5,
+          ty - uy * head - ux * head * 0.5,
         ]).fill(COLOR_PATH);
       }
     }
@@ -570,12 +577,21 @@ export class EditorViewportRenderer {
   }
 
   /** Update the CSS cursor on the canvas element. */
-  updateCursor(canvas: HTMLCanvasElement, panning: boolean, spaceDown: boolean, marqueeActive: boolean): void {
+  updateCursor(
+    canvas: HTMLCanvasElement,
+    panning: boolean,
+    spaceDown: boolean,
+    marqueeActive: boolean,
+  ): void {
     const state = this.store.get();
     const isPan = panning || spaceDown || state.activeTool === "pan";
-    const isCross = marqueeActive || state.activeTool === "place" ||
-      state.activeTool === "placeDecoration" || state.activeTool === "tile" ||
+    const isCross =
+      marqueeActive ||
+      state.activeTool === "place" ||
+      state.activeTool === "placeDecoration" ||
+      state.activeTool === "tile" ||
       state.activeTool === "tilePaint";
-    canvas.style.cursor = state.mode === "play" ? "default" : isPan ? "grab" : isCross ? "crosshair" : "default";
+    canvas.style.cursor =
+      state.mode === "play" ? "default" : isPan ? "grab" : isCross ? "crosshair" : "default";
   }
 }

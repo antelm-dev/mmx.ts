@@ -32,7 +32,11 @@ export function definitionDeleteBlocker(definitionId: string): string | null {
   const others = (project?.levels ?? [])
     .filter((level) => level.id !== project?.manifest.entryLevelId)
     .map((level) => level.document);
-  return deleteBlocker(definitionId, [editor.store.get().document, ...others], project?.manifest.objects ?? []);
+  return deleteBlocker(
+    definitionId,
+    [editor.store.get().document, ...others],
+    project?.manifest.objects ?? [],
+  );
 }
 
 /**

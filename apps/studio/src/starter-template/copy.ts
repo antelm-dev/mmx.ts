@@ -63,7 +63,9 @@ export async function copyStarterProjectToDirectory(
   return loadProject(destFs);
 }
 
-export async function exportFreshStarterCopy(exportRoot: string): Promise<ProjectResult<StudioProject>> {
+export async function exportFreshStarterCopy(
+  exportRoot: string,
+): Promise<ProjectResult<StudioProject>> {
   return copyStarterProjectToDirectory(exportRoot, {
     id: "mmx.starter.export",
     name: "MMX Starter Export",

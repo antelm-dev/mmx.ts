@@ -33,7 +33,11 @@ function duplicateDefinition(def: GameObjectDefinition): void {
   const objects = projectSession.getSnapshot().project?.manifest.objects ?? [];
   if (def.baseId) projectSession.setObjects(duplicateObject(objects, def.id));
   else if (def.category === "enemy") editor.duplicateEnemy(String(def.fields.Kind), def.name);
-  else projectSession.setObjects([...objects, { id: freeObjectId(def.id, objects), name: `${def.name} copy`, base: def.id }]);
+  else
+    projectSession.setObjects([
+      ...objects,
+      { id: freeObjectId(def.id, objects), name: `${def.name} copy`, base: def.id },
+    ]);
 }
 
 const rowAction = {
@@ -47,7 +51,11 @@ const rowAction = {
   rounded: "md",
   color: "studio.fgTertiary",
   cursor: "pointer",
-  _disabled: { opacity: 0.35, cursor: "default", _hover: { color: "studio.fgTertiary", bg: "transparent" } },
+  _disabled: {
+    opacity: 0.35,
+    cursor: "default",
+    _hover: { color: "studio.fgTertiary", bg: "transparent" },
+  },
 } as const;
 
 /** Detachable dock panel: the searchable, virtualized object palette. */
@@ -205,7 +213,8 @@ function PaletteList({
                   aria-label={`Delete ${def.name}`}
                   title={blocker ?? `Delete ${def.name}`}
                   onClick={() => {
-                    if (!window.confirm(`Delete the object '${def.name}' from the project?`)) return;
+                    if (!window.confirm(`Delete the object '${def.name}' from the project?`))
+                      return;
                     const objects = projectSession.getSnapshot().project?.manifest.objects ?? [];
                     projectSession.setObjects(objects.filter((o) => o.id !== def.id));
                   }}
@@ -239,7 +248,11 @@ function PaletteList({
                   _hover={{ color: "studio.fg", bg: "studio.hover" }}
                   disabled={copyEnemy && broken}
                   aria-label={`Duplicate ${def.name}`}
-                  title={copyEnemy && broken ? "Fix the data/game.json errors in Problems first" : `Duplicate ${def.name}`}
+                  title={
+                    copyEnemy && broken
+                      ? "Fix the data/game.json errors in Problems first"
+                      : `Duplicate ${def.name}`
+                  }
                   onClick={() => duplicateDefinition(def)}
                 >
                   <Copy size={14} />

@@ -82,7 +82,9 @@ test("New enemy: create a Crab from the Metool, place it, save it, and play it",
     source: { kind: "enemy", ref: "crab" },
   });
   const level = JSON.parse(readFileSync(join(projectRoot, "levels/level.main.json"), "utf8"));
-  expect(level.objects.map((o: { definitionId: string }) => o.definitionId)).toContain("enemy.crab");
+  expect(level.objects.map((o: { definitionId: string }) => o.definitionId)).toContain(
+    "enemy.crab",
+  );
 
   await page.getByRole("button", { name: /^Play$/ }).click();
   await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });

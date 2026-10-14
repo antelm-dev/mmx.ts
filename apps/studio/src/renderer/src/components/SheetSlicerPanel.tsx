@@ -21,7 +21,13 @@ import { ToolbarButton } from "../ui/editor/toolbar-button.js";
 
 const Row = chakra("div", { base: { py: "3px", px: "3.5" } });
 const Grid2 = chakra("div", {
-  base: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2", py: "3px", px: "3.5" },
+  base: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "2",
+    py: "3px",
+    px: "3.5",
+  },
 });
 
 export type Sheet = { url: string; width: number; height: number; px: Uint8ClampedArray };
@@ -36,7 +42,12 @@ export async function loadSheet(url: string): Promise<Sheet> {
   canvas.height = img.naturalHeight;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(img, 0, 0);
-  return { url, width: canvas.width, height: canvas.height, px: ctx.getImageData(0, 0, canvas.width, canvas.height).data };
+  return {
+    url,
+    width: canvas.width,
+    height: canvas.height,
+    px: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+  };
 }
 
 /** Whole number from a field, or the fallback when blank or invalid. */
@@ -73,7 +84,11 @@ export function SheetSlicerPanel() {
       .readAssetUrl(assetId)
       .then((url) => (url ? loadSheet(url) : null))
       .then((loaded) => !cancelled && setSheet(loaded))
-      .catch((error: unknown) => editor.toast(`Could not read sheet: ${error instanceof Error ? error.message : String(error)}`));
+      .catch((error: unknown) =>
+        editor.toast(
+          `Could not read sheet: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
     return () => {
       cancelled = true;
     };
@@ -143,7 +158,10 @@ export function SheetSlicerPanel() {
           <>
             <Grid2>
               <Field label="Background">
-                <FieldSelect value={background} onChange={(e) => setBackground(e.target.value as "alpha" | "corner")}>
+                <FieldSelect
+                  value={background}
+                  onChange={(e) => setBackground(e.target.value as "alpha" | "corner")}
+                >
                   <option value="alpha">Transparent</option>
                   <option value="corner">Top-left pixel colour</option>
                 </FieldSelect>
@@ -160,7 +178,12 @@ export function SheetSlicerPanel() {
             <PanelActions>
               <ActionButton
                 disabled={!sheet}
-                onClick={() => sheet && replace(sliceAuto(sheet.px, sheet.width, sheet.height, { background: bg(), mergeGap }))}
+                onClick={() =>
+                  sheet &&
+                  replace(
+                    sliceAuto(sheet.px, sheet.width, sheet.height, { background: bg(), mergeGap }),
+                  )
+                }
               >
                 Detect regions
               </ActionButton>
@@ -170,22 +193,44 @@ export function SheetSlicerPanel() {
           <>
             <Grid2>
               <Field label="Cell width">
-                <FieldInput type="number" min={1} value={cell[0]} onChange={(e) => setCell([int(e.target.value, cell[0], 1), cell[1]])} />
+                <FieldInput
+                  type="number"
+                  min={1}
+                  value={cell[0]}
+                  onChange={(e) => setCell([int(e.target.value, cell[0], 1), cell[1]])}
+                />
               </Field>
               <Field label="Cell height">
-                <FieldInput type="number" min={1} value={cell[1]} onChange={(e) => setCell([cell[0], int(e.target.value, cell[1], 1)])} />
+                <FieldInput
+                  type="number"
+                  min={1}
+                  value={cell[1]}
+                  onChange={(e) => setCell([cell[0], int(e.target.value, cell[1], 1)])}
+                />
               </Field>
               <Field label="Margin">
-                <FieldInput type="number" min={0} value={margin} onChange={(e) => setMargin(int(e.target.value, margin))} />
+                <FieldInput
+                  type="number"
+                  min={0}
+                  value={margin}
+                  onChange={(e) => setMargin(int(e.target.value, margin))}
+                />
               </Field>
               <Field label="Spacing">
-                <FieldInput type="number" min={0} value={spacing} onChange={(e) => setSpacing(int(e.target.value, spacing))} />
+                <FieldInput
+                  type="number"
+                  min={0}
+                  value={spacing}
+                  onChange={(e) => setSpacing(int(e.target.value, spacing))}
+                />
               </Field>
             </Grid2>
             <PanelActions>
               <ActionButton
                 disabled={!sheet}
-                onClick={() => sheet && replace(sliceGrid(sheet.width, sheet.height, { cell, margin, spacing }))}
+                onClick={() =>
+                  sheet && replace(sliceGrid(sheet.width, sheet.height, { cell, margin, spacing }))
+                }
               >
                 Apply grid
               </ActionButton>
@@ -203,7 +248,10 @@ export function SheetSlicerPanel() {
           <ActionButton
             disabled={selected.length < 2}
             onClick={() =>
-              replace([...rects.filter((_, i) => !selected.includes(i)), mergeRects(selected.map((i) => rects[i]!))])
+              replace([
+                ...rects.filter((_, i) => !selected.includes(i)),
+                mergeRects(selected.map((i) => rects[i]!)),
+              ])
             }
           >
             Merge
@@ -212,14 +260,19 @@ export function SheetSlicerPanel() {
             disabled={selected.length !== 1 || !sheet}
             onClick={() =>
               sheet &&
-              replace([...rects.filter((_, i) => i !== selected[0]), ...splitRect(sheet.px, sheet.width, rects[selected[0]!]!, bg())])
+              replace([
+                ...rects.filter((_, i) => i !== selected[0]),
+                ...splitRect(sheet.px, sheet.width, rects[selected[0]!]!, bg()),
+              ])
             }
           >
             Split
           </ActionButton>
           <ActionButton
             disabled={!assetId}
-            onClick={() => setSpriteRegions(editor.store, projectSession, assetId, toRegions(rects, byRow))}
+            onClick={() =>
+              setSpriteRegions(editor.store, projectSession, assetId, toRegions(rects, byRow))
+            }
           >
             Save regions
           </ActionButton>
@@ -265,7 +318,9 @@ export function SheetSlicerPanel() {
                     color="white"
                     textShadow="0 0 2px black"
                     style={{ left: x * zoom, top: y * zoom, width: w * zoom, height: h * zoom }}
-                    onClick={() => setSelected(on ? selected.filter((s) => s !== i) : [...selected, i])}
+                    onClick={() =>
+                      setSelected(on ? selected.filter((s) => s !== i) : [...selected, i])
+                    }
                   >
                     {i + 1}
                   </chakra.button>

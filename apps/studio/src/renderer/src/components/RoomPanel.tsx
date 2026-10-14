@@ -156,7 +156,12 @@ export function RoomPanel() {
           data-testid="image-layers"
         >
           {(doc.imageLayers ?? []).map((layer, index, all) => (
-            <ImageLayerRow key={layer.id} layer={layer} first={index === 0} last={index === all.length - 1} />
+            <ImageLayerRow
+              key={layer.id}
+              layer={layer}
+              first={index === 0}
+              last={index === all.length - 1}
+            />
           ))}
           <ToolbarButton onClick={() => void editor.importImageLayer()}>
             <ImagePlus size={14} /> Add image layer…
@@ -200,7 +205,15 @@ export function RoomPanel() {
 }
 
 /** One image layer: asset, draw layer, parallax, position, list order and removal. */
-function ImageLayerRow({ layer, first, last }: { layer: ImageLayer; first: boolean; last: boolean }) {
+function ImageLayerRow({
+  layer,
+  first,
+  last,
+}: {
+  layer: ImageLayer;
+  first: boolean;
+  last: boolean;
+}) {
   const commitNumber = (key: "parallax" | "x" | "y", raw: string): void => {
     const value = Number(raw);
     if (raw.trim() === "" || !Number.isFinite(value)) return;
