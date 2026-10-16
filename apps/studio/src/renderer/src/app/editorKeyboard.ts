@@ -46,6 +46,9 @@ export type EditorCommand =
   | { kind: "zoomOut" }
   | { kind: "zoomReset" }
   | { kind: "duplicate" }
+  | { kind: "copy" }
+  | { kind: "cut" }
+  | { kind: "paste" }
   | { kind: "delete" }
   | { kind: "fit" }
   | { kind: "toggleGrid" }
@@ -123,6 +126,11 @@ export function dispatchEditorKey(
   if (mod && e.code === "Enter") return { kind: "togglePlay" };
 
   if (ctx.isTypingField) return null;
+
+  // after the typing-field check so text fields keep their native copy/paste
+  if (mod && e.code === "KeyC") return { kind: "copy" };
+  if (mod && e.code === "KeyX") return { kind: "cut" };
+  if (mod && e.code === "KeyV") return { kind: "paste" };
 
   switch (e.code) {
     case "Delete":

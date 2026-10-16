@@ -130,6 +130,10 @@ export class EditorViewport {
 
   // ---------- Public interaction helpers ----------
 
+  pointerOnCanvas(): { x: number; y: number } | null {
+    return this.interaction.pointerOnCanvas();
+  }
+
   setSpace(down: boolean): void {
     this.interaction.setSpace(down);
   }

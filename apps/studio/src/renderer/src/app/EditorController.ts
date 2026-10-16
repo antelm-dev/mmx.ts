@@ -16,6 +16,7 @@ import {
   setRoomSettings,
   setTileAt,
 } from "../core/actions.js";
+import { copySelection, cutSelection, pasteClipboard } from "../core/clipboard.js";
 import { EditorViewport } from "../core/EditorViewport.js";
 import { tileGrid } from "../core/EditorViewportGeometry.js";
 import { type PlaytestSnapshot } from "@mmx/editor-runtime";
@@ -680,6 +681,17 @@ export class EditorController {
   deleteSelection(): void {
     deleteSelection(this.store);
   }
+  copySelection(): void {
+    copySelection(this.store);
+  }
+  cutSelection(): void {
+    cutSelection(this.store);
+  }
+  /** Paste at the pointer when it is over the canvas, else next to the copied items. */
+  paste(): void {
+    const message = pasteClipboard(this.store, this.viewport?.pointerOnCanvas() ?? undefined);
+    if (message) this.toast(message);
+  }
 
   /** Add a project enemy (data/game.json) and pick it for placing; saved with the project. */
   createEnemy(input: NewEnemyInput): void {
@@ -858,6 +870,15 @@ export class EditorController {
         break;
       case "delete":
         this.deleteSelection();
+        break;
+      case "copy":
+        this.copySelection();
+        break;
+      case "cut":
+        this.cutSelection();
+        break;
+      case "paste":
+        this.paste();
         break;
       case "fit":
         this.fit();

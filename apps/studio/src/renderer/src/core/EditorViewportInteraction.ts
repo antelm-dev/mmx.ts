@@ -103,6 +103,8 @@ export class EditorViewportInteraction {
   } | null = null;
   private marqueeActive = false;
   pointerWorld = { x: 0, y: 0 };
+  /** Client position of the pointer while it is over the canvas. */
+  private hoverClient: { x: number; y: number } | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -133,6 +135,11 @@ export class EditorViewportInteraction {
     if (!this.marquee) return null;
     return { start: this.marquee.start, current: this.marquee.current, active: this.marqueeActive };
   }
+  /** World position under the pointer in the current view, or null when it is off the canvas. */
+  pointerOnCanvas(): { x: number; y: number } | null {
+    return this.hoverClient && this.screenToWorld(this.hoverClient.x, this.hoverClient.y);
+  }
+
   isPanning(): boolean {
     return this.panning;
   }
@@ -378,6 +385,7 @@ export class EditorViewportInteraction {
     const c = this.canvas;
     c.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     c.addEventListener("pointermove", (e) => this.onPointerMove(e));
+    c.addEventListener("pointerleave", () => (this.hoverClient = null));
     const { signal } = this.windowListeners;
     window.addEventListener("pointerup", (e) => this.onPointerUp(e), { signal });
     c.addEventListener("wheel", (e) => this.onWheel(e), { passive: false });
@@ -561,6 +569,7 @@ export class EditorViewportInteraction {
   private onPointerMove(e: PointerEvent): void {
     const world = this.screenToWorld(e.clientX, e.clientY);
     this.pointerWorld = world;
+    this.hoverClient = { x: e.clientX, y: e.clientY };
 
     if (this.panning) {
       const { zoom, viewportPosition } = this.store.get();
