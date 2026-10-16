@@ -90,9 +90,21 @@ describe("ProjectSession failed open", () => {
     const opened = session.getSnapshot();
 
     expect(await session.openProject("/projects/moved")).toEqual([missing]);
-    expect(session.getSnapshot()).toBe(opened);
-    expect(session.getSnapshot().open).toBe(true);
-    expect(session.getSnapshot().rootPath).toBe("/projects/b");
+    const after = session.getSnapshot();
+    expect(after).toEqual({ ...opened, issues: [missing] });
+    expect(after.project).toBe(opened.project);
+    expect(after.open).toBe(true);
+    expect(after.rootPath).toBe("/projects/b");
+  });
+
+  it("reports the failed load's issues when no project was open", async () => {
+    const missing = { severity: "error", code: "project.missing", path: "/", message: "gone" };
+    const load = async () => ({ ok: false, issues: [missing] });
+    vi.stubGlobal("window", { studio: { project: { ...bridge, load } } });
+    const session = new ProjectSession();
+
+    expect(await session.openProject("/projects/moved")).toEqual([missing]);
+    expect(session.getSnapshot()).toMatchObject({ open: false, project: null, issues: [missing] });
   });
 });
 
