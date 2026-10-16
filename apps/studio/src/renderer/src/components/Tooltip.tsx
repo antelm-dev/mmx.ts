@@ -17,6 +17,7 @@ export function Tooltip({ label, children }: { label: string; children: ReactNod
             borderColor="studio.borderStrong"
             color="studio.fg"
             fontSize="11px"
+            whiteSpace="pre-line"
             boxShadow="0 8px 20px rgba(0,0,0,0.4)"
           >
             {label}

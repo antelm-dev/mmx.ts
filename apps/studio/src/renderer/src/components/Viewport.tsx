@@ -25,6 +25,8 @@ import {
 } from "../ui/primitives/menu.js";
 import { Keycap, OverlayCard } from "../ui/editor/overlay.js";
 import { PlaytestDebugger } from "./PlaytestDebugger.js";
+import { ProblemBadges } from "./ProblemBadges.js";
+import { OverlayBottom, OverlayCanvas, OverlayTop } from "./viewportOverlay.js";
 
 interface PlaceGroup {
   category: string;
@@ -36,7 +38,8 @@ interface PlaceGroup {
  * Hosts the Pixi editing surface (and, in Play mode, the game renderer's canvas).
  * The heavy lifting stays in the framework-agnostic {@link EditorViewport} and
  * the playtest controller; this component only supplies the host element, the
- * empty-cell placement menu, and — in Play mode — the {@link PlaytestDebugger}.
+ * empty-cell placement menu, the Edit-mode overlays (tool card, hint bar and the C-OVERLAY
+ * slots of `viewportOverlay.ts`), and — in Play mode — the {@link PlaytestDebugger}.
  */
 export function Viewport() {
   const snap = useEditorSnapshot();
@@ -90,6 +93,12 @@ export function Viewport() {
       <chakra.div ref={hostRef} position="absolute" inset="0" overflow="hidden">
         {mode === "edit" && (
           <>
+            {/* C-OVERLAY slots (see viewportOverlay.ts): one line per feature. */}
+            <OverlayCanvas>
+              <ProblemBadges />
+            </OverlayCanvas>
+            <OverlayTop />
+            <OverlayBottom />
             <chakra.div
               position="absolute"
               zIndex="3"
