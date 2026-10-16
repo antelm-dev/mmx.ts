@@ -29,6 +29,8 @@ export interface KeyboardContext {
   isFullscreen: boolean;
   hasContextMenu: boolean;
   invulnerable: boolean;
+  /** Selectable page text is selected: Ctrl+C / Ctrl+X copy it natively instead of the level selection. */
+  hasTextSelection: boolean;
   /** Where undo/redo go: the surface the user last clicked or focused. */
   undoScope: UndoScope;
 }
@@ -46,6 +48,9 @@ export type EditorCommand =
   | { kind: "zoomOut" }
   | { kind: "zoomReset" }
   | { kind: "duplicate" }
+  | { kind: "copy" }
+  | { kind: "cut" }
+  | { kind: "paste" }
   | { kind: "delete" }
   | { kind: "fit" }
   | { kind: "toggleGrid" }
@@ -57,6 +62,7 @@ export type EditorCommand =
   | { kind: "exitFullscreen" }
   | { kind: "nudge"; dx: number; dy: number }
   | { kind: "togglePlay" }
+  | { kind: "playFromHere" }
   // play-mode commands
   | { kind: "playtestExit" }
   | { kind: "playtestTogglePause" }
@@ -120,9 +126,14 @@ export function dispatchEditorKey(
   if (mod && (e.code === "Minus" || e.code === "NumpadSubtract")) return { kind: "zoomOut" };
   if (mod && e.code === "Digit0") return { kind: "zoomReset" };
   if (mod && e.code === "KeyD") return { kind: "duplicate" };
-  if (mod && e.code === "Enter") return { kind: "togglePlay" };
+  if (mod && e.code === "Enter") return { kind: e.shiftKey ? "playFromHere" : "togglePlay" };
 
   if (ctx.isTypingField) return null;
+
+  // after the typing-field check so text fields keep their native copy/paste
+  if (mod && e.code === "KeyC") return ctx.hasTextSelection ? null : { kind: "copy" };
+  if (mod && e.code === "KeyX") return ctx.hasTextSelection ? null : { kind: "cut" };
+  if (mod && e.code === "KeyV") return { kind: "paste" };
 
   switch (e.code) {
     case "Delete":

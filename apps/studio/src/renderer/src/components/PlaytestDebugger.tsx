@@ -53,6 +53,18 @@ export function PlaytestDebugger(): ReactElement | null {
       pointerEvents="none"
     >
       <OverlayCard pointerEvents="auto" display="flex" alignItems="center" gap="1" h="9" px="1.5">
+        {editor.playingFromHere && (
+          <>
+            <OverlayLabel
+              px="1.5"
+              color="#4b8eff"
+              title="Started from a chosen point; the level's Spawn did not move"
+            >
+              from here
+            </OverlayLabel>
+            <Divider />
+          </>
+        )}
         <IconButton
           label={paused ? "Resume (F8)" : "Pause (F8)"}
           onClick={() => editor.playtestTogglePause()}
