@@ -5,11 +5,13 @@ import electronPath from "electron";
 export const NOTICE_SEEN_KEY = "mmx.studio-notice-seen.v1";
 export const SHOW_START_PAGE_KEY = "mmx.studio-show-start-page.v1";
 export const RECENT_PROJECTS_KEY = "mmx.studio-recent-projects.v1";
+export const MINIMAP_KEY = "mmx.studio-minimap.v1";
 /** Profile keys the specs run with; `null` leaves the value as is (specs opening projects add recents). */
 const SPEC_VALUES: Record<string, string | null> = {
   [NOTICE_SEEN_KEY]: "1",
   [SHOW_START_PAGE_KEY]: "false",
   [RECENT_PROJECTS_KEY]: null,
+  [MINIMAP_KEY]: "true",
 };
 // Same process as globalTeardown: env carries the developer's values across. null = key was absent.
 const PREVIOUS_ENV = "MMX_E2E_PROFILE_PREVIOUS";
@@ -39,8 +41,9 @@ export async function withRealProfile<T>(fn: (page: Page) => Promise<T>): Promis
 
 /**
  * Marks the first-launch notice as seen and turns the start page off so neither covers the
- * editor in the specs; fan-notice.spec.ts and start-page.spec.ts use their own fresh profile
- * instead. globalTeardown puts the developer's values back, recent projects included.
+ * editor in the specs, and shows the minimap (its default) for the same shots in every run;
+ * fan-notice.spec.ts and start-page.spec.ts use their own fresh profile instead.
+ * globalTeardown puts the developer's values back, recent projects included.
  */
 export default async function globalSetup(): Promise<void> {
   const previous = await withRealProfile((page) =>

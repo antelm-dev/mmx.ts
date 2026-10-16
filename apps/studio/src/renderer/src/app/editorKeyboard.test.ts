@@ -186,6 +186,10 @@ describe("tool shortcuts", () => {
   it("T → toolTile", () => {
     expect(dispatch(key("KeyT"))).toEqual({ kind: "toolTile" });
   });
+  it("H → toggleTrail, but not while typing", () => {
+    expect(dispatch(key("KeyH"))).toEqual({ kind: "toggleTrail" });
+    expect(dispatch(key("KeyH"), { ...editCtx, isTypingField: true })).toBeNull();
+  });
   it("G → toggleGrid", () => {
     expect(dispatch(key("KeyG"))).toEqual({ kind: "toggleGrid" });
   });

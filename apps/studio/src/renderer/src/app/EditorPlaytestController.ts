@@ -2,6 +2,7 @@ import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
 import {
   createPlaytest,
   STOPPED_PLAYTEST,
+  traceRun,
   type EditorPlaytestSession,
   type PlaytestSnapshot,
 } from "@mmx/editor-runtime";
@@ -254,8 +255,10 @@ export class EditorPlaytestController {
   }
 
   stopPlay(): void {
-    this.playToken++;
+    const token = ++this.playToken;
     this.fromHere = false;
+    // Taken before dispose: the run as played (a "from here" copy included), traced after.
+    const run = this.play?.recordedRun();
     this.play?.dispose();
     this.play = null;
     this.audio?.stopMusic();
@@ -268,6 +271,25 @@ export class EditorPlaytestController {
         this.savedView.viewportPosition,
         this.savedSelection,
       );
+    }
+    // Invulnerability (the only cheat that taints) is not in the input stream: a re-simulation
+    // would take the hits the run ignored, so it would not show the run that was played.
+    if (run?.replay.tainted) {
+      this.store.setTrail(null);
+      this.cb.toast("Trail unavailable: the run used a debug cheat.");
+    } else if (run) {
+      const opens = this.store.openCount;
+      // Abandoned when another Play starts or another document opens meanwhile.
+      const isStale = () => token !== this.playToken || this.store.openCount !== opens;
+      traceRun(run, { isStale })
+        .then((trail) => {
+          if (trail && !isStale()) this.store.setTrail(trail);
+        })
+        .catch((error: unknown) =>
+          this.cb.toast(
+            `Could not trace the last run: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
     }
   }
 

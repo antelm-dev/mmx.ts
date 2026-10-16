@@ -108,3 +108,25 @@ export function setShowStartPageAtLaunch(
     /* storage unavailable: the default (shown) applies next launch */
   }
 }
+
+export const MINIMAP_KEY = "mmx.studio-minimap.v1";
+
+/** View → Minimap; on unless turned off. */
+export function minimapVisibleAtLaunch(storage: Pick<Storage, "getItem"> = localStorage): boolean {
+  try {
+    return storage.getItem(MINIMAP_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+export function persistMinimapVisible(
+  visible: boolean,
+  storage: Pick<Storage, "setItem"> = localStorage,
+): void {
+  try {
+    storage.setItem(MINIMAP_KEY, String(visible));
+  } catch {
+    /* storage unavailable: the default (shown) applies next launch */
+  }
+}

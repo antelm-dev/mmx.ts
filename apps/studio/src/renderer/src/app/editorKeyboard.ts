@@ -65,6 +65,7 @@ export type EditorCommand =
   | { kind: "playFromHere" }
   | { kind: "partWheel" }
   | { kind: "recentPart"; index: number }
+  | { kind: "toggleTrail" }
   // play-mode commands
   | { kind: "playtestExit" }
   | { kind: "playtestTogglePause" }
@@ -156,6 +157,8 @@ export function dispatchEditorKey(
       return { kind: "toolSelect" };
     case "KeyT":
       return { kind: "toolTile" };
+    case "KeyH":
+      return { kind: "toggleTrail" };
     case "ArrowLeft":
       return { kind: "nudge", dx: e.shiftKey ? -gridSize : -1, dy: 0 };
     case "ArrowRight":

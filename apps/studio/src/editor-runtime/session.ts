@@ -1,12 +1,13 @@
 import { documentToLevelData } from "./adapters/adapters.js";
 import type { LevelDocument } from "@mmx/content-schema";
-import type { Scene } from "@mmx/engine";
+import type { Scene, SceneOptions } from "@mmx/engine";
 import { createToolingRuntime, type ToolingRuntime } from "@mmx/runtime/tooling";
 import type { RuntimePresentation } from "@mmx/runtime";
 import type { StudioPlaytestRenderer } from "@mmx/renderer-pixi";
 import { mapSimulationSnapshot } from "./mapSnapshot.js";
 import { PlaytestInput } from "./PlaytestInput.js";
 import { STOPPED_PLAYTEST, type PlaytestSnapshot } from "./snapshots.js";
+import type { RecordedRun } from "./trail.js";
 import type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
 
 const REACT_UPDATE_INTERVAL_MS = 70;
@@ -22,6 +23,8 @@ export function createPlaytest(
 
 class PlaytestSession implements EditorPlaytestSession {
   private runtime: ToolingRuntime | null = null;
+  /** The options the runtime's scene was built from, kept so a trace re-simulates the same run. */
+  private sceneOptions: SceneOptions | null = null;
   private renderer: StudioPlaytestRenderer | null = null;
   private browser = false;
   private selectedRuntimeId: string | null = "player";
@@ -46,19 +49,20 @@ class PlaytestSession implements EditorPlaytestSession {
     const visual = this.options.host ? await import("@mmx/renderer-pixi") : null;
     const assets = visual ? this.options.rendererAssets : null;
 
+    this.sceneOptions = {
+      seed: this.options.seed,
+      loadoutId: this.options.loadoutId,
+      gameData: this.options.gameData,
+      // Visual Play hands the engine the manifest's clips, as the web export does,
+      // so timing and frame boxes (and the replay hash) match it. Headless stays clip-less.
+      clips:
+        visual && this.options.rendererManifest
+          ? visual.sceneClipsFromManifest(this.options.rendererManifest)
+          : undefined,
+      level: documentToLevelData(this.document),
+    };
     const runtime = createToolingRuntime({
-      scene: {
-        seed: this.options.seed,
-        loadoutId: this.options.loadoutId,
-        gameData: this.options.gameData,
-        // Visual Play hands the engine the manifest's clips, as the web export does,
-        // so timing and frame boxes (and the replay hash) match it. Headless stays clip-less.
-        clips:
-          visual && this.options.rendererManifest
-            ? visual.sceneClipsFromManifest(this.options.rendererManifest)
-            : undefined,
-        level: documentToLevelData(this.document),
-      },
+      scene: this.sceneOptions,
       audio,
       onError: (error) => this.fail(error),
       replayFiles: this.options.replayFiles,
@@ -146,6 +150,11 @@ class PlaytestSession implements EditorPlaytestSession {
         notice: debug.notice,
       },
     };
+  }
+
+  recordedRun(): RecordedRun | null {
+    if (!this.runtime || !this.sceneOptions) return null;
+    return { replay: this.runtime.toReplay(), scene: this.sceneOptions };
   }
 
   togglePause(): void {

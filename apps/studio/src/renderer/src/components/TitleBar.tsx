@@ -14,6 +14,7 @@ import {
   Info,
   LayoutTemplate,
   Magnet,
+  Map as MapIcon,
   Maximize,
   Maximize2,
   Minus,
@@ -225,6 +226,8 @@ function ViewMenu() {
   const themePreference = useUiStore((s) => s.themePreference);
   const setThemePreference = useUiStore((s) => s.setThemePreference);
   const fullscreen = useUiStore((s) => s.fullscreen);
+  const minimapVisible = useUiStore((s) => s.minimapVisible);
+  const toggleMinimap = useUiStore((s) => s.toggleMinimap);
   const zoomPercent = Math.round(snap.state.zoom * 100);
 
   return (
@@ -273,6 +276,14 @@ function ViewMenu() {
         >
           <Magnet size={13} /> Snap
           <MenuShortcut>⇧G</MenuShortcut>
+        </MenuCheckboxItem>
+        <MenuCheckboxItem
+          value="minimap"
+          closeOnSelect={false}
+          checked={minimapVisible}
+          onCheckedChange={toggleMinimap}
+        >
+          <MapIcon size={13} /> Minimap
         </MenuCheckboxItem>
       </MenuGroup>
 
