@@ -114,6 +114,8 @@ export class ProjectSession {
   /** Definition snapshots before (undo) and after (redo) the current one; reset on project open/close. */
   private undoStack: Definitions[] = [];
   private redoStack: Definitions[] = [];
+  /** Ids of levels deleted since the project opened: their files stay on disk, so new levels never reuse them. */
+  private removedLevelIds = new Set<string>();
   /** Stops Play and drops viewport sprites; runs before old sheet textures are destroyed. */
   beforeSheetReset: () => void = () => {};
 
@@ -151,6 +153,7 @@ export class ProjectSession {
     if (!keepHistory) {
       this.undoStack = [];
       this.redoStack = [];
+      this.removedLevelIds = new Set();
       const levels = next.project?.levels ?? [];
       const entryId = next.project?.manifest.entryLevelId;
       next = {
@@ -282,6 +285,30 @@ export class ProjectSession {
     });
   }
 
+  /** Every level's document, the shown one as `live` (the store's copy); just `live` without a project. */
+  levelDocuments(live: LevelDocument): LevelDocument[] {
+    const { project, currentLevelId } = this.state;
+    if (!project) return [live];
+    return project.levels.map((level) => (level.id === currentLevelId ? live : level.document));
+  }
+
+  /**
+   * Make the level a recovery draft was saved from current (matched by id), or add the draft as
+   * a new level when no level has its id; returns the document to open, null without a project.
+   * A draft is never synced into another level's slot.
+   */
+  recoverLevel(draft: LevelDocument): LevelDocument | null {
+    const project = this.state.project;
+    if (!project) return null;
+    if (project.levels.some((level) => level.id === draft.id)) {
+      this.setCurrentLevel(draft.id);
+      return draft;
+    }
+    const id = this.addLevel(draft.name || "Recovered level", draft);
+    if (id) this.setCurrentLevel(id);
+    return this.getCurrentLevelDocument();
+  }
+
   /** Make `id` the level the editor syncs; the caller opens its document in the store. */
   setCurrentLevel(id: string): void {
     if (!this.state.project?.levels.some((level) => level.id === id)) return;
@@ -312,10 +339,13 @@ export class ProjectSession {
         .replace(/[^a-z0-9]+/g, ".")
         .replace(/^\.+|\.+$/g, "")
         .replace(/^level(\.|$)/, "") || "untitled";
-    const taken = new Set(project.manifest.levels.map((level) => level.id));
+    const taken = new Set([
+      ...project.manifest.levels.map((level) => level.id),
+      ...this.removedLevelIds,
+    ]);
     let id = `level.${slug}`;
     for (let n = 2; taken.has(id); n++) id = `level.${slug}.${n}`;
-    // shortcut: a leftover file at this path (e.g. of a deleted level) is overwritten on save; check the disk if that bites.
+    // shortcut: a file left by a level deleted in an earlier session, or written by hand, is overwritten on save; check the disk if that bites.
     const path = levelManifestPath(id);
     const level = { ...(document ?? createLevelDocument()), id, name };
     this.editLevels({
@@ -373,6 +403,7 @@ export class ProjectSession {
       return false;
     }
     if (!project.levels.some((level) => level.id === id)) return false;
+    this.removedLevelIds.add(id);
     this.editLevels(
       {
         ...project,

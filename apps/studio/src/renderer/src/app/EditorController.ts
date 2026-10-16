@@ -596,7 +596,8 @@ export class EditorController {
       return;
     }
     if (this.store.get().mode === "play") this.togglePlay();
-    this.openDocument(doc);
+    // In a project: into the level the draft came from (or a new one), never the shown slot.
+    this.openDocument(projectSession.recoverLevel(doc) ?? doc);
     this.toast("Recovery draft restored.");
   }
 

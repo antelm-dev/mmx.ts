@@ -46,6 +46,7 @@ vi.mock("@mmx/project-io", () => ({
 vi.mock("@mmx/project-schema", () => ({ validateProject: () => ({ issues: [] }) }));
 
 const { ProjectSession } = await import("./projectSession.js");
+const { deleteBlocker } = await import("./objectDefinitions.js");
 
 const project = { manifest: { assets: [] }, levels: [] };
 const bridge = {
@@ -328,7 +329,8 @@ describe("ProjectSession levels", () => {
     const level = (id: string, name: string) => ({
       id,
       path: `levels/${id}.json`,
-      document: { id, name },
+      // Level A places one instance of the project object `obj.crab`.
+      document: { id, name, objects: id === "level.a" ? [{ definitionId: "obj.crab" }] : [] },
     });
     return {
       manifest: {
@@ -418,6 +420,39 @@ describe("ProjectSession levels", () => {
     expect(ids(session)).toEqual(["level.a"]);
     expect(session.getSnapshot()).toMatchObject({ currentLevelId: "level.a", dirty: true });
     expect(session.deleteLevel("level.a")).toBe(false);
+    await session.getAssets();
+  });
+
+  it("counts a level you left when a definition delete is checked", async () => {
+    const session = await open();
+    session.setCurrentLevel("level.b");
+    const live = session.getCurrentLevelDocument()!;
+    const docs = session.levelDocuments(live);
+    expect(docs).toHaveLength(2);
+    expect(docs).toContain(live);
+    expect(deleteBlocker("obj.crab", docs as never, [])).toMatch(/Used by 1 placed object/);
+    await session.getAssets();
+  });
+
+  it("restores a recovery draft into its own level, or as a new level", async () => {
+    const session = await open();
+    const draftB = { ...session.getSnapshot().project!.levels[1]!.document, name: "B draft" };
+    expect(session.recoverLevel(draftB as never)).toBe(draftB);
+    expect(session.getSnapshot().currentLevelId).toBe("level.b");
+
+    const stray = { ...draftB, id: "level.elsewhere", name: "Stray" };
+    const opened = session.recoverLevel(stray as never)!;
+    expect(opened).toMatchObject({ id: "level.stray", name: "Stray" });
+    expect(session.getSnapshot().currentLevelId).toBe("level.stray");
+    expect(ids(session)).toEqual(["level.a", "level.b", "level.stray"]);
+    expect(session.getSnapshot().project!.levels[0]!.document.name).toBe("A");
+    await session.getAssets();
+  });
+
+  it("never reuses the id (and file) of a level deleted this session", async () => {
+    const session = await open();
+    expect(session.deleteLevel("level.b")).toBe(true);
+    expect(session.addLevel("B")).toBe("level.b.2");
     await session.getAssets();
   });
 });
