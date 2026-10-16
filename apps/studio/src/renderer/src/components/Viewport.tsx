@@ -22,6 +22,7 @@ import {
   MenuLabel,
   MenuRoot,
   MenuSeparator,
+  MenuShortcut,
 } from "../ui/primitives/menu.js";
 import { Keycap, OverlayCard } from "../ui/editor/overlay.js";
 import { PlaytestDebugger } from "./PlaytestDebugger.js";
@@ -209,6 +210,11 @@ export function Viewport() {
               <MenuLabel fontFamily="mono" textTransform="none" letterSpacing="normal" pb="1.5">
                 Cell {contextMenu.col}, {contextMenu.row}
               </MenuLabel>
+              <MenuItem value="play-here" onSelect={() => editor.playFromContext()}>
+                Play from here
+                <MenuShortcut>Ctrl+Shift+Enter</MenuShortcut>
+              </MenuItem>
+              <MenuSeparator />
               <MenuLabel>Terrain</MenuLabel>
               {contextMenu.tileSolid ? (
                 <MenuItem

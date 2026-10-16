@@ -202,6 +202,9 @@ describe("play entry/exit", () => {
   it("Ctrl+Enter in edit mode → togglePlay", () => {
     expect(dispatch(key("Enter", { mod: true }))).toEqual({ kind: "togglePlay" });
   });
+  it("Ctrl+Shift+Enter in edit mode → playFromHere", () => {
+    expect(dispatch(key("Enter", { mod: true, shift: true }))).toEqual({ kind: "playFromHere" });
+  });
   it("Escape in play mode → playtestExit", () => {
     expect(dispatch(key("Escape"), playCtx)).toEqual({ kind: "playtestExit" });
   });

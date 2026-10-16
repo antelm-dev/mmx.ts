@@ -5,12 +5,48 @@ import {
   type EditorPlaytestSession,
   type PlaytestSnapshot,
 } from "@mmx/editor-runtime";
+import { documentToLevelData } from "@mmx/editor-runtime/adapters";
+import { BODY_HALF_H, BODY_HALF_W, DEFAULT_PLAYER_LOADOUT, World } from "@mmx/engine";
+import { instanceSize, type LevelDocument } from "@mmx/content-schema";
 import { emptySelection, type EditorSelection, type EditorStore } from "../core/EditorStore.js";
 import { type FileAccess } from "../core/persistence.js";
 import { ensureStudioClientSettings } from "../settings/studioClientSettings.js";
 import type { StudioAssets } from "../assets/studioAssets.js";
 import type { ValidationResult } from "@mmx/content-schema";
 import type { CompiledGameData } from "@mmx/engine/data";
+
+/** Suffix of a "Play from here" level id: its replays are refused by a normal Play. */
+export const PLAY_HERE_SUFFIX = "@here";
+
+/**
+ * A copy of `doc` with its Spawn at a world point, centred and snapped like a placed Spawn
+ * (`snap`), under a suffixed id so a replay recorded there never loads into a normal Play.
+ * The engine puts the player's centre on the Spawn's x/y, so `body` (half extents) is
+ * checked there. Returns why not instead when the player would start in a wall or off the level.
+ */
+export function playHereDocument(
+  doc: LevelDocument,
+  worldX: number,
+  worldY: number,
+  body: { hw: number; hh: number },
+  snap: (value: number) => number,
+): LevelDocument | string {
+  const spawn = doc.objects.find((o) => o.definitionId === "spawn");
+  const { width, height } = spawn ? instanceSize(spawn) : { width: 0, height: 0 };
+  const x = snap(worldX - width / 2);
+  const y = snap(worldY - height / 2);
+  // Off the top the player beams into nothing, off the bottom they die at once.
+  if (y < 0 || y >= doc.rows * doc.gridSize)
+    return "Play from here needs a point inside the level.";
+  const { tiles, cols, rows, slopes } = documentToLevelData(doc);
+  if (new World(tiles, cols, rows, slopes).overlaps(x, y, body.hw, body.hh))
+    return "Can't play from here: the player would start inside a wall.";
+  return {
+    ...doc,
+    id: `${doc.id}${PLAY_HERE_SUFFIX}`,
+    objects: doc.objects.map((o) => (o === spawn ? { ...o, x, y } : o)),
+  };
+}
 
 export interface PlaytestCallbacks {
   getHost: () => HTMLElement | null;
@@ -47,6 +83,9 @@ export class EditorPlaytestController {
   /** Bumped on every startPlay so an async renderer creation can detect it was superseded. */
   private playToken = 0;
 
+  /** Whether the running Play started from a chosen point rather than the Spawn. */
+  private fromHere = false;
+
   private savedView: { zoom: number; viewportPosition: { x: number; y: number } } | null = null;
   private savedSelection: EditorSelection = emptySelection();
 
@@ -76,16 +115,42 @@ export class EditorPlaytestController {
 
   togglePlay(): void {
     if (this.store.get().mode === "play") this.stopPlay();
-    else void this.startPlay();
+    else void this.startPlay(null);
   }
 
-  private async startPlay(): Promise<void> {
+  /** Start Play with the player at a world point; the level's own Spawn does not move. */
+  playFromHere(worldX: number, worldY: number): void {
+    if (this.store.get().mode === "edit") void this.startPlay({ x: worldX, y: worldY });
+  }
+
+  get playingFromHere(): boolean {
+    return this.fromHere;
+  }
+
+  private async startPlay(here: { x: number; y: number } | null): Promise<void> {
     const host = this.cb.getHost();
     if (!host) return;
     const gameData = this.cb.getGameData();
     if (!gameData) {
       this.cb.toast("Fix the errors in data/game.json (see Problems) before playing.");
       return;
+    }
+    // Checked first so a refusal is immediate; the copy is what Play runs (restarts included).
+    let hereDocument: LevelDocument | null = null;
+    if (here) {
+      const loadout = gameData.loadouts.get(this.cb.getLoadoutId() ?? DEFAULT_PLAYER_LOADOUT);
+      const moved = playHereDocument(
+        this.store.get().document,
+        here.x,
+        here.y,
+        loadout?.actor.body ?? { hw: BODY_HALF_W, hh: BODY_HALF_H },
+        (value) => this.store.snap(value),
+      );
+      if (typeof moved === "string") {
+        this.cb.toast(moved);
+        return;
+      }
+      hereDocument = moved;
     }
     const assets = await this.cb.getAssets();
     if (!assets) {
@@ -122,6 +187,7 @@ export class EditorPlaytestController {
           : { kind: "tiles", indices: [...state.selection.indices] };
 
     const token = ++this.playToken;
+    this.fromHere = hereDocument !== null;
     this.cb.onModeChange("play");
     this.cb.setViewportVisible(false);
 
@@ -129,7 +195,7 @@ export class EditorPlaytestController {
       await audio.load();
       const files = this.cb.getFileAccess();
       const loadoutId = this.cb.getLoadoutId();
-      const session = createPlaytest(state.document, {
+      const session = createPlaytest(hereDocument ?? state.document, {
         host,
         loadoutId,
         gameData,
@@ -188,6 +254,7 @@ export class EditorPlaytestController {
 
   stopPlay(): void {
     this.playToken++;
+    this.fromHere = false;
     this.play?.dispose();
     this.play = null;
     this.audio?.stopMusic();

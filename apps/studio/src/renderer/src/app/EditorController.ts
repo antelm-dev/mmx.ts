@@ -764,6 +764,23 @@ export class EditorController {
     this.playtest.togglePlay();
   }
 
+  /** Play with the player at a world point; the level's own Spawn does not move. */
+  playFromHere(worldX: number, worldY: number): void {
+    this.playtest.playFromHere(worldX, worldY);
+  }
+
+  /** "Play from here" at the right-clicked point. */
+  playFromContext(): void {
+    const ctx = useUiStore.getState().contextMenu;
+    if (!ctx) return;
+    this.closeEmptyContextMenu();
+    this.playFromHere(ctx.worldX, ctx.worldY);
+  }
+
+  get playingFromHere(): boolean {
+    return this.playtest.playingFromHere;
+  }
+
   // ---------- Playtest debugger commands ----------
 
   playtestTogglePause(): void {
@@ -896,6 +913,13 @@ export class EditorController {
       case "togglePlay":
         this.togglePlay();
         break;
+      case "playFromHere": {
+        // From the mouse when it is over the level, else a normal Play.
+        const at = this.viewport?.pointerWorld();
+        if (at) this.playFromHere(at.x, at.y);
+        else this.togglePlay();
+        break;
+      }
       case "playtestExit":
         this.playtest.stopPlay();
         break;
