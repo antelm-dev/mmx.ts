@@ -1,19 +1,24 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
+import { getDecorationAsset } from "@mmx/renderer-pixi";
 import {
   EditorStore,
   isLayerEditable,
   isLayerLocked,
   isLayerVisible,
   objectLayerKey,
-  paintTargetKey,
+  toolTargetKey,
   selectedObjectIds,
   selectedTileIndices,
 } from "./EditorStore.js";
 import {
   addImageLayer,
   addTileLayer,
+  deleteSelection,
+  duplicateSelection,
+  nudgeSelection,
   placeAt,
+  placeDecorationAt,
   reorderTarget,
   reorderTileLayer,
   setTileAt,
@@ -57,9 +62,49 @@ describe("layer visibility and locks", () => {
     expect(objectLayerKey({ definitionId: "camera-zone" })).toBe("cameras");
     expect(objectLayerKey({ definitionId: "spawn" })).toBe("objects");
     const tilePaint = { layerId: "a", tile: 0, mode: "brush" as const };
-    expect(paintTargetKey({ activeTool: "tile", tilePaint })).toBe("collision");
-    expect(paintTargetKey({ activeTool: "tilePaint", tilePaint })).toBe("tile:a");
-    expect(paintTargetKey({ activeTool: "select", tilePaint })).toBeUndefined();
+    expect(toolTargetKey({ activeTool: "tile", tilePaint })).toBe("collision");
+    expect(toolTargetKey({ activeTool: "tilePaint", tilePaint })).toBe("tile:a");
+    expect(toolTargetKey({ activeTool: "select", tilePaint })).toBeUndefined();
+    const placing = { tilePaint, placingDefinitionId: "camera-zone" };
+    expect(toolTargetKey({ activeTool: "place", ...placing })).toBe("cameras");
+    const asset = getDecorationAsset("prop.life-capsule")!;
+    expect(
+      toolTargetKey({ activeTool: "placeDecoration", tilePaint, placingAssetId: asset.id }),
+    ).toBe(asset.defaultLayer);
+  });
+
+  it("places nothing on a locked or hidden layer", () => {
+    const store = new EditorStore(createLevelDocument());
+    const before = store.get().document;
+    store.setLayerLocked("objects", true);
+    placeAt(store, "enemy.metool", 100, 100);
+    const asset = getDecorationAsset("prop.life-capsule")!;
+    store.setLayerVisible(asset.defaultLayer, false);
+    placeDecorationAt(store, asset.id, 100, 100);
+    expect(store.get().document).toBe(before);
+    placeAt(store, "camera-zone", 0, 0);
+    expect(store.get().document.objects).toHaveLength(2);
+  });
+
+  it("keeps a selection's members on locked or hidden layers out of nudge, delete and duplicate", () => {
+    const store = new EditorStore(createLevelDocument());
+    placeAt(store, "camera-zone", 400, 0);
+    const [spawn, camera] = store.get().document.objects;
+    // As a Scene panel click would: selected, then its layer locked.
+    store.selectObjects([camera!.id]);
+    store.setLayerLocked("cameras", true);
+    const before = store.get().document;
+    nudgeSelection(store, 16, 0);
+    duplicateSelection(store);
+    deleteSelection(store);
+    expect(store.get().document).toBe(before);
+
+    store.selectObjects([spawn!.id, camera!.id]);
+    nudgeSelection(store, 16, 0);
+    const moved = store.get().document.objects;
+    expect(moved.map((o) => o.x)).toEqual([spawn!.x + 16, camera!.x]);
+    deleteSelection(store);
+    expect(store.get().document.objects.map((o) => o.id)).toEqual([camera!.id]);
   });
 
   it("leaves a locked collision layer alone from the context menu", () => {
@@ -170,6 +215,20 @@ describe("viewport interaction on locked layers", () => {
     expect(selectedObjectIds(store.get().selection)).toEqual([]);
     view.click(...center(spawn));
     expect(selectedObjectIds(store.get().selection)).toEqual([spawn.id]);
+  });
+
+  it("drags only the members of a selection on editable layers", () => {
+    const store = new EditorStore(createLevelDocument());
+    placeAt(store, "camera-zone", 400, 0);
+    const [spawn, camera] = store.get().document.objects;
+    store.selectObjects([spawn!.id, camera!.id]);
+    store.setLayerLocked("cameras", true);
+    viewport(store).drag([spawn!.x + 2, spawn!.y + 2], [spawn!.x + 34, spawn!.y + 2]);
+    const after = store.get().document.objects;
+    expect(after.map((o) => [o.x, o.y])).toEqual([
+      [spawn!.x + 32, spawn!.y],
+      [camera!.x, camera!.y],
+    ]);
   });
 
   it("neither selects nor paints a locked collision layer", () => {

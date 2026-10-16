@@ -9,6 +9,7 @@ import {
 } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
 import {
+  editableSelectionIds,
   paintTileLayer,
   paintTiles,
   placeAt,
@@ -20,7 +21,7 @@ import {
   emptySelection,
   isLayerEditable,
   objectLayerKey,
-  paintTargetKey,
+  toolTargetKey,
   selectedDecorationIds,
   selectedObjectIds,
   selectionsEqual,
@@ -434,8 +435,8 @@ export class EditorViewportInteraction {
     }
 
     const state = this.store.get();
-    // A hidden or locked paint target takes no stroke; the tool card says why.
-    const target = paintTargetKey(state);
+    // A hidden or locked target layer takes no stroke or placement; the tool card says why.
+    const target = toolTargetKey(state);
     if (target && !isLayerEditable(state, target)) return;
 
     if (state.activeTool === "tile" && (e.button === 0 || e.button === 2)) {
@@ -511,7 +512,8 @@ export class EditorViewportInteraction {
       }
       const selectedIds = selectedObjectIds(state.selection);
       if (!selectedIds.includes(hit.id)) this.store.selectObjects([hit.id]);
-      const ids = selectedObjectIds(this.store.get().selection);
+      // Members on a layer locked since they were selected stay put.
+      const ids = editableSelectionIds(this.store);
       const orig = new Map<string, Box>();
       for (const o of state.document.objects) if (ids.includes(o.id)) orig.set(o.id, boxOf(o));
       this.dragStart = { kind: "objects", world, ids, orig };
@@ -526,7 +528,7 @@ export class EditorViewportInteraction {
       }
       const selDecIds = selectedDecorationIds(state.selection);
       if (!selDecIds.includes(hitDec.id)) this.store.selectDecorations([hitDec.id]);
-      const ids = selectedDecorationIds(this.store.get().selection);
+      const ids = editableSelectionIds(this.store);
       const orig = new Map<string, { x: number; y: number }>();
       for (const d of state.document.decorations)
         if (ids.includes(d.id)) orig.set(d.id, { x: d.x, y: d.y });

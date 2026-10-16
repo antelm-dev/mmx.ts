@@ -11,7 +11,7 @@ import {
 import type { CompiledGameData } from "@mmx/engine/data";
 import type { TilesetAsset } from "@mmx/project-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
-import { knownDecorationAssetIds } from "@mmx/renderer-pixi";
+import { getDecorationAsset, knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
 export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile" | "tilePaint";
 export type TilePaintMode = "brush" | "rect" | "fill" | "erase";
@@ -70,15 +70,29 @@ export function isLayerEditable(
   return isLayerVisible(state, key) && !isLayerLocked(state, key);
 }
 
-/** The layer the active paint tool writes to: collision for `tile`, the paint layer for `tilePaint`. */
-export function paintTargetKey(
-  state: Pick<EditorState, "activeTool" | "tilePaint">,
+/**
+ * The layer the active tool writes to: collision for `tile`, the paint layer for `tilePaint`,
+ * the placed object's or decoration's layer for `place` / `placeDecoration`.
+ */
+export function toolTargetKey(
+  state: Pick<EditorState, "activeTool" | "tilePaint" | "placingDefinitionId" | "placingAssetId">,
 ): LayerKey | undefined {
-  if (state.activeTool === "tile") return "collision";
-  if (state.activeTool === "tilePaint" && state.tilePaint.layerId) {
-    return `tile:${state.tilePaint.layerId}`;
+  switch (state.activeTool) {
+    case "tile":
+      return "collision";
+    case "tilePaint":
+      return state.tilePaint.layerId ? `tile:${state.tilePaint.layerId}` : undefined;
+    case "place":
+      return state.placingDefinitionId
+        ? objectLayerKey({ definitionId: state.placingDefinitionId })
+        : undefined;
+    case "placeDecoration":
+      return state.placingAssetId
+        ? getDecorationAsset(state.placingAssetId)?.defaultLayer
+        : undefined;
+    default:
+      return undefined;
   }
-  return undefined;
 }
 
 export function emptySelection(): EditorSelection {

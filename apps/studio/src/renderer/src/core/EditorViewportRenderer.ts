@@ -18,6 +18,7 @@ import type { DebugPrimitive } from "@mmx/engine/behaviors";
 import { EditableTerrain } from "./EditableTerrain.js";
 import { tileLayerWritesCollision } from "./actions.js";
 import {
+  isLayerEditable,
   isLayerVisible,
   objectLayerKey,
   selectedDecorationIds,
@@ -267,7 +268,8 @@ export class EditorViewportRenderer {
     live: LivePreview,
     selIds: string[],
   ): { x: number; y: number } {
-    if (live?.type === "moveDecorations" && selIds.includes(inst.id)) {
+    const moves = selIds.includes(inst.id) && isLayerEditable(this.store.get(), inst.layer);
+    if (live?.type === "moveDecorations" && moves) {
       return { x: inst.x + live.dx, y: inst.y + live.dy };
     }
     return { x: inst.x, y: inst.y };
@@ -303,8 +305,14 @@ export class EditorViewportRenderer {
 
   private objectDrawBox(inst: LevelObjectInstance, live: LivePreview): Box {
     const base = boxOf(inst);
-    const ids = selectedObjectIds(this.store.get().selection);
-    if (live?.type === "move" && ids.includes(inst.id)) {
+    const state = this.store.get();
+    const ids = selectedObjectIds(state.selection);
+    // Like the drag commit, a selected object on a locked or hidden layer stays put.
+    if (
+      live?.type === "move" &&
+      ids.includes(inst.id) &&
+      isLayerEditable(state, objectLayerKey(inst))
+    ) {
       return { ...base, x: base.x + live.dx, y: base.y + live.dy };
     }
     if (live?.type === "resize" && live.id === inst.id) return live.box;
@@ -316,9 +324,11 @@ export class EditorViewportRenderer {
     layer.removeChildren().forEach((c) => c.destroy());
     const state = this.store.get();
     const zoom = state.zoom;
+    let drawn = 0;
 
     for (const inst of state.document.objects) {
       if (!isLayerVisible(state, objectLayerKey(inst))) continue;
+      drawn++;
       const def = definitionFor(inst.definitionId);
       const color = hexToNum(def.editor.color);
       const box = this.objectDrawBox(inst, live);
@@ -374,6 +384,8 @@ export class EditorViewportRenderer {
       label.scale.set(1 / zoom);
       layer.addChild(label);
     }
+    // Lets e2e tests count the object instances drawn (hidden layers are skipped).
+    (this.app.canvas as HTMLCanvasElement).dataset.objectsDrawn = String(drawn);
   }
 
   private drawOverlay(

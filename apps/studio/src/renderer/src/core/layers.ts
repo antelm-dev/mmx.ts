@@ -27,6 +27,8 @@ export function layerStack(doc: LevelDocument): LayerRow[] {
       .map((layer) => ({ kind: "tile" as const, key: `tile:${layer.id}` as const, layer })),
   ];
   const decorations = (key: DecorationLayer): LayerRow => ({ kind: "decorations", key });
+  // Cameras and objects share one container, as do the back and the front decoration rows:
+  // inside each container, items draw in document order whatever the row order.
   const backToFront: LayerRow[] = [
     ...art("far-background"),
     ...art("background"),
