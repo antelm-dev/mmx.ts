@@ -340,6 +340,35 @@ test("title bar menus work by pointer and keyboard and return focus", async () =
   await page.keyboard.press("Escape");
   await expect(viewMenu).toBeFocused();
 
+  // Panels is a submenu: ArrowRight opens it on its first item, toggles keep it open, ArrowLeft
+  // closes only the submenu and Escape closes the whole menu.
+  const panelsItem = page.getByRole("menuitem", { name: "Panels", exact: true });
+  const firstPanel = page.getByRole("menuitemcheckbox", { name: "Levels" });
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("menu")).toBeFocused();
+  await page.keyboard.press("End");
+  await page.keyboard.press("ArrowUp");
+  await expect(panelsItem).toHaveAttribute("data-highlighted", "");
+  await expect(firstPanel).toBeHidden();
+  await page.keyboard.press("ArrowRight");
+  await expect(firstPanel).toHaveAttribute("data-highlighted", "");
+  const wasOpen = (await firstPanel.getAttribute("aria-checked")) === "true";
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
+  await page.keyboard.press("Enter");
+  await expect(firstPanel).toHaveAttribute("aria-checked", String(!wasOpen));
+  await page.keyboard.press("Enter");
+  await expect(firstPanel).toHaveAttribute("aria-checked", String(wasOpen));
+  await page.keyboard.press("ArrowLeft");
+  await expect(firstPanel).toBeHidden();
+  await expect(panelsItem).toHaveAttribute("data-highlighted", "");
+  await page.keyboard.press("ArrowRight");
+  await expect(firstPanel).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(viewMenu).toBeFocused();
+
   // Disabled state and labels survive in the File menu.
   const fileMenu = page.getByRole("button", { name: "File menu" });
   await fileMenu.click();
