@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { createLevelDocument } from "@mmx/content-schema";
+import { EditorStore } from "./EditorStore.js";
 import {
   MAX_RECENT_PARTS,
   availableParts,
@@ -6,6 +8,8 @@ import {
   placingLabel,
   placingPart,
   pushRecentPart,
+  trackRecentParts,
+  type RecentPart,
 } from "./recentParts.js";
 
 const obj = (id: string) => ({ kind: "object" as const, id });
@@ -59,5 +63,28 @@ describe("placingPart", () => {
     expect(placingLabel({ activeTool: "place", placingDefinitionId: "enemy.metool" })).toBe(
       "Place: Metool",
     );
+  });
+});
+
+describe("trackRecentParts", () => {
+  it("records tools picked elsewhere; a pick from the bar keeps the bar's order", () => {
+    const store = new EditorStore(createLevelDocument());
+    let list: RecentPart[] = [];
+    const pickFromBar = trackRecentParts(store, (part) => (list = pushRecentPart(list, part)));
+    store.setTool("place", "enemy.metool");
+    store.setTool("placeDecoration", "bg.cloud");
+    store.setTool("select");
+    expect(list).toEqual([deco("bg.cloud"), obj("enemy.metool")]);
+
+    // Slot 2 twice stays slot 2: the tool changes, the order does not.
+    pickFromBar(list[1]!);
+    expect(store.get()).toMatchObject({ activeTool: "place", placingDefinitionId: "enemy.metool" });
+    pickFromBar(list[1]!);
+    expect(list).toEqual([deco("bg.cloud"), obj("enemy.metool")]);
+
+    // Later picks from the palette or wheel still reorder it.
+    store.setTool("placeDecoration", "bg.cloud");
+    store.setTool("place", "enemy.metool");
+    expect(list).toEqual([obj("enemy.metool"), deco("bg.cloud")]);
   });
 });

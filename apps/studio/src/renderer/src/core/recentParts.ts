@@ -1,6 +1,6 @@
 import { getDefinition } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
-import type { EditorState } from "./EditorStore.js";
+import type { EditorState, EditorStore } from "./EditorStore.js";
 
 /** A piece the place tools put down: an object definition or a decoration asset. */
 export interface RecentPart {
@@ -51,4 +51,27 @@ export function placingLabel(
 /** The store's tool for placing `part`. */
 export function placeTool(part: RecentPart): "place" | "placeDecoration" {
   return part.kind === "object" ? "place" : "placeDecoration";
+}
+
+/**
+ * Feeds `add` every place tool the store picks (palette, wheel, new enemy), and returns the
+ * bar's own pick: it sets the tool without reordering the bar, so slot 2 stays slot 2.
+ */
+export function trackRecentParts(
+  store: Pick<EditorStore, "subscribe" | "setTool">,
+  add: (part: RecentPart) => void,
+): (part: RecentPart) => void {
+  let fromBar = false;
+  store.subscribe((state, reason) => {
+    const part = reason === "ui" && !fromBar ? placingPart(state) : undefined;
+    if (part) add(part);
+  });
+  return (part) => {
+    fromBar = true;
+    try {
+      store.setTool(placeTool(part), part.id);
+    } finally {
+      fromBar = false;
+    }
+  };
 }

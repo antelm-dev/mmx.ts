@@ -1,6 +1,5 @@
-import { useMemo } from "react";
 import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
-import { availableParts, partName, placeTool, placingPart } from "../core/recentParts.js";
+import { availableParts, partName, placingPart } from "../core/recentParts.js";
 import { useUiStore } from "../store/uiStore.js";
 import { OverlayButton, OverlayCard } from "../ui/editor/overlay.js";
 import { PartIcon, PartWheel } from "./PartWheel.js";
@@ -14,9 +13,10 @@ import { Tooltip } from "./Tooltip.js";
 export function RecentPartsBar() {
   const recent = useUiStore((s) => s.recentParts);
   const snap = useEditorSnapshot();
-  // Parts whose definition went with another project drop out; the project's objects change with it.
-  const objects = useProjectSession().project?.manifest.objects;
-  const parts = useMemo(() => availableParts(recent), [recent, objects]);
+  // Read fresh on every render, like keys 1 to 8: a part whose definition is gone (another
+  // project, a deleted or undone enemy) drops out. The session hook re-renders on those edits.
+  useProjectSession();
+  const parts = availableParts(recent);
   const active = placingPart(snap.state);
 
   return (
@@ -43,7 +43,7 @@ export function RecentPartsBar() {
                   aria-pressed={isActive}
                   // A mouse click leaves focus where it was, so Space (pan) cannot re-click the slot.
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => editor.store.setTool(placeTool(part), part.id)}
+                  onClick={() => editor.pickRecentPart(i)}
                 >
                   <PartIcon part={part} size={26} />
                 </OverlayButton>

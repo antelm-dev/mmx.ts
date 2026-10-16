@@ -97,11 +97,16 @@ test("recent parts bar: placed parts show, 1 to 8 pick them, Q opens the part wh
   await page.keyboard.press("1");
   await expect(toolCard("Place: Life Capsule")).toBeVisible();
   await expect(slots.nth(0)).toHaveAttribute("aria-pressed", "true");
+  // Picking from the bar keeps its order: 2 twice is still the second part.
   await page.keyboard.press("2");
   await expect(toolCard("Place: Metool")).toBeVisible();
-  await expect(slots.nth(0)).toHaveAccessibleName("Place Metool");
+  await page.keyboard.press("2");
+  await expect(toolCard("Place: Metool")).toBeVisible();
+  await expect(slots.nth(0)).toHaveAccessibleName("Place Life Capsule");
+  await expect(slots.nth(1)).toHaveAttribute("aria-pressed", "true");
   await bar.getByRole("button", { name: "Place Life Capsule" }).click();
   await expect(toolCard("Place: Life Capsule")).toBeVisible();
+  await expect(slots.nth(0)).toHaveAccessibleName("Place Life Capsule");
 
   // Escape closes the wheel without changing the tool; so does a click outside it.
   await page.keyboard.press("q");
@@ -119,6 +124,8 @@ test("recent parts bar: placed parts show, 1 to 8 pick them, Q opens the part wh
   await wheel.getByRole("menuitem", { name: "Enemies" }).click();
   await page.getByRole("menu", { name: "Enemies parts" }).getByLabel("Place Metool").click();
   await expect(toolCard("Place: Metool")).toBeVisible();
+  // A pick from the wheel reorders the bar.
+  await expect(slots.nth(0)).toHaveAccessibleName("Place Metool");
 
   // Text fields keep Q and digits.
   const search = page.getByLabel("Search objects");
@@ -127,6 +134,29 @@ test("recent parts bar: placed parts show, 1 to 8 pick them, Q opens the part wh
   await search.press("1");
   await expect(search).toHaveValue("q1");
   await expect(wheel).toHaveCount(0);
+  await expect(toolCard("Place: Metool")).toBeVisible();
+
+  // A new enemy leads the bar; undoing its creation (a game-data-only edit) drops its slot,
+  // and key 1 picks what slot 1 shows.
+  await search.fill("");
+  await page.getByRole("button", { name: "New enemy…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await dialog.getByLabel("Name").fill("Crab");
+  await dialog.getByLabel("Based on").selectOption("metool");
+  await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
+  await dialog.getByRole("button", { name: "Create" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(toolCard("Place: Crab")).toBeVisible();
+  await expect(slots).toHaveCount(3);
+  await expect(slots.nth(0)).toHaveAccessibleName("Place Crab");
+  // Ctrl+Z from the palette undoes the definition edit.
+  await search.click();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.getByTitle("Place Crab", { exact: true })).toHaveCount(0);
+  await expect(slots).toHaveCount(2);
+  await expect(slots.nth(0)).toHaveAccessibleName("Place Metool");
+  await search.blur();
+  await page.keyboard.press("1");
   await expect(toolCard("Place: Metool")).toBeVisible();
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

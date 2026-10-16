@@ -43,7 +43,7 @@ import { addRecentProject } from "../settings/recentProjects.js";
 import type { GameDataOverlay } from "@mmx/engine/data";
 import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
-import { availableParts, placeTool, placingPart } from "../core/recentParts.js";
+import { availableParts, trackRecentParts, type RecentPart } from "../core/recentParts.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
 import { focusPanel, isPanelVisible, openEnemyDocument } from "./dock.js";
@@ -94,6 +94,8 @@ export class EditorController {
   private readonly listeners = new Set<() => void>();
 
   private readonly playtest: EditorPlaytestController;
+  /** Picks a recent part without reordering the bar (see {@link trackRecentParts}). */
+  private readonly pickFromBar: (part: RecentPart) => void;
   private assetKey: string | undefined;
   /** The Play assets the last validation saw: their enemy sheets decide `enemy.animation`. */
   private validatedAssets: unknown = projectSession.loadedAssets();
@@ -139,11 +141,9 @@ export class EditorController {
 
     this.snapshot = this.build("open");
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
-    // The recent parts bar: every place tool picked (palette, bar, wheel, new enemy).
-    this.store.subscribe((state, reason) => {
-      const part = reason === "ui" ? placingPart(state) : undefined;
-      if (part) useUiStore.getState().addRecentPart(part);
-    });
+    this.pickFromBar = trackRecentParts(this.store, (part) =>
+      useUiStore.getState().addRecentPart(part),
+    );
     // Manifest edits (e.g. the player loadout) live in the project session, not the store.
     projectSession.subscribe(() => {
       // Tile layers draw and paint from the manifest's tilesets; keep the store's copy current.
@@ -764,11 +764,11 @@ export class EditorController {
     ui.setPartWheelOpen(!ui.partWheelOpen);
   }
 
-  /** Keys 1 to 8: pick the place tool of the recent parts bar's slot `index`. */
+  /** A bar slot or keys 1 to 8: pick the place tool of slot `index`, keeping the bar's order. */
   pickRecentPart(index: number): void {
     if (!isPanelVisible("viewport")) return;
     const part = availableParts(useUiStore.getState().recentParts)[index];
-    if (part) this.store.setTool(placeTool(part), part.id);
+    if (part) this.pickFromBar(part);
   }
 
   focusDecoration(id: string): void {
