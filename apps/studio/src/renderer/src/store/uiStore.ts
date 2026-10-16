@@ -7,6 +7,7 @@ import {
   type ThemePreference,
 } from "../app/theme.js";
 import type { EmptyCellContextMenu } from "../core/EditorViewport.js";
+import type { LayerKey } from "../core/EditorStore.js";
 
 /**
  * Purely-ephemeral view state — the kind the brief reserves for Zustand:
@@ -31,6 +32,8 @@ interface UiState {
   colorTheme: ColorTheme;
   fullscreen: boolean;
   playtestInspectorVisible: boolean;
+  /** The Layers panel row whose settings are open; unset, the tile paint layer is. */
+  selectedLayer?: LayerKey;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -42,6 +45,7 @@ interface UiState {
   toggleColorTheme: () => void;
   setFullscreen: (fullscreen: boolean) => void;
   togglePlaytestInspector: () => void;
+  setSelectedLayer: (key: LayerKey | undefined) => void;
 }
 
 let toastSeq = 0;
@@ -88,4 +92,5 @@ export const useUiStore = create<UiState>((set, get) => ({
   setFullscreen: (fullscreen) => set({ fullscreen }),
   togglePlaytestInspector: () =>
     set((s) => ({ playtestInspectorVisible: !s.playtestInspectorVisible })),
+  setSelectedLayer: (selectedLayer) => set({ selectedLayer }),
 }));

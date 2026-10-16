@@ -5,7 +5,12 @@ import {
   type ValidationResult,
 } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
-import { type ChangeReason, type EditorState, EditorStore } from "../core/EditorStore.js";
+import {
+  type ChangeReason,
+  type EditorState,
+  EditorStore,
+  type LayerKey,
+} from "../core/EditorStore.js";
 import {
   addImageLayer,
   addTileLayer,
@@ -19,6 +24,8 @@ import {
 import { copySelection, cutSelection, pasteClipboard } from "../core/clipboard.js";
 import { EditorViewport } from "../core/EditorViewport.js";
 import { tileGrid } from "../core/EditorViewportGeometry.js";
+import { problemTarget } from "../core/problemAnchors.js";
+import type { PositionedIssue } from "@mmx/editor-runtime/adapters";
 import { type PlaytestSnapshot } from "@mmx/editor-runtime";
 import type { TilesetAsset } from "@mmx/project-schema";
 import {
@@ -759,6 +766,32 @@ export class EditorController {
     this.store.selectObjects([id]);
     const { width, height } = instanceSize(inst);
     this.viewport?.centerOn(inst.x + width / 2, inst.y + height / 2);
+  }
+
+  /** Contract C-WORLD: centre the level view on a world point, keeping the zoom. */
+  centerOn(x: number, y: number): void {
+    this.viewport?.centerOn(x, y);
+  }
+
+  /** Open a layer's row in the Layers panel; a tile layer also becomes the paint target. */
+  selectLayer(key: LayerKey): void {
+    if (key.startsWith("tile:")) this.store.setTilePaint({ layerId: key.slice("tile:".length) });
+    useUiStore.getState().setSelectedLayer(key);
+  }
+
+  /** Select and frame what a validation problem is about (a Problems row, a canvas badge). */
+  focusProblem(issue: Pick<PositionedIssue, "objectId" | "position">): void {
+    const target = problemTarget(this.store.get().document, issue);
+    if (!target) return;
+    if (target.kind === "object") return this.focusObject(target.id);
+    if (target.kind === "decoration") return this.focusDecoration(target.id);
+    if (target.kind === "position") return this.centerOn(target.x, target.y);
+    this.selectLayer(`${target.kind === "tileLayer" ? "tile" : "image"}:${target.id}`);
+    focusPanel("layers");
+    // A tile layer covers the whole level: frame its centre, not the badge's corner.
+    const { cols, rows, gridSize } = this.store.get().document;
+    if (target.kind === "tileLayer") this.centerOn((cols * gridSize) / 2, (rows * gridSize) / 2);
+    else this.centerOn(target.x, target.y);
   }
 
   /** Add/remove an object from the current selection without recentering. */
