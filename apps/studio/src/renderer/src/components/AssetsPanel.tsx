@@ -1,28 +1,13 @@
 import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
-import { Eye, EyeOff, Lock, Search, Unlock, X } from "lucide-react";
-import { DECORATION_LAYERS, type DecorationLayer } from "@mmx/content-schema";
+import { Search, X } from "lucide-react";
 import { DECORATION_ASSETS, type DecorationAsset } from "@mmx/renderer-pixi";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { ListRow, ListRowAdd } from "../ui/editor/list-row.js";
 import { Panel, PanelNote, PanelScroll, SearchBox } from "../ui/editor/panel.js";
-import { CategoryHeader, SectionTitle } from "../ui/editor/section-title.js";
+import { CategoryHeader } from "../ui/editor/section-title.js";
 import { SpritePreview } from "./SpritePreview.js";
-
-const LayerButton = chakra("button", {
-  base: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    w: "6",
-    h: "6",
-    rounded: "md",
-    color: "studio.fgTertiary",
-    cursor: "pointer",
-    _hover: { color: "studio.fg", bg: "studio.hover" },
-  },
-});
 
 type PaletteRow =
   | { kind: "header"; key: string; label: string }
@@ -58,7 +43,6 @@ export function AssetsPanel() {
         )}
       </SearchBox>
       <DecorationList query={query} snap={snap} />
-      <LayerToggles snap={snap} />
     </Panel>
   );
 }
@@ -146,46 +130,5 @@ function DecorationList({
         })}
       </chakra.div>
     </PanelScroll>
-  );
-}
-
-function LayerToggles({ snap }: { snap: ReturnType<typeof useEditorSnapshot> }) {
-  const vis = snap.state.decorationLayerVisible;
-  const locks = snap.state.decorationLayerLocked;
-
-  return (
-    <chakra.div flex="none" borderTop="1px solid" borderColor="studio.border">
-      <SectionTitle pt="2" pb="1">
-        Layers
-      </SectionTitle>
-      {DECORATION_LAYERS.map((layer: DecorationLayer) => (
-        <chakra.div
-          key={layer}
-          display="flex"
-          alignItems="center"
-          gap="1.5"
-          px="3"
-          py="0.5"
-          textStyle="xs"
-          color="studio.fgSecondary"
-        >
-          <LayerButton
-            title={vis[layer] ? `Hide ${layer}` : `Show ${layer}`}
-            onClick={() => editor.store.setDecorationLayerVisible(layer, !vis[layer])}
-          >
-            {vis[layer] ? <Eye size={14} /> : <EyeOff size={14} />}
-          </LayerButton>
-          <LayerButton
-            title={locks[layer] ? `Unlock ${layer}` : `Lock ${layer}`}
-            onClick={() => editor.store.setDecorationLayerLocked(layer, !locks[layer])}
-          >
-            {locks[layer] ? <Lock size={14} /> : <Unlock size={14} />}
-          </LayerButton>
-          <chakra.span flex="1" minW="0" truncate>
-            {layer}
-          </chakra.span>
-        </chakra.div>
-      ))}
-    </chakra.div>
   );
 }

@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useMemo, useRef } from "react";
 import { chakra } from "@chakra-ui/react";
-import { Grid3x3, Magnet, MousePointer2, Paintbrush } from "lucide-react";
+import { EyeOff, Grid3x3, Lock, Magnet, MousePointer2, Paintbrush } from "lucide-react";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -9,6 +9,13 @@ import {
 } from "@mmx/content-schema";
 import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
+import {
+  isLayerEditable,
+  isLayerLocked,
+  isLayerVisible,
+  objectLayerKey,
+  toolTargetKey,
+} from "../core/EditorStore.js";
 import {
   MenuContent,
   MenuItem,
@@ -51,6 +58,17 @@ export function Viewport() {
   }, []);
 
   const objects = useProjectSession().project?.manifest.objects;
+  // Paint and place tools do nothing on a hidden or locked layer; the tool card says so.
+  const target = toolTargetKey(snap.state);
+  const blocked = !target
+    ? undefined
+    : !isLayerVisible(snap.state, target)
+      ? "hidden"
+      : isLayerLocked(snap.state, target)
+        ? "locked"
+        : undefined;
+  // The context menu's tile and place items are off on a locked or hidden target layer.
+  const collisionEditable = isLayerEditable(snap.state, "collision");
   const placeGroups = useMemo<PlaceGroup[]>(
     () =>
       CATEGORY_ORDER.map((category) => ({
@@ -105,6 +123,18 @@ export function Viewport() {
                   : snap.state.activeTool === "tilePaint"
                     ? "Tile layer paint"
                     : "Select / move"}
+                {blocked && (
+                  <chakra.span
+                    display="inline-flex"
+                    alignItems="center"
+                    gap="1"
+                    color="studio.warning"
+                    data-testid="paint-blocked"
+                  >
+                    {blocked === "locked" ? <Lock size={12} /> : <EyeOff size={12} />}
+                    Layer {blocked}
+                  </chakra.span>
+                )}
               </OverlayCard>
               <OverlayCard
                 display="inline-flex"
@@ -181,12 +211,20 @@ export function Viewport() {
               </MenuLabel>
               <MenuLabel>Terrain</MenuLabel>
               {contextMenu.tileSolid ? (
-                <MenuItem value="tile-remove" onSelect={() => editor.setTileAtContext(false)}>
+                <MenuItem
+                  value="tile-remove"
+                  disabled={!collisionEditable}
+                  onSelect={() => editor.setTileAtContext(false)}
+                >
                   <Swatch style={{ border: "1px solid #ff5a5a" }} />
                   Remove solid tile
                 </MenuItem>
               ) : (
-                <MenuItem value="tile-add" onSelect={() => editor.setTileAtContext(true)}>
+                <MenuItem
+                  value="tile-add"
+                  disabled={!collisionEditable}
+                  onSelect={() => editor.setTileAtContext(true)}
+                >
                   <Swatch style={{ background: "#33507a", boxShadow: SWATCH_RING }} />
                   Add solid tile
                 </MenuItem>
@@ -201,6 +239,9 @@ export function Viewport() {
                       <MenuItem
                         key={def.id}
                         value={`place:${def.id}`}
+                        disabled={
+                          !isLayerEditable(snap.state, objectLayerKey({ definitionId: def.id }))
+                        }
                         onSelect={() => editor.placeAtContext(def.id)}
                       >
                         <Swatch style={{ background: def.editor.color, boxShadow: SWATCH_RING }} />

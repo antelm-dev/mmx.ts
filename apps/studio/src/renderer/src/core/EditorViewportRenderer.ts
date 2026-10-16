@@ -17,7 +17,14 @@ import {
 import type { DebugPrimitive } from "@mmx/engine/behaviors";
 import { EditableTerrain } from "./EditableTerrain.js";
 import { tileLayerWritesCollision } from "./actions.js";
-import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
+import {
+  isLayerEditable,
+  isLayerVisible,
+  objectLayerKey,
+  selectedDecorationIds,
+  selectedObjectIds,
+  type EditorStore,
+} from "./EditorStore.js";
 import {
   boxOf,
   environmentGeometry,
@@ -109,6 +116,7 @@ export class EditorViewportRenderer {
       fontSize: 10,
       fill: 0xdfe7f5,
     });
+    // The Layers panel lists these in the same order (`layerStack` in layers.ts).
     this.world.addChild(
       this.art.farBackground,
       this.art.background,
@@ -218,25 +226,26 @@ export class EditorViewportRenderer {
   }
 
   private drawImageLayers(): void {
-    const { document: doc, decorationLayerVisible: vis } = this.store.get();
-    // Rebuilds only when the layers change (DecorationView keys on a signature).
+    const state = this.store.get();
+    const { document: doc, tilesets } = state;
+    // Rebuilds only when the layers change (DecorationView keys on a signature), so a hidden
+    // layer is simply left out.
     // An invalid colour (hand-edited JSON) is a Problems error; Pixi would throw on it.
     const backdrop = /^#[0-9a-f]{6}$/i.test(doc.backdrop ?? "") ? doc.backdrop : undefined;
-    const imageLayers = Array.isArray(doc.imageLayers) ? doc.imageLayers : undefined;
-    const tileLayers = Array.isArray(doc.tileLayers) ? doc.tileLayers : undefined;
-    const { tilesets } = this.store.get();
+    const imageLayers = Array.isArray(doc.imageLayers)
+      ? doc.imageLayers.filter((l) => isLayerVisible(state, `image:${l.id}`))
+      : undefined;
+    const tileLayers = Array.isArray(doc.tileLayers)
+      ? doc.tileLayers.filter((l) => isLayerVisible(state, `tile:${l.id}`))
+      : undefined;
     this.art.setDecorations([], { imageLayers, backdrop, tileLayers, cols: doc.cols, tilesets });
     // Painted world tiles stay visible through the collision fill, which the engine hides.
     this.terrainLayer.alpha = tileLayers?.some(tileLayerWritesCollision) ? 0.35 : 1;
+    this.terrainLayer.visible = isLayerVisible(state, "collision");
     this.art.backdrop.width = this.app.screen.width;
     this.art.backdrop.height = this.app.screen.height;
-    this.art.farBackground.visible = vis["far-background"];
-    this.art.background.visible = vis.background;
-    this.art.worldBack.visible = vis["world-back"];
-    this.art.worldFront.visible = vis["world-front"];
-    this.art.foreground.visible = vis.foreground;
     // Lets e2e tests count the image-layer sprites (and tile sprites) the viewport actually
-    // drew, and map world cells to screen points.
+    // drew, see whether collision is drawn, and map world cells to screen points.
     const layers = [
       this.art.farBackground,
       this.art.background,
@@ -249,6 +258,7 @@ export class EditorViewportRenderer {
     canvas.dataset.tileLayerSprites = String(
       layers.reduce((n, c) => n + c.children.reduce((m, child) => m + child.children.length, 0), 0),
     );
+    canvas.dataset.collisionVisible = String(this.terrainLayer.visible);
     const { zoom, viewportPosition } = this.store.get();
     canvas.dataset.view = `${zoom},${viewportPosition.x},${viewportPosition.y}`;
   }
@@ -258,7 +268,8 @@ export class EditorViewportRenderer {
     live: LivePreview,
     selIds: string[],
   ): { x: number; y: number } {
-    if (live?.type === "moveDecorations" && selIds.includes(inst.id)) {
+    const moves = selIds.includes(inst.id) && isLayerEditable(this.store.get(), inst.layer);
+    if (live?.type === "moveDecorations" && moves) {
       return { x: inst.x + live.dx, y: inst.y + live.dy };
     }
     return { x: inst.x, y: inst.y };
@@ -270,12 +281,11 @@ export class EditorViewportRenderer {
     backLayer.removeChildren().forEach((c) => c.destroy());
     frontLayer.removeChildren().forEach((c) => c.destroy());
     const state = this.store.get();
-    const vis = state.decorationLayerVisible;
     const selIds = selectedDecorationIds(state.selection);
     const BACK_LAYERS = new Set(["far-background", "background", "world-back"]);
 
     for (const inst of state.document.decorations) {
-      if (!vis[inst.layer]) continue;
+      if (!isLayerVisible(state, inst.layer)) continue;
       const asset = getDecorationAsset(inst.assetId);
       if (!asset) continue;
       const texture = this.assets.getDecorationPreview(inst.assetId)?.texture;
@@ -295,8 +305,14 @@ export class EditorViewportRenderer {
 
   private objectDrawBox(inst: LevelObjectInstance, live: LivePreview): Box {
     const base = boxOf(inst);
-    const ids = selectedObjectIds(this.store.get().selection);
-    if (live?.type === "move" && ids.includes(inst.id)) {
+    const state = this.store.get();
+    const ids = selectedObjectIds(state.selection);
+    // Like the drag commit, a selected object on a locked or hidden layer stays put.
+    if (
+      live?.type === "move" &&
+      ids.includes(inst.id) &&
+      isLayerEditable(state, objectLayerKey(inst))
+    ) {
       return { ...base, x: base.x + live.dx, y: base.y + live.dy };
     }
     if (live?.type === "resize" && live.id === inst.id) return live.box;
@@ -308,8 +324,11 @@ export class EditorViewportRenderer {
     layer.removeChildren().forEach((c) => c.destroy());
     const state = this.store.get();
     const zoom = state.zoom;
+    let drawn = 0;
 
     for (const inst of state.document.objects) {
+      if (!isLayerVisible(state, objectLayerKey(inst))) continue;
+      drawn++;
       const def = definitionFor(inst.definitionId);
       const color = hexToNum(def.editor.color);
       const box = this.objectDrawBox(inst, live);
@@ -365,6 +384,8 @@ export class EditorViewportRenderer {
       label.scale.set(1 / zoom);
       layer.addChild(label);
     }
+    // Lets e2e tests count the object instances drawn (hidden layers are skipped).
+    (this.app.canvas as HTMLCanvasElement).dataset.objectsDrawn = String(drawn);
   }
 
   private drawOverlay(
