@@ -9,10 +9,14 @@ import {
 } from "@mmx/content-schema";
 import { documentToLevelData } from "./adapters.js";
 
-function mapDiagnostic(d: EngineDiagnostic): ValidationIssue {
-  const issue: ValidationIssue = { severity: d.severity, code: d.code, message: d.message };
+/** A validation issue that may carry the engine's world position of the entity it is about. */
+export type PositionedIssue = ValidationIssue & { position?: { x: number; y: number } };
+
+function mapDiagnostic(d: EngineDiagnostic): PositionedIssue {
+  const issue: PositionedIssue = { severity: d.severity, code: d.code, message: d.message };
   if (d.entityId !== undefined) issue.objectId = d.entityId;
   if (d.field !== undefined) issue.field = d.field;
+  if (d.position !== undefined) issue.position = d.position;
   return issue;
 }
 
@@ -25,7 +29,7 @@ export function engineDiagnostics(
   doc: LevelDocument,
   gameData: CompiledGameData = COMPILED_GAME_DATA,
   enemySheets?: ReadonlySet<string>,
-): ValidationIssue[] {
+): PositionedIssue[] {
   try {
     const result = compileLevel(documentToLevelData(doc), gameData);
     const issues = result.diagnostics.map(mapDiagnostic);

@@ -7,8 +7,8 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table";
-import type { ValidationIssue } from "@mmx/content-schema";
 import type { ProjectIssue } from "@mmx/project-io";
+import type { PositionedIssue } from "@mmx/editor-runtime/adapters";
 import type { DockviewPanelApi } from "dockview-react";
 import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { Panel, PanelNote, PanelScroll } from "../ui/editor/panel.js";
@@ -30,6 +30,8 @@ type ProblemRow = {
   code: string;
   message: string;
   objectId?: string;
+  /** The engine diagnostic's world point, framed when `objectId` names nothing on the level. */
+  position?: { x: number; y: number };
   path?: string;
 };
 
@@ -46,7 +48,7 @@ const problemColumns: ColumnDef<ProblemRow, string>[] = [
 ];
 
 function toProblemRows(
-  levelIssues: ValidationIssue[],
+  levelIssues: PositionedIssue[],
   projectIssues: ProjectIssue[],
 ): ProblemRow[] {
   const projectRows = projectIssues.map((issue) => ({
@@ -60,6 +62,7 @@ function toProblemRows(
     code: issue.code,
     message: issue.message,
     objectId: issue.objectId,
+    position: issue.position,
   }));
   return [...projectRows, ...levelRows];
 }
@@ -110,7 +113,7 @@ export function ProblemsPanel({ api }: { api?: DockviewPanelApi }): ReactElement
                   key={row.id}
                   cursor="pointer"
                   _hover={{ bg: "studio.popoverHover" }}
-                  onClick={() => row.original.objectId && editor.focusObject(row.original.objectId)}
+                  onClick={() => editor.focusProblem(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <chakra.td

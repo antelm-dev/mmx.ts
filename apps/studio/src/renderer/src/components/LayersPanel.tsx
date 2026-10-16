@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { chakra } from "@chakra-ui/react";
 import {
   ArrowDown,
@@ -28,6 +27,7 @@ import {
 } from "../core/actions.js";
 import { isLayerLocked, isLayerVisible, type LayerKey } from "../core/EditorStore.js";
 import { layerStack, type LayerRow } from "../core/layers.js";
+import { useUiStore } from "../store/uiStore.js";
 import { Field, FieldInput, FieldSelect } from "../ui/editor/field.js";
 import { Panel, PanelScroll } from "../ui/editor/panel.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
@@ -97,16 +97,12 @@ function rowLabel(row: LayerRow): string {
 export function LayersPanel() {
   const snap = useEditorSnapshot();
   const { state } = snap;
-  const [selected, setSelected] = useState<LayerKey>();
+  const selected = useUiStore((s) => s.selectedLayer);
   const paintKey: LayerKey | undefined = state.tilePaint.layerId
     ? `tile:${state.tilePaint.layerId}`
     : undefined;
   // Until a row is picked, the paint layer is the selection (a new tile layer shows its picker).
   const current = selected ?? paintKey;
-  const select = (row: LayerRow): void => {
-    setSelected(row.key);
-    if (row.kind === "tile") editor.store.setTilePaint({ layerId: row.layer.id });
-  };
   /** Up is toward the front: later in the layer list. Only tile and image layers move. */
   const mover = (row: LayerRow) => {
     if (row.kind !== "tile" && row.kind !== "image") return undefined;
@@ -131,7 +127,7 @@ export function LayersPanel() {
               active={row.key === current}
               visible={isLayerVisible(state, row.key)}
               locked={isLayerLocked(state, row.key)}
-              onSelect={() => select(row)}
+              onSelect={() => editor.selectLayer(row.key)}
               mover={mover(row)}
             />
             {row.key === current && row.kind === "tile" && (
@@ -156,7 +152,7 @@ export function LayersPanel() {
         borderTop="1px solid"
         borderColor="studio.border"
       >
-        <AddTileLayer onAdd={() => setSelected(undefined)} />
+        <AddTileLayer onAdd={() => useUiStore.getState().setSelectedLayer(undefined)} />
         <ToolbarButton onClick={() => void editor.importImageLayer()}>
           <ImagePlus size={14} /> Import image layer…
         </ToolbarButton>

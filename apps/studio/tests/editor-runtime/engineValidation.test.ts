@@ -32,13 +32,14 @@ const platform = (over: Partial<LevelObjectInstance> = {}): LevelObjectInstance 
   ...over,
 });
 
-test("engine diagnostics map entityId → objectId and field → field", () => {
+test("engine diagnostics map entityId → objectId, field → field and keep the position", () => {
   const issues = engineDiagnostics(docWith([platform({ overrides: { Speed: -5 } })]));
   const issue = issues.find((i) => i.code === "field.nonNegative");
   assert.ok(issue, "expected the negative-speed diagnostic");
   assert.equal(issue?.objectId, "plat-1");
   assert.equal(issue?.field, "Speed");
   assert.equal(issue?.severity, "error");
+  assert.deepEqual(issue?.position, { x: 96, y: 96 });
 });
 
 test("an object wholly outside the level is an out-of-bounds error, reported once", () => {
