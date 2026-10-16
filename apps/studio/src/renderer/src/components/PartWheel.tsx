@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Portal, chakra } from "@chakra-ui/react";
 import { ChevronLeft, X } from "lucide-react";
 import {
@@ -31,7 +31,7 @@ export function PartIcon({ part, size }: { part: RecentPart; size: number }) {
     />
   ) : (
     // A project without the decoration's sheet draws no preview: keep the slot visible.
-    <SpritePreview assetId={part.id} size={size} fallbackColor="#3a4960" />
+    <SpritePreview assetId={part.id} size={size} fallbackColor="#7c8da7" />
   );
 }
 
@@ -103,11 +103,17 @@ function WheelMenu({ pointer }: { pointer: { x: number; y: number } | null }) {
   useEffect(() => {
     ref.current?.querySelector<HTMLElement>("[data-wheel-item]")?.focus();
   }, [group]);
+  // Re-clamp to the window when it is resized while open.
+  const [, relayout] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    window.addEventListener("resize", relayout);
+    return () => window.removeEventListener("resize", relayout);
+  }, []);
 
   const items = group ? group.parts.length : groups.length;
-  const itemSize = group ? 44 : 76;
+  const itemSize = group ? 64 : 76;
   // shortcut: one ring that grows with its item count; split long categories into pages if one outgrows the window.
-  const radius = Math.max(96, (items * (itemSize + (group ? 8 : 24))) / (2 * Math.PI));
+  const radius = Math.max(96, (items * (itemSize + 24)) / (2 * Math.PI));
   const reach = radius + itemSize / 2 + 12;
   const cx = Math.min(Math.max(origin.x, reach), Math.max(reach, innerWidth - reach));
   const cy = Math.min(Math.max(origin.y, reach), Math.max(reach, innerHeight - reach));
@@ -161,16 +167,21 @@ function WheelMenu({ pointer }: { pointer: { x: number; y: number } | null }) {
                     role="menuitem"
                     data-wheel-item=""
                     style={at(i)}
-                    w="11"
-                    h="11"
-                    rounded="full"
+                    w="64px"
+                    h="12"
+                    flexDirection="column"
+                    gap="0.5"
+                    fontSize="9px"
                     aria-label={`Place ${name}`}
                     onClick={() => {
                       editor.store.setTool(placeTool(part), part.id);
                       close();
                     }}
                   >
-                    <PartIcon part={part} size={28} />
+                    <PartIcon part={part} size={22} />
+                    <chakra.span maxW="full" px="1" truncate>
+                      {name}
+                    </chakra.span>
                   </WheelItem>
                 </Tooltip>
               );
