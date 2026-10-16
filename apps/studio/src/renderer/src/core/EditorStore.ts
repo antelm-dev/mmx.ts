@@ -192,6 +192,7 @@ export class EditorStore {
   private state: EditorState;
   private listeners = new Set<Listener>();
   private savedRef: LevelDocument;
+  private opens = 0;
 
   constructor(document: LevelDocument) {
     this.history = new History(document);
@@ -287,6 +288,7 @@ export class EditorStore {
   open(document: LevelDocument): void {
     this.history.reset(document);
     this.savedRef = document;
+    this.opens++;
     this.state = {
       ...this.state,
       document,
@@ -301,6 +303,11 @@ export class EditorStore {
       trail: null,
     };
     this.emit("open");
+  }
+
+  /** How many documents were opened: tells work started on one document from the next. */
+  get openCount(): number {
+    return this.opens;
   }
 
   /** Mark the current document as the on-disk baseline (after a save). */
@@ -429,8 +436,8 @@ export class EditorStore {
     this.patch({ tilesets }, "ui");
   }
 
-  /** A new trail replaces the last one and is shown. */
-  setTrail(trail: PlayTrail): void {
+  /** A new trail replaces the last one and is shown; null clears it. */
+  setTrail(trail: PlayTrail | null): void {
     this.patch({ trail, trailVisible: true }, "ui");
   }
 

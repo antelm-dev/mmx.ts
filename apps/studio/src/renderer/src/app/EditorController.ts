@@ -950,7 +950,7 @@ export class EditorController {
         this.toggleTileTool();
         break;
       case "toggleTrail":
-        this.store.toggleTrail();
+        if (isPanelVisible("viewport")) this.store.toggleTrail();
         break;
       case "escapeTool":
         if (

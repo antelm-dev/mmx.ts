@@ -424,13 +424,18 @@ export class EditorViewportRenderer {
       // The dash pattern runs on along the whole line, across its samples.
       let on = true;
       let left = dash;
+      let px = line[0]!;
+      let py = line[1]!;
       for (let i = 2; i < line.length; i += 2) {
-        let x = line[i - 2]!;
-        let y = line[i - 1]!;
-        let len = Math.hypot(line[i]! - x, line[i + 1]! - y);
-        if (len === 0) continue;
-        const ux = (line[i]! - x) / len;
-        const uy = (line[i + 1]! - y) / len;
+        let len = Math.hypot(line[i]! - px, line[i + 1]! - py);
+        // Samples under a pixel apart (standing still) add segments, not detail.
+        if (len < 1) continue;
+        const ux = (line[i]! - px) / len;
+        const uy = (line[i + 1]! - py) / len;
+        let x = px;
+        let y = py;
+        px = line[i]!;
+        py = line[i + 1]!;
         while (len > 0) {
           const step = Math.min(left, len);
           if (on) g.moveTo(x, y).lineTo(x + ux * step, y + uy * step);

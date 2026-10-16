@@ -114,13 +114,13 @@ describe("EditorPlaytestController", () => {
     expect(store.isDirty).toBe(false);
   });
 
-  it("Stop traces the run as played (a from-here copy) and shows it on the level", async () => {
-    const store = new EditorStore(level());
-    const { ctl } = controller(store);
+  /** The next Play records `frames` idle frames of the level it is given (tainted on request). */
+  function recordNextPlay(frames: number, tainted = false): void {
     vi.mocked(createPlaytest).mockImplementationOnce((played) => {
       const scene = { level: documentToLevelData(played), gameData: COMPILED_GAME_DATA };
       const recorder = new Recorder(scene);
-      for (let i = 0; i < 120; i++) recorder.step(0);
+      for (let i = 0; i < frames; i++) recorder.step(0);
+      if (tainted) recorder.markTainted();
       return {
         start: async () => undefined,
         dispose: () => undefined,
@@ -129,6 +129,12 @@ describe("EditorPlaytestController", () => {
         enemyKinds: [],
       } as unknown as ReturnType<typeof createPlaytest>;
     });
+  }
+
+  it("Stop traces the run as played (a from-here copy) and shows it on the level", async () => {
+    const store = new EditorStore(level());
+    const { ctl } = controller(store);
+    recordNextPlay(120);
 
     ctl.playFromHere(100, 100);
     await vi.waitFor(() => expect(store.get().mode).toBe("play"));
@@ -140,6 +146,36 @@ describe("EditorPlaytestController", () => {
     expect(store.get().trailVisible).toBe(true);
     // Another level drops it.
     store.open(createLevelDocument());
+    expect(store.get().trail).toBeNull();
+  });
+
+  it("does not trace a run tainted by a debug cheat, and clears the last trail", async () => {
+    const store = new EditorStore(level());
+    const { ctl, toast } = controller(store);
+    recordNextPlay(120);
+    ctl.togglePlay();
+    await vi.waitFor(() => expect(store.get().mode).toBe("play"));
+    ctl.stopPlay();
+    await vi.waitFor(() => expect(store.get().trail).not.toBeNull());
+
+    // Invulnerability is not in the replay: re-simulated, the run would take hits it ignored.
+    recordNextPlay(120, true);
+    ctl.togglePlay();
+    await vi.waitFor(() => expect(store.get().mode).toBe("play"));
+    ctl.stopPlay();
+    expect(store.get().trail).toBeNull();
+    expect(toast).toHaveBeenCalledWith("Trail unavailable: the run used a debug cheat.");
+  });
+
+  it("drops a trace once another document opens, even one with the same level id", async () => {
+    const store = new EditorStore(level());
+    const { ctl } = controller(store);
+    recordNextPlay(600);
+    ctl.togglePlay();
+    await vi.waitFor(() => expect(store.get().mode).toBe("play"));
+    ctl.stopPlay();
+    store.open({ ...level(), id: store.get().document.id });
+    await new Promise((resolve) => setTimeout(resolve, 300));
     expect(store.get().trail).toBeNull();
   });
 

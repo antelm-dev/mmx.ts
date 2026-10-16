@@ -272,13 +272,18 @@ export class EditorPlaytestController {
         this.savedSelection,
       );
     }
-    if (run) {
-      const levelId = this.store.get().document.id;
-      traceRun(run, { isStale: () => token !== this.playToken })
+    // Invulnerability (the only cheat that taints) is not in the input stream: a re-simulation
+    // would take the hits the run ignored, so it would not show the run that was played.
+    if (run?.replay.tainted) {
+      this.store.setTrail(null);
+      this.cb.toast("Trail unavailable: the run used a debug cheat.");
+    } else if (run) {
+      const opens = this.store.openCount;
+      // Abandoned when another Play starts or another document opens meanwhile.
+      const isStale = () => token !== this.playToken || this.store.openCount !== opens;
+      traceRun(run, { isStale })
         .then((trail) => {
-          // Dropped when another Play started or another level opened meanwhile.
-          if (trail && token === this.playToken && this.store.get().document.id === levelId)
-            this.store.setTrail(trail);
+          if (trail && !isStale()) this.store.setTrail(trail);
         })
         .catch((error: unknown) =>
           this.cb.toast(
