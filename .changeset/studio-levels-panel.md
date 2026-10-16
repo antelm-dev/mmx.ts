@@ -1,6 +1,6 @@
 ---
 "@mmx/studio": minor
-"@mmx/project-schema": patch
+"@mmx/project-schema": minor
 ---
 
 Studio edits every level of a project: a Levels panel (activity bar) switches, adds, renames,

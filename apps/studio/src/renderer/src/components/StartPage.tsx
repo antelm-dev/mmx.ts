@@ -35,7 +35,7 @@ const Muted = chakra("span", {
 /** Start tab over the level: project commands, a blank level and the recent projects. */
 export function StartPage({ api }: { api: DockviewPanelApi }) {
   // Re-renders (and so re-reads the recent list) when a project opens from the File menu.
-  useProjectSession();
+  const projectOpen = useProjectSession().open;
   const [failed, setFailed] = useState<{ rootPath: string; message: string } | null>(null);
   const [showAtLaunch, setShowAtLaunch] = useState(showStartPageAtLaunch);
   const recents = readRecentProjects();
@@ -96,7 +96,7 @@ export function StartPage({ api }: { api: DockviewPanelApi }) {
               icon={<FilePlus2 size={15} />}
               onClick={() => done({ opened: editor.newLevel() })}
             >
-              Blank level
+              {projectOpen ? "Add blank level" : "Blank level"}
             </Command>
             <chakra.div px="3.5" pt="4">
               <Checkbox

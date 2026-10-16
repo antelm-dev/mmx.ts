@@ -9,6 +9,9 @@ import { Panel, PanelNote, PanelScroll } from "../ui/editor/panel.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
 import { Tooltip } from "./Tooltip.js";
 
+/** Keyboard users land on the delete question; a stable ref, so it runs once per opening. */
+const focusOnMount = (el: HTMLElement | null): void => el?.focus();
+
 /**
  * Left dock view: the open project's levels in manifest order. Clicking a row shows that
  * level; the toolbar acts on the shown one (contract C-LEVEL). List edits are saved with
@@ -108,6 +111,8 @@ export function LevelsPanel() {
         <chakra.div
           role="alertdialog"
           aria-label="Delete level"
+          tabIndex={-1}
+          ref={focusOnMount}
           px="3"
           pt="2.5"
           borderBottom="1px solid"
