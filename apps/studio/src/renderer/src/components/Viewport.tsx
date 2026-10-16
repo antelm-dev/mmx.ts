@@ -92,7 +92,7 @@ export function Viewport() {
       minH="0"
       bgImage="radial-gradient(circle at 50% 35%,#111a29 0%,#06090f 55%,#04060a 100%)"
     >
-      <chakra.div ref={hostRef} position="absolute" inset="0" overflow="hidden">
+      <chakra.div ref={hostRef} position="absolute" inset="0" overflow="hidden" data-viewport-host>
         {mode === "edit" && (
           <>
             {/* C-OVERLAY slots (see viewportOverlay.ts): one line per feature. */}

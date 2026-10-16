@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { chakra } from "@chakra-ui/react";
 import { definitionFor, instanceSize } from "@mmx/content-schema";
-import { editor, useEditorSnapshot } from "../app/useEditor.js";
+import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { minimapLayout, minimapViewRect, terrainPixels } from "../core/minimap.js";
 import { useUiStore } from "../store/uiStore.js";
 import { OverlayCard } from "../ui/editor/overlay.js";
@@ -30,9 +30,9 @@ function MinimapStrip() {
       .putImageData(new ImageData(terrainPixels(doc), doc.cols, doc.rows), 0, 0);
   }, [doc.tiles, doc.cols, doc.rows]);
 
-  // The viewport host (the slot's parent) is the view: EditorViewport sizes its canvas to it.
+  // The viewport host is the view: EditorViewport sizes its canvas to it.
   useLayoutEffect(() => {
-    const host = card.current!.parentElement!.parentElement!;
+    const host = card.current!.closest<HTMLElement>("[data-viewport-host]")!;
     const observer = new ResizeObserver(() =>
       setViewSize({ w: host.clientWidth, h: host.clientHeight }),
     );
@@ -40,12 +40,42 @@ function MinimapStrip() {
     return () => observer.disconnect();
   }, []);
 
-  const marks = useMemo(
-    () =>
-      doc.objects
-        .map((inst) => ({ inst, def: definitionFor(inst.definitionId), ...instanceSize(inst) }))
-        .filter((m) => MARKED.has(m.def.category)),
-    [doc.objects],
+  // The project's definitions (read by definitionFor) change with `objects` and `gameData`.
+  const project = useProjectSession().project;
+  const objects = project?.manifest.objects;
+  const gameData = project?.gameData;
+  // Only the view rectangle changes on pan and zoom.
+  const markers = useMemo(
+    () => (
+      <g>
+        {doc.objects.map((inst) => {
+          const def = definitionFor(inst.definitionId);
+          if (!MARKED.has(def.category)) return null;
+          const { width, height } = instanceSize(inst);
+          return def.category === "camera" ? (
+            <rect
+              key={inst.id}
+              x={inst.x * layout.sx}
+              y={inst.y * layout.sy}
+              width={width * layout.sx}
+              height={height * layout.sy}
+              fill="none"
+              stroke={def.editor.color}
+              strokeOpacity={0.8}
+            />
+          ) : (
+            <circle
+              key={inst.id}
+              cx={(inst.x + width / 2) * layout.sx}
+              cy={(inst.y + height / 2) * layout.sy}
+              r={2}
+              fill={def.editor.color}
+            />
+          );
+        })}
+      </g>
+    ),
+    [doc.objects, layout.sx, layout.sy, objects, gameData],
   );
 
   const view = minimapViewRect(layout, zoom, viewportPosition, viewSize);
@@ -95,28 +125,7 @@ function MinimapStrip() {
           }}
         />
         <chakra.svg position="absolute" inset="0" w="full" h="full" overflow="hidden">
-          {marks.map((m) =>
-            m.def.category === "camera" ? (
-              <rect
-                key={m.inst.id}
-                x={m.inst.x * layout.sx}
-                y={m.inst.y * layout.sy}
-                width={m.width * layout.sx}
-                height={m.height * layout.sy}
-                fill="none"
-                stroke={m.def.editor.color}
-                strokeOpacity={0.8}
-              />
-            ) : (
-              <circle
-                key={m.inst.id}
-                cx={(m.inst.x + m.width / 2) * layout.sx}
-                cy={(m.inst.y + m.height / 2) * layout.sy}
-                r={2}
-                fill={m.def.editor.color}
-              />
-            ),
-          )}
+          {markers}
           <rect
             x={view.x}
             y={view.y}
