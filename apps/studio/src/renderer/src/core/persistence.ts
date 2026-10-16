@@ -133,6 +133,12 @@ export function readRecovery(): RecoveryDraft | null {
   }
 }
 
+/** Point a draft written in the project at `from` to `to`, where that project moved. */
+export function retargetRecovery(from: string, to: string): void {
+  const draft = readRecovery();
+  if (draft?.rootPath === from) writeRecovery(draft.document, to);
+}
+
 export function clearRecovery(): void {
   try {
     localStorage.removeItem(RECOVERY_KEY);

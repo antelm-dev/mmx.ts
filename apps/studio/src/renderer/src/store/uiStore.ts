@@ -41,6 +41,8 @@ interface UiState {
   /** The last place tools picked, newest first; session memory only, so e2e captures stay stable. */
   recentParts: RecentPart[];
   partWheelOpen: boolean;
+  /** The first Save of an untitled project asks for its name (SaveProjectDialog). */
+  saveProjectOpen: boolean;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -56,6 +58,7 @@ interface UiState {
   setSelectedLayer: (key: LayerKey | undefined) => void;
   addRecentPart: (part: RecentPart) => void;
   setPartWheelOpen: (open: boolean) => void;
+  setSaveProjectOpen: (open: boolean) => void;
 }
 
 let toastSeq = 0;
@@ -77,6 +80,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   playtestInspectorVisible: true,
   recentParts: [],
   partWheelOpen: false,
+  saveProjectOpen: false,
   minimapVisible: minimapVisibleAtLaunch(),
 
   addToast: (message) => {
@@ -108,6 +112,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   setSelectedLayer: (selectedLayer) => set({ selectedLayer }),
   addRecentPart: (part) => set((s) => ({ recentParts: pushRecentPart(s.recentParts, part) })),
   setPartWheelOpen: (partWheelOpen) => set({ partWheelOpen }),
+  setSaveProjectOpen: (saveProjectOpen) => set({ saveProjectOpen }),
   toggleMinimap: () => {
     const minimapVisible = !get().minimapVisible;
     persistMinimapVisible(minimapVisible);

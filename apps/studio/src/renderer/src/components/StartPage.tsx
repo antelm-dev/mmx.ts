@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { chakra } from "@chakra-ui/react";
 import type { DockviewPanelApi } from "dockview-react";
 import {
@@ -7,11 +7,12 @@ import {
   FolderKanban,
   FolderOpen,
   FolderClock,
+  History,
   LayoutTemplate,
 } from "lucide-react";
 import { focusPanel } from "../app/dock.js";
 import type { ProjectOpenResult } from "../app/EditorController.js";
-import { editor, useProjectSession } from "../app/useEditor.js";
+import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import {
   readRecentProjects,
   removeRecentProject,
@@ -38,7 +39,10 @@ export function StartPage({ api }: { api: DockviewPanelApi }) {
   const projectOpen = useProjectSession().open;
   const [failed, setFailed] = useState<{ rootPath: string; message: string } | null>(null);
   const [showAtLaunch, setShowAtLaunch] = useState(showStartPageAtLaunch);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const recents = readRecentProjects();
+  const unsaved = projectSession.leftoverWorkProjects();
+  useEffect(() => void projectSession.listWorkProjects(), []);
 
   /** A command that went through leaves the start page for the level. */
   const done = (result: ProjectOpenResult): void => {
@@ -111,6 +115,49 @@ export function StartPage({ api }: { api: DockviewPanelApi }) {
           </Column>
 
           <Column aria-label="Recent projects">
+            {unsaved.length > 0 && (
+              <chakra.div role="region" aria-label="Unsaved projects" mb="4">
+                <SectionTitle>Unsaved</SectionTitle>
+                {unsaved.map((work) => (
+                  <chakra.div key={work.rootPath}>
+                    <ListRow
+                      title="Restore unsaved project"
+                      onClick={async () => done(await editor.restoreWorkProject(work.rootPath))}
+                    >
+                      <History size={15} />
+                      <chakra.span minW="0">
+                        {work.name}
+                        <Muted>Restore unsaved project · {formatDate(work.modifiedAt)}</Muted>
+                      </chakra.span>
+                    </ListRow>
+                    {deleting === work.rootPath ? (
+                      <chakra.div role="alert" mx="4" mb="2" fontSize="11px">
+                        Delete this unsaved project? This cannot be undone.
+                        <chakra.div display="flex" gap="2" mt="1.5">
+                          <ActionButton flex="1" onClick={() => setDeleting(null)}>
+                            Cancel
+                          </ActionButton>
+                          <ActionButton
+                            flex="1"
+                            color="studio.dangerFg"
+                            onClick={async () => {
+                              setDeleting(null);
+                              await editor.deleteWorkProject(work.rootPath);
+                            }}
+                          >
+                            Delete
+                          </ActionButton>
+                        </chakra.div>
+                      </chakra.div>
+                    ) : (
+                      <ActionButton mx="4" mb="2" onClick={() => setDeleting(work.rootPath)}>
+                        Delete…
+                      </ActionButton>
+                    )}
+                  </chakra.div>
+                ))}
+              </chakra.div>
+            )}
             <SectionTitle>Recent</SectionTitle>
             {recents.length === 0 && <PanelNote>No recent projects yet.</PanelNote>}
             {recents.map((project) => (
@@ -145,6 +192,9 @@ export function StartPage({ api }: { api: DockviewPanelApi }) {
     </Panel>
   );
 }
+
+const formatDate = (ms: number) =>
+  new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 function Command({
   icon,

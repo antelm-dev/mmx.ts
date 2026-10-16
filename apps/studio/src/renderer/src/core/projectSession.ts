@@ -42,6 +42,8 @@ export type ProjectSessionState = {
   playerAnimation?: string;
   /** The level the editor shows and syncs (contract C-LEVEL); the entry level on open. */
   currentLevelId?: string;
+  /** Contract C-WORK: an unsaved project in Studio's work folder, moved to a picked folder on its first Save. */
+  untitled: boolean;
 };
 
 const EMPTY: ProjectSessionState = {
@@ -49,6 +51,28 @@ const EMPTY: ProjectSessionState = {
   rootPath: null,
   project: null,
   issues: [],
+  untitled: false,
+};
+
+/** An untitled project left in Studio's work folder (`list-work-projects`). */
+export type WorkProject = { rootPath: string; name: string; modifiedAt: number };
+
+const unavailable = (): ProjectIssue[] => [
+  {
+    severity: "error",
+    code: "project.unavailable",
+    path: "/",
+    message: "Project I/O is only available in the Electron shell.",
+  },
+];
+
+/** A project id from its name, as `name.slug.project` (`fallback` when nothing is left). */
+const projectId = (name: string, fallback: string): string => {
+  const id = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+  return id.length > 0 ? `${id}.project` : fallback;
 };
 
 function mapSchemaIssues(issues: ValidationIssue[]): ProjectIssue[] {
@@ -123,6 +147,8 @@ export class ProjectSession {
   private removedLevelIds = new Set<string>();
   /** Stops Play and drops viewport sprites; runs before old sheet textures are destroyed. */
   beforeSheetReset: () => void = () => {};
+  /** Work projects on disk, as last listed (plus the ones created since). */
+  private workProjects: WorkProject[] = [];
 
   subscribe = (fn: () => void): (() => void) => {
     this.listeners.add(fn);
@@ -626,16 +652,7 @@ export class ProjectSession {
 
   async createProject(): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
-    if (!bridge) {
-      return [
-        {
-          severity: "error",
-          code: "project.unavailable",
-          path: "/",
-          message: "Project I/O is only available in the Electron shell.",
-        },
-      ];
-    }
+    if (!bridge) return unavailable();
 
     const rootPath = await bridge.pickDirectory("Create Project");
     if (!rootPath) return [];
@@ -643,13 +660,7 @@ export class ProjectSession {
     const name = window.prompt("Project name?", "Untitled Project")?.trim();
     if (!name) return [];
 
-    const id = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ".")
-      .replace(/^\.+|\.+$/g, "");
-    const projectId = id.length > 0 ? `${id}.project` : "untitled.project";
-
-    const result = await bridge.create(rootPath, { id: projectId, name });
+    const result = await bridge.create(rootPath, { id: projectId(name, "untitled.project"), name });
     if (!result.ok) {
       this.switchProject({ ...EMPTY, issues: result.issues });
       return result.issues;
@@ -660,22 +671,14 @@ export class ProjectSession {
       rootPath: result.value.rootPath,
       project: result.value.project,
       issues: [...result.issues, ...validateOpenProject(result.value.project)],
+      untitled: false,
     });
     return this.state.issues;
   }
 
   async createFromStarter(): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
-    if (!bridge) {
-      return [
-        {
-          severity: "error",
-          code: "project.unavailable",
-          path: "/",
-          message: "Project I/O is only available in the Electron shell.",
-        },
-      ];
-    }
+    if (!bridge) return unavailable();
 
     const rootPath = await bridge.pickDirectory("Create MMX Starter Project");
     if (!rootPath) return [];
@@ -683,13 +686,10 @@ export class ProjectSession {
     const name = window.prompt("Project name?", "MMX Project")?.trim();
     if (!name) return [];
 
-    const id = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ".")
-      .replace(/^\.+|\.+$/g, "");
-    const projectId = id.length > 0 ? `${id}.project` : "mmx.project";
-
-    const result = await bridge.createFromStarter(rootPath, { id: projectId, name });
+    const result = await bridge.createFromStarter(rootPath, {
+      id: projectId(name, "mmx.project"),
+      name,
+    });
     if (!result.ok) {
       this.switchProject({ ...EMPTY, issues: result.issues });
       return result.issues;
@@ -700,23 +700,18 @@ export class ProjectSession {
       rootPath: result.value.rootPath,
       project: result.value.project,
       issues: [...result.issues, ...validateOpenProject(result.value.project)],
+      untitled: false,
     });
     return this.state.issues;
   }
 
-  /** Load the project at `path` (a recent project), or at a folder the user picks. */
-  async openProject(path?: string): Promise<ProjectIssue[]> {
+  /**
+   * Load the project at `path` (a recent project, or with `untitled` a work project to restore),
+   * or at a folder the user picks.
+   */
+  async openProject(path?: string, untitled = false): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
-    if (!bridge) {
-      return [
-        {
-          severity: "error",
-          code: "project.unavailable",
-          path: "/",
-          message: "Project I/O is only available in the Electron shell.",
-        },
-      ];
-    }
+    if (!bridge) return unavailable();
 
     const rootPath = path ?? (await bridge.pickDirectory("Open Project"));
     if (!rootPath) return [];
@@ -735,6 +730,9 @@ export class ProjectSession {
       rootPath: result.value.rootPath,
       project: result.value.project,
       issues: [...result.issues, ...validateOpenProject(result.value.project)],
+      untitled,
+      // Never saved to a folder of the user's: it reads as unsaved until then.
+      dirty: untitled,
     });
     return this.state.issues;
   }
@@ -743,16 +741,7 @@ export class ProjectSession {
   async importFromSteam(onProgress: (step: string) => void): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
     const importer = window.studio?.import;
-    if (!bridge || !importer) {
-      return [
-        {
-          severity: "error",
-          code: "project.unavailable",
-          path: "/",
-          message: "Project I/O is only available in the Electron shell.",
-        },
-      ];
-    }
+    if (!bridge || !importer) return unavailable();
 
     const rootPath = await bridge.pickDirectory("Import from Steam installs: output folder");
     if (!rootPath) return [];
@@ -766,6 +755,7 @@ export class ProjectSession {
         rootPath: result.value.rootPath,
         project: result.value.project,
         issues: [...result.issues, ...validateOpenProject(result.value.project)],
+        untitled: false,
       });
       return this.state.issues;
     } finally {
@@ -808,6 +798,94 @@ export class ProjectSession {
       issues: [...result.issues, ...validateOpenProject(result.value.project)],
     });
     return this.state.issues;
+  }
+
+  /**
+   * Contract C-WORK: create an untitled project in Studio's work folder with `document` as its
+   * entry level and open it, unsaved. Nothing is open on failure, as before.
+   */
+  async createWorkProject(document: LevelDocument): Promise<ProjectIssue[]> {
+    const bridge = window.studio?.project;
+    if (!bridge) return unavailable();
+    const result = await bridge.createWorkProject({
+      name: "Untitled Project",
+      initialLevel: document,
+    });
+    if (!result.ok) return result.issues;
+    const { rootPath, project } = result.value;
+    this.workProjects = [
+      { rootPath, name: project.manifest.name, modifiedAt: Date.now() },
+      ...this.workProjects,
+    ];
+    this.switchProject({
+      open: true,
+      rootPath,
+      project,
+      issues: [...result.issues, ...validateOpenProject(project)],
+      untitled: true,
+      dirty: true,
+    });
+    return this.state.issues;
+  }
+
+  /**
+   * First Save of an untitled project: pick a folder (null when cancelled, nothing changed), then
+   * save as `name` in the work folder and move the whole project there. On failure the project
+   * stays untitled, in the work folder, and the issues say why.
+   */
+  async saveUntitled(name: string): Promise<ProjectIssue[] | null> {
+    const bridge = window.studio?.project;
+    const { rootPath: workRoot, project, untitled } = this.state;
+    if (!bridge) return unavailable();
+    if (!workRoot || !project || !untitled) return [];
+    const destination = await bridge.pickWorkDestination("Save Project");
+    if (!destination || this.state.rootPath !== workRoot) return null;
+
+    const manifest = { ...project.manifest, id: projectId(name, "untitled.project"), name };
+    this.setState({ ...this.state, project: { ...this.state.project!, manifest } });
+    const saved = await this.saveProject();
+    if (saved.some((issue) => issue.severity === "error")) return saved;
+
+    const moved = await bridge.moveWorkProject({ workRoot, destination });
+    if (!moved.ok) {
+      this.setState({ ...this.state, issues: [...moved.issues, ...this.state.issues] });
+      return moved.issues;
+    }
+    this.workProjects = this.workProjects.filter((entry) => entry.rootPath !== workRoot);
+    // Moved, so the work folder is gone even if another project was opened meanwhile.
+    if (this.state.rootPath !== workRoot) return moved.issues;
+    this.setState({
+      ...this.state,
+      rootPath: moved.value.rootPath,
+      untitled: false,
+      issues: [...moved.issues, ...this.state.issues],
+    });
+    return this.state.issues;
+  }
+
+  /** Re-read the work projects on disk (the Start tab's "unsaved projects"). */
+  async listWorkProjects(): Promise<WorkProject[]> {
+    const bridge = window.studio?.project;
+    if (!bridge?.listWorkProjects) return [];
+    this.workProjects = await bridge.listWorkProjects();
+    // A new state object, so subscribers re-render with the new list.
+    this.setState({ ...this.state });
+    return this.workProjects;
+  }
+
+  /** Work projects other than the open one, as last listed. */
+  leftoverWorkProjects(): WorkProject[] {
+    return this.workProjects.filter((entry) => entry.rootPath !== this.state.rootPath);
+  }
+
+  /** Delete a work project that is not the open one; its files are gone for good. */
+  async deleteWorkProject(rootPath: string): Promise<ProjectIssue[]> {
+    const bridge = window.studio?.project;
+    if (!bridge) return unavailable();
+    if (rootPath === this.state.rootPath) return [];
+    const result = await bridge.deleteWorkProject(rootPath);
+    if (result.ok) await this.listWorkProjects();
+    return result.issues;
   }
 
   async exportProject(): Promise<ProjectIssue[]> {

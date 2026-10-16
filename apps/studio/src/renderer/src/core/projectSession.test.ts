@@ -486,3 +486,104 @@ describe("ProjectSession levels", () => {
     await session.getAssets();
   });
 });
+
+describe("ProjectSession work project (C-WORK)", () => {
+  const work = "/userData/work-projects/w1";
+  const workProject = {
+    manifest: { id: "untitled.project", name: "Untitled Project", assets: [] },
+    levels: [],
+  };
+  const workBridge = (overrides: Record<string, unknown> = {}) => {
+    const calls = {
+      created: [] as unknown[],
+      saved: [] as { rootPath: string; name: string }[],
+      moved: [] as unknown[],
+    };
+    const stub = {
+      ...bridge,
+      createWorkProject: async (input: unknown) => {
+        calls.created.push(input);
+        return { ok: true, issues: [], value: { rootPath: work, project: workProject } };
+      },
+      pickWorkDestination: async () => "/games/hero",
+      save: async (rootPath: string, saved: typeof workProject) => {
+        calls.saved.push({ rootPath, name: saved.manifest.name });
+        return { ok: true, issues: [], value: { rootPath, project: saved } };
+      },
+      moveWorkProject: async (input: unknown) => {
+        calls.moved.push(input);
+        return { ok: true, issues: [], value: { rootPath: "/games/hero" } };
+      },
+      listWorkProjects: async () => [
+        { rootPath: work, name: "Untitled Project", modifiedAt: 2 },
+        { rootPath: "/userData/work-projects/w0", name: "Older", modifiedAt: 1 },
+      ],
+      ...overrides,
+    };
+    vi.stubGlobal("window", { studio: { project: stub } });
+    return calls;
+  };
+
+  it("opens the current level as an untitled, unsaved project", async () => {
+    const calls = workBridge();
+    const session = new ProjectSession();
+    const level = { id: "level.x", name: "Mine" } as never;
+    expect(await session.createWorkProject(level)).toEqual([]);
+    expect(calls.created).toEqual([{ name: "Untitled Project", initialLevel: level }]);
+    expect(session.getSnapshot()).toMatchObject({
+      open: true,
+      rootPath: work,
+      untitled: true,
+      dirty: true,
+    });
+    // The open one is never offered for restore or delete.
+    await session.listWorkProjects();
+    expect(session.leftoverWorkProjects().map((entry) => entry.name)).toEqual(["Older"]);
+    await session.getAssets();
+  });
+
+  it("stays closed when the work project cannot be created", async () => {
+    const failed = { severity: "error", code: "work-project.create", path: "/", message: "no" };
+    workBridge({ createWorkProject: async () => ({ ok: false, issues: [failed] }) });
+    const session = new ProjectSession();
+    expect(await session.createWorkProject({} as never)).toEqual([failed]);
+    expect(session.getSnapshot()).toMatchObject({ open: false, untitled: false });
+  });
+
+  it("first Save: names the project, saves it in the work folder, then moves it", async () => {
+    const calls = workBridge();
+    const session = new ProjectSession();
+    await session.createWorkProject({} as never);
+    expect(await session.saveUntitled("Hero Game")).toEqual([]);
+    expect(calls.saved).toEqual([{ rootPath: work, name: "Hero Game" }]);
+    expect(calls.moved).toEqual([{ workRoot: work, destination: "/games/hero" }]);
+    expect(session.getSnapshot()).toMatchObject({
+      rootPath: "/games/hero",
+      untitled: false,
+      dirty: false,
+      project: { manifest: { id: "hero.game.project", name: "Hero Game" } },
+    });
+    await session.getAssets();
+  });
+
+  it("a cancelled folder pick changes nothing", async () => {
+    const calls = workBridge({ pickWorkDestination: async () => null });
+    const session = new ProjectSession();
+    await session.createWorkProject({} as never);
+    const before = session.getSnapshot();
+    expect(await session.saveUntitled("Hero Game")).toBeNull();
+    expect(session.getSnapshot()).toBe(before);
+    expect(calls.saved).toEqual([]);
+    await session.getAssets();
+  });
+
+  it("a failed move leaves the project untitled in the work folder", async () => {
+    const failed = { severity: "error", code: "work-project.move", path: "/", message: "full" };
+    workBridge({ moveWorkProject: async () => ({ ok: false, issues: [failed] }) });
+    const session = new ProjectSession();
+    await session.createWorkProject({} as never);
+    expect(await session.saveUntitled("Hero Game")).toEqual([failed]);
+    expect(session.getSnapshot()).toMatchObject({ rootPath: work, untitled: true });
+    await session.getAssets();
+  });
+});
