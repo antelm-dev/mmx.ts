@@ -315,11 +315,12 @@ function ViewMenu() {
         <MenuTriggerItem>
           <PanelsTopLeft size={13} /> Panels
         </MenuTriggerItem>
-        <MenuContent>
+        <MenuContent overflowY="auto">
           {PANELS.map((p) => (
             <MenuCheckboxItem
               key={p.id}
               value={`panel-${p.id}`}
+              valueText={p.title}
               closeOnSelect={false}
               checked={open.includes(p.id)}
               onCheckedChange={() => togglePanel(p.id)}

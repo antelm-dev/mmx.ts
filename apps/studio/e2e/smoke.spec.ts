@@ -365,6 +365,12 @@ test("title bar menus work by pointer and keyboard and return focus", async () =
   await expect(panelsItem).toHaveAttribute("data-highlighted", "");
   await page.keyboard.press("ArrowRight");
   await expect(firstPanel).toBeVisible();
+  // Typeahead matches the panel title.
+  await page.keyboard.type("r");
+  await expect(page.getByRole("menuitemcheckbox", { name: "Room" })).toHaveAttribute(
+    "data-highlighted",
+    "",
+  );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
   await expect(viewMenu).toBeFocused();
