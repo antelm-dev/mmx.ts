@@ -135,22 +135,18 @@ export class EditorPlaytestController {
       this.cb.toast("Fix the errors in data/game.json (see Problems) before playing.");
       return;
     }
-    // Checked first so a refusal is immediate; the copy is what Play runs (restarts included).
-    let hereDocument: LevelDocument | null = null;
-    if (here) {
-      const loadout = gameData.loadouts.get(this.cb.getLoadoutId() ?? DEFAULT_PLAYER_LOADOUT);
-      const moved = playHereDocument(
-        this.store.get().document,
-        here.x,
-        here.y,
-        loadout?.actor.body ?? { hw: BODY_HALF_W, hh: BODY_HALF_H },
-        (value) => this.store.snap(value),
-      );
-      if (typeof moved === "string") {
-        this.cb.toast(moved);
-        return;
-      }
-      hereDocument = moved;
+    // The copy Play runs (restarts included); checked now so a refusal is immediate,
+    // and rebuilt from the level as it is once the loads below are done.
+    const body = gameData.loadouts.get(this.cb.getLoadoutId() ?? DEFAULT_PLAYER_LOADOUT)?.actor
+      .body ?? { hw: BODY_HALF_W, hh: BODY_HALF_H };
+    const moveSpawn =
+      here &&
+      ((doc: LevelDocument) =>
+        playHereDocument(doc, here.x, here.y, body, (value) => this.store.snap(value)));
+    const early = moveSpawn?.(this.store.get().document);
+    if (typeof early === "string") {
+      this.cb.toast(early);
+      return;
     }
     const assets = await this.cb.getAssets();
     if (!assets) {
@@ -178,6 +174,11 @@ export class EditorPlaytestController {
     }
 
     const state = this.store.get();
+    const level = moveSpawn ? moveSpawn(state.document) : state.document;
+    if (typeof level === "string") {
+      this.cb.toast(level);
+      return;
+    }
     this.savedView = { zoom: state.zoom, viewportPosition: { ...state.viewportPosition } };
     this.savedSelection =
       state.selection.kind === "objects"
@@ -187,7 +188,7 @@ export class EditorPlaytestController {
           : { kind: "tiles", indices: [...state.selection.indices] };
 
     const token = ++this.playToken;
-    this.fromHere = hereDocument !== null;
+    this.fromHere = here !== null;
     this.cb.onModeChange("play");
     this.cb.setViewportVisible(false);
 
@@ -195,7 +196,7 @@ export class EditorPlaytestController {
       await audio.load();
       const files = this.cb.getFileAccess();
       const loadoutId = this.cb.getLoadoutId();
-      const session = createPlaytest(hereDocument ?? state.document, {
+      const session = createPlaytest(level, {
         host,
         loadoutId,
         gameData,

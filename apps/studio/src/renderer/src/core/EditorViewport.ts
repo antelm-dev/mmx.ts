@@ -142,7 +142,7 @@ export class EditorViewport {
 
   /** The world point under the mouse, or null when the mouse is not over the canvas. */
   pointerWorld(): { x: number; y: number } | null {
-    return this.canvas.matches(":hover") ? { ...this.interaction.pointerWorld } : null;
+    return this.canvas.matches(":hover") ? this.interaction.hoverWorld() : null;
   }
 
   emptyContextAt(

@@ -126,6 +126,26 @@ describe("EditorPlaytestController", () => {
   });
 });
 
+describe("EditorPlaytestController Play from here, edited while loading", () => {
+  it("builds the copy from the level as it is after the loads", async () => {
+    const store = new EditorStore(level());
+    const { ctl, getAssets, toast } = controller(store);
+    vi.mocked(createPlaytest).mockClear();
+    // A wall lands on the chosen point while Play's assets load.
+    const walled = level();
+    walled.tiles[6 * walled.cols + 6] = TerrainTile.Solid;
+    getAssets.mockImplementationOnce(async () => {
+      store.open(walled);
+      return { catalog: {}, manifest: { playerSheet: "sheet" }, project: { assets: [] } };
+    });
+
+    ctl.playFromHere(100, 100);
+    await vi.waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringMatching(/wall/)));
+    expect(createPlaytest).not.toHaveBeenCalled();
+    expect(store.get().mode).toBe("edit");
+  });
+});
+
 describe("playHereDocument", () => {
   it("centres and snaps the Spawn like a placed one, on a suffixed copy", () => {
     const doc = level();
