@@ -27,6 +27,7 @@ const editCtx: KeyboardContext = {
   isFullscreen: false,
   hasContextMenu: false,
   invulnerable: false,
+  hasTextSelection: false,
   undoScope: "level",
 };
 
@@ -37,6 +38,7 @@ const playCtx: KeyboardContext = {
   isFullscreen: false,
   hasContextMenu: false,
   invulnerable: false,
+  hasTextSelection: false,
   undoScope: "level",
 };
 
@@ -174,6 +176,12 @@ describe("tool shortcuts", () => {
     expect(dispatch(key("KeyC", { mod: true }))).toEqual({ kind: "copy" });
     expect(dispatch(key("KeyX", { meta: true }))).toEqual({ kind: "cut" });
     expect(dispatch(key("KeyV", { mod: true }))).toEqual({ kind: "paste" });
+  });
+  it("Ctrl+C/X copy selected page text natively; Ctrl+V still pastes", () => {
+    const textCtx: KeyboardContext = { ...editCtx, hasTextSelection: true };
+    expect(dispatch(key("KeyC", { mod: true }), textCtx)).toBeNull();
+    expect(dispatch(key("KeyX", { mod: true }), textCtx)).toBeNull();
+    expect(dispatch(key("KeyV", { mod: true }), textCtx)).toEqual({ kind: "paste" });
   });
   it("T → toolTile", () => {
     expect(dispatch(key("KeyT"))).toEqual({ kind: "toolTile" });

@@ -141,24 +141,30 @@ export function pasteClipboard(
     const tiles = doc.tiles.slice();
     const slopes = { ...doc.slopes };
     const indices: number[] = [];
+    let changed = false;
     for (const c of clip.cells) {
       const cc = c.col - box.x + col;
       const rr = c.row - box.y + row;
       // A copy wider than this level loses the cells past its edge.
       if (cc >= doc.cols || rr >= doc.rows) continue;
       const index = rr * doc.cols + cc;
+      const prev = doc.slopes?.[index];
+      changed ||=
+        tiles[index] !== c.value || prev?.[0] !== c.slope?.[0] || prev?.[1] !== c.slope?.[1];
       tiles[index] = c.value;
       if (c.slope) slopes[index] = [c.slope[0], c.slope[1]];
       else delete slopes[index];
       indices.push(index);
     }
-    store.execute(
-      setTileState(
-        doc,
-        { tiles, slopes: Object.keys(slopes).length > 0 ? slopes : undefined },
-        "Paste tiles",
-      ),
-    );
+    // Pasting cells over identical ones must not add a history entry or dirty the level.
+    if (changed)
+      store.execute(
+        setTileState(
+          doc,
+          { tiles, slopes: Object.keys(slopes).length > 0 ? slopes : undefined },
+          "Paste tiles",
+        ),
+      );
     store.selectTiles(indices);
     return undefined;
   }

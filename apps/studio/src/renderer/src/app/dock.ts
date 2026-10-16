@@ -391,6 +391,11 @@ export function useOpenPanelIds(): string[] {
   );
 }
 
+/** Whether panel `id`'s tab is shown in its group (always true before the dock mounts). */
+export function isPanelVisible(id: string): boolean {
+  return !api || visibleIds.includes(id);
+}
+
 /** Reactive ids of the panels whose tab is shown in their group (one per group). */
 export function useVisiblePanelIds(): string[] {
   return useSyncExternalStore(

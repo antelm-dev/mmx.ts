@@ -140,6 +140,19 @@ describe("clipboard", () => {
     expect(store.get().selection).toEqual({ kind: "decorations", ids: [b!.id] });
   });
 
+  it("adds no undo step when pasted cells change nothing", () => {
+    const store = new EditorStore(createLevelDocument());
+    const { cols, rows } = store.get().document;
+    const floor = (rows - 1) * cols;
+    store.selectTiles([floor, floor + 1]);
+    copySelection(store);
+    const before = store.get().document;
+    pasteClipboard(store, { x: 0, y: (rows - 1) * 16 });
+    expect(store.get().document).toBe(before);
+    expect(store.canUndo).toBe(false);
+    expect(selectedTileIndices(store.get().selection)).toEqual([floor, floor + 1]);
+  });
+
   it("copies and pastes collision cells at the pointer as one undo step", () => {
     const store = new EditorStore(createLevelDocument());
     const { cols, rows } = store.get().document;

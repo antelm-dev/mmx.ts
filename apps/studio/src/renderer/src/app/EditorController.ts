@@ -38,7 +38,7 @@ import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
-import { focusPanel, openEnemyDocument } from "./dock.js";
+import { focusPanel, isPanelVisible, openEnemyDocument } from "./dock.js";
 import {
   dispatchEditorKey,
   undoScopeOf,
@@ -681,14 +681,17 @@ export class EditorController {
   deleteSelection(): void {
     deleteSelection(this.store);
   }
+  // Copy, cut and paste act on the level only while its viewport tab is shown.
   copySelection(): void {
-    copySelection(this.store);
+    if (isPanelVisible("viewport")) copySelection(this.store);
   }
   cutSelection(): void {
-    cutSelection(this.store);
+    if (isPanelVisible("viewport")) cutSelection(this.store);
   }
   /** Paste at the pointer when it is over the canvas, else next to the copied items. */
   paste(): void {
+    if (!isPanelVisible("viewport")) return;
+    this.closeEmptyContextMenu();
     const message = pasteClipboard(this.store, this.viewport?.pointerOnCanvas() ?? undefined);
     if (message) this.toast(message);
   }
@@ -833,6 +836,7 @@ export class EditorController {
       isFullscreen: uiState.fullscreen,
       hasContextMenu: !!uiState.contextMenu,
       invulnerable: this.playtest.getSnapshot().debug.invulnerable,
+      hasTextSelection: !!window.getSelection()?.toString(),
       undoScope: this.undoScope,
     };
 
