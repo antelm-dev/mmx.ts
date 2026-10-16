@@ -29,6 +29,7 @@ import type { PositionedIssue } from "@mmx/editor-runtime/adapters";
 import { type PlaytestSnapshot } from "@mmx/editor-runtime";
 import type { TilesetAsset } from "@mmx/project-schema";
 import {
+  clearRecovery,
   createFileAccess,
   parseDocument,
   readRecovery,
@@ -100,6 +101,8 @@ export class EditorController {
   private validatedAssets: unknown = projectSession.loadedAssets();
   private readonly tilesetSizes = new Map<string, { path: string; w: number; h: number }>();
   private readonly tilesetSizeLoads = new Set<string>();
+  /** A recovery draft that differs from the shown document exists; checked on open, not per render. */
+  private recoveryOffered = false;
 
   constructor() {
     this.playtest = new EditorPlaytestController(this.store, {
@@ -138,6 +141,7 @@ export class EditorController {
       this.viewport?.releaseSheetTextures();
     };
 
+    this.recoveryOffered = this.draftDiffersFromDocument();
     this.snapshot = this.build("open");
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
     this.pickFromBar = trackRecentParts(this.store, (part) =>
@@ -290,7 +294,11 @@ export class EditorController {
   private onStoreChange(reason: ChangeReason): void {
     this.viewport?.redraw();
     if (reason === "document" || reason === "open") {
-      writeRecovery(this.store.get().document, projectSession.getSnapshot().rootPath);
+      // Only an edit writes the draft: opening a level must not overwrite a crash draft.
+      if (reason === "document") {
+        writeRecovery(this.store.get().document, projectSession.getSnapshot().rootPath);
+      }
+      this.recoveryOffered = reason === "open" && this.draftDiffersFromDocument();
       const { currentLevelId } = projectSession.getSnapshot();
       if (currentLevelId) projectSession.syncLevel(currentLevelId, this.store.get().document);
     }
@@ -409,6 +417,7 @@ export class EditorController {
         this.toast(`Project save failed: ${issues[0]?.message ?? "validation error"}`);
         return;
       }
+      this.dropRecovery();
       this.store.markSaved();
       this.toast("Project saved.");
       return;
@@ -416,6 +425,7 @@ export class EditorController {
 
     const ok = await this.fileAccess.save(doc.id || doc.name || "level", serializeDocument(doc));
     if (!ok) return;
+    this.dropRecovery();
     this.store.markSaved();
     this.toast("Level saved.");
   }
@@ -590,9 +600,19 @@ export class EditorController {
   }
 
   hasRecoveryDraft(): boolean {
+    return this.recoveryOffered;
+  }
+
+  private draftDiffersFromDocument(): boolean {
     const draft = readRecovery();
     if (!draft) return false;
     return serializeDocument(draft.document) !== serializeDocument(this.store.get().document);
+  }
+
+  /** Saved: the draft only exists while there are unsaved edits. */
+  private dropRecovery(): void {
+    clearRecovery();
+    this.recoveryOffered = false;
   }
 
   /**

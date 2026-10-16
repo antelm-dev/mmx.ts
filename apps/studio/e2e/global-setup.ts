@@ -57,7 +57,7 @@ export default async function globalSetup(): Promise<void> {
           before[key] = localStorage.getItem(key);
           if (value !== null) localStorage.setItem(key, value);
         }
-        // A backup left by a run whose teardown never ran still holds the developer's draft.
+        // Stale-backup policy: a backup left by a run whose teardown never ran is kept, not replaced.
         for (const key of recoveryKeys) {
           if (localStorage.getItem(key + backup) === null) {
             localStorage.setItem(key + backup, JSON.stringify(localStorage.getItem(key)));

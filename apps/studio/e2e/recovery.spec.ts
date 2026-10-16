@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { _electron as electron, expect, test, type ElectronApplication } from "@playwright/test";
@@ -39,6 +39,26 @@ test("Restore Recovery Draft: a draft from another project never replaces a leve
   });
   await expect(page.locator("#viewport-canvas")).toBeVisible({ timeout: 30_000 });
 
+  const getDraft = () => page.evaluate((key) => localStorage.getItem(key), RECOVERY_KEY);
+  const setDraft = (value: string) =>
+    page.evaluate(([key, draft]) => localStorage.setItem(key!, draft!), [RECOVERY_KEY, value]);
+  const restoreItem = page.getByRole("menuitem", { name: /Restore Recovery Draft/ });
+  const row = (id: string) => page.getByTitle(id, { exact: true });
+  const setRoomField = async (label: string, value: string) => {
+    await page.getByRole("tab", { name: "Room" }).click();
+    const field = page.getByLabel(label, { exact: true });
+    await field.fill(value);
+    await field.press("Enter");
+  };
+
+  // A crash draft from another project, with the id of this project's entry level.
+  const main = JSON.parse(readFileSync(join(fixtureRoot, "levels/level.main.json"), "utf8"));
+  const foreign = JSON.stringify({
+    rootPath: "/elsewhere",
+    document: { ...main, name: "Foreign" },
+  });
+  await setDraft(foreign);
+
   await app.evaluate(({ dialog }, picked) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [picked] })) as never;
   }, projectRoot);
@@ -46,49 +66,52 @@ test("Restore Recovery Draft: a draft from another project never replaces a leve
   await page.getByRole("menuitem", { name: /Open Project/ }).click();
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
   await page.getByRole("button", { name: "Levels", exact: true }).click();
-  const row = (id: string) => page.getByTitle(id, { exact: true });
   await expect(row("level.main")).toContainText("Fixture Level");
-
-  // Opening the entry level wrote the draft with this project's root.
-  const written = JSON.parse(
-    (await page.evaluate((key) => localStorage.getItem(key), RECOVERY_KEY)) ?? "null",
-  );
-  expect(written).toMatchObject({ document: { id: "level.main" } });
-  expect(typeof written.rootPath).toBe("string");
-
-  const restore = async (draft: string) => {
-    await page.evaluate(
-      ([key, value]) => localStorage.setItem(key!, value!),
-      [RECOVERY_KEY, draft],
-    );
-    // The File menu reads the draft when it renders: a view change re-renders it.
-    await page.getByRole("button", { name: "View menu" }).click();
-    await page.getByRole("menuitem", { name: /Zoom In/ }).click();
-    await page.getByRole("button", { name: "File menu" }).click();
-  };
-  const restoreItem = page.getByRole("menuitem", { name: /Restore Recovery Draft/ });
+  // Opening the project's entry level keeps the draft.
+  expect(await getDraft()).toBe(foreign);
 
   // From another project: added as a new level, the project's `level.main` is untouched.
-  const foreign = { ...written.document, name: "Foreign" };
-  await restore(JSON.stringify({ rootPath: "/elsewhere", document: foreign }));
+  await page.getByRole("button", { name: "File menu" }).click();
   await restoreItem.click();
   expect(dialogs.pop()).toContain('Add the recovery draft as a new level, "Foreign (recovered)"');
   await expect(page.getByText(/Recovery draft added as a new level/)).toBeVisible();
   await expect(row("level.foreign.recovered")).toHaveAttribute("aria-current", "true");
   await expect(row("level.main")).toContainText("Fixture Level");
+  // Restoring keeps the draft too: a second crash before any edit still has it.
+  expect(await getDraft()).toBe(foreign);
 
-  // From this project: restored over its own level, after a confirmation naming it.
+  // An edit writes the draft, with this project's root.
+  await row("level.main").click();
+  await setRoomField("Columns", "40");
+  const written = JSON.parse((await getDraft()) ?? "null");
+  expect(written).toMatchObject({ document: { id: "level.main", cols: 40 } });
+  expect(typeof written.rootPath).toBe("string");
+
+  // From this project: restored over its own level, after a confirmation naming it. The File
+  // menu checks the draft when a level opens.
   const own = { ...written.document, name: "Restored Main" };
-  await restore(JSON.stringify({ rootPath: written.rootPath, document: own }));
+  await setDraft(JSON.stringify({ rootPath: written.rootPath, document: own }));
+  await row("level.foreign.recovered").click();
+  await page.getByRole("button", { name: "File menu" }).click();
   await restoreItem.click();
   expect(dialogs.pop()).toContain('Replace level "Fixture Level" with the recovery draft?');
   await expect(row("level.main")).toHaveAttribute("aria-current", "true");
   await expect(row("level.main")).toContainText("Restored Main");
 
   // A corrupt draft is not offered.
-  await restore("{oops");
+  await setDraft("{oops");
+  await row("level.foreign.recovered").click();
+  await page.getByRole("button", { name: "File menu" }).click();
   await expect(page.getByRole("menuitem", { name: /Open Project/ })).toBeVisible();
   await expect(restoreItem).toHaveCount(0);
   await page.keyboard.press("Escape");
+
+  // Save clears the draft: it only exists while there are unsaved edits.
+  await setRoomField("Rows", "20");
+  expect(await getDraft()).toContain('"rows":20');
+  await page.getByRole("button", { name: "File menu" }).click();
+  await page.getByRole("menuitem", { name: /^Save/ }).click();
+  await expect(page.getByText("Project saved.")).toBeVisible();
+  expect(await getDraft()).toBeNull();
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });
