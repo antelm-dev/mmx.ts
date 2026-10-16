@@ -32,7 +32,9 @@ function MinimapStrip() {
 
   // The viewport host is the view: EditorViewport sizes its canvas to it.
   useLayoutEffect(() => {
-    const host = card.current!.closest<HTMLElement>("[data-viewport-host]")!;
+    const host = card.current!.closest<HTMLElement>("[data-viewport-host]");
+    // No host: keep the strip without a view rectangle rather than throw and blank the window.
+    if (!host) return;
     const observer = new ResizeObserver(() =>
       setViewSize({ w: host.clientWidth, h: host.clientHeight }),
     );
