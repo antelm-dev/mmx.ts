@@ -171,6 +171,55 @@ export const START_PANEL: PanelSpec = {
   fallbackDir: "within",
 };
 
+/**
+ * An asset's document tab (contract C-DOC). `id` is one per asset (`tileset:<assetId>`,
+ * `enemy:<id>`, `clips:<assetId>`, `slicer:<assetId>`) so reopening an asset reuses its
+ * tab; `component` is its {@link App} `dockComponents` key; the panel reads the asset
+ * from its `props.params`.
+ */
+export interface DocumentSpec {
+  id: string;
+  component: string;
+  title: string;
+  params: Record<string, unknown>;
+}
+
+/**
+ * Open a document as a tab in the level view's group, or surface the tab of the same id
+ * with fresh params and title. Dockview's `updateParameters` merges into the existing
+ * params rather than replacing them, so keys left out of `params` persist. Not listed
+ * under View → Panels. Play re-activates the level tab itself (see
+ * `EditorController.togglePlay`), so documents may cover it.
+ */
+export function openDocument(doc: DocumentSpec): void {
+  if (!api) return;
+  const existing = api.getPanel(doc.id);
+  if (existing) {
+    existing.api.updateParameters(doc.params);
+    existing.api.setTitle(doc.title);
+    existing.api.setActive();
+    return;
+  }
+  const viewport = api.getPanel("viewport");
+  api.addPanel({
+    id: doc.id,
+    component: doc.component,
+    title: doc.title,
+    params: doc.params,
+    position: viewport ? { referencePanel: viewport, direction: "within" } : undefined,
+  });
+}
+
+/** Open (or surface) the tileset editor for a `tileset` asset; its id is the tab title. */
+export function openTilesetDocument(assetId: string): void {
+  openDocument({
+    id: `tileset:${assetId}`,
+    component: "tileset",
+    title: assetId,
+    params: { assetId },
+  });
+}
+
 /** Open the panel if closed, or close it if open (the View-menu checkbox action). */
 export function togglePanel(id: string): void {
   if (!api) return;

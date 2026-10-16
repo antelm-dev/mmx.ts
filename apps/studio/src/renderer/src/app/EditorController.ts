@@ -36,6 +36,7 @@ import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
+import { focusPanel } from "./dock.js";
 import {
   dispatchEditorKey,
   undoScopeOf,
@@ -706,6 +707,8 @@ export class EditorController {
   // ---------- Play ----------
 
   togglePlay(): void {
+    // Play draws into the level tab, which a document tab (C-DOC) may be covering.
+    if (this.store.get().mode === "edit") focusPanel("viewport");
     this.playtest.togglePlay();
   }
 

@@ -111,8 +111,20 @@ test("AC-PAINT: a painted tileset floor writes art and collision together and ho
   await pick(tilesetPath);
   await page.getByRole("button", { name: /Import tileset/ }).click();
   await expect(page.locator("[data-tile-layer]")).toHaveCount(1);
-  const tile = (i: number) => page.getByRole("button", { name: `Tile ${i}`, exact: true });
-  await expect(page.locator("[data-tile]")).toHaveCount(8);
+  // Collision is edited in the tileset's document tab, which covers the level view; tiles
+  // are picked for painting from the Room panel's picker under the paint layer.
+  await page.getByRole("button", { name: "Edit tileset" }).click();
+  const tilesetTab = page.getByRole("tab", {
+    name: (await page.locator("[data-tile-layer] [title]").getAttribute("title"))!,
+  });
+  const showTileset = () => tilesetTab.click();
+  const showLevel = () => page.getByRole("tab", { name: "Level", exact: true }).click();
+  const doc = page.getByTestId("tileset-document");
+  const room = page.getByTestId("tile-picker");
+  const tile = (i: number) => doc.getByRole("button", { name: `Tile ${i}`, exact: true });
+  const roomTile = (i: number) => room.getByRole("button", { name: `Tile ${i}`, exact: true });
+  await expect(doc.locator("[data-tile]")).toHaveCount(8);
+  await expect(room.locator("[data-tile]")).toHaveCount(8);
 
   // Collision: tiles 0 and 1 solid (multi-select), tile 2 one-way.
   const collision = page.getByRole("group", { name: "Tile collision" });
@@ -126,13 +138,15 @@ test("AC-PAINT: a painted tileset floor writes art and collision together and ho
   await expect(tile(2)).toHaveAttribute("data-collision", "4");
   await expect(tile(3)).toHaveAttribute("data-collision", "0");
 
-  // Brush: a 10-tile floor of tile 0 under the spawn (32, 128).
-  await tile(0).click();
-  await page.getByRole("button", { name: "Brush", exact: true }).click();
+  // Brush: a 10-tile floor of tile 0 under the spawn (32, 128), picked from Room.
+  await showLevel();
+  await roomTile(0).click();
+  await room.getByRole("button", { name: "Brush", exact: true }).click();
   await drag(page, [0, FLOOR_ROW], [9, FLOOR_ROW]);
-  // Rectangle: a 3x3 block of tile 1.
-  await tile(1).click();
-  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+  // Rectangle: a 3x3 block of tile 1, with no tab switch.
+  await roomTile(1).click();
+  await expect(roomTile(1)).toHaveAttribute("aria-pressed", "true");
+  await room.getByRole("button", { name: "Rectangle", exact: true }).click();
   await drag(page, [14, 9], [16, 11]);
   await expect(canvas).toHaveAttribute("data-tile-layer-sprites", "19");
 
@@ -196,13 +210,15 @@ test("AC-PAINT: a painted tileset floor writes art and collision together and ho
 
   // 32 px tiles cut the 64x32 sheet into 2: the painted index 1 still fits, but the check uses
   // the real tile count, and the old per-index collision is cleared.
-  await tile(2).click();
-  await page.getByRole("button", { name: "Brush", exact: true }).click();
+  await roomTile(2).click();
+  await room.getByRole("button", { name: "Brush", exact: true }).click();
   await drag(page, [20, 2], [20, 2]);
+  await showTileset();
   const tileSize = page.getByLabel("Tile size (px)");
   await tileSize.fill("32");
   await tileSize.blur();
   await expect(page.getByText(/expected -1 or a tile index below 2/)).toBeVisible();
-  await expect(page.locator("[data-tile]")).toHaveCount(2);
+  await expect(doc.locator("[data-tile]")).toHaveCount(2);
+  await expect(room.locator("[data-tile]")).toHaveCount(2);
   await expect(tile(0)).toHaveAttribute("data-collision", "0");
 });

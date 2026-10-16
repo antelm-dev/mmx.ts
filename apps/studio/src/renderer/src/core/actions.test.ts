@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
-import type { AnimationAsset } from "@mmx/project-schema";
+import type { AnimationAsset, ProjectAsset, TilesetAsset } from "@mmx/project-schema";
 import {
   EditorStore,
   selectedDecorationIds,
@@ -28,6 +28,7 @@ import {
   setRoomSettings,
   setSpriteRegions,
   setTileAt,
+  updateAsset,
   updateImageLayer,
   updateTileLayer,
 } from "./actions.js";
@@ -445,6 +446,39 @@ describe("setSpriteRegions", () => {
     expect(saved["sprite.sheet"]).toEqual([{ id: "frame.0", region: [0, 0, 8, 8] }]);
     store.redo();
     expect(saved["sprite.sheet"]).toEqual(next);
+  });
+});
+
+describe("updateAsset", () => {
+  it("replaces the asset through the session, undoes/redoes it, and skips no-ops", () => {
+    const store = freshStore();
+    const tileset: TilesetAsset = {
+      id: "ground",
+      kind: "tileset",
+      path: "assets/ground.png",
+      tileSize: 16,
+      collision: { 0: TerrainTile.Solid },
+    };
+    const assets = new Map<string, ProjectAsset>([[tileset.id, tileset]]);
+    const session = {
+      asset: (id: string) => assets.get(id) ?? null,
+      updateAsset: (next: ProjectAsset) => void assets.set(next.id, next),
+    };
+    const next: TilesetAsset = { ...tileset, collision: { 0: TerrainTile.OneWay } };
+    updateAsset(store, session, next, "Set tile collision");
+    expect(assets.get("ground")).toEqual(next);
+    expect(store.undoLabel).toBe("Set tile collision");
+    store.undo();
+    expect(assets.get("ground")).toEqual(tileset);
+    store.redo();
+    expect(assets.get("ground")).toEqual(next);
+
+    store.undo();
+    updateAsset(store, session, { ...tileset, collision: { ...tileset.collision } }, "Same");
+    expect(store.undoLabel).toBeUndefined();
+    updateAsset(store, session, { ...next, id: "missing" }, "Missing");
+    expect(store.undoLabel).toBeUndefined();
+    expect(assets.has("missing")).toBe(false);
   });
 });
 
