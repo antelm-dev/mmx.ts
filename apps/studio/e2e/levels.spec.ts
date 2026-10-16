@@ -104,6 +104,23 @@ test("Levels: edit A, switch to B, save writes both; add, import, rename, move a
     levels: [{ id: "level.main" }, { id: "level.b" }],
   });
 
+  // Levels and Layers share the left group; layer visibility and locks start fresh per level.
+  const bar = page.getByRole("navigation", { name: "Activity bar" });
+  const layers = page.getByTestId("layers-panel");
+  const canvas = page.locator("#viewport-canvas");
+  await bar.getByRole("button", { name: "Layers" }).click();
+  await layers.getByRole("button", { name: "Hide Collision" }).click();
+  await layers.getByRole("button", { name: "Lock Collision" }).click();
+  await expect(canvas).toHaveAttribute("data-collision-visible", "false");
+  await bar.getByRole("button", { name: "Levels" }).click();
+  await expect(page.getByRole("tab", { name: "Layers" })).toBeVisible();
+  await row("level.main").click();
+  await bar.getByRole("button", { name: "Layers" }).click();
+  await expect(canvas).toHaveAttribute("data-collision-visible", "true");
+  await expect(layers.getByRole("button", { name: "Lock Collision" })).toBeVisible();
+  await bar.getByRole("button", { name: "Levels" }).click();
+  await expect(page.getByRole("tab", { name: "Levels" })).toHaveAttribute("aria-selected", "true");
+
   // In a project, New Level and Open Level add levels instead of replacing the entry.
   await page.getByRole("button", { name: "Level menu" }).click();
   await page.getByRole("menuitem", { name: "New Level", exact: true }).click();
