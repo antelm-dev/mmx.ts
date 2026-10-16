@@ -11,6 +11,7 @@ import {
 import type { CompiledGameData } from "@mmx/engine/data";
 import type { TilesetAsset } from "@mmx/project-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
+import type { PlayTrail } from "@mmx/editor-runtime";
 import { getDecorationAsset, knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
 export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile" | "tilePaint";
@@ -176,6 +177,9 @@ export interface EditorState {
   /** The open project's `tileset` assets by id (tile geometry and collision per tile). */
   tilesets: Readonly<Record<string, TilesetAsset>>;
   tilePaint: TilePaint;
+  /** Editor-only: the player's path in the last Play of this level (never saved). */
+  trail: PlayTrail | null;
+  trailVisible: boolean;
 }
 
 /** Why the store emitted — lets subscribers skip expensive work they don't need. */
@@ -188,6 +192,7 @@ export class EditorStore {
   private state: EditorState;
   private listeners = new Set<Listener>();
   private savedRef: LevelDocument;
+  private opens = 0;
 
   constructor(document: LevelDocument) {
     this.history = new History(document);
@@ -205,6 +210,8 @@ export class EditorStore {
       layerLocked: {},
       tilesets: {},
       tilePaint: { tile: 0, mode: "brush" },
+      trail: null,
+      trailVisible: true,
     };
   }
 
@@ -281,6 +288,7 @@ export class EditorStore {
   open(document: LevelDocument): void {
     this.history.reset(document);
     this.savedRef = document;
+    this.opens++;
     this.state = {
       ...this.state,
       document,
@@ -292,8 +300,14 @@ export class EditorStore {
       mode: "edit",
       layerVisible: {},
       layerLocked: {},
+      trail: null,
     };
     this.emit("open");
+  }
+
+  /** How many documents were opened: tells work started on one document from the next. */
+  get openCount(): number {
+    return this.opens;
   }
 
   /** Mark the current document as the on-disk baseline (after a save). */
@@ -420,6 +434,15 @@ export class EditorStore {
 
   setTilesets(tilesets: Record<string, TilesetAsset>): void {
     this.patch({ tilesets }, "ui");
+  }
+
+  /** A new trail replaces the last one and is shown; null clears it. */
+  setTrail(trail: PlayTrail | null): void {
+    this.patch({ trail, trailVisible: true }, "ui");
+  }
+
+  toggleTrail(): void {
+    this.patch({ trailVisible: !this.state.trailVisible }, "ui");
   }
 
   setTilePaint(patch: Partial<TilePaint>): void {
