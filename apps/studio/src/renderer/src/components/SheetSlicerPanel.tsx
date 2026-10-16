@@ -10,6 +10,7 @@ import {
   type Rect,
   type SliceBackground,
 } from "@mmx/project-io";
+import { openSlicerDocument } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { setSpriteRegions } from "../core/actions.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -56,17 +57,27 @@ const int = (raw: string, fallback: number, min = 0): number => {
   return raw.trim() !== "" && Number.isFinite(value) && value >= min ? value : fallback;
 };
 
+/** Import a PNG as a new `sprite` asset and open its slicer tab. */
+export async function importSpriteSheet(): Promise<void> {
+  try {
+    const id = await projectSession.importImage("sprite");
+    if (id) openSlicerDocument(id);
+  } catch (error) {
+    editor.toast(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 /**
- * Document panel (C-DOC): slice a sprite sheet into frame regions (auto or grid), retouch
- * them, save them on the asset. Starts on `params.assetId`; an `image` asset is sliced for
- * preview only, as only sprites keep regions.
+ * Document panel (C-DOC): slice sprite sheet `params.assetId` into frame regions (auto or
+ * grid), retouch them, save them on the asset. The tab only ever edits that asset: picking
+ * or importing another opens its own tab. An `image` asset is sliced for preview only, as
+ * only sprites keep regions.
  */
 export function SheetSlicerPanel({ params }: { params: { assetId?: unknown } }) {
   const session = useProjectSession();
-  const docId = typeof params.assetId === "string" ? params.assetId : "";
+  const assetId = typeof params.assetId === "string" ? params.assetId : "";
   const assets = session.project?.manifest.assets ?? [];
   const sprites = assets.filter((asset) => asset.kind === "sprite" || asset.kind === "image");
-  const [assetId, setAssetId] = useState(docId);
   const isSprite = sprites.some((asset) => asset.id === assetId && asset.kind === "sprite");
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [rects, setRects] = useState<Rect[]>([]);
@@ -110,18 +121,9 @@ export function SheetSlicerPanel({ params }: { params: { assetId?: unknown } }) 
     setSelected([]);
   };
 
-  const importSheet = async (): Promise<void> => {
-    try {
-      const id = await projectSession.importImage("sprite");
-      if (id) setAssetId(id);
-    } catch (error) {
-      editor.toast(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
   if (!session.open) return <PanelNote>Open a project to slice its sprite sheets.</PanelNote>;
-  if (docId && !assets.some((asset) => asset.id === docId))
-    return <PanelNote>Asset “{docId}” is not in the open project.</PanelNote>;
+  if (!assets.some((asset) => asset.id === assetId))
+    return <PanelNote>Asset “{assetId}” is not in the open project.</PanelNote>;
 
   return (
     <Panel>
@@ -130,8 +132,7 @@ export function SheetSlicerPanel({ params }: { params: { assetId?: unknown } }) 
         <chakra.div display="flex" gap="2" alignItems="flex-end" py="3px" px="3.5">
           <chakra.div flex="1" minW="0">
             <Field label="Sprite asset">
-              <FieldSelect value={assetId} onChange={(e) => setAssetId(e.target.value)}>
-                <option value="">Choose a sprite…</option>
+              <FieldSelect value={assetId} onChange={(e) => openSlicerDocument(e.target.value)}>
                 {sprites.map((asset) => (
                   <option key={asset.id} value={asset.id}>
                     {asset.id}
@@ -140,7 +141,7 @@ export function SheetSlicerPanel({ params }: { params: { assetId?: unknown } }) 
               </FieldSelect>
             </Field>
           </chakra.div>
-          <ToolbarButton onClick={() => void importSheet()}>
+          <ToolbarButton onClick={() => void importSpriteSheet()}>
             <ImagePlus size={14} /> Import sheet…
           </ToolbarButton>
         </chakra.div>

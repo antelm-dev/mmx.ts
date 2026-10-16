@@ -650,7 +650,7 @@ export class EditorController {
       name,
     );
     this.setGameData(overlay);
-    openEnemyDocument(id, `${name} copy`);
+    openEnemyDocument(id, overlay.prefabs?.[id]?.name ?? id);
   }
 
   selectPalette(definitionId: string): void {

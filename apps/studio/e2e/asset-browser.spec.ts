@@ -65,7 +65,7 @@ test("AC-BROWSER: Assets lists the project's assets and opens each in its own do
       .getByRole("button", { name: "Assets" })
       .click();
   const browser = page.getByTestId("asset-browser");
-  const asset = (id: string) => browser.locator(`[data-asset-kind][title="${id}"]`);
+  const asset = (id: string) => browser.locator(`[data-asset-id="${id}"]`);
   const group = (label: string) => browser.getByRole("button", { name: new RegExp(`^${label}`) });
   const tab = (name: string) => page.getByRole("tab", { name, exact: true });
   const levelTab = tab("Level");
@@ -143,7 +143,9 @@ test("AC-BROWSER: Assets lists the project's assets and opens each in its own do
   await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.bg");
   // A sound has no document; an object is picked for placing.
   const tabs = await page.getByRole("tab").count();
-  await asset("sfx.jump").dblclick();
+  await expect(asset("sfx.jump")).toHaveAttribute("aria-disabled", "true");
+  await expect(asset("sfx.jump")).toHaveAttribute("title", "No editor");
+  await asset("sfx.jump").dblclick({ force: true });
   await expect(page.getByRole("tab")).toHaveCount(tabs);
   await browser.locator('[data-asset-kind="object"]').dblclick();
   await page.getByRole("tab", { name: "Object Palette" }).click();

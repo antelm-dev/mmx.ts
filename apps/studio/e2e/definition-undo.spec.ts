@@ -94,7 +94,7 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
   await expect(row("Moving Platform copy")).toHaveCount(0);
 
   // A placed Spiky Crab blocks its deletion; Ctrl+Z after clicking the viewport undoes the placement instead.
-  // The enemy is a tab beside Level: place from the Level tab, then come back to it.
+  // Enemy documents cover the level: place from the Level tab, then come back to the enemy's.
   await page.getByRole("button", { name: "Edit Spiky Crab", exact: true }).click();
   if ((await row("Spiky Crab").getAttribute("aria-current")) !== "true")
     await row("Spiky Crab").click();

@@ -8,6 +8,8 @@ import type {
   FrameBox,
   Region,
 } from "@mmx/project-schema";
+import type { DockviewPanelApi } from "dockview-react";
+import { openClipsDocument } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { setAnimationAsset, setPlayerAnimation } from "../core/actions.js";
 import {
@@ -120,23 +122,32 @@ const int = (raw: string, min: number): number | null => {
 
 /**
  * Document panel (C-DOC): assemble clips from a sliced sheet into a playable `animation`
- * asset (contract C-CLIP), starting on `params.assetId` and its sheet.
+ * asset (contract C-CLIP). The tab edits animation `params.assetId` on its own sheet, and
+ * only that one: picking another animation opens its tab. Without an asset id it is the
+ * "New animation" document: pick a sheet, and the first clip creates the animation, whose
+ * own tab then replaces this one.
  */
-export function ClipEditorPanel({ params }: { params: { assetId?: unknown } }) {
+export function ClipEditorPanel({
+  params,
+  api,
+}: {
+  params: { assetId?: unknown };
+  api?: DockviewPanelApi;
+}) {
   const session = useProjectSession();
   const docId = typeof params.assetId === "string" ? params.assetId : "";
+  const isNew = !docId;
   const assets = session.project?.manifest.assets ?? [];
-  const [sheetId, setSheetId] = useState(
-    () => projectSession.animationAsset(docId)?.sheetAssetId ?? "",
-  );
+  const docAnim = projectSession.animationAsset(docId);
+  const [pickedSheetId, setSheetId] = useState("");
+  const sheetId = isNew ? pickedSheetId : (docAnim?.sheetAssetId ?? "");
   // The opened animation's sheet is listed even when it is unsliced (or a plain image).
   const sheets = assets.filter(
     (asset) =>
       (asset.kind === "sprite" && (asset.regions?.length ?? 0) > 0) || asset.id === sheetId,
   );
   const [sheet, setSheet] = useState<Sheet | null>(null);
-  const [pickedAnimId, setAnimId] = useState(docId);
-  const [clipName, setClipName] = useState("");
+  const [clipName, setClipName] = useState(() => Object.keys(docAnim?.animations ?? {})[0] ?? "");
   const [newName, setNewName] = useState("");
   const [preset, setPreset] = useState(2);
   const [regionSel, setRegionSel] = useState<number[]>([]);
@@ -152,13 +163,16 @@ export function ClipEditorPanel({ params }: { params: { assetId?: unknown } }) {
   const regions = projectSession.spriteRegions(sheetId);
   const bound = assets.filter(
     (asset): asset is AnimationAsset =>
-      asset.kind === "animation" && asset.sheetAssetId === sheetId,
+      asset.kind === "animation" && (asset.sheetAssetId === sheetId || asset.id === docId),
   );
-  const newAnimId = `anim.${sheetId.replace(/^sprite\./, "")}`;
-  const animId = bound.some((asset) => asset.id === pickedAnimId)
-    ? pickedAnimId
-    : (bound[0]?.id ?? newAnimId);
-  const anim = projectSession.animationAsset(animId);
+  // A new animation never takes an existing asset's id.
+  let animId = docId;
+  if (isNew) {
+    const base = `anim.${sheetId.replace(/^sprite\./, "")}`;
+    animId = base;
+    for (let n = 2; assets.some((asset) => asset.id === animId); n++) animId = `${base}-${n}`;
+  }
+  const anim = isNew ? null : docAnim;
   const clips = anim?.animations ?? {};
   const clip: AnimationClip | undefined = clips[clipName];
   const frames = clip?.frames ?? [];
@@ -209,7 +223,7 @@ export function ClipEditorPanel({ params }: { params: { assetId?: unknown } }) {
   }, [playing, clip, speed]);
 
   if (!session.open) return <PanelNote>Open a project to edit its animation clips.</PanelNote>;
-  if (docId && !projectSession.animationAsset(docId))
+  if (!isNew && !docAnim)
     return <PanelNote>Animation “{docId}” is not in the open project.</PanelNote>;
 
   const writeAll = (label: string, animations: Record<string, AnimationClip>): void => {
@@ -225,6 +239,10 @@ export function ClipEditorPanel({ params }: { params: { assetId?: unknown } }) {
           }
         : null;
     setAnimationAsset(editor.store, projectSession, animId, next, label);
+    if (isNew && next) {
+      openClipsDocument(animId);
+      api?.close();
+    }
   };
   const writeClip = (label: string, next: AnimationClip): void =>
     writeAll(label, { ...clips, [clipName]: next });
@@ -372,28 +390,41 @@ export function ClipEditorPanel({ params }: { params: { assetId?: unknown } }) {
         <SectionTitle>Sheet</SectionTitle>
         <Grid2>
           <Field label="Sprite sheet">
-            <FieldSelect value={sheetId} onChange={(e) => setSheetId(e.target.value)}>
-              <option value="">Choose a sliced sheet…</option>
-              {sheets.map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.id}
-                </option>
-              ))}
-            </FieldSelect>
+            {/* An animation keeps its sheet: only a new one picks it. */}
+            {isNew ? (
+              <FieldSelect value={sheetId} onChange={(e) => setSheetId(e.target.value)}>
+                <option value="">Choose a sliced sheet…</option>
+                {sheets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.id}
+                  </option>
+                ))}
+              </FieldSelect>
+            ) : (
+              <FieldInput value={sheetId} readOnly />
+            )}
           </Field>
           <Field label="Animation asset">
-            <FieldSelect value={animId} onChange={(e) => setAnimId(e.target.value)}>
+            <FieldSelect
+              value={animId}
+              onChange={(e) => e.target.value !== animId && openClipsDocument(e.target.value)}
+            >
               {bound.map((asset) => (
                 <option key={asset.id} value={asset.id}>
                   {asset.id}
                 </option>
               ))}
-              {!anim && sheetId && <option value={newAnimId}>{newAnimId} (new)</option>}
+              {isNew && sheetId && <option value={animId}>{animId} (new)</option>}
             </FieldSelect>
           </Field>
         </Grid2>
-        {sheets.length === 0 && (
-          <PanelNote>Slice a sprite sheet first: open it from Assets.</PanelNote>
+        {isNew && sheets.length === 0 && (
+          <PanelNote>Slice a sprite sheet first: import one from Assets.</PanelNote>
+        )}
+        {!isNew && !sheetAsset && (
+          <PanelNote>
+            Sheet “{sheetId}” of this animation is not in the project: its clips cannot be edited.
+          </PanelNote>
         )}
         <PanelActions>
           <ActionButton

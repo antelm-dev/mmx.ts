@@ -210,9 +210,16 @@ export function openEnemyDocument(prefabId: string, name: string): void {
   });
 }
 
-/** Open (or surface) the Clip Editor on an `animation` asset. */
-export function openClipsDocument(assetId: string): void {
-  openDocument({ id: `clips:${assetId}`, component: "clips", title: assetId, params: { assetId } });
+/**
+ * Open (or surface) the Clip Editor on an `animation` asset, or without one the
+ * "New animation" document (`clips:new`), which picks the sheet of the animation it creates.
+ */
+export function openClipsDocument(assetId?: string): void {
+  openDocument(
+    assetId
+      ? { id: `clips:${assetId}`, component: "clips", title: assetId, params: { assetId } }
+      : { id: "clips:new", component: "clips", title: "New animation", params: {} },
+  );
 }
 
 /** Open (or surface) the Sheet Slicer on a `sprite` or `image` asset. */

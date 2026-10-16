@@ -43,8 +43,8 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   json: () => <JsonPanel />,
   "assets-browser": () => <AssetBrowserPanel />,
   slicer: (props) => <SheetSlicerPanel params={props.params} />,
-  clips: (props) => <ClipEditorPanel params={props.params} />,
-  enemy: (props) => <EnemyEditorPanel params={props.params} />,
+  clips: (props) => <ClipEditorPanel params={props.params} api={props.api} />,
+  enemy: (props) => <EnemyEditorPanel params={props.params} api={props.api} />,
   start: (props) => <StartPage api={props.api} />,
   tileset: (props) => <TilesetDocument params={props.params} />,
 };

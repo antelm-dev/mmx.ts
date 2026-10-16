@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
-import { ChevronDown, ChevronRight, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Film, ImagePlus, Search, X } from "lucide-react";
 import {
   openClipsDocument,
   openEnemyDocument,
@@ -11,8 +11,10 @@ import {
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { assetGroups, type AssetEntry, type AssetEntryKind } from "../core/assetBrowser.js";
 import { ListRow } from "../ui/editor/list-row.js";
+import { ToolbarButton } from "../ui/editor/toolbar-button.js";
 import { Panel, PanelNote, PanelScroll, SearchBox } from "../ui/editor/panel.js";
 import { CategoryHeader } from "../ui/editor/section-title.js";
+import { importSpriteSheet } from "./SheetSlicerPanel.js";
 
 const Count = chakra("span", {
   base: {
@@ -130,6 +132,23 @@ export function AssetBrowserPanel() {
           </button>
         )}
       </SearchBox>
+      {/* The ways in for a project with no sprite or animation yet. */}
+      <chakra.div display="flex" flexWrap="wrap" gap="1" px="3" pb="1">
+        <ToolbarButton
+          disabled={!project}
+          title={project ? undefined : "Open a project first"}
+          onClick={() => void importSpriteSheet()}
+        >
+          <ImagePlus size={14} /> Import sprite sheet…
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={!project}
+          title={project ? undefined : "Open a project first"}
+          onClick={() => openClipsDocument()}
+        >
+          <Film size={14} /> New animation…
+        </ToolbarButton>
+      </chakra.div>
       {!project && <PanelNote>Open a project to see its assets.</PanelNote>}
       <PanelScroll ref={scrollRef}>
         {rows.length === 0 && <PanelNote>No assets match your search.</PanelNote>}
@@ -164,14 +183,18 @@ export function AssetBrowserPanel() {
               );
             }
             const { entry } = row;
+            const openable = opens(entry);
             return (
               <div key={v.key} style={style}>
                 <ListRow
                   active={selected === row.key}
-                  title={entry.id}
+                  title={openable ? entry.id : "No editor"}
+                  aria-disabled={openable ? undefined : true}
+                  cursor={openable ? undefined : "default"}
                   data-asset-kind={entry.kind}
+                  data-asset-id={entry.id}
                   onClick={() => setSelected(row.key)}
-                  onDoubleClick={() => opens(entry) && openEntry(entry)}
+                  onDoubleClick={() => openable && openEntry(entry)}
                   onKeyDown={(e) => onKeyDown(e, entry)}
                 >
                   <chakra.span minW="0" flex="1" truncate>
