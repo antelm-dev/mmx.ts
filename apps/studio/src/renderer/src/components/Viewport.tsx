@@ -16,6 +16,7 @@ import {
   objectLayerKey,
   toolTargetKey,
 } from "../core/EditorStore.js";
+import { placingLabel } from "../core/recentParts.js";
 import {
   MenuContent,
   MenuItem,
@@ -27,6 +28,7 @@ import {
 import { Keycap, OverlayCard } from "../ui/editor/overlay.js";
 import { PlaytestDebugger } from "./PlaytestDebugger.js";
 import { ProblemBadges } from "./ProblemBadges.js";
+import { RecentPartsBar } from "./RecentPartsBar.js";
 import { OverlayBottom, OverlayCanvas, OverlayTop } from "./viewportOverlay.js";
 
 interface PlaceGroup {
@@ -98,7 +100,9 @@ export function Viewport() {
             <OverlayCanvas>
               <ProblemBadges />
             </OverlayCanvas>
-            <OverlayTop />
+            <OverlayTop>
+              <RecentPartsBar />
+            </OverlayTop>
             <OverlayBottom />
             <chakra.div
               position="absolute"
@@ -132,7 +136,7 @@ export function Viewport() {
                   ? "Tile paint"
                   : snap.state.activeTool === "tilePaint"
                     ? "Tile layer paint"
-                    : "Select / move"}
+                    : (placingLabel(snap.state) ?? "Select / move")}
                 {blocked && (
                   <chakra.span
                     display="inline-flex"

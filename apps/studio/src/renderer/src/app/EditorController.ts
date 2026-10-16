@@ -43,6 +43,7 @@ import { addRecentProject } from "../settings/recentProjects.js";
 import type { GameDataOverlay } from "@mmx/engine/data";
 import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
+import { availableParts, placeTool, placingPart } from "../core/recentParts.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
 import { focusPanel, isPanelVisible, openEnemyDocument } from "./dock.js";
@@ -138,6 +139,11 @@ export class EditorController {
 
     this.snapshot = this.build("open");
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
+    // The recent parts bar: every place tool picked (palette, bar, wheel, new enemy).
+    this.store.subscribe((state, reason) => {
+      const part = reason === "ui" ? placingPart(state) : undefined;
+      if (part) useUiStore.getState().addRecentPart(part);
+    });
     // Manifest edits (e.g. the player loadout) live in the project session, not the store.
     projectSession.subscribe(() => {
       // Tile layers draw and paint from the manifest's tilesets; keep the store's copy current.
@@ -751,6 +757,20 @@ export class EditorController {
     }
   }
 
+  /** Q: open the part wheel at the pointer, or close it; only while the level tab is shown. */
+  togglePartWheel(): void {
+    if (!isPanelVisible("viewport")) return;
+    const ui = useUiStore.getState();
+    ui.setPartWheelOpen(!ui.partWheelOpen);
+  }
+
+  /** Keys 1 to 8: pick the place tool of the recent parts bar's slot `index`. */
+  pickRecentPart(index: number): void {
+    if (!isPanelVisible("viewport")) return;
+    const part = availableParts(useUiStore.getState().recentParts)[index];
+    if (part) this.store.setTool(placeTool(part), part.id);
+  }
+
   focusDecoration(id: string): void {
     const inst = this.store.get().document.decorations.find((d) => d.id === id);
     if (!inst) return;
@@ -978,6 +998,12 @@ export class EditorController {
         else this.togglePlay();
         break;
       }
+      case "partWheel":
+        this.togglePartWheel();
+        break;
+      case "recentPart":
+        this.pickRecentPart(cmd.index);
+        break;
       case "playtestExit":
         this.playtest.stopPlay();
         break;
