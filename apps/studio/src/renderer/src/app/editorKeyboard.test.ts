@@ -199,6 +199,20 @@ describe("tool shortcuts", () => {
   it("F → fit", () => {
     expect(dispatch(key("KeyF"))).toEqual({ kind: "fit" });
   });
+  it("Q → partWheel; 1 to 8 → recent part slots", () => {
+    expect(dispatch(key("KeyQ"))).toEqual({ kind: "partWheel" });
+    expect(dispatch(key("Digit1"))).toEqual({ kind: "recentPart", index: 0 });
+    expect(dispatch(key("Digit8"))).toEqual({ kind: "recentPart", index: 7 });
+    expect(dispatch(key("Digit9"))).toBeNull();
+    expect(dispatch(key("Digit1", { mod: true }))).toBeNull();
+  });
+  it("Q and digits stay with typing fields and the game", () => {
+    const typingCtx: KeyboardContext = { ...editCtx, isTypingField: true };
+    expect(dispatch(key("KeyQ"), typingCtx)).toBeNull();
+    expect(dispatch(key("Digit1"), typingCtx)).toBeNull();
+    expect(dispatch(key("KeyQ"), playCtx)).toBeNull();
+    expect(dispatch(key("Digit1"), playCtx)).toBeNull();
+  });
 });
 
 describe("nudge shortcuts", () => {

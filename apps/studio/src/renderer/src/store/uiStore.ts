@@ -8,6 +8,7 @@ import {
 } from "../app/theme.js";
 import type { EmptyCellContextMenu } from "../core/EditorViewport.js";
 import type { LayerKey } from "../core/EditorStore.js";
+import { pushRecentPart, type RecentPart } from "../core/recentParts.js";
 import { minimapVisibleAtLaunch, persistMinimapVisible } from "../settings/studioClientSettings.js";
 
 /**
@@ -37,6 +38,9 @@ interface UiState {
   minimapVisible: boolean;
   /** The Layers panel row whose settings are open; unset, the tile paint layer is. */
   selectedLayer?: LayerKey;
+  /** The last place tools picked, newest first; session memory only, so e2e captures stay stable. */
+  recentParts: RecentPart[];
+  partWheelOpen: boolean;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -50,6 +54,8 @@ interface UiState {
   togglePlaytestInspector: () => void;
   toggleMinimap: () => void;
   setSelectedLayer: (key: LayerKey | undefined) => void;
+  addRecentPart: (part: RecentPart) => void;
+  setPartWheelOpen: (open: boolean) => void;
 }
 
 let toastSeq = 0;
@@ -69,6 +75,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   colorTheme: followThemePreference(initialThemePreference),
   fullscreen: false,
   playtestInspectorVisible: true,
+  recentParts: [],
+  partWheelOpen: false,
   minimapVisible: minimapVisibleAtLaunch(),
 
   addToast: (message) => {
@@ -98,6 +106,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   togglePlaytestInspector: () =>
     set((s) => ({ playtestInspectorVisible: !s.playtestInspectorVisible })),
   setSelectedLayer: (selectedLayer) => set({ selectedLayer }),
+  addRecentPart: (part) => set((s) => ({ recentParts: pushRecentPart(s.recentParts, part) })),
+  setPartWheelOpen: (partWheelOpen) => set({ partWheelOpen }),
   toggleMinimap: () => {
     const minimapVisible = !get().minimapVisible;
     persistMinimapVisible(minimapVisible);

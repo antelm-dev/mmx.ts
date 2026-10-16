@@ -63,6 +63,8 @@ export type EditorCommand =
   | { kind: "nudge"; dx: number; dy: number }
   | { kind: "togglePlay" }
   | { kind: "playFromHere" }
+  | { kind: "partWheel" }
+  | { kind: "recentPart"; index: number }
   | { kind: "toggleTrail" }
   // play-mode commands
   | { kind: "playtestExit" }
@@ -135,6 +137,11 @@ export function dispatchEditorKey(
   if (mod && e.code === "KeyC") return ctx.hasTextSelection ? null : { kind: "copy" };
   if (mod && e.code === "KeyX") return ctx.hasTextSelection ? null : { kind: "cut" };
   if (mod && e.code === "KeyV") return { kind: "paste" };
+
+  // Q opens the part wheel; 1 to 8 pick the recent parts bar's slots.
+  if (!mod && e.code === "KeyQ") return { kind: "partWheel" };
+  const slot = /^Digit([1-8])$/.exec(e.code);
+  if (!mod && slot) return { kind: "recentPart", index: Number(slot[1]) - 1 };
 
   switch (e.code) {
     case "Delete":
