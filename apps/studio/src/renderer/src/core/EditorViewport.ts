@@ -130,10 +130,6 @@ export class EditorViewport {
 
   // ---------- Public interaction helpers ----------
 
-  pointerOnCanvas(): { x: number; y: number } | null {
-    return this.interaction.pointerOnCanvas();
-  }
-
   setSpace(down: boolean): void {
     this.interaction.setSpace(down);
   }
@@ -142,6 +138,11 @@ export class EditorViewport {
     handler: import("./EditorViewportRenderer.js").EmptyCellContextMenuHandler | null,
   ): void {
     this.onEmptyContextMenu = handler;
+  }
+
+  /** The world point under the mouse, or null when the mouse is not over the canvas. */
+  pointerWorld(): { x: number; y: number } | null {
+    return this.canvas.matches(":hover") ? this.interaction.hoverWorld() : null;
   }
 
   emptyContextAt(

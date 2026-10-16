@@ -62,6 +62,7 @@ export type EditorCommand =
   | { kind: "exitFullscreen" }
   | { kind: "nudge"; dx: number; dy: number }
   | { kind: "togglePlay" }
+  | { kind: "playFromHere" }
   // play-mode commands
   | { kind: "playtestExit" }
   | { kind: "playtestTogglePause" }
@@ -125,7 +126,7 @@ export function dispatchEditorKey(
   if (mod && (e.code === "Minus" || e.code === "NumpadSubtract")) return { kind: "zoomOut" };
   if (mod && e.code === "Digit0") return { kind: "zoomReset" };
   if (mod && e.code === "KeyD") return { kind: "duplicate" };
-  if (mod && e.code === "Enter") return { kind: "togglePlay" };
+  if (mod && e.code === "Enter") return { kind: e.shiftKey ? "playFromHere" : "togglePlay" };
 
   if (ctx.isTypingField) return null;
 
