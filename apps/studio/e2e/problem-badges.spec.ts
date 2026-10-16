@@ -16,8 +16,8 @@ test.afterAll(async () => {
 });
 
 test("problems show as canvas badges that select and frame their object, hidden in Play", async () => {
-  // The minimal fixture plus a Metool wholly past the right edge (an error) and a platform
-  // overhanging it (a warning, which does not block Play).
+  // The minimal fixture plus a Metool wholly past the right edge (an error), one far off any
+  // view, and a platform overhanging the edge (a warning, which does not block Play).
   projectRoot = mkdtempSync(join(tmpdir(), "mmx-badges-"));
   cpSync(fixtureRoot, projectRoot, { recursive: true });
   const levelPath = join(projectRoot, "levels/level.main.json");
@@ -25,6 +25,7 @@ test("problems show as canvas badges that select and frame their object, hidden 
   const worldW = level.cols * level.gridSize;
   level.objects.push(
     { id: "metool.oob", definitionId: "enemy.metool", x: worldW + 40, y: 96 },
+    { id: "metool.far", definitionId: "enemy.metool", x: worldW + 5000, y: 96 },
     {
       id: "platform.edge",
       definitionId: "platform.moving",
@@ -64,13 +65,29 @@ test("problems show as canvas badges that select and frame their object, hidden 
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
   const badges = page.getByTestId("problem-badge");
-  const errorBadge = page.locator('[data-testid="problem-badge"][data-severity="error"]');
+  const errorBadge = page.locator('[data-anchor="object:metool.oob"]');
+  const farBadge = page.locator('[data-anchor="object:metool.far"]');
   const warningBadge = page.locator('[data-testid="problem-badge"][data-severity="warning"]');
-  await expect(errorBadge).toHaveCount(1);
+  await expect(page.locator('[data-testid="problem-badge"][data-severity="error"]')).toHaveCount(2);
   await expect(warningBadge).toHaveCount(1);
   await expect(errorBadge).toHaveAccessibleName(/outside the level bounds/);
 
-  // Zoom out so the badge past the level's edge is on screen, then hover it for its messages.
+  // A badge off the view leaves the Tab order, and focusing it scrolls nothing: badges stay
+  // aligned with the canvas.
+  await expect(farBadge).toHaveAttribute("tabindex", "-1");
+  const scrolled = await farBadge.evaluate((badge) => {
+    badge.focus();
+    const host = document.getElementById("viewport-canvas")!.parentElement!;
+    const offsets: number[] = [];
+    for (let el = badge.parentElement; el && el !== host.parentElement; el = el.parentElement)
+      offsets.push(el.scrollLeft, el.scrollTop);
+    return offsets;
+  });
+  expect(scrolled.length).toBeGreaterThan(0);
+  expect(scrolled.every((offset) => offset === 0)).toBe(true);
+
+  // Zoom out so the badge past the level's edge is on screen (a clipped badge cannot be
+  // scrolled into view), then hover it for its messages.
   for (let i = 0; i < 3; i++) await page.keyboard.press("Control+Minus");
   await errorBadge.hover();
   await expect(page.getByRole("tooltip")).toContainText("outside the level bounds");
@@ -89,9 +106,15 @@ test("problems show as canvas badges that select and frame their object, hidden 
   await x.fill("200");
   await x.press("Tab");
   await expect(errorBadge).toHaveCount(0);
+  await expect(farBadge).toHaveCount(1);
   await expect(warningBadge).toHaveCount(1);
 
-  // Badges are hidden in Play and back after Stop.
+  // Badges are hidden in Play and back after Stop (the far Metool must come in first).
+  await farBadge.evaluate((badge: HTMLElement) => badge.click());
+  await expect(x).toHaveValue(String(worldW + 5000));
+  await x.fill("100");
+  await x.press("Tab");
+  await expect(farBadge).toHaveCount(0);
   await page.getByRole("button", { name: /^Play$/ }).click();
   await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
   await expect(badges).toHaveCount(0);

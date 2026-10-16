@@ -1,12 +1,14 @@
-import { useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { chakra } from "@chakra-ui/react";
-import { useEditorSnapshot } from "../app/useEditor.js";
+import { editor } from "../app/useEditor.js";
 
 /*
  * Contract C-OVERLAY: named slots over the level canvas. {@link Viewport} mounts them in Edit
  * mode only, so everything in them is hidden in Play. A feature keeps its content in its own
  * component and adds one line to its slot. Slots let the pointer through to the canvas; an
- * interactive child sets `pointerEvents="auto"` itself.
+ * interactive child sets `pointerEvents="auto"` itself. They clip with `overflow: clip`, not
+ * `hidden`: a hidden box still scrolls when an off-view child is focused, leaving every child
+ * offset from the canvas.
  */
 
 /** Full-frame layer under the tool card and hint bar; children sit at {@link useWorldToScreen} px. */
@@ -15,7 +17,7 @@ export const OverlayCanvas = chakra("div", {
     position: "absolute",
     inset: "0",
     zIndex: "2",
-    overflow: "hidden",
+    overflow: "clip",
     pointerEvents: "none",
   },
 });
@@ -32,6 +34,9 @@ export const OverlayTop = chakra("div", {
     flexDirection: "column",
     alignItems: "center",
     gap: "2",
+    overflow: "clip",
+    // Room for the cards' drop shadows.
+    overflowClipMargin: "24px",
     pointerEvents: "none",
   },
 });
@@ -48,16 +53,23 @@ export const OverlayBottom = chakra("div", {
     justifyContent: "flex-end",
     alignItems: "flex-end",
     gap: "2",
+    overflow: "clip",
+    // Room for the cards' drop shadows.
+    overflowClipMargin: "24px",
     pointerEvents: "none",
   },
 });
 
 /**
  * Contract C-WORLD: maps a world point to px from the viewport's top-left corner, from the
- * store's `zoom` and `viewportPosition`; the component re-renders as the view pans or zooms.
- * The reverse move is `editor.centerOn(x, y)`.
+ * store's `zoom` and `viewportPosition`; the component re-renders when those change (pan and
+ * zoom), not on other edits. The reverse move is `editor.centerOn(x, y)`.
  */
 export function useWorldToScreen(): (x: number, y: number) => { x: number; y: number } {
-  const { zoom, viewportPosition: view } = useEditorSnapshot().state;
+  const zoom = useSyncExternalStore(editor.subscribe, () => editor.getSnapshot().state.zoom);
+  const view = useSyncExternalStore(
+    editor.subscribe,
+    () => editor.getSnapshot().state.viewportPosition,
+  );
   return useCallback((x, y) => ({ x: (x - view.x) * zoom, y: (y - view.y) * zoom }), [zoom, view]);
 }

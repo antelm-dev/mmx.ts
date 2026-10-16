@@ -770,11 +770,13 @@ export class EditorController {
     if (!target) return;
     if (target.kind === "object") return this.focusObject(target.id);
     if (target.kind === "decoration") return this.focusDecoration(target.id);
-    if (target.kind !== "position") {
-      this.selectLayer(`${target.kind === "tileLayer" ? "tile" : "image"}:${target.id}`);
-      focusPanel("layers");
-    }
-    this.centerOn(target.x, target.y);
+    if (target.kind === "position") return this.centerOn(target.x, target.y);
+    this.selectLayer(`${target.kind === "tileLayer" ? "tile" : "image"}:${target.id}`);
+    focusPanel("layers");
+    // A tile layer covers the whole level: frame its centre, not the badge's corner.
+    const { cols, rows, gridSize } = this.store.get().document;
+    if (target.kind === "tileLayer") this.centerOn((cols * gridSize) / 2, (rows * gridSize) / 2);
+    else this.centerOn(target.x, target.y);
   }
 
   /** Add/remove an object from the current selection without recentering. */

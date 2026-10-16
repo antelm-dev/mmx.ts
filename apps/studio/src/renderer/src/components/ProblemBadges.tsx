@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { chakra } from "@chakra-ui/react";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import { problemAnchors } from "../core/problemAnchors.js";
@@ -10,7 +10,8 @@ const Badge = chakra(
   {
     base: {
       position: "absolute",
-      transform: "translate(-50%, -50%)",
+      // Hangs below the corner: the object's name label sits just above it.
+      transform: "translateX(-50%)",
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
@@ -34,6 +35,7 @@ const Badge = chakra(
 /**
  * One badge per level element with validation problems (canvas slot of C-OVERLAY), at the
  * element's top-right corner or the engine diagnostic's position; clicking selects and frames it.
+ * Badges outside the view leave the Tab order.
  */
 export function ProblemBadges() {
   const snap = useEditorSnapshot();
@@ -43,27 +45,45 @@ export function ProblemBadges() {
     () => problemAnchors(document, snap.validation.issues),
     [document, snap.validation.issues],
   );
+  const frame = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = frame.current!;
+    const observer = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-  return anchors.map((anchor) => {
-    const { x, y } = toScreen(anchor.target.x, anchor.target.y);
-    const messages = anchor.issues.map((issue) => issue.message);
-    const count = messages.length;
-    return (
-      <Tooltip key={anchor.key} label={messages.join("\n")}>
-        <Badge
-          // Inline px: a class per pan/zoom position would bloat the style sheet.
-          style={{ left: x, top: y }}
-          bg={anchor.severity === "error" ? "studio.danger" : "studio.warning"}
-          aria-label={`${count} ${count === 1 ? anchor.severity : "problems"}: ${messages.join(" ")}`}
-          data-testid="problem-badge"
-          data-severity={anchor.severity}
-          // A mouse click leaves focus where it was, so Space (pan) cannot re-click the badge.
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => editor.focusProblem(anchor.issues[0]!)}
-        >
-          {count > 1 ? count : "!"}
-        </Badge>
-      </Tooltip>
-    );
-  });
+  return (
+    <chakra.div ref={frame} position="absolute" inset="0">
+      {anchors.map((anchor) => {
+        const { x, y } = toScreen(anchor.target.x, anchor.target.y);
+        const messages = anchor.issues.map((issue) => issue.message);
+        const count = messages.length;
+        const inView = x >= 0 && y >= 0 && x <= size.w && y <= size.h;
+        return (
+          <Tooltip key={anchor.key} label={messages.join("\n")}>
+            <Badge
+              // Inline px: a class per pan/zoom position would bloat the style sheet.
+              style={{ left: x, top: y }}
+              tabIndex={inView ? undefined : -1}
+              bg={anchor.severity === "error" ? "studio.danger" : "studio.warning"}
+              aria-label={`${count} ${count === 1 ? anchor.severity : "problems"}: ${messages.join(" ")}`}
+              data-testid="problem-badge"
+              data-anchor={anchor.key}
+              data-severity={anchor.severity}
+              // A mouse click leaves focus where it was, so Space (pan) cannot re-click the badge.
+              onMouseDown={(e) => e.preventDefault()}
+              // Space pans the view; only Enter activates a focused badge.
+              onKeyDown={(e) => e.key === " " && e.preventDefault()}
+              onKeyUp={(e) => e.key === " " && e.preventDefault()}
+              onClick={() => editor.focusProblem(anchor.issues[0]!)}
+            >
+              {count > 1 ? count : "!"}
+            </Badge>
+          </Tooltip>
+        );
+      })}
+    </chakra.div>
+  );
 }
