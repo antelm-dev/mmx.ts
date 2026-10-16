@@ -50,6 +50,15 @@ export const PANELS: PanelSpec[] = [
     activity: { label: "Scene", icon: "scene", order: 20 },
   },
   {
+    id: "layers",
+    title: "Layers",
+    component: "layers",
+    ref: "palette",
+    dir: "within",
+    fallbackDir: "left",
+    activity: { label: "Layers", icon: "layers", order: 25 },
+  },
+  {
     id: "inspector",
     title: "Inspector",
     component: "inspector",

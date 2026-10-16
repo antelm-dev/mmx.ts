@@ -1,8 +1,9 @@
 import {
   History,
-  DECORATION_LAYERS,
+  definitionFor,
   type DecorationLayer,
   type EditorCommand,
+  type LevelObjectInstance,
   type LevelDocument,
   type ValidationResult,
   TerrainTile,
@@ -10,7 +11,7 @@ import {
 import type { CompiledGameData } from "@mmx/engine/data";
 import type { TilesetAsset } from "@mmx/project-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
-import { knownDecorationAssetIds } from "@mmx/renderer-pixi";
+import { getDecorationAsset, knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
 export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile" | "tilePaint";
 export type TilePaintMode = "brush" | "rect" | "fill" | "erase";
@@ -34,15 +35,64 @@ export type EditorHover =
   | { kind: "decoration"; id: string }
   | { kind: "tile"; index: number };
 
-export type LayerVisibility = Record<DecorationLayer, boolean>;
-export type LayerLocks = Record<DecorationLayer, boolean>;
+/**
+ * One row of the Layers panel: object instances, cameras, the collision terrain, a
+ * decoration layer's catalog decorations (by layer name), or a tile / image layer by id.
+ */
+export type LayerKey =
+  | "objects"
+  | "cameras"
+  | "collision"
+  | DecorationLayer
+  | `tile:${string}`
+  | `image:${string}`;
 
-function allLayersTrue(): LayerVisibility {
-  return Object.fromEntries(DECORATION_LAYERS.map((l) => [l, true])) as LayerVisibility;
+type LayerFlags = Readonly<Partial<Record<LayerKey, boolean>>>;
+
+/** Cameras get their own layer; every other object instance is on `objects`. */
+export function objectLayerKey(inst: Pick<LevelObjectInstance, "definitionId">): LayerKey {
+  return definitionFor(inst.definitionId).category === "camera" ? "cameras" : "objects";
 }
 
-function allLayersFalse(): LayerLocks {
-  return Object.fromEntries(DECORATION_LAYERS.map((l) => [l, false])) as LayerLocks;
+export function isLayerVisible(state: Pick<EditorState, "layerVisible">, key: LayerKey): boolean {
+  return state.layerVisible[key] !== false;
+}
+
+export function isLayerLocked(state: Pick<EditorState, "layerLocked">, key: LayerKey): boolean {
+  return state.layerLocked[key] === true;
+}
+
+/** Shown and unlocked: the viewport may select from or paint into the layer. */
+export function isLayerEditable(
+  state: Pick<EditorState, "layerVisible" | "layerLocked">,
+  key: LayerKey,
+): boolean {
+  return isLayerVisible(state, key) && !isLayerLocked(state, key);
+}
+
+/**
+ * The layer the active tool writes to: collision for `tile`, the paint layer for `tilePaint`,
+ * the placed object's or decoration's layer for `place` / `placeDecoration`.
+ */
+export function toolTargetKey(
+  state: Pick<EditorState, "activeTool" | "tilePaint" | "placingDefinitionId" | "placingAssetId">,
+): LayerKey | undefined {
+  switch (state.activeTool) {
+    case "tile":
+      return "collision";
+    case "tilePaint":
+      return state.tilePaint.layerId ? `tile:${state.tilePaint.layerId}` : undefined;
+    case "place":
+      return state.placingDefinitionId
+        ? objectLayerKey({ definitionId: state.placingDefinitionId })
+        : undefined;
+    case "placeDecoration":
+      return state.placingAssetId
+        ? getDecorationAsset(state.placingAssetId)?.defaultLayer
+        : undefined;
+    default:
+      return undefined;
+  }
 }
 
 export function emptySelection(): EditorSelection {
@@ -119,10 +169,10 @@ export interface EditorState {
   gridVisible: boolean;
   snapEnabled: boolean;
   mode: Mode;
-  /** Editor-only: which decoration layers are drawn. */
-  decorationLayerVisible: LayerVisibility;
-  /** Editor-only: locked layers stay visible but are not selectable. */
-  decorationLayerLocked: LayerLocks;
+  /** Editor-only, by {@link LayerKey}: `false` hides the layer (absent = shown). */
+  layerVisible: LayerFlags;
+  /** Editor-only: a locked layer stays drawn but is neither selected nor painted (absent = unlocked). */
+  layerLocked: LayerFlags;
   /** The open project's `tileset` assets by id (tile geometry and collision per tile). */
   tilesets: Readonly<Record<string, TilesetAsset>>;
   tilePaint: TilePaint;
@@ -151,8 +201,8 @@ export class EditorStore {
       gridVisible: true,
       snapEnabled: true,
       mode: "edit",
-      decorationLayerVisible: allLayersTrue(),
-      decorationLayerLocked: allLayersFalse(),
+      layerVisible: {},
+      layerLocked: {},
       tilesets: {},
       tilePaint: { tile: 0, mode: "brush" },
     };
@@ -240,8 +290,8 @@ export class EditorStore {
       placingDefinitionId: undefined,
       placingAssetId: undefined,
       mode: "edit",
-      decorationLayerVisible: allLayersTrue(),
-      decorationLayerLocked: allLayersFalse(),
+      layerVisible: {},
+      layerLocked: {},
     };
     this.emit("open");
   }
@@ -356,22 +406,12 @@ export class EditorStore {
     this.patch({ snapEnabled: !this.state.snapEnabled }, "ui");
   }
 
-  setDecorationLayerVisible(layer: DecorationLayer, visible: boolean): void {
-    this.patch(
-      {
-        decorationLayerVisible: { ...this.state.decorationLayerVisible, [layer]: visible },
-      },
-      "ui",
-    );
+  setLayerVisible(key: LayerKey, visible: boolean): void {
+    this.patch({ layerVisible: { ...this.state.layerVisible, [key]: visible } }, "ui");
   }
 
-  setDecorationLayerLocked(layer: DecorationLayer, locked: boolean): void {
-    this.patch(
-      {
-        decorationLayerLocked: { ...this.state.decorationLayerLocked, [layer]: locked },
-      },
-      "ui",
-    );
+  setLayerLocked(key: LayerKey, locked: boolean): void {
+    this.patch({ layerLocked: { ...this.state.layerLocked, [key]: locked } }, "ui");
   }
 
   setMode(mode: Mode): void {

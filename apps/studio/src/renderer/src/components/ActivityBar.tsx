@@ -1,5 +1,5 @@
 import { chakra } from "@chakra-ui/react";
-import { CircleAlert, MapIcon, Shapes, ListTree, type LucideIcon } from "lucide-react";
+import { CircleAlert, Layers, MapIcon, Shapes, ListTree, type LucideIcon } from "lucide-react";
 import { openPanel, PANELS, useVisiblePanelIds } from "../app/dock.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
 import { Tooltip } from "./Tooltip.js";
@@ -9,6 +9,7 @@ const ICONS: Record<string, LucideIcon> = {
   levels: MapIcon,
   objects: Shapes,
   scene: ListTree,
+  layers: Layers,
   problems: CircleAlert,
 };
 

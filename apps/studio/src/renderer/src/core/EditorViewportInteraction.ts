@@ -1,6 +1,7 @@
 import {
   TerrainTile,
   effectiveValue,
+  type LevelObjectInstance,
   moveDecorations,
   moveObjects,
   setProperty,
@@ -8,6 +9,7 @@ import {
 } from "@mmx/content-schema";
 import { decorationBounds } from "@mmx/renderer-pixi";
 import {
+  editableSelectionIds,
   paintTileLayer,
   paintTiles,
   placeAt,
@@ -17,6 +19,9 @@ import {
 import {
   cloneSelection,
   emptySelection,
+  isLayerEditable,
+  objectLayerKey,
+  toolTargetKey,
   selectedDecorationIds,
   selectedObjectIds,
   selectionsEqual,
@@ -170,9 +175,15 @@ export class EditorViewportInteraction {
     };
   }
 
+  /** Hidden and locked layers are not selectable. */
+  private objectEditable(inst: LevelObjectInstance): boolean {
+    return isLayerEditable(this.store.get(), objectLayerKey(inst));
+  }
+
   private topObjectAt(wx: number, wy: number) {
     const objects = this.store.get().document.objects;
     for (let i = objects.length - 1; i >= 0; i--) {
+      if (!this.objectEditable(objects[i])) continue;
       const b = boxOf(objects[i]);
       if (wx >= b.x && wx <= b.x + b.w && wy >= b.y && wy <= b.y + b.h) return objects[i];
     }
@@ -181,11 +192,10 @@ export class EditorViewportInteraction {
 
   private topDecorationAt(wx: number, wy: number) {
     const state = this.store.get();
-    const { decorationLayerVisible: vis, decorationLayerLocked: locks } = state;
     const decos = state.document.decorations;
     for (let i = decos.length - 1; i >= 0; i--) {
       const d = decos[i];
-      if (!vis[d.layer] || locks[d.layer]) continue;
+      if (!isLayerEditable(state, d.layer)) continue;
       const b = decorationBounds(d);
       if (b && wx >= b.x && wx <= b.x + b.w && wy >= b.y && wy <= b.y + b.h) return d;
     }
@@ -197,14 +207,10 @@ export class EditorViewportInteraction {
   }
 
   private decorationsIntersecting(box: Box): string[] {
-    const {
-      decorationLayerVisible: vis,
-      decorationLayerLocked: locks,
-      document: doc,
-    } = this.store.get();
-    return doc.decorations
+    const state = this.store.get();
+    return state.document.decorations
       .filter((d) => {
-        if (!vis[d.layer] || locks[d.layer]) return false;
+        if (!isLayerEditable(state, d.layer)) return false;
         const b = decorationBounds(d);
         return b !== null && this.boxesIntersect(b, box);
       })
@@ -214,12 +220,15 @@ export class EditorViewportInteraction {
   private objectsIntersecting(box: Box): string[] {
     return this.store
       .get()
-      .document.objects.filter((o) => this.boxesIntersect(boxOf(o), box))
+      .document.objects.filter((o) => this.objectEditable(o) && this.boxesIntersect(boxOf(o), box))
       .map((o) => o.id);
   }
 
+  /** A selectable collision tile: none while the collision layer is hidden or locked. */
   private isTerrainCell(index: number): boolean {
-    return (this.store.get().document.tiles[index] ?? TerrainTile.Empty) !== TerrainTile.Empty;
+    const state = this.store.get();
+    if (!isLayerEditable(state, "collision")) return false;
+    return (state.document.tiles[index] ?? TerrainTile.Empty) !== TerrainTile.Empty;
   }
 
   private tilesAt(box: Box): number[] {
@@ -267,7 +276,7 @@ export class EditorViewportInteraction {
       state.document.objects,
       selectedObjectIds(state.selection),
     );
-    if (!target) return null;
+    if (!target || !this.objectEditable(target)) return null;
     const { zoom, viewportPosition } = state;
     return handleHitTest(
       boxOf(target),
@@ -283,7 +292,7 @@ export class EditorViewportInteraction {
   private travelGripAt(clientX: number, clientY: number) {
     const state = this.store.get();
     const target = travelTarget(state.document.objects, selectedObjectIds(state.selection));
-    if (!target) return null;
+    if (!target || !this.objectEditable(target.inst)) return null;
     const { zoom, viewportPosition } = state;
     const rect = this.canvas.getBoundingClientRect();
     return pointHitTest(
@@ -426,6 +435,9 @@ export class EditorViewportInteraction {
     }
 
     const state = this.store.get();
+    // A hidden or locked target layer takes no stroke or placement; the tool card says why.
+    const target = toolTargetKey(state);
+    if (target && !isLayerEditable(state, target)) return;
 
     if (state.activeTool === "tile" && (e.button === 0 || e.button === 2)) {
       this.tileStroke = { erase: e.button === 2 || e.altKey, changed: new Map() };
@@ -500,7 +512,8 @@ export class EditorViewportInteraction {
       }
       const selectedIds = selectedObjectIds(state.selection);
       if (!selectedIds.includes(hit.id)) this.store.selectObjects([hit.id]);
-      const ids = selectedObjectIds(this.store.get().selection);
+      // Members on a layer locked since they were selected stay put.
+      const ids = editableSelectionIds(this.store);
       const orig = new Map<string, Box>();
       for (const o of state.document.objects) if (ids.includes(o.id)) orig.set(o.id, boxOf(o));
       this.dragStart = { kind: "objects", world, ids, orig };
@@ -515,7 +528,7 @@ export class EditorViewportInteraction {
       }
       const selDecIds = selectedDecorationIds(state.selection);
       if (!selDecIds.includes(hitDec.id)) this.store.selectDecorations([hitDec.id]);
-      const ids = selectedDecorationIds(this.store.get().selection);
+      const ids = editableSelectionIds(this.store);
       const orig = new Map<string, { x: number; y: number }>();
       for (const d of state.document.decorations)
         if (ids.includes(d.id)) orig.set(d.id, { x: d.x, y: d.y });
