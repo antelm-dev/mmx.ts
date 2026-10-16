@@ -25,6 +25,7 @@ import {
   MenuShortcut,
 } from "../ui/primitives/menu.js";
 import { Keycap, OverlayCard } from "../ui/editor/overlay.js";
+import { Minimap } from "./Minimap.js";
 import { PlaytestDebugger } from "./PlaytestDebugger.js";
 import { ProblemBadges } from "./ProblemBadges.js";
 import { OverlayBottom, OverlayCanvas, OverlayTop } from "./viewportOverlay.js";
@@ -91,7 +92,7 @@ export function Viewport() {
       minH="0"
       bgImage="radial-gradient(circle at 50% 35%,#111a29 0%,#06090f 55%,#04060a 100%)"
     >
-      <chakra.div ref={hostRef} position="absolute" inset="0" overflow="hidden">
+      <chakra.div ref={hostRef} position="absolute" inset="0" overflow="hidden" data-viewport-host>
         {mode === "edit" && (
           <>
             {/* C-OVERLAY slots (see viewportOverlay.ts): one line per feature. */}
@@ -99,7 +100,9 @@ export function Viewport() {
               <ProblemBadges />
             </OverlayCanvas>
             <OverlayTop />
-            <OverlayBottom />
+            <OverlayBottom>
+              <Minimap />
+            </OverlayBottom>
             <chakra.div
               position="absolute"
               zIndex="3"
