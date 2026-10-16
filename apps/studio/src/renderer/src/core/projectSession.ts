@@ -557,10 +557,8 @@ export class ProjectSession {
     if (!rootPath) return [];
 
     const result = await bridge.load(rootPath);
-    if (!result.ok) {
-      this.switchProject({ ...EMPTY, issues: result.issues });
-      return result.issues;
-    }
+    // A missing or moved folder (a stale recent project) must not close the project still open.
+    if (!result.ok) return result.issues;
 
     this.switchProject({
       open: true,

@@ -112,6 +112,13 @@ test("a project opened from Start reopens from Recent after a restart", async ()
     const alert = recents(page).getByRole("alert");
     await expect(alert).toContainText("Project manifest not found");
     await expect(startTab(page)).toBeVisible();
+    // The failed open leaves Fixture Project open (Export needs an open project).
+    await page.getByRole("button", { name: "File menu" }).click();
+    await expect(page.getByRole("menuitem", { name: /Export Project/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    await page.keyboard.press("Escape");
     await alert.getByRole("button", { name: "Remove from list" }).click();
     await expect(recents(page).getByRole("button", { name: /Missing Project/ })).toHaveCount(0);
     await expect(alert).toHaveCount(0);

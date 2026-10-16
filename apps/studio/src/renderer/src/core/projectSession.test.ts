@@ -76,6 +76,26 @@ describe("ProjectSession asset switch", () => {
   });
 });
 
+describe("ProjectSession failed open", () => {
+  it("keeps the open project when another folder fails to load", async () => {
+    const missing = { severity: "error", code: "project.missing", path: "/", message: "gone" };
+    const load = vi.fn(async (root: string) =>
+      root === "/projects/b"
+        ? { ok: true, issues: [], value: { rootPath: "/projects/b", project } }
+        : { ok: false, issues: [missing] },
+    );
+    vi.stubGlobal("window", { studio: { project: { ...bridge, load } } });
+    const session = new ProjectSession();
+    await session.openProject();
+    const opened = session.getSnapshot();
+
+    expect(await session.openProject("/projects/moved")).toEqual([missing]);
+    expect(session.getSnapshot()).toBe(opened);
+    expect(session.getSnapshot().open).toBe(true);
+    expect(session.getSnapshot().rootPath).toBe("/projects/b");
+  });
+});
+
 describe("ProjectSession player animation binding", () => {
   it("plays the unsaved binding without reading the disk again, and writes it after the manifest on save", async () => {
     const writes: string[] = [];
