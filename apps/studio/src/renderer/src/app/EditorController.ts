@@ -29,15 +29,15 @@ import type { PositionedIssue } from "@mmx/editor-runtime/adapters";
 import { type PlaytestSnapshot } from "@mmx/editor-runtime";
 import type { TilesetAsset } from "@mmx/project-schema";
 import {
+  clearRecovery,
   createFileAccess,
   parseDocument,
   readRecovery,
-  readRecoveryJson,
   serializeDocument,
   writeRecovery,
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
-import { projectSession } from "../core/projectSession.js";
+import { projectSession, recoveredLevelName } from "../core/projectSession.js";
 import type { ProjectIssue, StudioProject } from "@mmx/project-io";
 import { addRecentProject } from "../settings/recentProjects.js";
 import type { GameDataOverlay } from "@mmx/engine/data";
@@ -101,6 +101,10 @@ export class EditorController {
   private validatedAssets: unknown = projectSession.loadedAssets();
   private readonly tilesetSizes = new Map<string, { path: string; w: number; h: number }>();
   private readonly tilesetSizeLoads = new Set<string>();
+  /** A recovery draft that differs from the shown document exists; checked on open, not per render. */
+  private recoveryOffered = false;
+  /** The stored draft is this session's own edit, so a save may clear it (never a crash draft). */
+  private draftWritten = false;
 
   constructor() {
     this.playtest = new EditorPlaytestController(this.store, {
@@ -139,6 +143,7 @@ export class EditorController {
       this.viewport?.releaseSheetTextures();
     };
 
+    this.recoveryOffered = this.draftDiffersFromDocument();
     this.snapshot = this.build("open");
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
     this.pickFromBar = trackRecentParts(this.store, (part) =>
@@ -291,7 +296,14 @@ export class EditorController {
   private onStoreChange(reason: ChangeReason): void {
     this.viewport?.redraw();
     if (reason === "document" || reason === "open") {
-      writeRecovery(this.store.get().document);
+      // Only an edit writes the draft: opening a level must not overwrite a crash draft.
+      if (
+        reason === "document" &&
+        writeRecovery(this.store.get().document, projectSession.getSnapshot().rootPath)
+      ) {
+        this.draftWritten = true;
+      }
+      this.recoveryOffered = reason === "open" && this.draftDiffersFromDocument();
       const { currentLevelId } = projectSession.getSnapshot();
       if (currentLevelId) projectSession.syncLevel(currentLevelId, this.store.get().document);
     }
@@ -410,6 +422,7 @@ export class EditorController {
         this.toast(`Project save failed: ${issues[0]?.message ?? "validation error"}`);
         return;
       }
+      this.dropRecovery();
       this.store.markSaved();
       this.toast("Project saved.");
       return;
@@ -417,6 +430,7 @@ export class EditorController {
 
     const ok = await this.fileAccess.save(doc.id || doc.name || "level", serializeDocument(doc));
     if (!ok) return;
+    this.dropRecovery();
     this.store.markSaved();
     this.toast("Level saved.");
   }
@@ -591,22 +605,58 @@ export class EditorController {
   }
 
   hasRecoveryDraft(): boolean {
-    const json = readRecoveryJson();
-    if (!json) return false;
-    return json !== serializeDocument(this.store.get().document);
+    return this.recoveryOffered;
   }
 
+  /** A draft equal to the level it would restore over (or the shown one) is not offered. */
+  private draftDiffersFromDocument(): boolean {
+    const draft = readRecovery();
+    if (!draft) return false;
+    const current = projectSession.recoveryTarget(draft) ?? this.store.get().document;
+    return serializeDocument(draft.document) !== serializeDocument(current);
+  }
+
+  /** Saved: this session's draft goes, so one only exists while there are unsaved edits. */
+  private dropRecovery(): void {
+    if (!this.draftWritten) return;
+    clearRecovery();
+    this.draftWritten = false;
+    this.recoveryOffered = false;
+  }
+
+  /**
+   * Open the recovery draft: in a project, over the level it was saved from only when it comes
+   * from this project, otherwise as a new level; without a project, as the current document.
+   */
   restoreRecovery(): void {
-    if (!this.confirmDiscardIfDirty("Restore the recovery draft?")) return;
-    const doc = readRecovery();
-    if (!doc) {
-      this.toast("No recovery draft found.");
+    const draft = readRecovery();
+    if (!draft) {
+      this.toast("No readable recovery draft found.");
       return;
     }
+    const inProject = projectSession.getSnapshot().project != null;
+    const target = projectSession.recoveryTarget(draft);
+    const added = recoveredLevelName(draft.document);
+    const confirmed = !inProject
+      ? this.confirmDiscardIfDirty("Replace the current document with the recovery draft?")
+      : target
+        ? window.confirm(
+            `Replace level "${target.name}" with the recovery draft?\n\nIts current content and unsaved changes will be lost.`,
+          )
+        : window.confirm(
+            `Add the recovery draft as a new level, "${added}"?\n\nNo existing level is replaced.`,
+          );
+    if (!confirmed) return;
     if (this.store.get().mode === "play") this.togglePlay();
     // In a project: into the level the draft came from (or a new one), never the shown slot.
-    this.openDocument(projectSession.recoverLevel(doc) ?? doc);
-    this.toast("Recovery draft restored.");
+    this.openDocument(projectSession.recoverLevel(draft) ?? draft.document);
+    this.toast(
+      !inProject
+        ? "Recovery draft opened as the current document."
+        : target
+          ? `Level "${target.name}" replaced with the recovery draft.`
+          : `Recovery draft added as a new level, "${added}".`,
+    );
   }
 
   private confirmDiscardIfDirty(action: string): boolean {

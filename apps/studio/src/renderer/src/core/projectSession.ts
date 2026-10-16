@@ -25,6 +25,11 @@ import {
 } from "../assets/studioAssets.js";
 import { requiredPlayerClips } from "./clips.js";
 import { projectGameData, type ProjectGameData } from "./gameData.js";
+import type { RecoveryDraft } from "./persistence.js";
+
+/** The name a recovery draft gets when it is added as a new level. */
+export const recoveredLevelName = (draft: LevelDocument): string =>
+  `${draft.name || "Untitled"} (recovered)`;
 
 export type ProjectSessionState = {
   open: boolean;
@@ -293,18 +298,27 @@ export class ProjectSession {
   }
 
   /**
-   * Make the level a recovery draft was saved from current (matched by id), or add the draft as
-   * a new level when no level has its id; returns the document to open, null without a project.
+   * The level a recovery draft restores over: the one with its id, only when the draft was
+   * written in this project. A draft from another project, none or an unknown one gets null.
+   */
+  recoveryTarget(draft: RecoveryDraft): LevelDocument | null {
+    const { project, rootPath } = this.state;
+    if (!project || draft.rootPath !== rootPath) return null;
+    return project.levels.find((level) => level.id === draft.document.id)?.document ?? null;
+  }
+
+  /**
+   * Make the level a recovery draft was saved from current ({@link recoveryTarget}), or add the
+   * draft as a new "(recovered)" level; returns the document to open, null without a project.
    * A draft is never synced into another level's slot.
    */
-  recoverLevel(draft: LevelDocument): LevelDocument | null {
-    const project = this.state.project;
-    if (!project) return null;
-    if (project.levels.some((level) => level.id === draft.id)) {
-      this.setCurrentLevel(draft.id);
-      return draft;
+  recoverLevel(draft: RecoveryDraft): LevelDocument | null {
+    if (!this.state.project) return null;
+    if (this.recoveryTarget(draft)) {
+      this.setCurrentLevel(draft.document.id);
+      return draft.document;
     }
-    const id = this.addLevel(draft.name || "Recovered level", draft);
+    const id = this.addLevel(recoveredLevelName(draft.document), draft.document);
     if (id) this.setCurrentLevel(id);
     return this.getCurrentLevelDocument();
   }

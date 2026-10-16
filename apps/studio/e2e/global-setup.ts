@@ -13,6 +13,9 @@ const SPEC_VALUES: Record<string, string | null> = {
   [RECENT_PROJECTS_KEY]: null,
   [MINIMAP_KEY]: "true",
 };
+/** Recovery drafts every edit overwrites; kept in the profile itself (too big for an env var). */
+const RECOVERY_KEYS = ["mmx-studio.recovery.v1", "mmx-studio.recovery.v2"];
+const BACKUP = ".e2e-backup";
 // Same process as globalTeardown: env carries the developer's values across. null = key was absent.
 const PREVIOUS_ENV = "MMX_E2E_PROFILE_PREVIOUS";
 
@@ -43,18 +46,27 @@ export async function withRealProfile<T>(fn: (page: Page) => Promise<T>): Promis
  * Marks the first-launch notice as seen and turns the start page off so neither covers the
  * editor in the specs, and shows the minimap (its default) for the same shots in every run;
  * fan-notice.spec.ts and start-page.spec.ts use their own fresh profile instead.
- * globalTeardown puts the developer's values back, recent projects included.
+ * globalTeardown puts the developer's values back, recent projects and recovery drafts included.
  */
 export default async function globalSetup(): Promise<void> {
   const previous = await withRealProfile((page) =>
-    page.evaluate((values) => {
-      const before: Record<string, string | null> = {};
-      for (const [key, value] of Object.entries(values)) {
-        before[key] = localStorage.getItem(key);
-        if (value !== null) localStorage.setItem(key, value);
-      }
-      return before;
-    }, SPEC_VALUES),
+    page.evaluate(
+      ({ values, recoveryKeys, backup }) => {
+        const before: Record<string, string | null> = {};
+        for (const [key, value] of Object.entries(values)) {
+          before[key] = localStorage.getItem(key);
+          if (value !== null) localStorage.setItem(key, value);
+        }
+        // Stale-backup policy: a backup left by a run whose teardown never ran is kept, not replaced.
+        for (const key of recoveryKeys) {
+          if (localStorage.getItem(key + backup) === null) {
+            localStorage.setItem(key + backup, JSON.stringify(localStorage.getItem(key)));
+          }
+        }
+        return before;
+      },
+      { values: SPEC_VALUES, recoveryKeys: RECOVERY_KEYS, backup: BACKUP },
+    ),
   );
   process.env[PREVIOUS_ENV] = JSON.stringify(previous);
 }
@@ -64,11 +76,22 @@ export async function restoreProfile(): Promise<void> {
   if (raw === undefined) return; // setup never recorded the values: leave the profile alone
   const previous = JSON.parse(raw) as Record<string, string | null>;
   await withRealProfile((page) =>
-    page.evaluate((values) => {
-      for (const [key, value] of Object.entries(values)) {
-        if (value === null) localStorage.removeItem(key);
-        else localStorage.setItem(key, value);
-      }
-    }, previous),
+    page.evaluate(
+      ({ values, recoveryKeys, backup }) => {
+        for (const [key, value] of Object.entries(values)) {
+          if (value === null) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+        }
+        for (const key of recoveryKeys) {
+          const saved = localStorage.getItem(key + backup);
+          if (saved === null) continue;
+          const value = JSON.parse(saved) as string | null;
+          if (value === null) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+          localStorage.removeItem(key + backup);
+        }
+      },
+      { values: previous, recoveryKeys: RECOVERY_KEYS, backup: BACKUP },
+    ),
   );
 }
