@@ -324,8 +324,9 @@ test("title bar menus work by pointer and keyboard and return focus", async () =
   // A regular item runs its command, closes the menu and refocuses the trigger.
   await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("menu")).toBeFocused();
-  // Light -> Dark -> System theme -> Fullscreen -> Grid -> Snap -> Zoom In (group labels are skipped).
-  for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowDown");
+  // Light -> Dark -> System theme -> Fullscreen -> Grid -> Snap -> Minimap -> Zoom In (group labels
+  // are skipped).
+  for (let i = 0; i < 7; i++) await page.keyboard.press("ArrowDown");
   await expect(zoomIn).toHaveAttribute("data-highlighted", "");
   // Arrow navigation refocuses the menu on the next frame; a select before that frame loses focus to body.
   await page.evaluate(

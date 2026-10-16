@@ -8,6 +8,7 @@ import {
 } from "../app/theme.js";
 import type { EmptyCellContextMenu } from "../core/EditorViewport.js";
 import type { LayerKey } from "../core/EditorStore.js";
+import { minimapVisibleAtLaunch, persistMinimapVisible } from "../settings/studioClientSettings.js";
 
 /**
  * Purely-ephemeral view state — the kind the brief reserves for Zustand:
@@ -32,6 +33,8 @@ interface UiState {
   colorTheme: ColorTheme;
   fullscreen: boolean;
   playtestInspectorVisible: boolean;
+  /** View → Minimap, kept in localStorage. */
+  minimapVisible: boolean;
   /** The Layers panel row whose settings are open; unset, the tile paint layer is. */
   selectedLayer?: LayerKey;
 
@@ -45,6 +48,7 @@ interface UiState {
   toggleColorTheme: () => void;
   setFullscreen: (fullscreen: boolean) => void;
   togglePlaytestInspector: () => void;
+  toggleMinimap: () => void;
   setSelectedLayer: (key: LayerKey | undefined) => void;
 }
 
@@ -65,6 +69,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   colorTheme: followThemePreference(initialThemePreference),
   fullscreen: false,
   playtestInspectorVisible: true,
+  minimapVisible: minimapVisibleAtLaunch(),
 
   addToast: (message) => {
     const id = ++toastSeq;
@@ -93,4 +98,9 @@ export const useUiStore = create<UiState>((set, get) => ({
   togglePlaytestInspector: () =>
     set((s) => ({ playtestInspectorVisible: !s.playtestInspectorVisible })),
   setSelectedLayer: (selectedLayer) => set({ selectedLayer }),
+  toggleMinimap: () => {
+    const minimapVisible = !get().minimapVisible;
+    persistMinimapVisible(minimapVisible);
+    set({ minimapVisible });
+  },
 }));

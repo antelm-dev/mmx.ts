@@ -25,6 +25,7 @@ import {
   MenuShortcut,
 } from "../ui/primitives/menu.js";
 import { Keycap, OverlayCard } from "../ui/editor/overlay.js";
+import { Minimap } from "./Minimap.js";
 import { PlaytestDebugger } from "./PlaytestDebugger.js";
 import { ProblemBadges } from "./ProblemBadges.js";
 import { OverlayBottom, OverlayCanvas, OverlayTop } from "./viewportOverlay.js";
@@ -99,7 +100,9 @@ export function Viewport() {
               <ProblemBadges />
             </OverlayCanvas>
             <OverlayTop />
-            <OverlayBottom />
+            <OverlayBottom>
+              <Minimap />
+            </OverlayBottom>
             <chakra.div
               position="absolute"
               zIndex="3"
