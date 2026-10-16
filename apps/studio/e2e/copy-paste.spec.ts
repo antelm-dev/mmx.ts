@@ -100,5 +100,41 @@ test("Copy two objects, switch level, paste at the pointer with new ids; Ctrl+Z 
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(sceneCount).toBe(1);
 
+  // A search box's text selection outlives its focus: it must not swallow the level copy.
+  const bar = page.getByRole("navigation", { name: "Activity bar" });
+  await bar.getByRole("button", { name: "Objects" }).click();
+  const search = page.getByLabel("Search objects");
+  await search.fill("met");
+  await search.press("ControlOrMeta+a");
+  // Marquee-select the level's objects (the spawn) on the canvas, leaving the search selected.
+  await page.mouse.move(box.x + 4, box.y + 4);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width - 4, box.y + box.height - 4, { steps: 5 });
+  await page.mouse.up();
+  await page.keyboard.press("ControlOrMeta+c");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.press("ControlOrMeta+v");
+  await expect.poll(sceneCount).toBe(2);
+
+  // Selectable text (the About dialog's links) still copies natively.
+  await page.getByRole("button", { name: "Help menu" }).click();
+  await page.getByRole("menuitem", { name: "About MMX Studio" }).click();
+  await page.evaluate(() => {
+    getSelection()!.selectAllChildren(document.querySelector('[data-testid="fan-notice"] dd')!);
+    // Record the native copy without touching the OS clipboard.
+    document.addEventListener(
+      "copy",
+      (e) => {
+        e.preventDefault();
+        document.body.dataset.copied = getSelection()!.toString();
+      },
+      { once: true },
+    );
+  });
+  await page.keyboard.press("ControlOrMeta+c");
+  await expect(page.locator("body")).toHaveAttribute("data-copied", /\S/);
+  await page.keyboard.press("Escape");
+  await expect.poll(sceneCount).toBe(2);
+
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

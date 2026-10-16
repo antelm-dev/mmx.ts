@@ -29,7 +29,7 @@ export interface KeyboardContext {
   isFullscreen: boolean;
   hasContextMenu: boolean;
   invulnerable: boolean;
-  /** Text is selected in the page: Ctrl+C / Ctrl+X copy it natively instead of the level selection. */
+  /** Selectable page text is selected: Ctrl+C / Ctrl+X copy it natively instead of the level selection. */
   hasTextSelection: boolean;
   /** Where undo/redo go: the surface the user last clicked or focused. */
   undoScope: UndoScope;

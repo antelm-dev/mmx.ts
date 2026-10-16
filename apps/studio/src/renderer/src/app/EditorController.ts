@@ -836,7 +836,7 @@ export class EditorController {
       isFullscreen: uiState.fullscreen,
       hasContextMenu: !!uiState.contextMenu,
       invulnerable: this.playtest.getSnapshot().debug.invulnerable,
-      hasTextSelection: !!window.getSelection()?.toString(),
+      hasTextSelection: hasPageTextSelection(),
       undoScope: this.undoScope,
     };
 
@@ -960,6 +960,18 @@ export class EditorController {
   toast(message: string): void {
     useUiStore.getState().addToast(message);
   }
+}
+
+/**
+ * Whether selectable page text (the About dialog's URLs) is selected. An input's selection
+ * outlives its focus and still shows in `toString()`, but reads as collapsed on the input's
+ * parent, which inherits the body's `user-select: none`: it does not count.
+ */
+function hasPageTextSelection(): boolean {
+  const sel = window.getSelection();
+  const node = sel?.isCollapsed === false ? sel.anchorNode : null;
+  const el = node instanceof Element ? node : node?.parentElement;
+  return !!el && getComputedStyle(el).userSelect !== "none";
 }
 
 /** The one editor instance the whole renderer shares. */
