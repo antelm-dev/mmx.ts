@@ -158,7 +158,6 @@ export class EditorViewportInteraction {
   emptyContextAt(clientX: number, clientY: number): EmptyCellContextMenu | null {
     if (this.store.get().mode === "play") return null;
     const world = this.screenToWorld(clientX, clientY);
-    if (this.topObjectAt(world.x, world.y)) return null;
     const doc = this.store.get().document;
     const grid = doc.gridSize;
     const col = Math.floor(world.x / grid);
@@ -172,6 +171,7 @@ export class EditorViewportInteraction {
       col,
       row,
       tileSolid: inBounds && doc.tiles[row * doc.cols + col] === TerrainTile.Solid,
+      onObject: this.topObjectAt(world.x, world.y) !== null,
     };
   }
 

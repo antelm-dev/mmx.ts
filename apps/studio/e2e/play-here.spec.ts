@@ -88,6 +88,18 @@ test("Play from here starts the player at the chosen point without moving the Sp
   await expect(page.getByText(/the player would start inside a wall/)).toBeVisible();
   await expect(page.locator("#play-canvas")).toHaveCount(0);
 
+  // On an object (the Spawn) the menu opens too, with the cell's items off; the player
+  // starts there and falls to the floor (centre y = 240 - 14).
+  const onSpawn = await screenAt(page, 40, 136);
+  await page.mouse.click(onSpawn.x, onSpawn.y, { button: "right" });
+  await expect(menu.getByText("Cell 2, 8")).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: /solid tile/ })).toBeDisabled();
+  await page.getByRole("menuitem", { name: /Play from here/ }).click();
+  await expect(fromHere).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => playerPosition(page), { timeout: 10_000 }).toBe("32, 226");
+  await page.getByRole("button", { name: /^Stop$/ }).click();
+  await expect(canvas).toBeVisible();
+
   // Above the platform: the player beams in there and lands on it (centre y = 128 - 14).
   const ledge = await screenAt(page, 324, 120);
   await page.mouse.click(ledge.x, ledge.y, { button: "right" });
