@@ -289,13 +289,6 @@ export function buildDefaultLayout(dock: DockviewApi): void {
     position: { referencePanel: palette, direction: "within" },
   });
 
-  dock.addPanel({
-    id: "layers",
-    component: "layers",
-    title: "Layers",
-    position: { referencePanel: palette, direction: "within" },
-  });
-
   const inspector = dock.addPanel({
     id: "inspector",
     component: "inspector",
