@@ -838,7 +838,7 @@ export class ProjectSession {
     const { rootPath: workRoot, project, untitled } = this.state;
     if (!bridge) return unavailable();
     if (!workRoot || !project || !untitled) return [];
-    const destination = await bridge.pickWorkDestination("Save Project");
+    const destination = await bridge.pickWorkDestination("Save Project", workRoot);
     if (!destination || this.state.rootPath !== workRoot) return null;
 
     const manifest = { ...project.manifest, id: projectId(name, "untitled.project"), name };

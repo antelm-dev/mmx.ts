@@ -122,6 +122,24 @@ export async function moveWorkProject(
   }
 }
 
+/**
+ * The folder just picked for one work project: a move must name both, and uses the pick once.
+ * Any move attempt or new pick clears it, so a pick never stays armed for another project.
+ */
+export function destinationPick() {
+  let picked: { destination: string; workRoot: string } | null = null;
+  return {
+    set(next: { destination: string; workRoot: string } | null) {
+      picked = next;
+    },
+    take(destination: string, workRoot: string): boolean {
+      const ok = picked?.destination === destination && picked.workRoot === workRoot;
+      picked = null;
+      return ok;
+    },
+  };
+}
+
 /** Delete a work project folder (after `containWorkRoot`). */
 export async function deleteWorkProject(base: string, workRoot: string): Promise<void> {
   await rm(await containWorkRoot(base, workRoot), { recursive: true, force: true });

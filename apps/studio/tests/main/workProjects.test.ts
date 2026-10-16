@@ -16,6 +16,7 @@ import { afterEach, test } from "node:test";
 import {
   containWorkRoot,
   deleteWorkProject,
+  destinationPick,
   listWorkProjects,
   moveWorkProject,
   newWorkRoot,
@@ -152,6 +153,23 @@ test("a failed copy keeps the work project and removes what it wrote", async () 
     (await listWorkProjects(base)).map((entry) => entry.rootPath),
     [root],
   );
+});
+
+test("a picked folder moves only the work project it was picked for, once", () => {
+  const pick = destinationPick();
+  assert.equal(pick.take("/games/a", "/work/1"), false);
+  pick.set({ destination: "/games/a", workRoot: "/work/1" });
+  // Another work root (or folder) is refused, and that attempt disarms the pick.
+  assert.equal(pick.take("/games/a", "/work/2"), false);
+  assert.equal(pick.take("/games/a", "/work/1"), false);
+  pick.set({ destination: "/games/a", workRoot: "/work/1" });
+  assert.equal(pick.take("/games/b", "/work/1"), false);
+  pick.set({ destination: "/games/a", workRoot: "/work/1" });
+  pick.set(null); // a new pick clears the last one first
+  assert.equal(pick.take("/games/a", "/work/1"), false);
+  pick.set({ destination: "/games/a", workRoot: "/work/1" });
+  assert.equal(pick.take("/games/a", "/work/1"), true);
+  assert.equal(pick.take("/games/a", "/work/1"), false);
 });
 
 test("deletes only a contained work project", async () => {

@@ -22,6 +22,7 @@ import { createNodeFileSystem } from "@mmx/project-io/node";
 import { copyStarterProjectToDirectory } from "@mmx/starter-template";
 import {
   deleteWorkProject,
+  destinationPick,
   listWorkProjects,
   moveWorkProject,
   newWorkRoot,
@@ -47,8 +48,8 @@ function errorMessage(error: unknown): string {
 export function createProjectIpc() {
   // Only a file the user just picked may be copied in from outside the project.
   let pickedImportPath: string | null = null;
-  // Likewise, an unsaved project only moves to the folder the user just picked.
-  let pickedDestination: string | null = null;
+  // Likewise, an unsaved project only moves to the folder the user just picked for it.
+  const pickedDestination = destinationPick();
   // Computed here, never taken from the renderer.
   const workBase = () => join(app.getPath("userData"), WORK_PROJECTS_DIR);
 
@@ -147,15 +148,19 @@ export function createProjectIpc() {
 
     "list-work-projects": handle(async (): Promise<WorkProject[]> => listWorkProjects(workBase())),
 
-    "pick-work-destination": handle(async (_event, title: string): Promise<string | null> => {
-      const result = await dialog.showOpenDialog({
-        title,
-        properties: ["openDirectory", "createDirectory"],
-      });
-      if (result.canceled || result.filePaths.length === 0) return null;
-      pickedDestination = result.filePaths[0] ?? null;
-      return pickedDestination;
-    }),
+    "pick-work-destination": handle(
+      async (_event, title: string, workRoot: string): Promise<string | null> => {
+        pickedDestination.set(null);
+        const result = await dialog.showOpenDialog({
+          title,
+          properties: ["openDirectory", "createDirectory"],
+        });
+        const destination = result.canceled ? undefined : result.filePaths[0];
+        if (!destination) return null;
+        pickedDestination.set({ destination, workRoot });
+        return destination;
+      },
+    ),
 
     /** Move an unsaved project to the folder just picked (empty or absent); returns its new root. */
     "move-work-project": handle(
@@ -163,13 +168,12 @@ export function createProjectIpc() {
         _event,
         input: { workRoot: string; destination: string },
       ): Promise<ProjectResult<{ rootPath: string }>> => {
-        if (input.destination !== pickedDestination) {
+        if (!pickedDestination.take(input.destination, input.workRoot)) {
           return {
             ok: false,
             issues: [issue("work-project.destination", "Pick the folder first.", "/destination")],
           };
         }
-        pickedDestination = null;
         try {
           const moved = await moveWorkProject(workBase(), input.workRoot, input.destination);
           const issues = moved.warning
