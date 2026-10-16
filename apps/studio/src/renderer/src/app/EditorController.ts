@@ -474,10 +474,15 @@ export class EditorController {
     }
     const { rootPath, project, untitled } = projectSession.getSnapshot();
     if (untitled || !rootPath || !project || rootPath === workRoot) return;
-    // Save wrote every level, so a draft of the work project is redundant now.
-    if (readRecovery()?.rootPath === workRoot) clearRecovery();
+    const draft = readRecovery();
+    if (draft?.rootPath === workRoot) {
+      // Save wrote every level: the draft is redundant, unless its level is not in the project,
+      // then it follows the project and stays offered as a "(recovered)" level.
+      if (project.levels.some((level) => level.id === draft.document.id)) clearRecovery();
+      else writeRecovery(draft.document, rootPath);
+    }
     this.draftWritten = false;
-    this.recoveryOffered = false;
+    this.recoveryOffered = this.draftDiffersFromDocument();
     this.store.markSaved();
     addRecentProject({ rootPath, name: project.manifest.name });
     const warning = issues.find((issue) => issue.code === "work-project.cleanup");

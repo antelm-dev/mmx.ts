@@ -230,4 +230,29 @@ describe("EditorController work project (C-WORK)", () => {
     expect(readRecentProjects()).toEqual([]);
     await projectSession.getAssets();
   });
+
+  it("keeps, for its new folder, a draft whose level the saved project does not have", async () => {
+    projectSession.close();
+    workProjects = [{ rootPath: WORK, name: "Untitled Project", modifiedAt: 1 }];
+    const stray = { ...createLevelDocument(), id: "level.gone", name: "Gone", rows: 20 };
+    storage.set(V2, JSON.stringify({ rootPath: WORK, document: stray }));
+    const editor = new EditorController();
+    await vi.waitFor(() => expect(projectSession.leftoverWorkProjects()).toHaveLength(1));
+    expect(await editor.restoreWorkProject(WORK)).toEqual({ opened: true });
+    expect(editor.store.get().document.id).toBe("level.a");
+
+    await editor.saveUntitledProject("Hero");
+    expect(projectSession.getSnapshot()).toMatchObject({
+      rootPath: "/games/hero",
+      untitled: false,
+    });
+    expect(JSON.parse(storage.get(V2)!)).toMatchObject({
+      rootPath: "/games/hero",
+      document: { id: "level.gone", rows: 20 },
+    });
+    // Still offered, now as a "(recovered)" level of the moved project.
+    expect(editor.hasRecoveryDraft()).toBe(true);
+    workProjects = [];
+    await projectSession.getAssets();
+  });
 });
