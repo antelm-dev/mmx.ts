@@ -23,7 +23,7 @@ import {
 } from "@mmx/content-schema";
 import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { SpriteRegion } from "@mmx/project-io";
-import type { AnimationAsset } from "@mmx/project-schema";
+import type { AnimationAsset, ProjectAsset } from "@mmx/project-schema";
 import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
 import type { ProjectSession } from "./projectSession.js";
 
@@ -437,6 +437,32 @@ export function setSpriteRegions(
     },
     undo: (doc) => {
       session.setSpriteRegions(assetId, before);
+      return doc;
+    },
+  });
+}
+
+/**
+ * Replace a manifest asset (matched by `next.id`) as one undoable step: every tileset
+ * edit (tile size, collision, slopes) goes through here. Like the sprite regions, the
+ * asset lives in the project manifest, so the level document is left as is.
+ */
+export function updateAsset(
+  store: EditorStore,
+  session: Pick<ProjectSession, "asset" | "updateAsset">,
+  next: ProjectAsset,
+  label: string,
+): void {
+  const before = session.asset(next.id);
+  if (!before || JSON.stringify(before) === JSON.stringify(next)) return;
+  store.execute({
+    label,
+    execute: (doc) => {
+      session.updateAsset(next);
+      return doc;
+    },
+    undo: (doc) => {
+      session.updateAsset(before);
       return doc;
     },
   });

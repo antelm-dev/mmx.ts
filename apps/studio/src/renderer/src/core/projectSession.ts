@@ -671,6 +671,11 @@ export class ProjectSession {
     this.switchProject({ ...EMPTY });
   }
 
+  /** A manifest asset of the open project by id, or null. */
+  asset(assetId: string): ProjectAsset | null {
+    return this.state.project?.manifest.assets.find((entry) => entry.id === assetId) ?? null;
+  }
+
   /** Replace one manifest asset by id (e.g. a tileset's collision); saved with the project. */
   updateAsset(asset: ProjectAsset): void {
     const project = this.state.project;

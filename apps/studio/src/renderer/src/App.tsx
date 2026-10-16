@@ -17,6 +17,7 @@ import { JsonPanel } from "./components/JsonPanel.js";
 import { SheetSlicerPanel } from "./components/SheetSlicerPanel.js";
 import { ClipEditorPanel } from "./components/ClipEditorPanel.js";
 import { EnemyEditorPanel } from "./components/EnemyEditorPanel.js";
+import { TilesetDocument } from "./components/TilesetDocument.js";
 import { Toasts } from "./components/Toasts.js";
 import { useUiStore } from "./store/uiStore.js";
 
@@ -39,6 +40,7 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   slicer: () => <SheetSlicerPanel />,
   clips: () => <ClipEditorPanel />,
   enemy: () => <EnemyEditorPanel />,
+  tileset: (props) => <TilesetDocument params={props.params} />,
 };
 
 /** Root layout: a fixed command toolbar above a user-configurable Dockview workspace. */
