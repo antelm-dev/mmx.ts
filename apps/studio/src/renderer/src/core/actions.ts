@@ -24,7 +24,12 @@ import {
 import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { SpriteRegion } from "@mmx/project-io";
 import type { AnimationAsset, ProjectAsset } from "@mmx/project-schema";
-import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
+import {
+  isLayerEditable,
+  selectedDecorationIds,
+  selectedObjectIds,
+  type EditorStore,
+} from "./EditorStore.js";
 import type { ProjectSession } from "./projectSession.js";
 
 /**
@@ -154,10 +159,13 @@ export function paintTiles(store: EditorStore, edits: readonly TileEdit[], erasi
   store.execute(setTiles(store.get().document, changed, erasing ? "Erase tiles" : "Paint tiles"));
 }
 
-/** Set a single terrain cell to solid or empty (context-menu "Add/Remove tile"). */
+/**
+ * Set a single terrain cell to solid or empty (context-menu "Add/Remove tile"), unless the
+ * collision layer is locked or hidden.
+ */
 export function setTileAt(store: EditorStore, col: number, row: number, solid: boolean): void {
   const index = cellIndex(store, col, row);
-  if (index === null) return;
+  if (index === null || !isLayerEditable(store.get(), "collision")) return;
   paintTiles(store, [{ index, value: solid ? TerrainTile.Solid : TerrainTile.Empty }], !solid);
 }
 
@@ -239,12 +247,29 @@ export function removeImageLayer(store: EditorStore, id: string): void {
   editImageLayers(store, "Remove image layer", (layers) => layers.filter((l) => l.id !== id));
 }
 
-/** Move a layer one step earlier (-1, drawn further back) or later (+1) in the list. */
+/**
+ * Where layer `id` moves one step back (-1) or forward (+1): the index of the nearest layer of
+ * the list on the same draw layer, or -1. Layers on other draw layers don't change its depth.
+ */
+export function reorderTarget(
+  layers: readonly Pick<ImageLayer, "id" | "layer">[],
+  id: string,
+  delta: -1 | 1,
+): number {
+  const from = layers.findIndex((l) => l.id === id);
+  if (from < 0) return -1;
+  for (let to = from + delta; to >= 0 && to < layers.length; to += delta) {
+    if (layers[to]!.layer === layers[from]!.layer) return to;
+  }
+  return -1;
+}
+
+/** Move a layer one step back (-1) or forward (+1) among the image layers of its draw layer. */
 export function reorderImageLayer(store: EditorStore, id: string, delta: -1 | 1): void {
   const layers = store.get().document.imageLayers ?? [];
   const from = layers.findIndex((l) => l.id === id);
-  const to = from + delta;
-  if (from < 0 || to < 0 || to >= layers.length) return;
+  const to = reorderTarget(layers, id, delta);
+  if (to < 0) return;
   editImageLayers(store, "Reorder image layers", (next) => {
     [next[from], next[to]] = [next[to]!, next[from]!];
     return next;
@@ -338,12 +363,12 @@ export function removeTileLayer(store: EditorStore, id: string): void {
   editTileLayers(store, "Remove tile layer", (layers) => layers.filter((l) => l.id !== id));
 }
 
-/** Move a tile layer one step earlier (-1, drawn further back) or later (+1) in the list. */
+/** Move a tile layer one step back (-1) or forward (+1) among the tile layers of its draw layer. */
 export function reorderTileLayer(store: EditorStore, id: string, delta: -1 | 1): void {
   const layers = store.get().document.tileLayers ?? [];
   const from = layers.findIndex((l) => l.id === id);
-  const to = from + delta;
-  if (from < 0 || to < 0 || to >= layers.length) return;
+  const to = reorderTarget(layers, id, delta);
+  if (to < 0) return;
   editTileLayers(store, "Reorder tile layers", (next) => {
     [next[from], next[to]] = [next[to]!, next[from]!];
     return next;

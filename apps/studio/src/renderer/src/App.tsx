@@ -10,6 +10,7 @@ import { ScenePanel } from "./components/ScenePanel.js";
 import { Viewport } from "./components/Viewport.js";
 import { Inspector } from "./components/Inspector.js";
 import { RoomPanel } from "./components/RoomPanel.js";
+import { LayersPanel } from "./components/LayersPanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ProblemsPanel } from "./components/ProblemsPanel.js";
 import { SelectionPanel } from "./components/SelectionPanel.js";
@@ -34,6 +35,7 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   viewport: () => <Viewport />,
   palette: () => <PalettePanel />,
   scene: (props) => <ScenePanel api={props.api} />,
+  layers: () => <LayersPanel />,
   inspector: () => <Inspector />,
   room: () => <RoomPanel />,
   assets: () => <AssetsPanel />,

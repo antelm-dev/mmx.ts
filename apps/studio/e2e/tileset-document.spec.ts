@@ -57,7 +57,10 @@ test("AC-TILESET: the tileset editor is a document tab and its edits undo with C
   };
 
   await openProject(projectRoot);
-  await page.getByRole("tab", { name: "Room" }).click();
+  await page
+    .getByRole("navigation", { name: "Activity bar" })
+    .getByRole("button", { name: "Layers" })
+    .click();
   await pick(tilesetPath);
   await page.getByRole("button", { name: /Import tileset/ }).click();
   await expect(page.locator("[data-tile-layer]")).toHaveCount(1);
@@ -78,7 +81,7 @@ test("AC-TILESET: the tileset editor is a document tab and its edits undo with C
   await expect(tilesetTab).toHaveAttribute("aria-selected", "true");
 
   // Collision: set, Ctrl+Z restores it, Ctrl+Y sets it again (focus stays in the tab).
-  // Scoped: the Room panel shows the paint layer's tile picker too.
+  // Scoped: the Layers panel shows the paint layer's tile picker too.
   const doc = page.getByTestId("tileset-document");
   const tile = (i: number) => doc.getByRole("button", { name: `Tile ${i}`, exact: true });
   const collision = page.getByRole("group", { name: "Tile collision" });

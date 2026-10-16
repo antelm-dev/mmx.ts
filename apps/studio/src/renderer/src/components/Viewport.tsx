@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useMemo, useRef } from "react";
 import { chakra } from "@chakra-ui/react";
-import { Grid3x3, Magnet, MousePointer2, Paintbrush } from "lucide-react";
+import { EyeOff, Grid3x3, Lock, Magnet, MousePointer2, Paintbrush } from "lucide-react";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -9,6 +9,7 @@ import {
 } from "@mmx/content-schema";
 import { editor, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
+import { isLayerLocked, isLayerVisible, paintTargetKey } from "../core/EditorStore.js";
 import {
   MenuContent,
   MenuItem,
@@ -51,6 +52,15 @@ export function Viewport() {
   }, []);
 
   const objects = useProjectSession().project?.manifest.objects;
+  // The paint tool does nothing on a hidden or locked layer; the tool card says so.
+  const target = paintTargetKey(snap.state);
+  const blocked = !target
+    ? undefined
+    : !isLayerVisible(snap.state, target)
+      ? "hidden"
+      : isLayerLocked(snap.state, target)
+        ? "locked"
+        : undefined;
   const placeGroups = useMemo<PlaceGroup[]>(
     () =>
       CATEGORY_ORDER.map((category) => ({
@@ -105,6 +115,18 @@ export function Viewport() {
                   : snap.state.activeTool === "tilePaint"
                     ? "Tile layer paint"
                     : "Select / move"}
+                {blocked && (
+                  <chakra.span
+                    display="inline-flex"
+                    alignItems="center"
+                    gap="1"
+                    color="studio.warning"
+                    data-testid="paint-blocked"
+                  >
+                    {blocked === "locked" ? <Lock size={12} /> : <EyeOff size={12} />}
+                    Layer {blocked}
+                  </chakra.span>
+                )}
               </OverlayCard>
               <OverlayCard
                 display="inline-flex"

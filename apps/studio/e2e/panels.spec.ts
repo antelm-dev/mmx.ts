@@ -120,6 +120,11 @@ test("activity bar surfaces side views, marks the shown one and reopens a closed
   );
   await expect(objects).toHaveAttribute("aria-pressed", "true");
   await expect(scene).toHaveAttribute("aria-pressed", "false");
+  const layers = bar.getByRole("button", { name: "Layers" });
+  await layers.click();
+  await expect(page.getByRole("tab", { name: "Layers" })).toHaveAttribute("aria-selected", "true");
+  await expect(layers).toHaveAttribute("aria-pressed", "true");
+  await expect(objects).toHaveAttribute("aria-pressed", "false");
 
   // Closed from View → Panels, Problems comes back beside Decorations.
   const problemsTab = page.getByRole("tab", { name: "Problems" });
