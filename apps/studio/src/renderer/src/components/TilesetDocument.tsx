@@ -37,7 +37,7 @@ const MODES: { mode: TilePaintMode; label: string; icon: typeof Paintbrush }[] =
 ];
 
 /** Loads a tileset's image URL and pixel size from the open project's assets. */
-function useTilesetImage(tileset: TilesetAsset | undefined) {
+export function useTilesetImage(tileset: TilesetAsset | undefined) {
   const [image, setImage] = useState<{ url: string; w: number; h: number } | null>(null);
   const key = tileset ? `${tileset.id}|${tileset.path}` : "";
   useEffect(() => {
@@ -64,6 +64,28 @@ function useTilesetImage(tileset: TilesetAsset | undefined) {
   return image;
 }
 
+/** Brush / Rectangle / Fill / Erase: the tile tool painting `layerId`, disabled without one. */
+export function PaintModes({ layerId }: { layerId: string | undefined }) {
+  const { tilePaint, activeTool } = useEditorSnapshot().state;
+  return (
+    <chakra.div display="flex" flexWrap="wrap" gap="1">
+      {MODES.map(({ mode, label, icon: Icon }) => (
+        <ToolbarButton
+          key={mode}
+          disabled={!layerId}
+          active={activeTool === "tilePaint" && tilePaint.mode === mode}
+          onClick={() => {
+            editor.store.setTilePaint({ mode, layerId });
+            editor.store.setTool("tilePaint");
+          }}
+        >
+          <Icon size={14} /> {label}
+        </ToolbarButton>
+      ))}
+    </chakra.div>
+  );
+}
+
 /**
  * Tileset document tab (C-DOC, opened by `openTilesetDocument`): tile size, per-tile
  * collision and slopes (each edit one undo step in the level history), tile pick and
@@ -71,7 +93,7 @@ function useTilesetImage(tileset: TilesetAsset | undefined) {
  */
 export function TilesetDocument({ params }: { params: { assetId?: unknown } }) {
   const snap = useEditorSnapshot();
-  const { document: doc, tilesets, tilePaint, activeTool } = snap.state;
+  const { document: doc, tilesets, tilePaint } = snap.state;
   const assetId = typeof params.assetId === "string" ? params.assetId : "";
   const tileset = tilesets[assetId];
   const image = useTilesetImage(tileset);
@@ -182,21 +204,7 @@ export function TilesetDocument({ params }: { params: { assetId?: unknown } }) {
             Click a tile to paint with it; Shift-click selects several to set their collision.
           </Hint>
 
-          <chakra.div display="flex" flexWrap="wrap" gap="1">
-            {MODES.map(({ mode, label, icon: Icon }) => (
-              <ToolbarButton
-                key={mode}
-                disabled={!layerId}
-                active={activeTool === "tilePaint" && tilePaint.mode === mode}
-                onClick={() => {
-                  editor.store.setTilePaint({ mode, layerId });
-                  editor.store.setTool("tilePaint");
-                }}
-              >
-                <Icon size={14} /> {label}
-              </ToolbarButton>
-            ))}
-          </chakra.div>
+          <PaintModes layerId={layerId} />
           {!layerId && <Hint>Add a tile layer with this tileset (Room panel) to paint it.</Hint>}
 
           <chakra.div

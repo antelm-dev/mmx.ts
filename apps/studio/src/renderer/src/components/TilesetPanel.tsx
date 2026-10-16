@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { chakra } from "@chakra-ui/react";
 import { ArrowDown, ArrowUp, LayoutGrid, Paintbrush, Pencil, Plus, Trash2 } from "lucide-react";
 import { DECORATION_LAYERS, type DecorationLayer, type TileLayer } from "@mmx/content-schema";
+import type { TilesetAsset } from "@mmx/project-schema";
 import { openTilesetDocument } from "../app/dock.js";
 import { editor, useEditorSnapshot } from "../app/useEditor.js";
 import {
@@ -14,6 +15,8 @@ import {
 import { Field, FieldInput, FieldSelect } from "../ui/editor/field.js";
 import { SectionTitle } from "../ui/editor/section-title.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
+import { TilePalette } from "./TilePalette.js";
+import { PaintModes, useTilesetImage } from "./TilesetDocument.js";
 
 const Grid2 = chakra("div", {
   base: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2" },
@@ -40,15 +43,21 @@ export function TileLayersSection() {
         py="3px"
         data-testid="tile-layers"
       >
-        {(doc.tileLayers ?? []).map((layer, index, all) => (
-          <TileLayerRow
-            key={layer.id}
-            layer={layer}
-            painting={layer.id === tilePaint.layerId}
-            first={index === 0}
-            last={index === all.length - 1}
-          />
-        ))}
+        {(doc.tileLayers ?? []).map((layer, index, all) => {
+          const painting = layer.id === tilePaint.layerId;
+          const tileset = tilesets[layer.tilesetId];
+          return (
+            <Fragment key={layer.id}>
+              <TileLayerRow
+                layer={layer}
+                painting={painting}
+                first={index === 0}
+                last={index === all.length - 1}
+              />
+              {painting && tileset && <TilePicker tileset={tileset} layerId={layer.id} />}
+            </Fragment>
+          );
+        })}
         {addFrom && (
           <chakra.div display="flex" alignItems="center" gap="1.5">
             <FieldSelect
@@ -72,6 +81,28 @@ export function TileLayersSection() {
         </ToolbarButton>
       </chakra.div>
     </>
+  );
+}
+
+/**
+ * The paint layer's tile pick and paint modes, so painting needs no tab switch; collision is
+ * edited in the tileset document. Task #70 moves this into the Layers panel.
+ */
+function TilePicker({ tileset, layerId }: { tileset: TilesetAsset; layerId: string }) {
+  const { tile } = useEditorSnapshot().state.tilePaint;
+  const image = useTilesetImage(tileset);
+  return (
+    <chakra.div display="flex" flexDirection="column" gap="1.5" data-testid="tile-picker">
+      {image && (
+        <TilePalette
+          tileset={tileset}
+          image={image}
+          selected={[tile]}
+          onPick={(picked) => editor.store.setTilePaint({ tile: picked, layerId })}
+        />
+      )}
+      <PaintModes layerId={layerId} />
+    </chakra.div>
   );
 }
 

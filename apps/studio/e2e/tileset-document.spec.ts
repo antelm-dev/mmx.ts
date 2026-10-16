@@ -78,9 +78,11 @@ test("AC-TILESET: the tileset editor is a document tab and its edits undo with C
   await expect(tilesetTab).toHaveAttribute("aria-selected", "true");
 
   // Collision: set, Ctrl+Z restores it, Ctrl+Y sets it again (focus stays in the tab).
-  const tile = (i: number) => page.getByRole("button", { name: `Tile ${i}`, exact: true });
+  // Scoped: the Room panel shows the paint layer's tile picker too.
+  const doc = page.getByTestId("tileset-document");
+  const tile = (i: number) => doc.getByRole("button", { name: `Tile ${i}`, exact: true });
   const collision = page.getByRole("group", { name: "Tile collision" });
-  await expect(page.locator("[data-tile]")).toHaveCount(8);
+  await expect(doc.locator("[data-tile]")).toHaveCount(8);
   await tile(0).click();
   await collision.getByRole("button", { name: "Solid", exact: true }).click();
   await expect(tile(0)).toHaveAttribute("data-collision", "1");
@@ -98,11 +100,11 @@ test("AC-TILESET: the tileset editor is a document tab and its edits undo with C
   const tileSize = page.getByLabel("Tile size (px)");
   await tileSize.fill("32");
   await tileSize.blur();
-  await expect(page.locator("[data-tile]")).toHaveCount(2);
+  await expect(doc.locator("[data-tile]")).toHaveCount(2);
   await expect(tile(0)).toHaveAttribute("data-collision", "0");
   await collision.getByRole("button", { name: "Empty", exact: true }).focus();
   await page.keyboard.press("Control+z");
-  await expect(page.locator("[data-tile]")).toHaveCount(8);
+  await expect(doc.locator("[data-tile]")).toHaveCount(8);
   await expect(tile(0)).toHaveAttribute("data-collision", "1");
   await page.keyboard.press("Control+z");
   await expect(tile(1)).toHaveAttribute("data-collision", "0");
