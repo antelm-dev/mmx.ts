@@ -13,6 +13,7 @@ import { Inspector } from "./components/Inspector.js";
 import { RoomPanel } from "./components/RoomPanel.js";
 import { LayersPanel } from "./components/LayersPanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
+import { AssetBrowserPanel } from "./components/AssetBrowserPanel.js";
 import { ProblemsPanel } from "./components/ProblemsPanel.js";
 import { SelectionPanel } from "./components/SelectionPanel.js";
 import { JsonPanel } from "./components/JsonPanel.js";
@@ -44,9 +45,10 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   problems: (props) => <ProblemsPanel api={props.api} />,
   selection: () => <SelectionPanel />,
   json: () => <JsonPanel />,
-  slicer: () => <SheetSlicerPanel />,
-  clips: () => <ClipEditorPanel />,
-  enemy: () => <EnemyEditorPanel />,
+  "assets-browser": () => <AssetBrowserPanel />,
+  slicer: (props) => <SheetSlicerPanel params={props.params} />,
+  clips: (props) => <ClipEditorPanel params={props.params} api={props.api} />,
+  enemy: (props) => <EnemyEditorPanel params={props.params} api={props.api} />,
   start: (props) => <StartPage api={props.api} />,
   tileset: (props) => <TilesetDocument params={props.params} />,
 };

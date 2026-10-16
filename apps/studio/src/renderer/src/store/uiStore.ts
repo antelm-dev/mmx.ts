@@ -31,8 +31,6 @@ interface UiState {
   colorTheme: ColorTheme;
   fullscreen: boolean;
   playtestInspectorVisible: boolean;
-  /** Palette definition (prefab) id of the enemy the Enemy panel edits. */
-  enemyEditorId: string | null;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -44,7 +42,6 @@ interface UiState {
   toggleColorTheme: () => void;
   setFullscreen: (fullscreen: boolean) => void;
   togglePlaytestInspector: () => void;
-  setEnemyEditorId: (id: string | null) => void;
 }
 
 let toastSeq = 0;
@@ -64,7 +61,6 @@ export const useUiStore = create<UiState>((set, get) => ({
   colorTheme: followThemePreference(initialThemePreference),
   fullscreen: false,
   playtestInspectorVisible: true,
-  enemyEditorId: null,
 
   addToast: (message) => {
     const id = ++toastSeq;
@@ -92,5 +88,4 @@ export const useUiStore = create<UiState>((set, get) => ({
   setFullscreen: (fullscreen) => set({ fullscreen }),
   togglePlaytestInspector: () =>
     set((s) => ({ playtestInspectorVisible: !s.playtestInspectorVisible })),
-  setEnemyEditorId: (enemyEditorId) => set({ enemyEditorId }),
 }));

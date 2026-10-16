@@ -73,21 +73,28 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
     await page.getByRole("button", { name: "File menu" }).click();
     await page.getByRole("menuitem", { name: item }).click();
   };
+  const showAssets = () =>
+    page
+      .getByRole("navigation", { name: "Activity bar" })
+      .getByRole("button", { name: "Assets" })
+      .click();
 
   await pick(projectRoot);
   await menu(/Open Project/);
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
-  // Slice the fixture sheet on its 32×32 grid.
-  await menu(/Slice Sheet/);
+  // Import the sheet from Assets (it opens in its slicer tab), slice it on its 32×32 grid.
+  await showAssets();
   await pick(sheetPath);
-  await page.getByRole("button", { name: /Import sheet/ }).click();
+  await page.getByRole("button", { name: "Import sprite sheet…" }).click();
   await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.sheet");
   await page.getByLabel("Mode").selectOption("grid");
   await page.getByRole("button", { name: "Apply grid" }).click();
   await page.getByRole("button", { name: "Save regions" }).click();
 
-  await menu(/Clip Editor/);
+  // Assets → New animation…: pick the sheet; the first clip creates the animation, whose tab
+  // replaces the "New animation" one.
+  await page.getByRole("button", { name: "New animation…" }).click();
   const panel = page.getByTestId("clip-editor");
   await panel.getByLabel("Sprite sheet").selectOption("sprite.sheet");
   await expect(panel.getByLabel("Animation asset")).toHaveValue("anim.sheet");
@@ -98,13 +105,21 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
   await panel.getByRole("button", { name: "Region 1", exact: true }).click();
   await panel.getByLabel("Clip name").fill("idle");
   await panel.getByRole("button", { name: "Create clip" }).click();
+  await expect(page.getByRole("tab", { name: "anim.sheet" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("tab", { name: "New animation" })).toHaveCount(0);
   await expect(clipSelect).toHaveValue("idle");
   await expect(frames).toHaveText("1");
   // Feet aligned by default: bottom-centre of the opaque box.
   await panel.getByRole("button", { name: "Frame 1", exact: true }).click();
   await expect(panel.getByTestId("frame-anchor")).toHaveText("16, 28");
   await undoRedo(page, async (undone) => {
-    if (undone) await expect(panel.getByLabel("Animation asset")).toContainText("(new)");
+    if (undone)
+      await expect(
+        page.getByText("Animation “anim.sheet” is not in the open project."),
+      ).toBeVisible();
     else await expect(clipSelect).toHaveValue("idle");
   });
 

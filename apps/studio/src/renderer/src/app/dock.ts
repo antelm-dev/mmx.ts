@@ -41,6 +41,15 @@ export const PANELS: PanelSpec[] = [
     activity: { label: "Objects", icon: "objects", order: 10 },
   },
   {
+    id: "assets-browser",
+    title: "Assets",
+    component: "assets-browser",
+    ref: "palette",
+    dir: "within",
+    fallbackDir: "left",
+    activity: { label: "Assets", icon: "assets", order: 15 },
+  },
+  {
     id: "scene",
     title: "Scene",
     component: "scene",
@@ -150,35 +159,6 @@ export function focusPanel(id: string): void {
   api?.getPanel(id)?.api.setActive();
 }
 
-/** Tool panel opened from File → Slice Sheet…; not listed under View → Panels. */
-export const SLICER_PANEL: PanelSpec = {
-  id: "slicer",
-  title: "Sheet Slicer",
-  component: "slicer",
-  ref: "viewport",
-  // Beside the level view, not over it: Play draws into the viewport panel.
-  dir: "right",
-  fallbackDir: "right",
-};
-
-/** Tool panel opened from File → Clip Editor…; not listed under View → Panels. */
-export const CLIP_PANEL: PanelSpec = {
-  ...SLICER_PANEL,
-  id: "clips",
-  title: "Clip Editor",
-  component: "clips",
-};
-
-/** Tool panel opened from an enemy's edit button in the Object Palette; not listed under View → Panels. */
-export const ENEMY_PANEL: PanelSpec = {
-  id: "enemy",
-  title: "Enemy",
-  component: "enemy",
-  ref: "inspector",
-  dir: "within",
-  fallbackDir: "right",
-};
-
 /** Workspace start page: opened over the level at launch and from Help → Start Page. */
 export const START_PANEL: PanelSpec = {
   id: "start",
@@ -233,6 +213,38 @@ export function openTilesetDocument(assetId: string): void {
   openDocument({
     id: `tileset:${assetId}`,
     component: "tileset",
+    title: assetId,
+    params: { assetId },
+  });
+}
+
+/** Open (or surface) the Enemy editor on an enemy, by its palette definition (prefab) id. */
+export function openEnemyDocument(prefabId: string, name: string): void {
+  openDocument({
+    id: `enemy:${prefabId}`,
+    component: "enemy",
+    title: name,
+    params: { enemyId: prefabId },
+  });
+}
+
+/**
+ * Open (or surface) the Clip Editor on an `animation` asset, or without one the
+ * "New animation" document (`clips:new`), which picks the sheet of the animation it creates.
+ */
+export function openClipsDocument(assetId?: string): void {
+  openDocument(
+    assetId
+      ? { id: `clips:${assetId}`, component: "clips", title: assetId, params: { assetId } }
+      : { id: "clips:new", component: "clips", title: "New animation", params: {} },
+  );
+}
+
+/** Open (or surface) the Sheet Slicer on a `sprite` or `image` asset. */
+export function openSlicerDocument(assetId: string): void {
+  openDocument({
+    id: `slicer:${assetId}`,
+    component: "slicer",
     title: assetId,
     params: { assetId },
   });

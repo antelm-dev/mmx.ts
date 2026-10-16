@@ -61,10 +61,32 @@ test("a PNG sheet is sliced on a grid, retouched, and its regions are saved on t
   await page.getByRole("menuitem", { name: /Open Project/ }).click();
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
-  await page.getByRole("button", { name: "File menu" }).click();
-  await page.getByRole("menuitem", { name: /Slice Sheet/ }).click();
+  // Assets → double-click a sprite opens it in a Sheet Slicer tab.
+  await page
+    .getByRole("navigation", { name: "Activity bar" })
+    .getByRole("button", { name: "Assets" })
+    .click();
+  await page.locator('[data-asset-kind][title="sprite.bg"]').dblclick();
+  await expect(page.getByRole("tab", { name: "sprite.bg" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.bg");
   await pick(sheetPath);
+  // Importing opens the new sprite in its own tab; the sprite.bg tab keeps sprite.bg.
   await page.getByRole("button", { name: /Import sheet/ }).click();
+  const tab = (name: string) => page.getByRole("tab", { name, exact: true });
+  await expect(tab("sprite.sheet")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.sheet");
+  await tab("sprite.bg").click();
+  await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.bg");
+  // The picker opens the picked sprite's tab instead of retargeting this one.
+  await page.getByLabel("Sprite asset").selectOption("sprite.sheet");
+  await expect(tab("sprite.sheet")).toHaveAttribute("aria-selected", "true");
+  await expect(tab("sprite.sheet")).toHaveCount(1);
+  await tab("sprite.bg").click();
+  await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.bg");
+  await tab("sprite.sheet").click();
   await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.sheet");
 
   const count = page.getByTestId("region-count");

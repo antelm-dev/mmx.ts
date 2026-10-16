@@ -79,7 +79,9 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
   await expect(row("Spiky Crab copy")).toBeVisible();
   await copyPanel.getByRole("button", { name: "Delete" }).click();
   await expect(row("Spiky Crab copy")).toHaveCount(0);
-  await expect(page.getByText("'enemy.spiky-crab-copy' was deleted.")).toBeVisible();
+  await expect(
+    page.getByText("Enemy 'enemy.spiky-crab-copy' is not in the open project."),
+  ).toBeVisible();
   await page.keyboard.press("Control+z");
   await expect(row("Spiky Crab copy")).toBeVisible();
   await expect(copyPanel.getByLabel("Name", { exact: true })).toHaveValue("Spiky Crab copy");
@@ -92,12 +94,15 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
   await expect(row("Moving Platform copy")).toHaveCount(0);
 
   // A placed Spiky Crab blocks its deletion; Ctrl+Z after clicking the viewport undoes the placement instead.
+  // Enemy documents cover the level: place from the Level tab, then come back to the enemy's.
   await page.getByRole("button", { name: "Edit Spiky Crab", exact: true }).click();
   if ((await row("Spiky Crab").getAttribute("aria-current")) !== "true")
     await row("Spiky Crab").click();
+  await page.getByRole("tab", { name: "Level", exact: true }).click();
   const canvas = page.locator("#viewport-canvas");
   const box = (await canvas.boundingBox())!;
   await canvas.click({ position: { x: box.width / 2, y: box.height / 2 } });
+  await page.getByRole("tab", { name: "Spiky Crab", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Delete" })).toBeDisabled();
   await page.keyboard.press("Control+z");
   await expect(panel.getByRole("button", { name: "Delete" })).toBeEnabled();

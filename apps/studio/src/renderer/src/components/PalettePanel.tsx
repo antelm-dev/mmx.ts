@@ -8,7 +8,7 @@ import {
   allDefinitions,
   type GameObjectDefinition,
 } from "@mmx/content-schema";
-import { ENEMY_PANEL, openPanel } from "../app/dock.js";
+import { openEnemyDocument } from "../app/dock.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import { duplicateObject, freeObjectId } from "../core/objectDefinitions.js";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
@@ -230,10 +230,7 @@ function PaletteList({
                   _hover={{ color: "studio.fg", bg: "studio.hover" }}
                   aria-label={`Edit ${def.name}`}
                   title={`Edit ${def.name}`}
-                  onClick={() => {
-                    useUiStore.getState().setEnemyEditorId(def.id);
-                    openPanel(ENEMY_PANEL);
-                  }}
+                  onClick={() => openEnemyDocument(def.id, def.name)}
                 >
                   <Pencil size={14} />
                 </chakra.button>

@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { chakra } from "@chakra-ui/react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { getDefinition, type PropertyMeta } from "@mmx/content-schema";
 import type { ActorDefinition, EnemyDefinition, Hitbox, MovementModel } from "@mmx/engine/data";
+import type { DockviewPanelApi } from "dockview-react";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import {
@@ -19,7 +20,6 @@ import {
   withConfig,
   withReaction,
 } from "../core/enemyEditor.js";
-import { useUiStore } from "../store/uiStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Checkbox } from "../ui/editor/checkbox.js";
 import { labelStyle } from "../ui/editor/field.js";
@@ -122,13 +122,25 @@ function Chips({
 }
 
 /**
- * Tool panel: compose the enemy picked in the Object Palette as data. A project
- * enemy (data/game.json) is edited in place; a built-in one is shown read-only
- * and can be duplicated into the project. Compile errors show by their field.
+ * Document panel (C-DOC): compose enemy `params.enemyId` (its palette definition, or
+ * prefab, id) as data. A project enemy (data/game.json) is edited in place; a built-in
+ * one is shown read-only and can be duplicated into the project. Compile errors show by
+ * their field.
  */
-export function EnemyEditorPanel() {
+export function EnemyEditorPanel({
+  params,
+  api,
+}: {
+  params: { enemyId?: unknown };
+  api?: DockviewPanelApi;
+}) {
   const project = useProjectSession().project;
-  const prefabId = useUiStore((s) => s.enemyEditorId);
+  const prefabId = typeof params.enemyId === "string" ? params.enemyId : null;
+  // The tab follows the enemy's display name through renames and their undo.
+  const title = prefabId ? getDefinition(prefabId)?.name : undefined;
+  useEffect(() => {
+    if (title) api?.setTitle(title);
+  }, [api, title]);
   // Re-render on level edits: placed instances block Delete.
   useEditorSnapshot();
   if (!project)
@@ -142,7 +154,7 @@ export function EnemyEditorPanel() {
           ? "Pick an enemy to edit with its Edit button in the Object Palette."
           : project.gameData?.prefabs?.[prefabId] || def
             ? `'${prefabId}' cannot be shown: fix data/game.json (see Problems) or pick another enemy.`
-            : `'${prefabId}' was deleted.`}
+            : `Enemy '${prefabId}' is not in the open project.`}
       </PanelNote>
     );
   }
