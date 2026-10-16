@@ -1,11 +1,12 @@
 import { chakra } from "@chakra-ui/react";
-import { CircleAlert, Shapes, ListTree, type LucideIcon } from "lucide-react";
+import { CircleAlert, MapIcon, Shapes, ListTree, type LucideIcon } from "lucide-react";
 import { openPanel, PANELS, useVisiblePanelIds } from "../app/dock.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
 import { Tooltip } from "./Tooltip.js";
 
 /** `PanelSpec.activity.icon` names; an unknown name falls back to the label's initial. */
 const ICONS: Record<string, LucideIcon> = {
+  levels: MapIcon,
   objects: Shapes,
   scene: ListTree,
   problems: CircleAlert,
