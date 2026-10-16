@@ -539,7 +539,8 @@ export class ProjectSession {
     return this.state.issues;
   }
 
-  async openProject(): Promise<ProjectIssue[]> {
+  /** Load the project at `path` (a recent project), or at a folder the user picks. */
+  async openProject(path?: string): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
     if (!bridge) {
       return [
@@ -552,12 +553,15 @@ export class ProjectSession {
       ];
     }
 
-    const rootPath = await bridge.pickDirectory("Open Project");
+    const rootPath = path ?? (await bridge.pickDirectory("Open Project"));
     if (!rootPath) return [];
 
     const result = await bridge.load(rootPath);
     if (!result.ok) {
-      this.switchProject({ ...EMPTY, issues: result.issues });
+      // A missing, moved or invalid folder must not close the project still open; Problems
+      // lists why it was refused until the next edit or open recomputes the issues.
+      if (this.state.open) this.setState({ ...this.state, issues: result.issues });
+      else this.switchProject({ ...EMPTY, issues: result.issues });
       return result.issues;
     }
 

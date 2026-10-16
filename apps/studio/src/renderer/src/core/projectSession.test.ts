@@ -76,6 +76,38 @@ describe("ProjectSession asset switch", () => {
   });
 });
 
+describe("ProjectSession failed open", () => {
+  it("keeps the open project when another folder fails to load", async () => {
+    const missing = { severity: "error", code: "project.missing", path: "/", message: "gone" };
+    const load = vi.fn(async (root: string) =>
+      root === "/projects/b"
+        ? { ok: true, issues: [], value: { rootPath: "/projects/b", project } }
+        : { ok: false, issues: [missing] },
+    );
+    vi.stubGlobal("window", { studio: { project: { ...bridge, load } } });
+    const session = new ProjectSession();
+    await session.openProject();
+    const opened = session.getSnapshot();
+
+    expect(await session.openProject("/projects/moved")).toEqual([missing]);
+    const after = session.getSnapshot();
+    expect(after).toEqual({ ...opened, issues: [missing] });
+    expect(after.project).toBe(opened.project);
+    expect(after.open).toBe(true);
+    expect(after.rootPath).toBe("/projects/b");
+  });
+
+  it("reports the failed load's issues when no project was open", async () => {
+    const missing = { severity: "error", code: "project.missing", path: "/", message: "gone" };
+    const load = async () => ({ ok: false, issues: [missing] });
+    vi.stubGlobal("window", { studio: { project: { ...bridge, load } } });
+    const session = new ProjectSession();
+
+    expect(await session.openProject("/projects/moved")).toEqual([missing]);
+    expect(session.getSnapshot()).toMatchObject({ open: false, project: null, issues: [missing] });
+  });
+});
+
 describe("ProjectSession player animation binding", () => {
   it("plays the unsaved binding without reading the disk again, and writes it after the manifest on save", async () => {
     const writes: string[] = [];

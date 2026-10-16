@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Grid3x3,
   History,
+  House,
   Info,
   LayoutTemplate,
   Magnet,
@@ -35,6 +36,7 @@ import {
   PANELS,
   resetLayout,
   SLICER_PANEL,
+  START_PANEL,
   togglePanel,
   useOpenPanelIds,
 } from "../app/dock.js";
@@ -347,6 +349,9 @@ function HelpMenu() {
   return (
     <>
       <TitleMenu label="Help" ariaLabel="Help menu">
+        <MenuItem value="start-page" onSelect={() => openPanel(START_PANEL)}>
+          <House size={13} /> Start Page
+        </MenuItem>
         <MenuItem value="toggle-devtools" onSelect={() => void controls()?.toggleDevTools()}>
           <Code2 size={13} /> Toggle Developer Tools
           <MenuShortcut>{modLabel}+Shift+I</MenuShortcut>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, type ReactElement } from "react";
 import { chakra } from "@chakra-ui/react";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import { editor } from "./app/useEditor.js";
-import { buildDefaultLayout, setDockApi } from "./app/dock.js";
+import { buildDefaultLayout, openPanel, setDockApi, START_PANEL } from "./app/dock.js";
 import { TitleBar } from "./components/TitleBar.js";
 import { Toolbar } from "./components/Toolbar.js";
 import { PalettePanel } from "./components/PalettePanel.js";
@@ -19,11 +19,14 @@ import { ClipEditorPanel } from "./components/ClipEditorPanel.js";
 import { EnemyEditorPanel } from "./components/EnemyEditorPanel.js";
 import { TilesetDocument } from "./components/TilesetDocument.js";
 import { Toasts } from "./components/Toasts.js";
+import { ActivityBar } from "./components/ActivityBar.js";
+import { StartPage } from "./components/StartPage.js";
 import { useUiStore } from "./store/uiStore.js";
 
 import {
   ensureStudioClientSettings,
   getStudioClientSettingsStore,
+  showStartPageAtLaunch,
 } from "./settings/studioClientSettings.js";
 
 /** Dockview panel registry. Panels read the shared controller; props are unused. */
@@ -40,10 +43,11 @@ const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElemen
   slicer: () => <SheetSlicerPanel />,
   clips: () => <ClipEditorPanel />,
   enemy: () => <EnemyEditorPanel />,
+  start: (props) => <StartPage api={props.api} />,
   tileset: (props) => <TilesetDocument params={props.params} />,
 };
 
-/** Root layout: a fixed command toolbar above a user-configurable Dockview workspace. */
+/** Root layout: a fixed command toolbar above the activity bar and a user-configurable Dockview workspace. */
 export function App() {
   const fullscreen = useUiStore((s) => s.fullscreen);
   const setFullscreen = useUiStore((s) => s.setFullscreen);
@@ -99,6 +103,7 @@ export function App() {
   const onReady = useCallback(({ api }: DockviewReadyEvent) => {
     setDockApi(api);
     buildDefaultLayout(api);
+    if (showStartPageAtLaunch()) openPanel(START_PANEL);
   }, []);
 
   return (
@@ -111,13 +116,16 @@ export function App() {
       >
         {!fullscreen && <TitleBar />}
         <Toolbar />
-        <chakra.main minH="0" minW="0" overflow="hidden" bg="studio.bg">
-          <DockviewReact
-            className="dockview-theme-studio studio-workspace"
-            components={dockComponents}
-            onReady={onReady}
-          />
-        </chakra.main>
+        <chakra.div display="grid" gridTemplateColumns="40px minmax(0,1fr)" minH="0">
+          <ActivityBar />
+          <chakra.main minH="0" minW="0" overflow="hidden" bg="studio.bg">
+            <DockviewReact
+              className="dockview-theme-studio studio-workspace"
+              components={dockComponents}
+              onReady={onReady}
+            />
+          </chakra.main>
+        </chakra.div>
       </chakra.div>
       <Toasts />
     </>

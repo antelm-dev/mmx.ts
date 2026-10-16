@@ -17,6 +17,8 @@ export interface PanelSpec {
   ref: string;
   dir: Direction;
   fallbackDir: Direction;
+  /** Listed in the activity bar; `icon` names an entry of its icon map. */
+  activity?: { label: string; icon: string; order: number };
 }
 
 export const PANELS: PanelSpec[] = [
@@ -27,6 +29,7 @@ export const PANELS: PanelSpec[] = [
     ref: "viewport",
     dir: "left",
     fallbackDir: "left",
+    activity: { label: "Objects", icon: "objects", order: 10 },
   },
   {
     id: "scene",
@@ -35,6 +38,7 @@ export const PANELS: PanelSpec[] = [
     ref: "palette",
     dir: "within",
     fallbackDir: "left",
+    activity: { label: "Scene", icon: "scene", order: 20 },
   },
   {
     id: "inspector",
@@ -75,6 +79,7 @@ export const PANELS: PanelSpec[] = [
     ref: "assets",
     dir: "right",
     fallbackDir: "below",
+    activity: { label: "Problems", icon: "problems", order: 90 },
   },
   {
     id: "selection",
@@ -96,11 +101,14 @@ let api: DockviewApi | null = null;
 
 /** Cached list of open panel ids; a stable snapshot for {@link useOpenPanelIds}. */
 let openIds: string[] = [];
+/** Cached ids of each group's shown tab; a stable snapshot for {@link useVisiblePanelIds}. */
+let visibleIds: string[] = [];
 const listeners = new Set<() => void>();
 let disposers: { dispose: () => void }[] = [];
 
 function refresh(): void {
   openIds = api ? api.panels.map((p) => p.id) : [];
+  visibleIds = api ? api.groups.flatMap((g) => (g.activePanel ? [g.activePanel.id] : [])) : [];
   for (const notify of listeners) notify();
 }
 
@@ -109,7 +117,12 @@ export function setDockApi(next: DockviewApi | null): void {
   disposers = [];
   api = next;
   if (api) {
-    disposers.push(api.onDidAddPanel(refresh), api.onDidRemovePanel(refresh));
+    disposers.push(
+      api.onDidAddPanel(refresh),
+      api.onDidRemovePanel(refresh),
+      // Also fires on tab switches and moves, which change the shown tab of a group.
+      api.onDidLayoutChange(refresh),
+    );
   }
   refresh();
 }
@@ -146,6 +159,16 @@ export const ENEMY_PANEL: PanelSpec = {
   ref: "inspector",
   dir: "within",
   fallbackDir: "right",
+};
+
+/** Workspace start page: opened over the level at launch and from Help → Start Page. */
+export const START_PANEL: PanelSpec = {
+  id: "start",
+  title: "Start",
+  component: "start",
+  ref: "viewport",
+  dir: "within",
+  fallbackDir: "within",
 };
 
 /**
@@ -335,5 +358,14 @@ export function useOpenPanelIds(): string[] {
     subscribe,
     () => openIds,
     () => openIds,
+  );
+}
+
+/** Reactive ids of the panels whose tab is shown in their group (one per group). */
+export function useVisiblePanelIds(): string[] {
+  return useSyncExternalStore(
+    subscribe,
+    () => visibleIds,
+    () => visibleIds,
   );
 }
