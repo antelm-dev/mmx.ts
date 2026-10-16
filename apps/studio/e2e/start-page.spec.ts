@@ -58,6 +58,14 @@ test("first launch shows the Start tab; Blank level closes it and the canvas res
     await expect(recents(page)).toContainText("No recent projects yet.");
     await expect(page.locator("#viewport-canvas")).toBeHidden();
 
+    // Play brings the level forward over the Start tab and shows the game.
+    await page.getByRole("button", { name: /^Play$/ }).click();
+    await expect(page.getByRole("tab", { name: "Level" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^Stop$/ }).click();
+    await expect(page.locator("#viewport-canvas")).toBeVisible();
+    await startTab(page).click();
+
     await page.getByRole("button", { name: "Blank level" }).click();
     await expect(startTab(page)).toHaveCount(0);
     await expect(page.getByRole("tab", { name: "Level" })).toHaveAttribute("aria-selected", "true");
