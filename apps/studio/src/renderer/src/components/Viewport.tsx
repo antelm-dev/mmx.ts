@@ -22,6 +22,7 @@ import {
   MenuLabel,
   MenuRoot,
   MenuSeparator,
+  MenuShortcut,
 } from "../ui/primitives/menu.js";
 import { Keycap, OverlayCard } from "../ui/editor/overlay.js";
 import { PlaytestDebugger } from "./PlaytestDebugger.js";
@@ -36,7 +37,7 @@ interface PlaceGroup {
  * Hosts the Pixi editing surface (and, in Play mode, the game renderer's canvas).
  * The heavy lifting stays in the framework-agnostic {@link EditorViewport} and
  * the playtest controller; this component only supplies the host element, the
- * empty-cell placement menu, and — in Play mode — the {@link PlaytestDebugger}.
+ * canvas context menu, and — in Play mode — the {@link PlaytestDebugger}.
  */
 export function Viewport() {
   const snap = useEditorSnapshot();
@@ -209,11 +210,16 @@ export function Viewport() {
               <MenuLabel fontFamily="mono" textTransform="none" letterSpacing="normal" pb="1.5">
                 Cell {contextMenu.col}, {contextMenu.row}
               </MenuLabel>
+              <MenuItem value="play-here" onSelect={() => editor.playFromContext()}>
+                Play from here
+                <MenuShortcut>Ctrl+Shift+Enter</MenuShortcut>
+              </MenuItem>
+              <MenuSeparator />
               <MenuLabel>Terrain</MenuLabel>
               {contextMenu.tileSolid ? (
                 <MenuItem
                   value="tile-remove"
-                  disabled={!collisionEditable}
+                  disabled={!collisionEditable || contextMenu.onObject}
                   onSelect={() => editor.setTileAtContext(false)}
                 >
                   <Swatch style={{ border: "1px solid #ff5a5a" }} />
@@ -222,7 +228,7 @@ export function Viewport() {
               ) : (
                 <MenuItem
                   value="tile-add"
-                  disabled={!collisionEditable}
+                  disabled={!collisionEditable || contextMenu.onObject}
                   onSelect={() => editor.setTileAtContext(true)}
                 >
                   <Swatch style={{ background: "#33507a", boxShadow: SWATCH_RING }} />
@@ -240,6 +246,7 @@ export function Viewport() {
                         key={def.id}
                         value={`place:${def.id}`}
                         disabled={
+                          contextMenu.onObject ||
                           !isLayerEditable(snap.state, objectLayerKey({ definitionId: def.id }))
                         }
                         onSelect={() => editor.placeAtContext(def.id)}

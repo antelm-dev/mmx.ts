@@ -103,6 +103,8 @@ export class EditorViewportInteraction {
   } | null = null;
   private marqueeActive = false;
   pointerWorld = { x: 0, y: 0 };
+  /** Last client position over the canvas: re-projected on read, so a zoom or fit since is seen. */
+  private hoverClient: { x: number; y: number } | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -158,7 +160,6 @@ export class EditorViewportInteraction {
   emptyContextAt(clientX: number, clientY: number): EmptyCellContextMenu | null {
     if (this.store.get().mode === "play") return null;
     const world = this.screenToWorld(clientX, clientY);
-    if (this.topObjectAt(world.x, world.y)) return null;
     const doc = this.store.get().document;
     const grid = doc.gridSize;
     const col = Math.floor(world.x / grid);
@@ -172,7 +173,13 @@ export class EditorViewportInteraction {
       col,
       row,
       tileSolid: inBounds && doc.tiles[row * doc.cols + col] === TerrainTile.Solid,
+      onObject: this.topObjectAt(world.x, world.y) !== null,
     };
+  }
+
+  /** The world point under the last pointer position over the canvas, in the current view. */
+  hoverWorld(): { x: number; y: number } | null {
+    return this.hoverClient && this.screenToWorld(this.hoverClient.x, this.hoverClient.y);
   }
 
   /** Hidden and locked layers are not selectable. */
@@ -561,6 +568,7 @@ export class EditorViewportInteraction {
   private onPointerMove(e: PointerEvent): void {
     const world = this.screenToWorld(e.clientX, e.clientY);
     this.pointerWorld = world;
+    this.hoverClient = { x: e.clientX, y: e.clientY };
 
     if (this.panning) {
       const { zoom, viewportPosition } = this.store.get();

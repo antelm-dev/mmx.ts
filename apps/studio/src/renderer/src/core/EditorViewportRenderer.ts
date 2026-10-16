@@ -48,6 +48,8 @@ export interface EmptyCellContextMenu {
   row: number;
   /** Whether the cell already holds a solid tile — picks Add- vs Remove-tile. */
   tileSolid: boolean;
+  /** Whether an object is under the click: the cell's terrain and Place items are off. */
+  onObject: boolean;
 }
 
 export type EmptyCellContextMenuHandler = (payload: EmptyCellContextMenu) => void;
