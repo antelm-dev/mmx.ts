@@ -22,7 +22,7 @@ describe("recovery draft", () => {
 
   it("records the project it was written in, and replaces a v1 draft", () => {
     const map = stubStorage({ [V1]: serializeDocument(doc) });
-    writeRecovery(doc, "/projects/x");
+    expect(writeRecovery(doc, "/projects/x")).toBe(true);
     expect(map.has(V1)).toBe(false);
     expect(JSON.parse(map.get(V2)!)).toMatchObject({ rootPath: "/projects/x", document: doc });
     expect(readRecovery()).toEqual({ rootPath: "/projects/x", document: { ...doc } });
@@ -58,7 +58,7 @@ describe("recovery draft", () => {
       throw new Error("blocked");
     };
     vi.stubGlobal("localStorage", { getItem: fail, setItem: fail, removeItem: fail });
-    expect(() => writeRecovery(doc, null)).not.toThrow();
+    expect(writeRecovery(doc, null)).toBe(false);
     expect(readRecovery()).toBeNull();
     expect(() => clearRecovery()).not.toThrow();
   });

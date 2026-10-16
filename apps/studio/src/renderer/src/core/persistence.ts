@@ -100,14 +100,19 @@ function checkDocument(raw: unknown): LevelDocument {
   return doc;
 }
 
-/** Best-effort local recovery copy, written on every mutation with the open project's root. */
-export function writeRecovery(doc: LevelDocument, rootPath: string | null): void {
+/**
+ * Best-effort local recovery copy, written on every mutation with the open project's root;
+ * false when storage refused it.
+ */
+export function writeRecovery(doc: LevelDocument, rootPath: string | null): boolean {
   try {
     const document = { ...doc, schemaVersion: SCHEMA_VERSION };
     localStorage.setItem(RECOVERY_KEY, JSON.stringify({ rootPath, document }));
     localStorage.removeItem(LEGACY_RECOVERY_KEY);
+    return true;
   } catch {
     // Storage full or blocked (private mode) — recovery is best-effort.
+    return false;
   }
 }
 

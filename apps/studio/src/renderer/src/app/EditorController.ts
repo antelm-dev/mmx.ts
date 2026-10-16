@@ -103,6 +103,8 @@ export class EditorController {
   private readonly tilesetSizeLoads = new Set<string>();
   /** A recovery draft that differs from the shown document exists; checked on open, not per render. */
   private recoveryOffered = false;
+  /** The stored draft is this session's own edit, so a save may clear it (never a crash draft). */
+  private draftWritten = false;
 
   constructor() {
     this.playtest = new EditorPlaytestController(this.store, {
@@ -295,8 +297,11 @@ export class EditorController {
     this.viewport?.redraw();
     if (reason === "document" || reason === "open") {
       // Only an edit writes the draft: opening a level must not overwrite a crash draft.
-      if (reason === "document") {
-        writeRecovery(this.store.get().document, projectSession.getSnapshot().rootPath);
+      if (
+        reason === "document" &&
+        writeRecovery(this.store.get().document, projectSession.getSnapshot().rootPath)
+      ) {
+        this.draftWritten = true;
       }
       this.recoveryOffered = reason === "open" && this.draftDiffersFromDocument();
       const { currentLevelId } = projectSession.getSnapshot();
@@ -603,15 +608,19 @@ export class EditorController {
     return this.recoveryOffered;
   }
 
+  /** A draft equal to the level it would restore over (or the shown one) is not offered. */
   private draftDiffersFromDocument(): boolean {
     const draft = readRecovery();
     if (!draft) return false;
-    return serializeDocument(draft.document) !== serializeDocument(this.store.get().document);
+    const current = projectSession.recoveryTarget(draft) ?? this.store.get().document;
+    return serializeDocument(draft.document) !== serializeDocument(current);
   }
 
-  /** Saved: the draft only exists while there are unsaved edits. */
+  /** Saved: this session's draft goes, so one only exists while there are unsaved edits. */
   private dropRecovery(): void {
+    if (!this.draftWritten) return;
     clearRecovery();
+    this.draftWritten = false;
     this.recoveryOffered = false;
   }
 

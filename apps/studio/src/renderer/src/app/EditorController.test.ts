@@ -5,11 +5,14 @@ import { createLevelDocument } from "@mmx/content-schema";
 vi.mock("../core/EditorViewport.js", () => ({ EditorViewport: class {} }));
 vi.mock("./EditorPlaytestController.js", () => ({ EditorPlaytestController: class {} }));
 vi.mock("./dock.js", () => ({ focusPanel: () => {}, isPanelVisible: () => false }));
-vi.mock("../assets/studioAssets.js", () => ({
-  starterAssets: null,
-  buildStarterAssets: () => null,
-  buildStudioAssets: () => null,
-}));
+vi.mock("../assets/studioAssets.js", () => {
+  const assets = { catalog: { load: async () => undefined }, manifest: {} };
+  return {
+    starterAssets: assets,
+    buildStarterAssets: () => assets,
+    buildStudioAssets: () => assets,
+  };
+});
 vi.mock("../settings/studioClientSettings.js", () => ({
   minimapVisibleAtLaunch: () => true,
   persistMinimapVisible: () => {},
@@ -26,7 +29,31 @@ vi.stubGlobal("localStorage", {
   removeItem: (key: string) => void storage.delete(key),
 });
 vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: () => {} }));
-vi.stubGlobal("window", { studio: { files: { saveFile } }, confirm: () => true });
+/** A project at `/p` with levels A (the entry) and B. */
+const project = {
+  load: async (rootPath: string) => {
+    const level = (id: string, name: string) => ({
+      id,
+      path: `levels/${id}.json`,
+      document: { ...createLevelDocument(), id, name },
+    });
+    const levels = [level("level.a", "A"), level("level.b", "B")];
+    const manifest = {
+      schemaVersion: 1,
+      id: "p",
+      name: "P",
+      gameVersion: "0.1.0",
+      compatibleRuntime: { min: "1.0.0" },
+      entryLevelId: "level.a",
+      assets: [],
+      levels: levels.map(({ id, path }) => ({ id, path })),
+    };
+    return { ok: true, issues: [], value: { rootPath, project: { manifest, levels } } };
+  },
+  readPlayAssets: async () => ({ ok: true, issues: [], value: { gameData: {}, urls: {} } }),
+  save: async () => ({ ok: true, issues: [] }),
+};
+vi.stubGlobal("window", { studio: { files: { saveFile }, project }, confirm: () => true });
 vi.stubGlobal("document", { title: "", documentElement: { dataset: {}, style: {} } });
 beforeEach(() => storage.clear());
 
@@ -61,6 +88,32 @@ describe("EditorController recovery draft", () => {
     editor.save();
     await vi.waitFor(() => expect(saveFile).toHaveBeenCalled());
     await vi.waitFor(() => expect(storage.has(V2)).toBe(false));
+    expect(editor.hasRecoveryDraft()).toBe(false);
+  });
+
+  it("keeps a crash draft through a save with no edit this session", async () => {
+    storage.set(V2, draft);
+    const editor = new EditorController();
+    const saved = vi.spyOn(editor.store, "markSaved");
+    editor.save();
+    await vi.waitFor(() => expect(saved).toHaveBeenCalled());
+    expect(storage.get(V2)).toBe(draft);
+    expect(editor.hasRecoveryDraft()).toBe(true);
+  });
+
+  it("does not offer this project's draft on another level once it matches its own level", async () => {
+    const editor = new EditorController();
+    expect(await editor.openProject("/p")).toEqual({ opened: true });
+    const doc = editor.store.get().document;
+    const { gridSize, cols } = doc;
+    editor.store.execute(setRoomSettings(doc, { name: "A2", gridSize, cols, rows: 20 }));
+    expect(JSON.parse(storage.get(V2)!)).toMatchObject({
+      rootPath: "/p",
+      document: { id: "level.a" },
+    });
+
+    editor.openProjectLevel("level.b");
+    expect(editor.store.get().document.id).toBe("level.b");
     expect(editor.hasRecoveryDraft()).toBe(false);
   });
 });
