@@ -41,10 +41,11 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
   await page.getByRole("tab", { name: "Object Palette" }).click();
-  await page.getByRole("button", { name: "New enemy…" }).click();
-  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await page.getByRole("button", { name: "New object…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New object" });
+  await dialog.getByRole("button", { name: "Enemies" }).click();
+  await dialog.getByRole("button", { name: "Metool" }).click();
   await dialog.getByLabel("Name").fill("Crab");
-  await dialog.getByLabel("Based on").selectOption("metool");
   await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
-import { ChevronDown, ChevronRight, Film, ImagePlus, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Film, ImagePlus, Plus, Search, X } from "lucide-react";
 import {
   openClipsDocument,
   openEnemyDocument,
@@ -9,6 +9,8 @@ import {
   openTilesetDocument,
 } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
+import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
+import { useUiStore } from "../store/uiStore.js";
 import { assetGroups, type AssetEntry, type AssetEntryKind } from "../core/assetBrowser.js";
 import { ListRow } from "../ui/editor/list-row.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
@@ -70,6 +72,9 @@ function openEntry(entry: AssetEntry): void {
 /** Side view: every asset of the project (and every enemy), searchable; double-click or Enter opens one. */
 export function AssetBrowserPanel() {
   const { project } = useProjectSession();
+  const openNewObject = useUiStore((s) => s.openNewObject);
+  // As in the palette: new ids are picked against the merged data, the engine's alone while data/game.json has errors.
+  const broken = !!project && projectSession.gameData().issues.length > 0;
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Partial<Record<AssetEntryKind, boolean>>>({});
   const [selected, setSelected] = useState("");
@@ -147,6 +152,21 @@ export function AssetBrowserPanel() {
           onClick={() => openClipsDocument()}
         >
           <Film size={14} /> New animation…
+        </ToolbarButton>
+        <ToolbarButton
+          // Ctrl+Z right after creating one undoes it: focus comes back here.
+          {...DEFINITIONS_SCOPE}
+          disabled={!project || broken}
+          title={
+            !project
+              ? "Open a project first"
+              : broken
+                ? "Fix the data/game.json errors in Problems first"
+                : undefined
+          }
+          onClick={() => openNewObject()}
+        >
+          <Plus size={14} /> New object…
         </ToolbarButton>
       </chakra.div>
       {!project && <PanelNote>Open a project to see its assets.</PanelNote>}

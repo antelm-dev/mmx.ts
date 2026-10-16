@@ -55,11 +55,12 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
 
   // A Crab from the Metool, as in new-enemy.spec.
   await page.getByRole("tab", { name: "Object Palette" }).click();
-  const newEnemy = page.getByRole("button", { name: "New enemy…" });
+  const newEnemy = page.getByRole("button", { name: "New object…" });
   await newEnemy.click();
-  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  const dialog = page.getByRole("dialog", { name: "New object" });
+  await dialog.getByRole("button", { name: "Enemies" }).click();
+  await dialog.getByRole("button", { name: "Metool" }).click();
   await dialog.getByLabel("Name").fill("Crab");
-  await dialog.getByLabel("Based on").selectOption("metool");
   await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);

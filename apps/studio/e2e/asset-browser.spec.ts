@@ -79,10 +79,11 @@ test("AC-BROWSER: Assets lists the project's assets and opens each in its own do
   await openProject(projectRoot);
   // A project enemy (as in new-enemy.spec) and a project object (a palette duplicate).
   await page.getByRole("tab", { name: "Object Palette" }).click();
-  await page.getByRole("button", { name: "New enemy…" }).click();
-  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await page.getByRole("button", { name: "New object…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New object" });
+  await dialog.getByRole("button", { name: "Enemies" }).click();
+  await dialog.getByRole("button", { name: "Metool" }).click();
   await dialog.getByLabel("Name").fill("Crab");
-  await dialog.getByLabel("Based on").selectOption("metool");
   await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);
