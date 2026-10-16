@@ -272,10 +272,11 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
 
   // An enemy drawn from the boxed animation is placed and plays: Play hands the scene its clips.
   await page.getByRole("tab", { name: "Object Palette" }).click();
-  await page.getByRole("button", { name: "New enemy…" }).click();
-  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await page.getByRole("button", { name: "New object…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New object" });
+  await dialog.getByRole("button", { name: "Enemies" }).click();
+  await dialog.getByRole("button", { name: "Metool" }).click();
   await dialog.getByLabel("Name").fill("Crab");
-  await dialog.getByLabel("Based on").selectOption("metool");
   await dialog.getByLabel("Animation").selectOption("anim.sheet");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);

@@ -41,6 +41,8 @@ interface UiState {
   /** The last place tools picked, newest first; session memory only, so e2e captures stay stable. */
   recentParts: RecentPart[];
   partWheelOpen: boolean;
+  /** The open New object… dialog, starting at `category` when given; null when closed. */
+  newObject: { category?: string } | null;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -56,6 +58,9 @@ interface UiState {
   setSelectedLayer: (key: LayerKey | undefined) => void;
   addRecentPart: (part: RecentPart) => void;
   setPartWheelOpen: (open: boolean) => void;
+  /** New object… (C-NEWOBJ); the dialog assumes a project is open. */
+  openNewObject: (category?: string) => void;
+  closeNewObject: () => void;
 }
 
 let toastSeq = 0;
@@ -77,6 +82,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   playtestInspectorVisible: true,
   recentParts: [],
   partWheelOpen: false,
+  newObject: null,
   minimapVisible: minimapVisibleAtLaunch(),
 
   addToast: (message) => {
@@ -108,6 +114,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   setSelectedLayer: (selectedLayer) => set({ selectedLayer }),
   addRecentPart: (part) => set((s) => ({ recentParts: pushRecentPart(s.recentParts, part) })),
   setPartWheelOpen: (partWheelOpen) => set({ partWheelOpen }),
+  openNewObject: (category) => set({ newObject: { category } }),
+  closeNewObject: () => set({ newObject: null }),
   toggleMinimap: () => {
     const minimapVisible = !get().minimapVisible;
     persistMinimapVisible(minimapVisible);

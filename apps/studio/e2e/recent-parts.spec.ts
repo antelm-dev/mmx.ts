@@ -142,10 +142,11 @@ test("recent parts bar: placed parts show, 1 to 8 pick them, Q opens the part wh
   // A new enemy leads the bar; undoing its creation (a game-data-only edit) drops its slot,
   // and key 1 picks what slot 1 shows.
   await search.fill("");
-  await page.getByRole("button", { name: "New enemy…" }).click();
-  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await page.getByRole("button", { name: "New object…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New object" });
+  await dialog.getByRole("button", { name: "Enemies" }).click();
+  await dialog.getByRole("button", { name: "Metool" }).click();
   await dialog.getByLabel("Name").fill("Crab");
-  await dialog.getByLabel("Based on").selectOption("metool");
   await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);
