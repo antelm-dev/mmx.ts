@@ -22,20 +22,15 @@ const Note = chakra("div", {
 });
 
 /**
- * Why a definition cannot be deleted (instances in the open level, live, or the
- * project's other levels; project objects based on it), or null. The open level
- * is always the entry level's slot: EditorController syncs every document it opens,
- * Ctrl+O included, into `entryLevelId`, so the slot's stored copy is the live one.
+ * Why a definition cannot be deleted (instances in the shown level, live, or the
+ * project's other levels; project objects based on it), or null. The shown level is
+ * `currentLevelId`'s slot (contract C-LEVEL), counted from the store.
  */
 export function definitionDeleteBlocker(definitionId: string): string | null {
-  const project = projectSession.getSnapshot().project;
-  const others = (project?.levels ?? [])
-    .filter((level) => level.id !== project?.manifest.entryLevelId)
-    .map((level) => level.document);
   return deleteBlocker(
     definitionId,
-    [editor.store.get().document, ...others],
-    project?.manifest.objects ?? [],
+    projectSession.levelDocuments(editor.store.get().document),
+    projectSession.getSnapshot().project?.manifest.objects ?? [],
   );
 }
 

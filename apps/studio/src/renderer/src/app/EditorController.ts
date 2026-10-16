@@ -13,6 +13,7 @@ import {
   duplicateSelection,
   nudgeSelection,
   placeAt,
+  setRoomSettings,
   setTileAt,
 } from "../core/actions.js";
 import { EditorViewport } from "../core/EditorViewport.js";
@@ -283,11 +284,8 @@ export class EditorController {
     this.viewport?.redraw();
     if (reason === "document" || reason === "open") {
       writeRecovery(this.store.get().document);
-      const project = projectSession.getSnapshot().project;
-      if (project) {
-        const levelId = project.manifest.entryLevelId;
-        projectSession.syncLevel(levelId, this.store.get().document);
-      }
+      const { currentLevelId } = projectSession.getSnapshot();
+      if (currentLevelId) projectSession.syncLevel(currentLevelId, this.store.get().document);
     }
     this.snapshot = this.build(reason);
     this.emit();
@@ -371,8 +369,18 @@ export class EditorController {
 
   // ---------- File ----------
 
-  /** Start a fresh, blank level with a floor and a single Spawn; false if the user kept their edits. */
+  /**
+   * Start a fresh, blank level with a floor and a single Spawn; false if the user kept their
+   * edits. With a project open, the level is added to it instead (nothing is discarded).
+   */
   newLevel(): boolean {
+    const project = projectSession.getSnapshot().project;
+    if (project) {
+      const id = projectSession.addLevel(`Level ${project.levels.length + 1}`);
+      if (id) this.openProjectLevel(id);
+      this.toast("Level added to the project.");
+      return true;
+    }
     if (!this.confirmDiscardIfDirty("Create a new level?")) return false;
     if (this.store.get().mode === "play") this.togglePlay();
     this.openDocument(createLevelDocument());
@@ -388,7 +396,7 @@ export class EditorController {
     const doc = this.store.get().document;
     const projectState = projectSession.getSnapshot();
     if (projectState.open && projectState.project) {
-      projectSession.syncLevel(projectState.project.manifest.entryLevelId, doc);
+      if (projectState.currentLevelId) projectSession.syncLevel(projectState.currentLevelId, doc);
       const issues = await projectSession.saveProject();
       if (issues.some((issue) => issue.severity === "error")) {
         this.toast(`Project save failed: ${issues[0]?.message ?? "validation error"}`);
@@ -484,7 +492,7 @@ export class EditorController {
     const { rootPath, project } = projectSession.getSnapshot();
     if (project === before || !rootPath || !project) return { opened: false };
     addRecentProject({ rootPath, name: project.manifest.name });
-    const entry = projectSession.getEntryLevelDocument();
+    const entry = projectSession.getCurrentLevelDocument();
     if (!entry) {
       this.toast(messages.noEntry);
       return { opened: true };
@@ -503,17 +511,66 @@ export class EditorController {
     this.toast("Project exported.");
   }
 
+  /** Open a level JSON file; with a project open, it is imported as a new level of the project. */
   async openLevel(): Promise<void> {
-    if (!this.confirmDiscardIfDirty("Open another level?")) return;
+    const inProject = projectSession.getSnapshot().open;
+    if (!inProject && !this.confirmDiscardIfDirty("Open another level?")) return;
     try {
       const opened = await this.fileAccess.open();
       if (!opened) return;
+      if (inProject) {
+        const doc = parseDocument(opened.json);
+        const id = projectSession.addLevel(doc.name || opened.name.replace(/\.json$/i, ""), doc);
+        if (id) this.openProjectLevel(id);
+        this.toast(`Added ${opened.name} to the project.`);
+        return;
+      }
       if (this.store.get().mode === "play") this.togglePlay();
       this.openDocument(parseDocument(opened.json));
       this.toast(`Opened ${opened.name}.`);
     } catch (error) {
       this.toast(`Open failed: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  // ---------- Project levels (contract C-LEVEL) ----------
+
+  /**
+   * Show another level of the open project. The store's edits are synced into the project on
+   * every change, so the level left keeps them, unsaved, until Save writes every level.
+   */
+  openProjectLevel(id: string): void {
+    const { project, currentLevelId } = projectSession.getSnapshot();
+    const level = project?.levels.find((entry) => entry.id === id);
+    if (!level) return;
+    focusPanel("viewport");
+    if (id === currentLevelId) return;
+    if (this.store.get().mode === "play") this.togglePlay();
+    projectSession.setCurrentLevel(id);
+    // shortcut: the undo history restarts on each switch; keep one per level if users miss it.
+    this.openDocument(level.document);
+  }
+
+  /** Rename a project level; the shown one through the store, so undo and sync stay in step. */
+  renameProjectLevel(id: string, name: string): void {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (id !== projectSession.getSnapshot().currentLevelId) {
+      projectSession.renameLevel(id, trimmed);
+      return;
+    }
+    const doc = this.store.get().document;
+    if (doc.name === trimmed) return;
+    const { gridSize, cols, rows } = doc;
+    this.store.execute(setRoomSettings(doc, { name: trimmed, gridSize, cols, rows }));
+  }
+
+  /** Remove a level from the project (not the entry or the last one), leaving it first if shown. */
+  deleteProjectLevel(id: string): void {
+    const { project, currentLevelId } = projectSession.getSnapshot();
+    if (!project || id === project.manifest.entryLevelId) return;
+    if (id === currentLevelId) this.openProjectLevel(project.manifest.entryLevelId);
+    if (projectSession.deleteLevel(id)) this.toast("Level removed from the project.");
   }
 
   async copyDocumentJson(): Promise<void> {
@@ -539,7 +596,8 @@ export class EditorController {
       return;
     }
     if (this.store.get().mode === "play") this.togglePlay();
-    this.openDocument(doc);
+    // In a project: into the level the draft came from (or a new one), never the shown slot.
+    this.openDocument(projectSession.recoverLevel(doc) ?? doc);
     this.toast("Recovery draft restored.");
   }
 
