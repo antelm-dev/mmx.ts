@@ -95,5 +95,11 @@ describe("trackRecentParts", () => {
     store.setTool("select");
     store.setTool("placeDecoration", "bg.cloud");
     expect(list).toEqual([deco("bg.cloud"), obj("enemy.metool")]);
+
+    // So does opening a level (an "open" reset to select) between the bar pick and the palette pick.
+    pickFromBar(list[1]!);
+    store.open(createLevelDocument());
+    store.setTool("place", "enemy.metool");
+    expect(list).toEqual([obj("enemy.metool"), deco("bg.cloud")]);
   });
 });

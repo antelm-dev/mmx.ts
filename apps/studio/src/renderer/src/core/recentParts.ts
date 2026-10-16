@@ -64,10 +64,12 @@ export function trackRecentParts(
   let fromBar = false;
   let last: RecentPart | undefined;
   store.subscribe((state, reason) => {
+    const part = placingPart(state);
+    // Any reset of the tool (opening a level reports "open") ends the last placing part.
+    if (!part) last = undefined;
     if (reason !== "ui") return;
     // Push on a change of placing part only: grid, snap, layer and save emissions also
     // report "ui" and must not bump the active part.
-    const part = placingPart(state);
     const same = !!part && !!last && part.kind === last.kind && part.id === last.id;
     last = part;
     if (part && !same && !fromBar) add(part);
