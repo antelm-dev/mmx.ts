@@ -100,6 +100,9 @@ test("recent parts bar: placed parts show, 1 to 8 pick them, Q opens the part wh
   // Picking from the bar keeps its order: 2 twice is still the second part.
   await page.keyboard.press("2");
   await expect(toolCard("Place: Metool")).toBeVisible();
+  // Nor does another "ui" change (the grid) while that part is active.
+  await page.keyboard.press("g");
+  await page.keyboard.press("g");
   await page.keyboard.press("2");
   await expect(toolCard("Place: Metool")).toBeVisible();
   await expect(slots.nth(0)).toHaveAccessibleName("Place Life Capsule");

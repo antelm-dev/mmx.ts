@@ -80,11 +80,20 @@ describe("trackRecentParts", () => {
     pickFromBar(list[1]!);
     expect(store.get()).toMatchObject({ activeTool: "place", placingDefinitionId: "enemy.metool" });
     pickFromBar(list[1]!);
+    // Other "ui" emissions (grid, save) while that part is active do not bump it either.
+    store.toggleGrid();
+    store.markSaved();
     expect(list).toEqual([deco("bg.cloud"), obj("enemy.metool")]);
 
     // Later picks from the palette or wheel still reorder it.
     store.setTool("placeDecoration", "bg.cloud");
     store.setTool("place", "enemy.metool");
     expect(list).toEqual([obj("enemy.metool"), deco("bg.cloud")]);
+
+    // Leaving the place tool and picking the same part again from the palette bumps it.
+    pickFromBar(list[1]!);
+    store.setTool("select");
+    store.setTool("placeDecoration", "bg.cloud");
+    expect(list).toEqual([deco("bg.cloud"), obj("enemy.metool")]);
   });
 });
