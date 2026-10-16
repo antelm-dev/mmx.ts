@@ -19,7 +19,6 @@ import {
   withConfig,
   withReaction,
 } from "../core/enemyEditor.js";
-import { useUiStore } from "../store/uiStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Checkbox } from "../ui/editor/checkbox.js";
 import { labelStyle } from "../ui/editor/field.js";
@@ -122,13 +121,14 @@ function Chips({
 }
 
 /**
- * Tool panel: compose the enemy picked in the Object Palette as data. A project
- * enemy (data/game.json) is edited in place; a built-in one is shown read-only
- * and can be duplicated into the project. Compile errors show by their field.
+ * Document panel (C-DOC): compose enemy `params.enemyId` (its palette definition, or
+ * prefab, id) as data. A project enemy (data/game.json) is edited in place; a built-in
+ * one is shown read-only and can be duplicated into the project. Compile errors show by
+ * their field.
  */
-export function EnemyEditorPanel() {
+export function EnemyEditorPanel({ params }: { params: { enemyId?: unknown } }) {
   const project = useProjectSession().project;
-  const prefabId = useUiStore((s) => s.enemyEditorId);
+  const prefabId = typeof params.enemyId === "string" ? params.enemyId : null;
   // Re-render on level edits: placed instances block Delete.
   useEditorSnapshot();
   if (!project)
@@ -142,7 +142,7 @@ export function EnemyEditorPanel() {
           ? "Pick an enemy to edit with its Edit button in the Object Palette."
           : project.gameData?.prefabs?.[prefabId] || def
             ? `'${prefabId}' cannot be shown: fix data/game.json (see Problems) or pick another enemy.`
-            : `'${prefabId}' was deleted.`}
+            : `Enemy '${prefabId}' is not in the open project.`}
       </PanelNote>
     );
   }

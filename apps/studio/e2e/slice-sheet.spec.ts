@@ -61,8 +61,17 @@ test("a PNG sheet is sliced on a grid, retouched, and its regions are saved on t
   await page.getByRole("menuitem", { name: /Open Project/ }).click();
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
-  await page.getByRole("button", { name: "File menu" }).click();
-  await page.getByRole("menuitem", { name: /Slice Sheet/ }).click();
+  // Assets → double-click a sprite opens it in a Sheet Slicer tab.
+  await page
+    .getByRole("navigation", { name: "Activity bar" })
+    .getByRole("button", { name: "Assets" })
+    .click();
+  await page.locator('[data-asset-kind][title="sprite.bg"]').dblclick();
+  await expect(page.getByRole("tab", { name: "sprite.bg" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.bg");
   await pick(sheetPath);
   await page.getByRole("button", { name: /Import sheet/ }).click();
   await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.sheet");

@@ -27,15 +27,11 @@ import {
   X,
   ZoomIn,
   ZoomOut,
-  Scissors,
-  Film,
 } from "lucide-react";
 import {
-  CLIP_PANEL,
   openPanel,
   PANELS,
   resetLayout,
-  SLICER_PANEL,
   START_PANEL,
   togglePanel,
   useOpenPanelIds,
@@ -180,20 +176,6 @@ function FileMenu() {
           onSelect={() => void editor.exportProject()}
         >
           <Share2 size={13} /> Export Project…
-        </MenuItem>
-        <MenuItem
-          value="slice-sheet"
-          disabled={!project.open}
-          onSelect={() => openPanel(SLICER_PANEL)}
-        >
-          <Scissors size={13} /> Slice Sheet…
-        </MenuItem>
-        <MenuItem
-          value="clip-editor"
-          disabled={!project.open}
-          onSelect={() => openPanel(CLIP_PANEL)}
-        >
-          <Film size={13} /> Clip Editor…
         </MenuItem>
       </MenuGroup>
       <MenuSeparator />

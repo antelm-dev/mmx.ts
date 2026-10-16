@@ -118,16 +118,24 @@ const int = (raw: string, min: number): number | null => {
   return raw.trim() !== "" && Number.isFinite(value) && value >= min ? value : null;
 };
 
-/** Tool panel: assemble clips from a sliced sheet into a playable `animation` asset (contract C-CLIP). */
-export function ClipEditorPanel() {
+/**
+ * Document panel (C-DOC): assemble clips from a sliced sheet into a playable `animation`
+ * asset (contract C-CLIP), starting on `params.assetId` and its sheet.
+ */
+export function ClipEditorPanel({ params }: { params: { assetId?: unknown } }) {
   const session = useProjectSession();
+  const docId = typeof params.assetId === "string" ? params.assetId : "";
   const assets = session.project?.manifest.assets ?? [];
-  const sheets = assets.filter(
-    (asset) => asset.kind === "sprite" && (asset.regions?.length ?? 0) > 0,
+  const [sheetId, setSheetId] = useState(
+    () => projectSession.animationAsset(docId)?.sheetAssetId ?? "",
   );
-  const [sheetId, setSheetId] = useState("");
+  // The opened animation's sheet is listed even when it is unsliced (or a plain image).
+  const sheets = assets.filter(
+    (asset) =>
+      (asset.kind === "sprite" && (asset.regions?.length ?? 0) > 0) || asset.id === sheetId,
+  );
   const [sheet, setSheet] = useState<Sheet | null>(null);
-  const [pickedAnimId, setAnimId] = useState("");
+  const [pickedAnimId, setAnimId] = useState(docId);
   const [clipName, setClipName] = useState("");
   const [newName, setNewName] = useState("");
   const [preset, setPreset] = useState(2);
@@ -201,6 +209,8 @@ export function ClipEditorPanel() {
   }, [playing, clip, speed]);
 
   if (!session.open) return <PanelNote>Open a project to edit its animation clips.</PanelNote>;
+  if (docId && !projectSession.animationAsset(docId))
+    return <PanelNote>Animation “{docId}” is not in the open project.</PanelNote>;
 
   const writeAll = (label: string, animations: Record<string, AnimationClip>): void => {
     if (!sheetAsset) return;
@@ -383,7 +393,7 @@ export function ClipEditorPanel() {
           </Field>
         </Grid2>
         {sheets.length === 0 && (
-          <PanelNote>Slice a sprite sheet first (File → Slice Sheet…).</PanelNote>
+          <PanelNote>Slice a sprite sheet first: open it from Assets.</PanelNote>
         )}
         <PanelActions>
           <ActionButton

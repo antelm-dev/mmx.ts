@@ -36,7 +36,7 @@ import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
-import { focusPanel } from "./dock.js";
+import { focusPanel, openEnemyDocument } from "./dock.js";
 import {
   dispatchEditorKey,
   undoScopeOf,
@@ -130,13 +130,7 @@ export class EditorController {
     this.snapshot = this.build("open");
     this.store.subscribe((_, reason) => this.onStoreChange(reason));
     // Manifest edits (e.g. the player loadout) live in the project session, not the store.
-    let rootPath = projectSession.getSnapshot().rootPath;
     projectSession.subscribe(() => {
-      // Another project's enemies: the Enemy panel no longer edits the last one's.
-      if (projectSession.getSnapshot().rootPath !== rootPath) {
-        rootPath = projectSession.getSnapshot().rootPath;
-        useUiStore.getState().setEnemyEditorId(null);
-      }
       // Tile layers draw and paint from the manifest's tilesets; keep the store's copy current.
       const tilesets = this.tilesetAssets();
       const prev = this.store.get().tilesets;
@@ -656,7 +650,7 @@ export class EditorController {
       name,
     );
     this.setGameData(overlay);
-    useUiStore.getState().setEnemyEditorId(id);
+    openEnemyDocument(id, `${name} copy`);
   }
 
   selectPalette(definitionId: string): void {

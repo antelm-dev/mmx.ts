@@ -64,7 +64,7 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);
 
-  // Palette → Edit Crab opens the Enemy panel on it.
+  // Palette → Edit Crab opens the Enemy editor on it, in a tab beside Level.
   await page.getByRole("button", { name: "Edit Crab" }).click();
   await expect(page.getByText("Enemy · crab")).toBeVisible();
   const patrol = page.getByRole("group", { name: "Patrol" });
@@ -100,7 +100,13 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   expect(crab.hurtbox.hw).toBe(9);
 
   // A built-in enemy is read-only; Duplicate copies it into the project and edits the copy.
+  // Each enemy is its own document tab: Crab's stays open beside Metool's.
   await page.getByRole("button", { name: "Edit Metool" }).click();
+  await expect(page.getByRole("tab", { name: "Metool", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("tab", { name: "Crab", exact: true })).toHaveCount(1);
   await expect(page.getByText("Built-in enemy, read-only.", { exact: false })).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed"),

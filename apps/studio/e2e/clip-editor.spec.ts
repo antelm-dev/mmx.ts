@@ -73,13 +73,22 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
     await page.getByRole("button", { name: "File menu" }).click();
     await page.getByRole("menuitem", { name: item }).click();
   };
+  // Assets view → double-click opens the asset's document tab.
+  const openAsset = async (id: string) => {
+    await page
+      .getByRole("navigation", { name: "Activity bar" })
+      .getByRole("button", { name: "Assets" })
+      .click();
+    await page.locator(`[data-asset-kind][title="${id}"]`).dblclick();
+  };
 
   await pick(projectRoot);
   await menu(/Open Project/);
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
-  // Slice the fixture sheet on its 32×32 grid.
-  await menu(/Slice Sheet/);
+  // Slice the fixture sheet on its 32×32 grid, from a slicer tab opened on another sprite.
+  await openAsset("sprite.bg");
+  await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.bg");
   await pick(sheetPath);
   await page.getByRole("button", { name: /Import sheet/ }).click();
   await expect(page.getByLabel("Sprite asset")).toHaveValue("sprite.sheet");
@@ -87,8 +96,11 @@ test("clips assembled from a sliced sheet play as the player animation (AC-CLIP)
   await page.getByRole("button", { name: "Apply grid" }).click();
   await page.getByRole("button", { name: "Save regions" }).click();
 
-  await menu(/Clip Editor/);
+  // The Clip Editor tab opens on the fixture animation and its sheet.
+  await openAsset("anim.player.fixture");
   const panel = page.getByTestId("clip-editor");
+  await expect(panel.getByLabel("Sprite sheet")).toHaveValue("sprite.player.fixture");
+  await expect(panel.getByLabel("Animation asset")).toHaveValue("anim.player.fixture");
   await panel.getByLabel("Sprite sheet").selectOption("sprite.sheet");
   await expect(panel.getByLabel("Animation asset")).toHaveValue("anim.sheet");
   const frames = panel.getByTestId("frame-count");

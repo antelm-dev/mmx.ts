@@ -56,11 +56,18 @@ const int = (raw: string, fallback: number, min = 0): number => {
   return raw.trim() !== "" && Number.isFinite(value) && value >= min ? value : fallback;
 };
 
-/** Tool panel: slice a sprite sheet into frame regions (auto or grid), retouch them, save them on the asset. */
-export function SheetSlicerPanel() {
+/**
+ * Document panel (C-DOC): slice a sprite sheet into frame regions (auto or grid), retouch
+ * them, save them on the asset. Starts on `params.assetId`; an `image` asset is sliced for
+ * preview only, as only sprites keep regions.
+ */
+export function SheetSlicerPanel({ params }: { params: { assetId?: unknown } }) {
   const session = useProjectSession();
-  const sprites = session.project?.manifest.assets.filter((asset) => asset.kind === "sprite") ?? [];
-  const [assetId, setAssetId] = useState("");
+  const docId = typeof params.assetId === "string" ? params.assetId : "";
+  const assets = session.project?.manifest.assets ?? [];
+  const sprites = assets.filter((asset) => asset.kind === "sprite" || asset.kind === "image");
+  const [assetId, setAssetId] = useState(docId);
+  const isSprite = sprites.some((asset) => asset.id === assetId && asset.kind === "sprite");
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [rects, setRects] = useState<Rect[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
@@ -113,6 +120,8 @@ export function SheetSlicerPanel() {
   };
 
   if (!session.open) return <PanelNote>Open a project to slice its sprite sheets.</PanelNote>;
+  if (docId && !assets.some((asset) => asset.id === docId))
+    return <PanelNote>Asset “{docId}” is not in the open project.</PanelNote>;
 
   return (
     <Panel>
@@ -269,7 +278,8 @@ export function SheetSlicerPanel() {
             Split
           </ActionButton>
           <ActionButton
-            disabled={!assetId}
+            disabled={!isSprite}
+            title={assetId && !isSprite ? "Only sprite assets keep regions" : undefined}
             onClick={() =>
               setSpriteRegions(editor.store, projectSession, assetId, toRegions(rects, byRow))
             }
