@@ -62,7 +62,8 @@ export function Select({
       <Portal>
         <ChakraSelect.Positioner>
           <ChakraSelect.Content
-            zIndex="60"
+            // Above a dialog's positioner too (New object…'s values).
+            zIndex="popover"
             py="1"
             bg="studio.popover"
             border="1px solid"

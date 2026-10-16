@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createLevelDocument } from "@mmx/content-schema";
-import { deleteBlocker, duplicateObject } from "./objectDefinitions.js";
+import { OBJECT_DEFINITIONS, createLevelDocument, getDefinition } from "@mmx/content-schema";
+import { addObject, deleteBlocker, duplicateObject, newObjectBases } from "./objectDefinitions.js";
 
 const fast = {
   id: "obj.platform.moving.1",
@@ -33,5 +33,40 @@ describe("project object definitions", () => {
       "Base of the object Crab (right); delete it first",
     );
     expect(deleteBlocker("enemy.crab", [doc], [fast])).toBeNull();
+  });
+
+  it("offers every category with a built-in base but spawn and unknown", () => {
+    const project = {
+      ...getDefinition("platform.moving")!,
+      id: "obj.fast",
+      baseId: "platform.moving",
+    };
+    const offered = newObjectBases([...OBJECT_DEFINITIONS, project]);
+    const categories = offered.map((c) => c.category);
+    expect(categories).not.toContain("spawn");
+    expect(categories).not.toContain("unknown");
+    expect(categories).toEqual(expect.arrayContaining(["enemy", "pickup", "platform", "camera"]));
+    // Project objects are no base: only built-ins are.
+    const platforms = offered.find((c) => c.category === "platform")!.bases.map((d) => d.id);
+    expect(platforms).toEqual(["platform.moving", "platform.falling"]);
+  });
+
+  it("adds an object under a free id with its values, exposing all by default", () => {
+    const base = getDefinition("platform.moving")!;
+    const values = { Travel: 64, Speed: 90, Axis: "vertical" };
+    const keys = base.properties.map((p) => p.key);
+    const all = addObject([fast], base, " Quick ", values, keys);
+    expect(all.id).toBe("obj.platform.moving.2");
+    expect(all.objects[1]).toEqual({ id: all.id, name: "Quick", base: base.id, values });
+    const some = addObject(all.objects, base, "Fixed", values, ["Speed"]);
+    expect(some.id).toBe("obj.platform.moving.3");
+    expect(some.objects[2]!.exposed).toEqual(["Speed"]);
+    // A base with no property gets no values.
+    const pickup = OBJECT_DEFINITIONS.find((d) => d.category === "pickup")!;
+    expect(addObject([], pickup, "Big", {}, []).objects[0]).toEqual({
+      id: `obj.${pickup.id}.1`,
+      name: "Big",
+      base: pickup.id,
+    });
   });
 });

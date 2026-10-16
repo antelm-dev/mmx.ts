@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
 import { Copy, Pencil, Search, Trash2, X } from "lucide-react";
@@ -17,7 +17,6 @@ import { ActionButton } from "../ui/editor/action-button.js";
 import { ListRow, ListRowAdd } from "../ui/editor/list-row.js";
 import { Panel, PanelActions, PanelNote, PanelScroll, SearchBox } from "../ui/editor/panel.js";
 import { CategoryHeader } from "../ui/editor/section-title.js";
-import { NewEnemyDialog } from "./NewEnemyDialog.js";
 import { definitionDeleteBlocker } from "./ObjectDefinitionSection.js";
 import { SpritePreview } from "./SpritePreview.js";
 
@@ -64,7 +63,7 @@ export function PalettePanel() {
   const query = useUiStore((s) => s.paletteQuery);
   const setQuery = useUiStore((s) => s.setPaletteQuery);
   const session = useProjectSession();
-  const [newEnemy, setNewEnemy] = useState(false);
+  const openNewObject = useUiStore((s) => s.openNewObject);
   // New ids are picked against the merged data, which is the engine's alone while data/game.json has errors.
   const broken = session.open && projectSession.gameData().issues.length > 0;
 
@@ -85,17 +84,16 @@ export function PalettePanel() {
         )}
       </SearchBox>
       <PaletteList query={query} snap={snap} />
-      {/* A project's enemies are saved in its data/game.json. */}
+      {/* New objects are saved in the project: its manifest, or data/game.json for enemies. */}
       {session.open && (
         <PanelActions>
           <ActionButton
             disabled={broken}
             title={broken ? "Fix the data/game.json errors in Problems first" : undefined}
-            onClick={() => setNewEnemy(true)}
+            onClick={() => openNewObject()}
           >
-            New enemy…
+            New object…
           </ActionButton>
-          <NewEnemyDialog open={newEnemy} onClose={() => setNewEnemy(false)} />
         </PanelActions>
       )}
     </Panel>

@@ -1,5 +1,40 @@
-import type { LevelDocument } from "@mmx/content-schema";
+import { CATEGORY_ORDER, type GameObjectDefinition, type LevelDocument } from "@mmx/content-schema";
 import type { ProjectObjectDefinition } from "@mmx/project-schema";
+
+/**
+ * New object…: the categories offered, in palette order, and the built-in bases of
+ * each, from catalog `defs`. A spawn must stay unique and a missing object is no base.
+ */
+export function newObjectBases(
+  defs: readonly GameObjectDefinition[],
+): { category: string; bases: GameObjectDefinition[] }[] {
+  return CATEGORY_ORDER.filter((c) => c !== "spawn" && c !== "unknown")
+    .map((category) => ({
+      category,
+      bases: defs.filter((d) => d.category === category && !d.baseId),
+    }))
+    .filter((c) => c.bases.length > 0);
+}
+
+/**
+ * `objects` plus a new object based on `base` under a free id, and that id. `exposed`
+ * is left out when every property stays editable per instance, as the manifest's default.
+ */
+export function addObject(
+  objects: readonly ProjectObjectDefinition[],
+  base: GameObjectDefinition,
+  name: string,
+  values: Record<string, unknown>,
+  exposed: readonly string[],
+): { objects: ProjectObjectDefinition[]; id: string } {
+  const id = freeObjectId(base.id, objects);
+  const keys = base.properties.map((p) => p.key);
+  const entry: ProjectObjectDefinition = { id, name: name.trim(), base: base.id };
+  if (keys.length > 0) entry.values = values;
+  if (keys.some((k) => !exposed.includes(k)))
+    entry.exposed = keys.filter((k) => exposed.includes(k));
+  return { objects: [...objects, entry], id };
+}
 
 /** A free `obj.<base>.<n>` id; built-in ids never start with `obj.`. */
 export function freeObjectId(base: string, objects: readonly ProjectObjectDefinition[]): string {

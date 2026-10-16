@@ -22,6 +22,7 @@ import { ClipEditorPanel } from "./components/ClipEditorPanel.js";
 import { EnemyEditorPanel } from "./components/EnemyEditorPanel.js";
 import { TilesetDocument } from "./components/TilesetDocument.js";
 import { Toasts } from "./components/Toasts.js";
+import { NewObjectDialog } from "./components/NewObjectDialog.js";
 import { ActivityBar } from "./components/ActivityBar.js";
 import { StartPage } from "./components/StartPage.js";
 import { SaveProjectDialog } from "./components/SaveProjectDialog.js";
@@ -136,6 +137,7 @@ export function App() {
       </chakra.div>
       <Toasts />
       <SaveProjectDialog />
+      <NewObjectDialog />
     </>
   );
 }

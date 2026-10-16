@@ -44,13 +44,14 @@ test("New enemy: create a Crab from the Metool, place it, save it, and play it",
   await page.getByRole("menuitem", { name: /Open Project/ }).click();
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
-  // Palette → New enemy…
+  // Palette → New object… → Enemies
   await page.getByRole("tab", { name: "Object Palette" }).click();
-  await page.getByRole("button", { name: "New enemy…" }).click();
-  const dialog = page.getByRole("dialog", { name: "New enemy" });
+  await page.getByRole("button", { name: "New object…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New object" });
+  await dialog.getByRole("button", { name: "Enemies" }).click();
+  await dialog.getByRole("button", { name: "Metool" }).click();
   await dialog.getByLabel("Name").fill("Crab");
   await expect(dialog.getByText("Id: enemy.crab")).toBeVisible();
-  await dialog.getByLabel("Based on").selectOption("metool");
   await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
   await dialog.getByLabel("Health").fill("3");
   await dialog.getByLabel("Touch damage").fill("2");

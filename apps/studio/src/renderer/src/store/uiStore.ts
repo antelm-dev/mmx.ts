@@ -43,6 +43,8 @@ interface UiState {
   partWheelOpen: boolean;
   /** The first Save of an untitled project asks for its name (SaveProjectDialog). */
   saveProjectOpen: boolean;
+  /** The open New object… dialog, starting at `category` when given; null when closed. */
+  newObject: { category?: string } | null;
 
   addToast: (message: string) => void;
   dismissToast: (id: number) => void;
@@ -59,6 +61,9 @@ interface UiState {
   addRecentPart: (part: RecentPart) => void;
   setPartWheelOpen: (open: boolean) => void;
   setSaveProjectOpen: (open: boolean) => void;
+  /** New object… (C-NEWOBJ); the dialog assumes a project is open. */
+  openNewObject: (category?: string) => void;
+  closeNewObject: () => void;
 }
 
 let toastSeq = 0;
@@ -81,6 +86,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   recentParts: [],
   partWheelOpen: false,
   saveProjectOpen: false,
+  newObject: null,
   minimapVisible: minimapVisibleAtLaunch(),
 
   addToast: (message) => {
@@ -113,6 +119,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   addRecentPart: (part) => set((s) => ({ recentParts: pushRecentPart(s.recentParts, part) })),
   setPartWheelOpen: (partWheelOpen) => set({ partWheelOpen }),
   setSaveProjectOpen: (saveProjectOpen) => set({ saveProjectOpen }),
+  openNewObject: (category) => set({ newObject: { category } }),
+  closeNewObject: () => set({ newObject: null }),
   toggleMinimap: () => {
     const minimapVisible = !get().minimapVisible;
     persistMinimapVisible(minimapVisible);
