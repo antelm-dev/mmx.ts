@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
+import { useEffect, useId, useState, type CSSProperties, type PointerEvent } from "react";
 import { chakra } from "@chakra-ui/react";
 import { AnimationCursor } from "@mmx/engine";
 import type {
@@ -158,6 +158,8 @@ export function ClipEditorPanel({
   const [tool, setTool] = useState<PreviewTool>("anchor");
   const [boxSel, setBoxSel] = useState<BoxRef | null>(null);
   const [drag, setDrag] = useState<BoxDrag | null>(null);
+  // Per tab: a shared id would point every tab's clip-name field at the first tab's list.
+  const clipNamesId = useId();
 
   const sheetAsset = sheets.find((asset) => asset.id === sheetId);
   const regions = projectSession.spriteRegions(sheetId);
@@ -460,7 +462,7 @@ export function ClipEditorPanel({
             <Grid2>
               <Field label="Clip name">
                 <FieldInput
-                  list="clip-names"
+                  list={clipNamesId}
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                 />
@@ -475,7 +477,7 @@ export function ClipEditorPanel({
                 </FieldSelect>
               </Field>
             </Grid2>
-            <datalist id="clip-names">
+            <datalist id={clipNamesId}>
               {required
                 .filter((name) => !clips[name])
                 .map((name) => (
