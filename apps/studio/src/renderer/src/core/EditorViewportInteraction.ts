@@ -103,7 +103,10 @@ export class EditorViewportInteraction {
   } | null = null;
   private marqueeActive = false;
   pointerWorld = { x: 0, y: 0 };
-  /** Last client position over the canvas: re-projected on read, so a zoom or fit since is seen. */
+  /**
+   * Last client position over the canvas (null once the pointer leaves it): re-projected on
+   * read, so a zoom or fit since is seen.
+   */
   private hoverClient: { x: number; y: number } | null = null;
 
   constructor(
@@ -385,6 +388,7 @@ export class EditorViewportInteraction {
     const c = this.canvas;
     c.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     c.addEventListener("pointermove", (e) => this.onPointerMove(e));
+    c.addEventListener("pointerleave", () => (this.hoverClient = null));
     const { signal } = this.windowListeners;
     window.addEventListener("pointerup", (e) => this.onPointerUp(e), { signal });
     c.addEventListener("wheel", (e) => this.onWheel(e), { passive: false });

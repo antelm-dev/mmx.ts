@@ -16,6 +16,7 @@ import {
   setRoomSettings,
   setTileAt,
 } from "../core/actions.js";
+import { copySelection, cutSelection, pasteClipboard } from "../core/clipboard.js";
 import { EditorViewport } from "../core/EditorViewport.js";
 import { tileGrid } from "../core/EditorViewportGeometry.js";
 import { type PlaytestSnapshot } from "@mmx/editor-runtime";
@@ -37,7 +38,7 @@ import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
-import { focusPanel, openEnemyDocument } from "./dock.js";
+import { focusPanel, isPanelVisible, openEnemyDocument } from "./dock.js";
 import {
   dispatchEditorKey,
   undoScopeOf,
@@ -680,6 +681,20 @@ export class EditorController {
   deleteSelection(): void {
     deleteSelection(this.store);
   }
+  // Copy, cut and paste act on the level only while its viewport tab is shown.
+  copySelection(): void {
+    if (isPanelVisible("viewport")) copySelection(this.store);
+  }
+  cutSelection(): void {
+    if (isPanelVisible("viewport")) cutSelection(this.store);
+  }
+  /** Paste at the pointer when it is over the canvas, else next to the copied items. */
+  paste(): void {
+    if (!isPanelVisible("viewport")) return;
+    this.closeEmptyContextMenu();
+    const message = pasteClipboard(this.store, this.viewport?.pointerWorld() ?? undefined);
+    if (message) this.toast(message);
+  }
 
   /** Add a project enemy (data/game.json) and pick it for placing; saved with the project. */
   createEnemy(input: NewEnemyInput): void {
@@ -838,6 +853,7 @@ export class EditorController {
       isFullscreen: uiState.fullscreen,
       hasContextMenu: !!uiState.contextMenu,
       invulnerable: this.playtest.getSnapshot().debug.invulnerable,
+      hasTextSelection: hasPageTextSelection(),
       undoScope: this.undoScope,
     };
 
@@ -875,6 +891,15 @@ export class EditorController {
         break;
       case "delete":
         this.deleteSelection();
+        break;
+      case "copy":
+        this.copySelection();
+        break;
+      case "cut":
+        this.cutSelection();
+        break;
+      case "paste":
+        this.paste();
         break;
       case "fit":
         this.fit();
@@ -959,6 +984,18 @@ export class EditorController {
   toast(message: string): void {
     useUiStore.getState().addToast(message);
   }
+}
+
+/**
+ * Whether selectable page text (the About dialog's URLs) is selected. An input's selection
+ * outlives its focus and still shows in `toString()`, but reads as collapsed on the input's
+ * parent, which inherits the body's `user-select: none`: it does not count.
+ */
+function hasPageTextSelection(): boolean {
+  const sel = window.getSelection();
+  const node = sel?.isCollapsed === false ? sel.anchorNode : null;
+  const el = node instanceof Element ? node : node?.parentElement;
+  return !!el && getComputedStyle(el).userSelect !== "none";
 }
 
 /** The one editor instance the whole renderer shares. */

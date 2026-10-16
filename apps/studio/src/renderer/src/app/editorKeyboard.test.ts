@@ -27,6 +27,7 @@ const editCtx: KeyboardContext = {
   isFullscreen: false,
   hasContextMenu: false,
   invulnerable: false,
+  hasTextSelection: false,
   undoScope: "level",
 };
 
@@ -37,6 +38,7 @@ const playCtx: KeyboardContext = {
   isFullscreen: false,
   hasContextMenu: false,
   invulnerable: false,
+  hasTextSelection: false,
   undoScope: "level",
 };
 
@@ -123,6 +125,10 @@ describe("typing-field protection", () => {
   it("Ctrl+S still works in typing field", () => {
     expect(dispatch(key("KeyS", { mod: true }), typingCtx)).toEqual({ kind: "save" });
   });
+  it("Ctrl+C/X/V stay native in typing field", () => {
+    for (const code of ["KeyC", "KeyX", "KeyV"])
+      expect(dispatch(key(code, { mod: true }), typingCtx)).toBeNull();
+  });
 });
 
 // ---------- Escape precedence ----------
@@ -165,6 +171,17 @@ describe("zoom shortcuts", () => {
 describe("tool shortcuts", () => {
   it("V → toolSelect", () => {
     expect(dispatch(key("KeyV"))).toEqual({ kind: "toolSelect" });
+  });
+  it("Ctrl/Cmd+C, X, V → copy, cut, paste (not the Select tool)", () => {
+    expect(dispatch(key("KeyC", { mod: true }))).toEqual({ kind: "copy" });
+    expect(dispatch(key("KeyX", { meta: true }))).toEqual({ kind: "cut" });
+    expect(dispatch(key("KeyV", { mod: true }))).toEqual({ kind: "paste" });
+  });
+  it("Ctrl+C/X copy selected page text natively; Ctrl+V still pastes", () => {
+    const textCtx: KeyboardContext = { ...editCtx, hasTextSelection: true };
+    expect(dispatch(key("KeyC", { mod: true }), textCtx)).toBeNull();
+    expect(dispatch(key("KeyX", { mod: true }), textCtx)).toBeNull();
+    expect(dispatch(key("KeyV", { mod: true }), textCtx)).toEqual({ kind: "paste" });
   });
   it("T → toolTile", () => {
     expect(dispatch(key("KeyT"))).toEqual({ kind: "toolTile" });
