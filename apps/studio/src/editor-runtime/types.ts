@@ -3,6 +3,7 @@ import type { CompiledGameData } from "@mmx/engine/data";
 import type { PlaytestAudio } from "./PlaytestAudio.js";
 import type { PlaytestInput } from "./PlaytestInput.js";
 import type { PlaytestSnapshot } from "./snapshots.js";
+import type { RecordedRun } from "./trail.js";
 import type { ClipboardAccess, ReplayFileAccess } from "@mmx/runtime/debug";
 import type { BrowserInputBindings } from "@mmx/runtime/browser";
 import type { AssetCatalog, RendererAssetManifest } from "@mmx/renderer-pixi";
@@ -34,6 +35,8 @@ export interface EditorPlaytestSession {
   step(input?: PlaytestInput): void;
   snapshot(): PlaytestSnapshot;
   dispose(): void;
+  /** The running Play's input timeline and scene, for {@link traceRun}; null when stopped. */
+  recordedRun(): RecordedRun | null;
 
   togglePause(): void;
   readonly isPaused: boolean;

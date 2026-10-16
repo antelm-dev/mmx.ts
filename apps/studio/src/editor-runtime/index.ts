@@ -1,6 +1,7 @@
 export { createPlaytest } from "./session.js";
 export type { PlaytestAudio } from "./PlaytestAudio.js";
 export type { CreatePlaytestOptions, EditorPlaytestSession } from "./types.js";
+export { traceRun, type PlayTrail, type RecordedRun, type TraceOptions } from "./trail.js";
 export { PlaytestInput, type PlaytestAction } from "./PlaytestInput.js";
 export {
   STOPPED_PLAYTEST,
