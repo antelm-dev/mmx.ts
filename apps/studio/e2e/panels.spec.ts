@@ -102,3 +102,36 @@ test("New Level shows a dismissible toast", async () => {
   await toast.getByRole("button", { name: "Dismiss" }).click();
   await expect(toast).toHaveCount(0);
 });
+
+test("activity bar surfaces side views, marks the shown one and reopens a closed view in place", async () => {
+  const bar = page.getByRole("navigation", { name: "Activity bar" });
+  const objects = bar.getByRole("button", { name: "Objects" });
+  const scene = bar.getByRole("button", { name: "Scene" });
+  const problems = bar.getByRole("button", { name: "Problems" });
+
+  await scene.click();
+  await expect(page.getByRole("tab", { name: /Scene/ })).toHaveAttribute("aria-selected", "true");
+  await expect(scene).toHaveAttribute("aria-pressed", "true");
+  await expect(objects).toHaveAttribute("aria-pressed", "false");
+  await objects.click();
+  await expect(page.getByRole("tab", { name: "Object Palette" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(objects).toHaveAttribute("aria-pressed", "true");
+  await expect(scene).toHaveAttribute("aria-pressed", "false");
+
+  // Closed from View → Panels, Problems comes back beside Decorations.
+  const problemsTab = page.getByRole("tab", { name: "Problems" });
+  const top = async () => (await problemsTab.boundingBox())?.y;
+  const before = await top();
+  await page.getByRole("button", { name: "View menu" }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Problems" }).click();
+  await page.keyboard.press("Escape");
+  await expect(problemsTab).toHaveCount(0);
+  await expect(problems).toHaveAttribute("aria-pressed", "false");
+  await problems.click();
+  await expect(problemsTab).toHaveAttribute("aria-selected", "true");
+  await expect(problems).toHaveAttribute("aria-pressed", "true");
+  expect(await top()).toBe(before);
+});

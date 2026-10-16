@@ -18,7 +18,8 @@ async function launch() {
     env,
   });
   const page = await app.firstWindow();
-  await expect(page.locator("#viewport-canvas")).toBeVisible({ timeout: 30_000 });
+  // Attached, not visible: a fresh profile opens the Start tab over the level.
+  await expect(page.locator("#viewport-canvas")).toBeAttached({ timeout: 30_000 });
   return { app, page };
 }
 

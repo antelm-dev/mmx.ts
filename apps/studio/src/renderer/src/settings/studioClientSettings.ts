@@ -86,3 +86,25 @@ export function markNoticeSeen(storage: Pick<Storage, "setItem"> = localStorage)
     /* storage unavailable: the notice shows again next launch, which is harmless */
   }
 }
+
+export const SHOW_START_PAGE_KEY = "mmx.studio-show-start-page.v1";
+
+/** Help → Start Page's "Show at launch" preference; on unless turned off. */
+export function showStartPageAtLaunch(storage: Pick<Storage, "getItem"> = localStorage): boolean {
+  try {
+    return storage.getItem(SHOW_START_PAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+export function setShowStartPageAtLaunch(
+  show: boolean,
+  storage: Pick<Storage, "setItem"> = localStorage,
+): void {
+  try {
+    storage.setItem(SHOW_START_PAGE_KEY, String(show));
+  } catch {
+    /* storage unavailable: the default (shown) applies next launch */
+  }
+}

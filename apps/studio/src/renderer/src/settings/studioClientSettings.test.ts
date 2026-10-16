@@ -8,6 +8,8 @@ import {
   createStudioSettingsStorage,
   hasSeenNotice,
   markNoticeSeen,
+  setShowStartPageAtLaunch,
+  showStartPageAtLaunch,
   STUDIO_CLIENT_SETTINGS_KEY,
 } from "./studioClientSettings.js";
 
@@ -114,5 +116,20 @@ describe("first-launch notice flag", () => {
     };
     expect(() => markNoticeSeen(broken)).not.toThrow();
     expect(hasSeenNotice(broken)).toBe(false);
+  });
+});
+
+describe("start page preference", () => {
+  it("defaults to shown and remembers being turned off", () => {
+    const memory = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => void memory.set(key, value),
+    };
+    expect(showStartPageAtLaunch(storage)).toBe(true);
+    setShowStartPageAtLaunch(false, storage);
+    expect(showStartPageAtLaunch(storage)).toBe(false);
+    setShowStartPageAtLaunch(true, storage);
+    expect(showStartPageAtLaunch(storage)).toBe(true);
   });
 });

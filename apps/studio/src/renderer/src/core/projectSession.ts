@@ -539,7 +539,8 @@ export class ProjectSession {
     return this.state.issues;
   }
 
-  async openProject(): Promise<ProjectIssue[]> {
+  /** Load the project at `path` (a recent project), or at a folder the user picks. */
+  async openProject(path?: string): Promise<ProjectIssue[]> {
     const bridge = window.studio?.project;
     if (!bridge) {
       return [
@@ -552,7 +553,7 @@ export class ProjectSession {
       ];
     }
 
-    const rootPath = await bridge.pickDirectory("Open Project");
+    const rootPath = path ?? (await bridge.pickDirectory("Open Project"));
     if (!rootPath) return [];
 
     const result = await bridge.load(rootPath);

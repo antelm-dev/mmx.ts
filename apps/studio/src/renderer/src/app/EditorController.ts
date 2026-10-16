@@ -29,6 +29,8 @@ import {
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
 import { projectSession } from "../core/projectSession.js";
+import type { ProjectIssue, StudioProject } from "@mmx/project-io";
+import { addRecentProject } from "../settings/recentProjects.js";
 import type { GameDataOverlay } from "@mmx/engine/data";
 import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
 import { duplicateEnemy } from "../core/enemyEditor.js";
@@ -42,6 +44,12 @@ import {
 } from "./editorKeyboard.js";
 
 const ZOOM_STEP = 1.2;
+
+/** Outcome of a project command; `error` is set when it failed rather than being cancelled. */
+export interface ProjectOpenResult {
+  opened: boolean;
+  error?: string;
+}
 
 /**
  * A single immutable view of everything the React tree renders from. Rebuilt on
@@ -362,12 +370,13 @@ export class EditorController {
 
   // ---------- File ----------
 
-  /** Start a fresh, blank level with a floor and a single Spawn. */
-  newLevel(): void {
-    if (!this.confirmDiscardIfDirty("Create a new level?")) return;
+  /** Start a fresh, blank level with a floor and a single Spawn; false if the user kept their edits. */
+  newLevel(): boolean {
+    if (!this.confirmDiscardIfDirty("Create a new level?")) return false;
     if (this.store.get().mode === "play") this.togglePlay();
     this.openDocument(createLevelDocument());
     this.toast("New level created.");
+    return true;
   }
 
   save(): void {
@@ -395,78 +404,93 @@ export class EditorController {
     this.toast("Level saved.");
   }
 
-  async createProject(): Promise<void> {
-    if (!this.confirmDiscardIfDirty("Create a new project?")) return;
+  async createProject(): Promise<ProjectOpenResult> {
+    if (!this.confirmDiscardIfDirty("Create a new project?")) return { opened: false };
     if (this.store.get().mode === "play") this.togglePlay();
+    const before = projectSession.getSnapshot().project;
     const issues = await projectSession.createProject();
     void this.applyProjectAssets();
-    if (issues.some((issue) => issue.severity === "error")) {
-      this.toast(`Create project failed: ${issues[0]?.message ?? "validation error"}`);
-      return;
-    }
-    const entry = projectSession.getEntryLevelDocument();
-    if (!entry) {
-      this.toast("Project created but no entry level was found.");
-      return;
-    }
-    this.openDocument(entry);
-    this.toast(`Project '${projectSession.getSnapshot().project?.manifest.name ?? ""}' created.`);
+    return this.enterProject(before, issues, {
+      failed: "Create project failed",
+      opened: (name) => `Project '${name}' created.`,
+      noEntry: "Project created but no entry level was found.",
+    });
   }
 
-  async createFromStarter(): Promise<void> {
-    if (!this.confirmDiscardIfDirty("Create a new project from the MMX starter template?")) return;
+  async createFromStarter(): Promise<ProjectOpenResult> {
+    if (!this.confirmDiscardIfDirty("Create a new project from the MMX starter template?")) {
+      return { opened: false };
+    }
     if (this.store.get().mode === "play") this.togglePlay();
+    const before = projectSession.getSnapshot().project;
     const issues = await projectSession.createFromStarter();
     void this.applyProjectAssets();
-    if (issues.some((issue) => issue.severity === "error")) {
-      this.toast(`Create starter project failed: ${issues[0]?.message ?? "validation error"}`);
-      return;
-    }
-    const entry = projectSession.getEntryLevelDocument();
-    if (!entry) {
-      this.toast("Starter project created but no entry level was found.");
-      return;
-    }
-    this.openDocument(entry);
-    this.toast(
-      `MMX starter project '${projectSession.getSnapshot().project?.manifest.name ?? ""}' created.`,
-    );
+    return this.enterProject(before, issues, {
+      failed: "Create starter project failed",
+      opened: (name) => `MMX starter project '${name}' created.`,
+      noEntry: "Starter project created but no entry level was found.",
+    });
   }
 
-  async openProject(): Promise<void> {
-    if (!this.confirmDiscardIfDirty("Open another project?")) return;
+  /** Open the project at `rootPath`, or at a folder the user picks. */
+  async openProject(rootPath?: string): Promise<ProjectOpenResult> {
+    if (!this.confirmDiscardIfDirty("Open another project?")) return { opened: false };
     if (this.store.get().mode === "play") this.togglePlay();
-    const issues = await projectSession.openProject();
+    const before = projectSession.getSnapshot().project;
+    const issues = await projectSession.openProject(rootPath);
     void this.applyProjectAssets();
-    if (issues.some((issue) => issue.severity === "error")) {
-      this.toast(`Open project failed: ${issues[0]?.message ?? "validation error"}`);
-      return;
-    }
-    const entry = projectSession.getEntryLevelDocument();
-    if (!entry) {
-      this.toast("Project opened but no entry level was found.");
-      return;
-    }
-    this.openDocument(entry);
-    this.toast(`Opened project '${projectSession.getSnapshot().project?.manifest.name ?? ""}'.`);
+    return this.enterProject(before, issues, {
+      failed: "Open project failed",
+      opened: (name) => `Opened project '${name}'.`,
+      noEntry: "Project opened but no entry level was found.",
+    });
   }
 
-  async importFromSteam(): Promise<void> {
-    if (!this.confirmDiscardIfDirty("Import a project from your Steam installs?")) return;
+  /** Start page: reopen a recent project, with the same unsaved-changes guard. */
+  openRecentProject(rootPath: string): Promise<ProjectOpenResult> {
+    return this.openProject(rootPath);
+  }
+
+  async importFromSteam(): Promise<ProjectOpenResult> {
+    if (!this.confirmDiscardIfDirty("Import a project from your Steam installs?")) {
+      return { opened: false };
+    }
     if (this.store.get().mode === "play") this.togglePlay();
+    const before = projectSession.getSnapshot().project;
     const issues = await projectSession.importFromSteam((step) => this.toast(`Import: ${step}…`));
-    if (issues.some((issue) => issue.severity === "error")) {
-      this.toast(`Import failed: ${issues[0]?.message ?? "validation error"}`);
-      return;
+    if (!issues.some((issue) => issue.severity === "error")) void this.applyProjectAssets();
+    return this.enterProject(before, issues, {
+      failed: "Import failed",
+      opened: (name) => `Imported project '${name}'.`,
+      noEntry: "Imported, but no entry level was found.",
+    });
+  }
+
+  /**
+   * Shared tail of the project commands: report a failure, or remember the project as recent
+   * and show its entry level. The same project object as `before` means the picker was cancelled.
+   */
+  private enterProject(
+    before: StudioProject | null,
+    issues: ProjectIssue[],
+    messages: { failed: string; opened: (name: string) => string; noEntry: string },
+  ): ProjectOpenResult {
+    const error = issues.find((issue) => issue.severity === "error");
+    if (error) {
+      this.toast(`${messages.failed}: ${error.message}`);
+      return { opened: false, error: error.message };
     }
-    void this.applyProjectAssets();
+    const { rootPath, project } = projectSession.getSnapshot();
+    if (project === before || !rootPath || !project) return { opened: false };
+    addRecentProject({ rootPath, name: project.manifest.name });
     const entry = projectSession.getEntryLevelDocument();
     if (!entry) {
-      this.toast("Imported, but no entry level was found.");
-      return;
+      this.toast(messages.noEntry);
+      return { opened: true };
     }
     this.openDocument(entry);
-    this.toast(`Imported project '${projectSession.getSnapshot().project?.manifest.name ?? ""}'.`);
+    this.toast(messages.opened(project.manifest.name));
+    return { opened: true };
   }
 
   async exportProject(): Promise<void> {
