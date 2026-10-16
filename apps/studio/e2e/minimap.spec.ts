@@ -72,11 +72,13 @@ test("AC-MINIMAP: the minimap shows the level, recentres the view and hides from
   const worldW = 40 * 16;
   const worldH = 23 * 16;
   const s = (await strip.boundingBox())!;
+  // Pointer events land on later frames than the mouse calls resolve: poll the view.
+  const near = (x: number, y: number) => async () => {
+    const v = await view();
+    return v.zoom === zoomed && Math.abs(v.cx - x) < 8 && Math.abs(v.cy - y) < 8;
+  };
   await page.mouse.click(s.x + s.width * 0.2, s.y + s.height * 0.5);
-  let now = await view();
-  expect(now.zoom).toBe(zoomed);
-  expect(Math.abs(now.cx - worldW * 0.2)).toBeLessThan(8);
-  expect(Math.abs(now.cy - worldH * 0.5)).toBeLessThan(8);
+  await expect.poll(near(worldW * 0.2, worldH * 0.5)).toBe(true);
   // The view rectangle follows.
   const rect = (await minimap.getByTestId("minimap-view").boundingBox())!;
   expect(Math.abs(rect.x + rect.width / 2 - (s.x + s.width * 0.2))).toBeLessThan(2);
@@ -85,13 +87,10 @@ test("AC-MINIMAP: the minimap shows the level, recentres the view and hides from
   await page.mouse.move(s.x + s.width * 0.3, s.y + s.height * 0.3);
   await page.mouse.down();
   await page.mouse.move(s.x + s.width * 0.6, s.y + s.height * 0.4, { steps: 4 });
-  now = await view();
-  expect(Math.abs(now.cx - worldW * 0.6)).toBeLessThan(8);
+  await expect.poll(near(worldW * 0.6, worldH * 0.4)).toBe(true);
   await page.mouse.move(s.x + s.width * 0.8, s.y + s.height * 0.6, { steps: 4 });
   await page.mouse.up();
-  now = await view();
-  expect(Math.abs(now.cx - worldW * 0.8)).toBeLessThan(8);
-  expect(Math.abs(now.cy - worldH * 0.6)).toBeLessThan(8);
+  await expect.poll(near(worldW * 0.8, worldH * 0.6)).toBe(true);
 
   // The wheel over the minimap does not zoom the editor.
   await page.mouse.move(s.x + s.width / 2, s.y + s.height / 2);
