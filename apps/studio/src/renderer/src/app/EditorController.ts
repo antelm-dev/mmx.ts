@@ -33,7 +33,6 @@ import {
   createFileAccess,
   parseDocument,
   readRecovery,
-  retargetRecovery,
   serializeDocument,
   writeRecovery,
 } from "../core/persistence.js";
@@ -465,14 +464,20 @@ export class EditorController {
     if (!issues) return;
     const error = issues.find((issue) => issue.severity === "error");
     if (error) {
-      this.toast(`Project save failed: ${error.message}`);
+      // Only the move reports `work-project.*`: the save to the work folder went through.
+      this.toast(
+        error.code.startsWith("work-project.")
+          ? `Project saved among the unsaved projects but could not be moved: ${error.message}`
+          : `Project save failed: ${error.message}`,
+      );
       return;
     }
     const { rootPath, project, untitled } = projectSession.getSnapshot();
     if (untitled || !rootPath || !project || rootPath === workRoot) return;
-    // The draft follows the project to its folder, so it still restores into it.
-    retargetRecovery(workRoot, rootPath);
-    this.dropRecovery();
+    // Save wrote every level, so a draft of the work project is redundant now.
+    if (readRecovery()?.rootPath === workRoot) clearRecovery();
+    this.draftWritten = false;
+    this.recoveryOffered = false;
     this.store.markSaved();
     addRecentProject({ rootPath, name: project.manifest.name });
     const warning = issues.find((issue) => issue.code === "work-project.cleanup");
@@ -504,7 +509,8 @@ export class EditorController {
     this.dropRecovery();
     const entry = projectSession.getCurrentLevelDocument();
     if (entry) {
-      // shortcut: the undo history restarts here (the level's id becomes the entry's); keep it if users miss it.
+      // shortcut: store.open restarts the undo history (the level's id becomes the entry's) and resets the
+      // selection, tool, placing ids, layer visibility/lock and the Play trail; keep them if users miss it.
       this.store.open(entry);
       this.syncPageTitle(this.computeTitle());
     }

@@ -74,7 +74,11 @@ const project = {
   }),
   listWorkProjects: async () => workProjects,
   pickWorkDestination: async () => "/games/hero",
-  moveWorkProject: async () => ({ ok: true, issues: [], value: { rootPath: "/games/hero" } }),
+  moveWorkProject: vi.fn(async () => ({
+    ok: true,
+    issues: [] as unknown[],
+    value: { rootPath: "/games/hero" },
+  })),
 };
 const WORK = "/userData/work-projects/w1";
 let workProjects: { rootPath: string; name: string; modifiedAt: number }[] = [];
@@ -191,9 +195,39 @@ describe("EditorController work project (C-WORK)", () => {
       rootPath: "/games/hero",
       untitled: false,
     });
-    expect(JSON.parse(storage.get(V2)!)).toMatchObject({ rootPath: "/games/hero" });
+    // Save wrote every level: the draft is redundant and not offered at the next launch.
+    expect(storage.has(V2)).toBe(false);
+    expect(editor.hasRecoveryDraft()).toBe(false);
     expect(readRecentProjects()).toMatchObject([{ rootPath: "/games/hero", name: "Hero" }]);
     workProjects = [];
+    await projectSession.getAssets();
+  });
+
+  it("a failed move says the project was saved among the unsaved projects, still unsaved", async () => {
+    projectSession.close();
+    const editor = new EditorController();
+    expect(await editor.ensureProject()).toBe(true);
+    project.moveWorkProject.mockResolvedValueOnce({
+      ok: false,
+      issues: [
+        {
+          severity: "error",
+          code: "work-project.move",
+          path: "/",
+          message: "Choose an empty folder.",
+        },
+      ],
+    } as never);
+    await editor.saveUntitledProject("Hero");
+    expect(projectSession.getSnapshot()).toMatchObject({
+      rootPath: WORK,
+      untitled: true,
+      dirty: true,
+    });
+    expect(useUiStore.getState().toasts.at(-1)?.message).toBe(
+      "Project saved among the unsaved projects but could not be moved: Choose an empty folder.",
+    );
+    expect(readRecentProjects()).toEqual([]);
     await projectSession.getAssets();
   });
 });

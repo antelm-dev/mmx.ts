@@ -583,7 +583,8 @@ describe("ProjectSession work project (C-WORK)", () => {
     const session = new ProjectSession();
     await session.createWorkProject({} as never);
     expect(await session.saveUntitled("Hero Game")).toEqual([failed]);
-    expect(session.getSnapshot()).toMatchObject({ rootPath: work, untitled: true });
+    // Written to the work folder only: it still reads as unsaved.
+    expect(session.getSnapshot()).toMatchObject({ rootPath: work, untitled: true, dirty: true });
     await session.getAssets();
   });
 });

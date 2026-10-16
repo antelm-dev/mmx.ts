@@ -848,7 +848,12 @@ export class ProjectSession {
 
     const moved = await bridge.moveWorkProject({ workRoot, destination });
     if (!moved.ok) {
-      this.setState({ ...this.state, issues: [...moved.issues, ...this.state.issues] });
+      // Saved, but only in the work folder: still unsaved for the user (opening another asks).
+      this.setState({
+        ...this.state,
+        dirty: true,
+        issues: [...moved.issues, ...this.state.issues],
+      });
       return moved.issues;
     }
     this.workProjects = this.workProjects.filter((entry) => entry.rootPath !== workRoot);
