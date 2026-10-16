@@ -131,8 +131,10 @@ test("activity bar surfaces side views, marks the shown one and reopens a closed
   const top = async () => (await problemsTab.boundingBox())?.y;
   const before = await top();
   await page.getByRole("button", { name: "View menu" }).click();
+  await page.getByRole("menuitem", { name: "Panels", exact: true }).click();
   await page.getByRole("menuitemcheckbox", { name: "Problems" }).click();
   await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
   await expect(problemsTab).toHaveCount(0);
   await expect(problems).toHaveAttribute("aria-pressed", "false");
   await problems.click();

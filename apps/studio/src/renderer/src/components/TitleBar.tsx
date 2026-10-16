@@ -20,6 +20,7 @@ import {
   Minus,
   Monitor,
   Moon,
+  PanelsTopLeft,
   RotateCcw,
   Save,
   Share2,
@@ -54,6 +55,7 @@ import {
   MenuSeparator,
   MenuShortcut,
   MenuTrigger,
+  MenuTriggerItem,
 } from "../ui/primitives/menu.js";
 
 const controls = () => window.studio?.window;
@@ -308,21 +310,26 @@ function ViewMenu() {
       </MenuGroup>
 
       <MenuSeparator />
-      <MenuGroup label="Panels">
-        {PANELS.map((p) => (
-          <MenuCheckboxItem
-            key={p.id}
-            value={`panel-${p.id}`}
-            closeOnSelect={false}
-            checked={open.includes(p.id)}
-            onCheckedChange={() => togglePanel(p.id)}
-          >
-            {p.title}
-          </MenuCheckboxItem>
-        ))}
-      </MenuGroup>
-
-      <MenuSeparator />
+      {/* A submenu: one row per panel would push the View menu past a 1280×800 window. */}
+      <MenuRoot positioning={{ placement: "right-start", gutter: 2 }}>
+        <MenuTriggerItem>
+          <PanelsTopLeft size={13} /> Panels
+        </MenuTriggerItem>
+        <MenuContent overflowY="auto">
+          {PANELS.map((p) => (
+            <MenuCheckboxItem
+              key={p.id}
+              value={`panel-${p.id}`}
+              valueText={p.title}
+              closeOnSelect={false}
+              checked={open.includes(p.id)}
+              onCheckedChange={() => togglePanel(p.id)}
+            >
+              {p.title}
+            </MenuCheckboxItem>
+          ))}
+        </MenuContent>
+      </MenuRoot>
       <MenuItem
         value="reset-layout"
         onSelect={() => {

@@ -1,5 +1,5 @@
 import { Box, Menu, Portal } from "@chakra-ui/react";
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 
 /** Escape closes the menu only; it must not reach the editor's window shortcuts (exit Play, clear selection). */
@@ -45,6 +45,29 @@ export function MenuItem(props: ComponentProps<typeof Menu.Item>) {
       _highlighted={{ bg: "studio.popoverHover", color: "studio.menuFgHover" }}
       {...props}
     />
+  );
+}
+
+/** Item that opens a nested `MenuRoot` (ArrowRight / hover open it, ArrowLeft closes it, Escape closes the whole menu). */
+export function MenuTriggerItem({ children, ...props }: ComponentProps<typeof Menu.TriggerItem>) {
+  return (
+    <Menu.TriggerItem
+      gap="9px"
+      px="3"
+      py="1.5"
+      rounded="0"
+      fontSize="12.5px"
+      color="studio.menuFg"
+      cursor="pointer"
+      _highlighted={{ bg: "studio.popoverHover", color: "studio.menuFgHover" }}
+      _open={{ bg: "studio.popoverHover", color: "studio.menuFgHover" }}
+      {...props}
+    >
+      {children}
+      <Box as="span" ms="auto" display="inline-flex" color="studio.fgTertiary">
+        <ChevronRight size={13} />
+      </Box>
+    </Menu.TriggerItem>
   );
 }
 
