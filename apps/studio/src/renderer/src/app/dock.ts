@@ -163,8 +163,10 @@ export interface DocumentSpec {
 
 /**
  * Open a document as a tab in the level view's group, or surface the tab of the same id
- * (with fresh params and title). Not listed under View → Panels. Play re-activates the
- * level tab itself (see `EditorController.togglePlay`), so documents may cover it.
+ * with fresh params and title. Dockview's `updateParameters` merges into the existing
+ * params rather than replacing them, so keys left out of `params` persist. Not listed
+ * under View → Panels. Play re-activates the level tab itself (see
+ * `EditorController.togglePlay`), so documents may cover it.
  */
 export function openDocument(doc: DocumentSpec): void {
   if (!api) return;
