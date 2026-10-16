@@ -151,6 +151,21 @@ test("AC-BROWSER: Assets lists the project's assets and opens each in its own do
   await page.getByRole("tab", { name: "Object Palette" }).click();
   await expect(platformCopy).toHaveAttribute("aria-current", "true");
 
+  // Levels, Layers and Assets share the palette group; documents outlive a level switch.
+  const bar = page.getByRole("navigation", { name: "Activity bar" });
+  await bar.getByRole("button", { name: "Levels" }).click();
+  await bar.getByRole("button", { name: "Layers" }).click();
+  await showAssets();
+  for (const name of ["Levels", "Layers", "Assets"]) await expect(tab(name)).toHaveCount(1);
+  await expect(tab("Assets")).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Level menu" }).click();
+  await page.getByRole("menuitem", { name: "New Level", exact: true }).click();
+  await expect(levelTab).toHaveAttribute("aria-selected", "true");
+  await tab("Metool").click();
+  await expect(page.getByText("Enemy · metool")).toBeVisible();
+  await tab("tileset.ground").click();
+  await expect(page.getByTestId("tileset-document")).toBeVisible();
+
   // Play brings the level tab back to draw into.
   await page.getByRole("button", { name: /^Play$/ }).click();
   await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
