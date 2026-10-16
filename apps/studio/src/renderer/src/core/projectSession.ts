@@ -1,7 +1,9 @@
 import {
+  createLevelDocument,
   projectDefinitionIssues,
   setCatalogGameData,
   setProjectDefinitions,
+  type LevelDocument,
 } from "@mmx/content-schema";
 import { GAME_DATA, type GameData, type GameDataOverlay } from "@mmx/engine/data";
 import {
@@ -12,7 +14,7 @@ import {
   type ValidationIssue,
 } from "@mmx/project-schema";
 import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io";
-import { PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
+import { levelManifestPath, PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
   buildStarterAssets,
@@ -33,6 +35,8 @@ export type ProjectSessionState = {
   dirty?: boolean;
   /** Unsaved `bindings.playerAnimation` for `game/data.json`, written on save. */
   playerAnimation?: string;
+  /** The level the editor shows and syncs (contract C-LEVEL); the entry level on open. */
+  currentLevelId?: string;
 };
 
 const EMPTY: ProjectSessionState = {
@@ -110,6 +114,8 @@ export class ProjectSession {
   /** Definition snapshots before (undo) and after (redo) the current one; reset on project open/close. */
   private undoStack: Definitions[] = [];
   private redoStack: Definitions[] = [];
+  /** Ids of levels deleted since the project opened: their files stay on disk, so new levels never reuse them. */
+  private removedLevelIds = new Set<string>();
   /** Stops Play and drops viewport sprites; runs before old sheet textures are destroyed. */
   beforeSheetReset: () => void = () => {};
 
@@ -147,6 +153,13 @@ export class ProjectSession {
     if (!keepHistory) {
       this.undoStack = [];
       this.redoStack = [];
+      this.removedLevelIds = new Set();
+      const levels = next.project?.levels ?? [];
+      const entryId = next.project?.manifest.entryLevelId;
+      next = {
+        ...next,
+        currentLevelId: levels.find((level) => level.id === entryId)?.id ?? levels[0]?.id,
+      };
     }
     this.setState(next);
     // Chained so two quick switches never load sheets concurrently.
@@ -251,21 +264,159 @@ export class ProjectSession {
     this.assets = this.assets.catch(() => null).then(() => this.buildPlayAssets(rootPath));
   }
 
-  getEntryLevelDocument() {
-    const project = this.state.project;
-    if (!project) return null;
-    const entry = project.levels.find((level) => level.id === project.manifest.entryLevelId);
-    return entry?.document ?? project.levels[0]?.document ?? null;
+  /** The document of the level the editor shows (contract C-LEVEL), or null without a project. */
+  getCurrentLevelDocument(): LevelDocument | null {
+    const { project, currentLevelId } = this.state;
+    return project?.levels.find((level) => level.id === currentLevelId)?.document ?? null;
   }
 
-  syncLevel(levelId: string, document: StudioProject["levels"][number]["document"]): void {
-    if (!this.state.project) return;
-    const nextProject = updateLevelDocument(this.state.project, levelId, document);
+  /** Store the editor's copy of a level; a changed document marks the project unsaved. */
+  syncLevel(levelId: string, document: LevelDocument): void {
+    const project = this.state.project;
+    const stored = project?.levels.find((level) => level.id === levelId);
+    if (!project || !stored) return;
+    const nextProject = updateLevelDocument(project, levelId, document);
     this.setState({
       ...this.state,
       project: nextProject,
+      // shortcut: an edit undone back to the saved level still reads as unsaved; keep the saved documents to compare if that confuses.
+      dirty: this.state.dirty || stored.document !== document,
       issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
     });
+  }
+
+  /** Every level's document, the shown one as `live` (the store's copy); just `live` without a project. */
+  levelDocuments(live: LevelDocument): LevelDocument[] {
+    const { project, currentLevelId } = this.state;
+    if (!project) return [live];
+    return project.levels.map((level) => (level.id === currentLevelId ? live : level.document));
+  }
+
+  /**
+   * Make the level a recovery draft was saved from current (matched by id), or add the draft as
+   * a new level when no level has its id; returns the document to open, null without a project.
+   * A draft is never synced into another level's slot.
+   */
+  recoverLevel(draft: LevelDocument): LevelDocument | null {
+    const project = this.state.project;
+    if (!project) return null;
+    if (project.levels.some((level) => level.id === draft.id)) {
+      this.setCurrentLevel(draft.id);
+      return draft;
+    }
+    const id = this.addLevel(draft.name || "Recovered level", draft);
+    if (id) this.setCurrentLevel(id);
+    return this.getCurrentLevelDocument();
+  }
+
+  /** Make `id` the level the editor syncs; the caller opens its document in the store. */
+  setCurrentLevel(id: string): void {
+    if (!this.state.project?.levels.some((level) => level.id === id)) return;
+    this.setState({ ...this.state, currentLevelId: id });
+  }
+
+  /** Apply a level-list edit: marked unsaved and revalidated, written on save. */
+  private editLevels(nextProject: StudioProject, currentLevelId = this.state.currentLevelId): void {
+    this.setState({
+      ...this.state,
+      project: nextProject,
+      currentLevelId,
+      dirty: true,
+      issues: [...validateOpenProject(nextProject), ...this.state.issues.filter(isPlayAssetIssue)],
+    });
+  }
+
+  /**
+   * Append a level named `name` (a blank one, or `document`) at `levels/<id>.json`; returns its
+   * id (`level.<slug>`, suffixed when taken), or null without a project. Written on save.
+   */
+  addLevel(name: string, document?: LevelDocument): string | null {
+    const project = this.state.project;
+    if (!project) return null;
+    const slug =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ".")
+        .replace(/^\.+|\.+$/g, "")
+        .replace(/^level(\.|$)/, "") || "untitled";
+    const taken = new Set([
+      ...project.manifest.levels.map((level) => level.id),
+      ...this.removedLevelIds,
+    ]);
+    let id = `level.${slug}`;
+    for (let n = 2; taken.has(id); n++) id = `level.${slug}.${n}`;
+    // shortcut: a file left by a level deleted in an earlier session, or written by hand, is overwritten on save; check the disk if that bites.
+    const path = levelManifestPath(id);
+    const level = { ...(document ?? createLevelDocument()), id, name };
+    this.editLevels({
+      ...project,
+      manifest: { ...project.manifest, levels: [...project.manifest.levels, { id, path }] },
+      levels: [...project.levels, { id, path, document: level }],
+    });
+    return id;
+  }
+
+  /** Rename a level (its document's `name`); its id and file path stay. */
+  renameLevel(id: string, name: string): void {
+    const document = this.state.project?.levels.find((level) => level.id === id)?.document;
+    if (!this.state.project || !document || document.name === name) return;
+    this.editLevels(updateLevelDocument(this.state.project, id, { ...document, name }));
+  }
+
+  /** Move a level to `toIndex` in the manifest's order (and the loaded levels', kept alike). */
+  moveLevel(id: string, toIndex: number): void {
+    const project = this.state.project;
+    const from = project?.manifest.levels.findIndex((level) => level.id === id) ?? -1;
+    if (!project || from < 0 || toIndex < 0 || toIndex >= project.manifest.levels.length) return;
+    if (from === toIndex) return;
+    const move = <T extends { id: string }>(list: T[]): T[] => {
+      const next = list.filter((level) => level.id !== id);
+      next.splice(
+        toIndex,
+        0,
+        list.find((level) => level.id === id)!,
+      );
+      return next;
+    };
+    this.editLevels({
+      ...project,
+      manifest: { ...project.manifest, levels: move(project.manifest.levels) },
+      levels: move(project.levels),
+    });
+  }
+
+  /** Make `id` the level Play and the exported game start from. */
+  setEntryLevel(id: string): void {
+    const project = this.state.project;
+    if (!project || project.manifest.entryLevelId === id) return;
+    if (!project.levels.some((level) => level.id === id)) return;
+    this.editLevels({ ...project, manifest: { ...project.manifest, entryLevelId: id } });
+  }
+
+  /**
+   * Drop a level from the project; refused (false) for the entry level and the last one.
+   * shortcut: its file stays on disk (save never deletes); remove it on save if orphans pile up.
+   */
+  deleteLevel(id: string): boolean {
+    const project = this.state.project;
+    if (!project || id === project.manifest.entryLevelId || project.levels.length <= 1) {
+      return false;
+    }
+    if (!project.levels.some((level) => level.id === id)) return false;
+    this.removedLevelIds.add(id);
+    this.editLevels(
+      {
+        ...project,
+        manifest: {
+          ...project.manifest,
+          levels: project.manifest.levels.filter((level) => level.id !== id),
+        },
+        levels: project.levels.filter((level) => level.id !== id),
+      },
+      // Never left syncing a level that is gone; the editor switches away first.
+      this.state.currentLevelId === id ? project.manifest.entryLevelId : this.state.currentLevelId,
+    );
+    return true;
   }
 
   /** Set `player.loadout` in the open project's manifest; saved with the project. */

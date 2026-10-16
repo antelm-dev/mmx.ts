@@ -23,6 +23,15 @@ export interface PanelSpec {
 
 export const PANELS: PanelSpec[] = [
   {
+    id: "levels",
+    title: "Levels",
+    component: "levels",
+    ref: "palette",
+    dir: "within",
+    fallbackDir: "left",
+    activity: { label: "Levels", icon: "levels", order: 5 },
+  },
+  {
     id: "palette",
     title: "Object Palette",
     component: "palette",
@@ -48,6 +57,15 @@ export const PANELS: PanelSpec[] = [
     dir: "within",
     fallbackDir: "left",
     activity: { label: "Scene", icon: "scene", order: 20 },
+  },
+  {
+    id: "layers",
+    title: "Layers",
+    component: "layers",
+    ref: "palette",
+    dir: "within",
+    fallbackDir: "left",
+    activity: { label: "Layers", icon: "layers", order: 25 },
   },
   {
     id: "inspector",

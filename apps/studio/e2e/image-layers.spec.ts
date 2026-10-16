@@ -43,12 +43,15 @@ test("an imported PNG becomes an image layer drawn in the viewport and in Play",
   await page.getByRole("menuitem", { name: /Open Project/ }).click();
   await expect(page.getByText(/Opened project 'Fixture Project'/)).toBeVisible();
 
-  await page.getByRole("tab", { name: "Room" }).click();
+  await page
+    .getByRole("navigation", { name: "Activity bar" })
+    .getByRole("button", { name: "Layers" })
+    .click();
   await pick(join(fixtureRoot, "assets/sprites/bg.png"));
-  await page.getByRole("button", { name: /Add image layer/ }).click();
+  await page.getByRole("button", { name: /Import image layer/ }).click();
 
   await expect(page.locator("[data-image-layer]")).toHaveCount(1);
-  await expect(page.getByTestId("image-layers")).toContainText("image.bg");
+  await expect(page.locator("[data-image-layer]")).toContainText("image.bg");
   await expect(canvas).toHaveAttribute("data-image-layer-sprites", "1");
   await page.getByRole("button", { name: "File menu" }).click();
   await expect(page.getByLabel("Unsaved changes")).toBeVisible();

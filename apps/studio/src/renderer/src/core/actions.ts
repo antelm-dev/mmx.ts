@@ -24,7 +24,12 @@ import {
 import { getDecorationAsset } from "@mmx/renderer-pixi";
 import type { SpriteRegion } from "@mmx/project-io";
 import type { AnimationAsset, ProjectAsset } from "@mmx/project-schema";
-import { selectedDecorationIds, selectedObjectIds, type EditorStore } from "./EditorStore.js";
+import {
+  isLayerEditable,
+  objectLayerKey,
+  selectedObjectIds,
+  type EditorStore,
+} from "./EditorStore.js";
 import type { ProjectSession } from "./projectSession.js";
 
 /**
@@ -33,7 +38,29 @@ import type { ProjectSession } from "./projectSession.js";
  * place that decides how a placement is sized or a duplicate is offset.
  */
 
-/** Place a new instance of a definition, centring point objects on the cursor. */
+/**
+ * The selected objects or decorations on shown, unlocked layers: edits of a selection skip the
+ * members on a layer locked or hidden after they were selected (or picked in the Scene panel).
+ */
+export function editableSelectionIds(store: EditorStore): string[] {
+  const state = store.get();
+  const { document, selection } = state;
+  if (selection.kind === "decorations") {
+    const ids = new Set(selection.ids);
+    return document.decorations
+      .filter((d) => ids.has(d.id) && isLayerEditable(state, d.layer))
+      .map((d) => d.id);
+  }
+  const ids = new Set(selectedObjectIds(selection));
+  return document.objects
+    .filter((o) => ids.has(o.id) && isLayerEditable(state, objectLayerKey(o)))
+    .map((o) => o.id);
+}
+
+/**
+ * Place a new instance of a definition, centring point objects on the cursor; not on a locked
+ * or hidden layer.
+ */
 export function placeAt(
   store: EditorStore,
   definitionId: string,
@@ -42,7 +69,7 @@ export function placeAt(
 ): void {
   // The palette object may have been deleted while its place tool was active.
   const def = getDefinition(definitionId);
-  if (!def) return;
+  if (!def || !isLayerEditable(store.get(), objectLayerKey({ definitionId }))) return;
   const { width, height } = def.defaultSize;
   const resizable = def.editor.resizable === true;
   const point = def.editor.placement === "point";
@@ -58,7 +85,7 @@ export function placeAt(
   store.selectObjects([inst.id]);
 }
 
-/** Place a decoration sprite at the cursor (anchor point). */
+/** Place a decoration sprite at the cursor (anchor point); not on a locked or hidden layer. */
 export function placeDecorationAt(
   store: EditorStore,
   assetId: string,
@@ -66,7 +93,7 @@ export function placeDecorationAt(
   worldY: number,
 ): void {
   const asset = getDecorationAsset(assetId);
-  if (!asset) return;
+  if (!asset || !isLayerEditable(store.get(), asset.defaultLayer)) return;
   const inst: DecorationInstance = {
     id: newId(),
     assetId,
@@ -85,7 +112,7 @@ export function duplicateSelection(store: EditorStore): void {
   const grid = document.gridSize;
 
   if (selection.kind === "decorations") {
-    const selectedIds = selectedDecorationIds(selection);
+    const selectedIds = editableSelectionIds(store);
     if (selectedIds.length === 0) return;
     const selected = new Set(selectedIds);
     const copies = document.decorations
@@ -97,7 +124,7 @@ export function duplicateSelection(store: EditorStore): void {
     return;
   }
 
-  const selectedIds = selectedObjectIds(selection);
+  const selectedIds = editableSelectionIds(store);
   if (selectedIds.length === 0) return;
   const selected = new Set(selectedIds);
   const copies = document.objects
@@ -114,24 +141,23 @@ export function duplicateSelection(store: EditorStore): void {
   store.selectObjects(copies.map((c) => c.id));
 }
 
-/** Delete the current selection (objects, decorations, or terrain cells). */
+/** Delete the current selection (objects, decorations, or terrain cells) on editable layers. */
 export function deleteSelection(store: EditorStore): void {
   const { document, selection } = store.get();
   if (selection.kind === "tiles") {
-    if (selection.indices.length === 0) return;
+    if (selection.indices.length === 0 || !isLayerEditable(store.get(), "collision")) return;
     const edits = selection.indices.map((index) => ({ index, value: TerrainTile.Empty }));
     paintTiles(store, edits, true);
     store.clearSelection();
     return;
   }
-  if (selection.kind === "decorations") {
-    if (selection.ids.length === 0) return;
-    store.execute(deleteDecorations(document, selection.ids));
-    store.clearSelection();
-    return;
-  }
-  if (selection.ids.length === 0) return;
-  store.execute(deleteObjects(document, selection.ids));
+  const ids = editableSelectionIds(store);
+  if (ids.length === 0) return;
+  store.execute(
+    selection.kind === "decorations"
+      ? deleteDecorations(document, ids)
+      : deleteObjects(document, ids),
+  );
   store.clearSelection();
 }
 
@@ -154,10 +180,13 @@ export function paintTiles(store: EditorStore, edits: readonly TileEdit[], erasi
   store.execute(setTiles(store.get().document, changed, erasing ? "Erase tiles" : "Paint tiles"));
 }
 
-/** Set a single terrain cell to solid or empty (context-menu "Add/Remove tile"). */
+/**
+ * Set a single terrain cell to solid or empty (context-menu "Add/Remove tile"), unless the
+ * collision layer is locked or hidden.
+ */
 export function setTileAt(store: EditorStore, col: number, row: number, solid: boolean): void {
   const index = cellIndex(store, col, row);
-  if (index === null) return;
+  if (index === null || !isLayerEditable(store.get(), "collision")) return;
   paintTiles(store, [{ index, value: solid ? TerrainTile.Solid : TerrainTile.Empty }], !solid);
 }
 
@@ -165,13 +194,14 @@ export function setTileAt(store: EditorStore, col: number, row: number, solid: b
 export function moveSelectedTiles(store: EditorStore, dCol: number, dRow: number): void {
   const { document, selection } = store.get();
   if (selection.kind !== "tiles" || selection.indices.length === 0) return;
+  if (!isLayerEditable(store.get(), "collision")) return;
   const result = moveTiles(document, selection.indices, dCol, dRow);
   if (!result) return;
   store.execute(result.command);
   store.selectTiles(result.nextIndices);
 }
 
-/** Nudge the selection (objects/decorations by pixels, tiles by cells). */
+/** Nudge the selection on editable layers (objects/decorations by pixels, tiles by cells). */
 export function nudgeSelection(store: EditorStore, dx: number, dy: number): void {
   const { document, selection } = store.get();
   if (selection.kind === "tiles") {
@@ -181,15 +211,11 @@ export function nudgeSelection(store: EditorStore, dx: number, dy: number): void
     moveSelectedTiles(store, dCol, dRow);
     return;
   }
-  if (selection.kind === "decorations") {
-    const ids = selectedDecorationIds(selection);
-    if (ids.length === 0) return;
-    store.execute(moveDecorations(ids, dx, dy));
-    return;
-  }
-  const selectedIds = selectedObjectIds(selection);
-  if (selectedIds.length === 0) return;
-  store.execute(moveObjects(selectedIds, dx, dy));
+  const ids = editableSelectionIds(store);
+  if (ids.length === 0) return;
+  store.execute(
+    selection.kind === "decorations" ? moveDecorations(ids, dx, dy) : moveObjects(ids, dx, dy),
+  );
 }
 
 /** Set the document's image layers and backdrop; absent/empty values drop their key. */
@@ -239,12 +265,29 @@ export function removeImageLayer(store: EditorStore, id: string): void {
   editImageLayers(store, "Remove image layer", (layers) => layers.filter((l) => l.id !== id));
 }
 
-/** Move a layer one step earlier (-1, drawn further back) or later (+1) in the list. */
+/**
+ * Where layer `id` moves one step back (-1) or forward (+1): the index of the nearest layer of
+ * the list on the same draw layer, or -1. Layers on other draw layers don't change its depth.
+ */
+export function reorderTarget(
+  layers: readonly Pick<ImageLayer, "id" | "layer">[],
+  id: string,
+  delta: -1 | 1,
+): number {
+  const from = layers.findIndex((l) => l.id === id);
+  if (from < 0) return -1;
+  for (let to = from + delta; to >= 0 && to < layers.length; to += delta) {
+    if (layers[to]!.layer === layers[from]!.layer) return to;
+  }
+  return -1;
+}
+
+/** Move a layer one step back (-1) or forward (+1) among the image layers of its draw layer. */
 export function reorderImageLayer(store: EditorStore, id: string, delta: -1 | 1): void {
   const layers = store.get().document.imageLayers ?? [];
   const from = layers.findIndex((l) => l.id === id);
-  const to = from + delta;
-  if (from < 0 || to < 0 || to >= layers.length) return;
+  const to = reorderTarget(layers, id, delta);
+  if (to < 0) return;
   editImageLayers(store, "Reorder image layers", (next) => {
     [next[from], next[to]] = [next[to]!, next[from]!];
     return next;
@@ -338,12 +381,12 @@ export function removeTileLayer(store: EditorStore, id: string): void {
   editTileLayers(store, "Remove tile layer", (layers) => layers.filter((l) => l.id !== id));
 }
 
-/** Move a tile layer one step earlier (-1, drawn further back) or later (+1) in the list. */
+/** Move a tile layer one step back (-1) or forward (+1) among the tile layers of its draw layer. */
 export function reorderTileLayer(store: EditorStore, id: string, delta: -1 | 1): void {
   const layers = store.get().document.tileLayers ?? [];
   const from = layers.findIndex((l) => l.id === id);
-  const to = from + delta;
-  if (from < 0 || to < 0 || to >= layers.length) return;
+  const to = reorderTarget(layers, id, delta);
+  if (to < 0) return;
   editTileLayers(store, "Reorder tile layers", (next) => {
     [next[from], next[to]] = [next[to]!, next[from]!];
     return next;

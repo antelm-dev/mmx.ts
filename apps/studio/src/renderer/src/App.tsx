@@ -5,11 +5,13 @@ import { editor } from "./app/useEditor.js";
 import { buildDefaultLayout, openPanel, setDockApi, START_PANEL } from "./app/dock.js";
 import { TitleBar } from "./components/TitleBar.js";
 import { Toolbar } from "./components/Toolbar.js";
+import { LevelsPanel } from "./components/LevelsPanel.js";
 import { PalettePanel } from "./components/PalettePanel.js";
 import { ScenePanel } from "./components/ScenePanel.js";
 import { Viewport } from "./components/Viewport.js";
 import { Inspector } from "./components/Inspector.js";
 import { RoomPanel } from "./components/RoomPanel.js";
+import { LayersPanel } from "./components/LayersPanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
 import { AssetBrowserPanel } from "./components/AssetBrowserPanel.js";
 import { ProblemsPanel } from "./components/ProblemsPanel.js";
@@ -33,8 +35,10 @@ import {
 /** Dockview panel registry. Panels read the shared controller; props are unused. */
 const dockComponents: Record<string, (props: IDockviewPanelProps) => ReactElement> = {
   viewport: () => <Viewport />,
+  levels: () => <LevelsPanel />,
   palette: () => <PalettePanel />,
   scene: (props) => <ScenePanel api={props.api} />,
+  layers: () => <LayersPanel />,
   inspector: () => <Inspector />,
   room: () => <RoomPanel />,
   assets: () => <AssetsPanel />,
