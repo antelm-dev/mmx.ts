@@ -8,7 +8,8 @@ import { editor } from "../app/useEditor.js";
  * component and adds one line to its slot. Slots let the pointer through to the canvas; an
  * interactive child sets `pointerEvents="auto"` itself. They clip with `overflow: clip`, not
  * `hidden`: a hidden box still scrolls when an off-view child is focused, leaving every child
- * offset from the canvas.
+ * offset from the canvas. The clip also cuts any popover or dropdown a slot child opens in
+ * place, so slot content must portal its menus.
  */
 
 /** Full-frame layer under the tool card and hint bar; children sit at {@link useWorldToScreen} px. */
