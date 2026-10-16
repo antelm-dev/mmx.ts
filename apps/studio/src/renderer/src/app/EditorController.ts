@@ -949,6 +949,9 @@ export class EditorController {
       case "toolTile":
         this.toggleTileTool();
         break;
+      case "toggleTrail":
+        this.store.toggleTrail();
+        break;
       case "escapeTool":
         if (
           state.activeTool === "place" ||

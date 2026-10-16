@@ -2,6 +2,7 @@ import { GameplaySounds, SoundEffects } from "@mmx/browser-audio";
 import {
   createPlaytest,
   STOPPED_PLAYTEST,
+  traceRun,
   type EditorPlaytestSession,
   type PlaytestSnapshot,
 } from "@mmx/editor-runtime";
@@ -254,8 +255,10 @@ export class EditorPlaytestController {
   }
 
   stopPlay(): void {
-    this.playToken++;
+    const token = ++this.playToken;
     this.fromHere = false;
+    // Taken before dispose: the run as played (a "from here" copy included), traced after.
+    const run = this.play?.recordedRun();
     this.play?.dispose();
     this.play = null;
     this.audio?.stopMusic();
@@ -268,6 +271,20 @@ export class EditorPlaytestController {
         this.savedView.viewportPosition,
         this.savedSelection,
       );
+    }
+    if (run) {
+      const levelId = this.store.get().document.id;
+      traceRun(run, { isStale: () => token !== this.playToken })
+        .then((trail) => {
+          // Dropped when another Play started or another level opened meanwhile.
+          if (trail && token === this.playToken && this.store.get().document.id === levelId)
+            this.store.setTrail(trail);
+        })
+        .catch((error: unknown) =>
+          this.cb.toast(
+            `Could not trace the last run: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
     }
   }
 

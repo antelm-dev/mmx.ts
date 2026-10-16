@@ -15,7 +15,9 @@ import {
   type AssetCatalog,
 } from "@mmx/renderer-pixi";
 import type { DebugPrimitive } from "@mmx/engine/behaviors";
+import type { PlayTrail } from "@mmx/editor-runtime";
 import { EditableTerrain } from "./EditableTerrain.js";
+import { fmtNumber } from "./playtest/format.js";
 import { tileLayerWritesCollision } from "./actions.js";
 import {
   isLayerEditable,
@@ -62,6 +64,7 @@ const COLOR_SELECT = 0x4c8dff;
 const COLOR_HOVER = 0xffffff;
 const COLOR_ERASE = 0xff5a5a;
 const COLOR_PATH = 0xffc94d;
+const COLOR_TRAIL = 0x5ee6c8;
 
 /** Typed snapshot of in-flight interaction state passed to {@link EditorViewportRenderer.redraw}. */
 export type LivePreview =
@@ -96,6 +99,10 @@ export class EditorViewportRenderer {
   private readonly decorationBackLayer = new Container();
   private readonly objectLayer = new Container();
   private readonly decorationFrontLayer = new Container();
+  /** The last Play's path; rebuilt only when the trail or the zoom changes. */
+  private readonly trailLayer = new Graphics();
+  private trailRef: PlayTrail | null = null;
+  private trailZoom = -1;
   private readonly overlay = new Graphics();
   /** The game's image-layer + backdrop view, drawn at camera 0 (no parallax) like catalog decorations. */
   private readonly art = new DecorationView();
@@ -130,6 +137,7 @@ export class EditorViewportRenderer {
       this.decorationFrontLayer,
       this.art.worldFront,
       this.art.foreground,
+      this.trailLayer,
       this.overlay,
     );
     this.app.stage.addChild(this.art.backdrop, this.world);
@@ -175,6 +183,7 @@ export class EditorViewportRenderer {
     this.drawImageLayers();
     this.drawDecorations(live);
     this.drawObjects(live);
+    this.drawTrail();
     this.drawOverlay(live, tileStroke, marquee, pointerWorld);
     this.app.render();
   }
@@ -388,6 +397,60 @@ export class EditorViewportRenderer {
     }
     // Lets e2e tests count the object instances drawn (hidden layers are skipped).
     (this.app.canvas as HTMLCanvasElement).dataset.objectsDrawn = String(drawn);
+  }
+
+  /** The last Play's path, dashed at a constant screen size, with a dot where it ended. */
+  private drawTrail(): void {
+    const { trail, trailVisible, zoom } = this.store.get();
+    const shown = trailVisible ? trail : null;
+    if (shown === this.trailRef && zoom === this.trailZoom) return;
+    this.trailRef = shown;
+    this.trailZoom = zoom;
+    const g = this.trailLayer;
+    g.clear();
+    // Lets e2e tests see whether a trail is drawn, how many samples it has and where it ends
+    // (formatted like the Play inspector's player position).
+    const canvas = this.app.canvas as HTMLCanvasElement;
+    canvas.dataset.trailPoints = String(
+      shown?.segments.reduce((n, line) => n + line.length / 2, 0) ?? 0,
+    );
+    canvas.dataset.trailEnd = shown?.end
+      ? `${fmtNumber(shown.end.x)}, ${fmtNumber(shown.end.y)}`
+      : "";
+    if (!shown) return;
+    const dash = 4 / zoom;
+    const gap = 3 / zoom;
+    for (const line of shown.segments) {
+      // The dash pattern runs on along the whole line, across its samples.
+      let on = true;
+      let left = dash;
+      for (let i = 2; i < line.length; i += 2) {
+        let x = line[i - 2]!;
+        let y = line[i - 1]!;
+        let len = Math.hypot(line[i]! - x, line[i + 1]! - y);
+        if (len === 0) continue;
+        const ux = (line[i]! - x) / len;
+        const uy = (line[i + 1]! - y) / len;
+        while (len > 0) {
+          const step = Math.min(left, len);
+          if (on) g.moveTo(x, y).lineTo(x + ux * step, y + uy * step);
+          x += ux * step;
+          y += uy * step;
+          len -= step;
+          left -= step;
+          if (left <= 0) {
+            on = !on;
+            left = on ? dash : gap;
+          }
+        }
+      }
+    }
+    g.stroke({ width: 1.5 / zoom, color: COLOR_TRAIL, alpha: 0.9 });
+    if (shown.end) {
+      g.circle(shown.end.x, shown.end.y, 3 / zoom)
+        .fill(COLOR_TRAIL)
+        .stroke({ width: 1 / zoom, color: 0xffffff });
+    }
   }
 
   private drawOverlay(

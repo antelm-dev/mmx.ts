@@ -11,6 +11,7 @@ import {
 import type { CompiledGameData } from "@mmx/engine/data";
 import type { TilesetAsset } from "@mmx/project-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
+import type { PlayTrail } from "@mmx/editor-runtime";
 import { getDecorationAsset, knownDecorationAssetIds } from "@mmx/renderer-pixi";
 
 export type Tool = "select" | "pan" | "place" | "placeDecoration" | "resize" | "tile" | "tilePaint";
@@ -176,6 +177,9 @@ export interface EditorState {
   /** The open project's `tileset` assets by id (tile geometry and collision per tile). */
   tilesets: Readonly<Record<string, TilesetAsset>>;
   tilePaint: TilePaint;
+  /** Editor-only: the player's path in the last Play of this level (never saved). */
+  trail: PlayTrail | null;
+  trailVisible: boolean;
 }
 
 /** Why the store emitted — lets subscribers skip expensive work they don't need. */
@@ -205,6 +209,8 @@ export class EditorStore {
       layerLocked: {},
       tilesets: {},
       tilePaint: { tile: 0, mode: "brush" },
+      trail: null,
+      trailVisible: true,
     };
   }
 
@@ -292,6 +298,7 @@ export class EditorStore {
       mode: "edit",
       layerVisible: {},
       layerLocked: {},
+      trail: null,
     };
     this.emit("open");
   }
@@ -420,6 +427,15 @@ export class EditorStore {
 
   setTilesets(tilesets: Record<string, TilesetAsset>): void {
     this.patch({ tilesets }, "ui");
+  }
+
+  /** A new trail replaces the last one and is shown. */
+  setTrail(trail: PlayTrail): void {
+    this.patch({ trail, trailVisible: true }, "ui");
+  }
+
+  toggleTrail(): void {
+    this.patch({ trailVisible: !this.state.trailVisible }, "ui");
   }
 
   setTilePaint(patch: Partial<TilePaint>): void {
