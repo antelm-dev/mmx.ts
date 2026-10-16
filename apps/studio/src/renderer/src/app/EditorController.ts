@@ -32,12 +32,11 @@ import {
   createFileAccess,
   parseDocument,
   readRecovery,
-  readRecoveryJson,
   serializeDocument,
   writeRecovery,
 } from "../core/persistence.js";
 import { useUiStore } from "../store/uiStore.js";
-import { projectSession } from "../core/projectSession.js";
+import { projectSession, recoveredLevelName } from "../core/projectSession.js";
 import type { ProjectIssue, StudioProject } from "@mmx/project-io";
 import { addRecentProject } from "../settings/recentProjects.js";
 import type { GameDataOverlay } from "@mmx/engine/data";
@@ -291,7 +290,7 @@ export class EditorController {
   private onStoreChange(reason: ChangeReason): void {
     this.viewport?.redraw();
     if (reason === "document" || reason === "open") {
-      writeRecovery(this.store.get().document);
+      writeRecovery(this.store.get().document, projectSession.getSnapshot().rootPath);
       const { currentLevelId } = projectSession.getSnapshot();
       if (currentLevelId) projectSession.syncLevel(currentLevelId, this.store.get().document);
     }
@@ -591,22 +590,44 @@ export class EditorController {
   }
 
   hasRecoveryDraft(): boolean {
-    const json = readRecoveryJson();
-    if (!json) return false;
-    return json !== serializeDocument(this.store.get().document);
+    const draft = readRecovery();
+    if (!draft) return false;
+    return serializeDocument(draft.document) !== serializeDocument(this.store.get().document);
   }
 
+  /**
+   * Open the recovery draft: in a project, over the level it was saved from only when it comes
+   * from this project, otherwise as a new level; without a project, as the current document.
+   */
   restoreRecovery(): void {
-    if (!this.confirmDiscardIfDirty("Restore the recovery draft?")) return;
-    const doc = readRecovery();
-    if (!doc) {
-      this.toast("No recovery draft found.");
+    const draft = readRecovery();
+    if (!draft) {
+      this.toast("No readable recovery draft found.");
       return;
     }
+    const inProject = projectSession.getSnapshot().project != null;
+    const target = projectSession.recoveryTarget(draft);
+    const added = recoveredLevelName(draft.document);
+    const confirmed = !inProject
+      ? this.confirmDiscardIfDirty("Replace the current document with the recovery draft?")
+      : target
+        ? window.confirm(
+            `Replace level "${target.name}" with the recovery draft?\n\nIts current content and unsaved changes will be lost.`,
+          )
+        : window.confirm(
+            `Add the recovery draft as a new level, "${added}"?\n\nNo existing level is replaced.`,
+          );
+    if (!confirmed) return;
     if (this.store.get().mode === "play") this.togglePlay();
     // In a project: into the level the draft came from (or a new one), never the shown slot.
-    this.openDocument(projectSession.recoverLevel(doc) ?? doc);
-    this.toast("Recovery draft restored.");
+    this.openDocument(projectSession.recoverLevel(draft) ?? draft.document);
+    this.toast(
+      !inProject
+        ? "Recovery draft opened as the current document."
+        : target
+          ? `Level "${target.name}" replaced with the recovery draft.`
+          : `Recovery draft added as a new level, "${added}".`,
+    );
   }
 
   private confirmDiscardIfDirty(action: string): boolean {

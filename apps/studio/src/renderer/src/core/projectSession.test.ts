@@ -434,19 +434,49 @@ describe("ProjectSession levels", () => {
     await session.getAssets();
   });
 
-  it("restores a recovery draft into its own level, or as a new level", async () => {
+  it("restores a recovery draft from this project into its own level", async () => {
     const session = await open();
     const draftB = { ...session.getSnapshot().project!.levels[1]!.document, name: "B draft" };
-    expect(session.recoverLevel(draftB as never)).toBe(draftB);
+    const draft = { document: draftB as never, rootPath: "/projects/b" };
+    expect(session.recoveryTarget(draft)).toMatchObject({ id: "level.b", name: "B" });
+    expect(session.recoverLevel(draft)).toBe(draftB);
     expect(session.getSnapshot().currentLevelId).toBe("level.b");
-
-    const stray = { ...draftB, id: "level.elsewhere", name: "Stray" };
-    const opened = session.recoverLevel(stray as never)!;
-    expect(opened).toMatchObject({ id: "level.stray", name: "Stray" });
-    expect(session.getSnapshot().currentLevelId).toBe("level.stray");
-    expect(ids(session)).toEqual(["level.a", "level.b", "level.stray"]);
-    expect(session.getSnapshot().project!.levels[0]!.document.name).toBe("A");
+    expect(ids(session)).toEqual(["level.a", "level.b"]);
     await session.getAssets();
+  });
+
+  it.each([
+    ["another project", "/projects/x"],
+    ["no project", null],
+    ["an unknown project (v1 draft)", undefined],
+  ])("adds a recovery draft from %s as a new level, never over its id", async (_, rootPath) => {
+    const session = await open();
+    const draftA = { ...session.getSnapshot().project!.levels[0]!.document, name: "Main" };
+    const draft = { document: draftA as never, rootPath };
+    expect(session.recoveryTarget(draft)).toBeNull();
+    const opened = session.recoverLevel(draft)!;
+    expect(opened).toMatchObject({ id: "level.main.recovered", name: "Main (recovered)" });
+    expect(session.getSnapshot().currentLevelId).toBe("level.main.recovered");
+    expect(ids(session)).toEqual(["level.a", "level.b", "level.main.recovered"]);
+    expect(session.getSnapshot().project!.levels[0]!.document.name).toBe("A");
+    // Restored twice: the taken id gets a suffix.
+    expect(session.recoverLevel(draft)).toMatchObject({ id: "level.main.recovered.2" });
+    await session.getAssets();
+  });
+
+  it("adds a draft from this project whose level is gone as a new level", async () => {
+    const session = await open();
+    const stray = { ...session.getSnapshot().project!.levels[1]!.document, id: "level.x" };
+    const opened = session.recoverLevel({ document: stray as never, rootPath: "/projects/b" })!;
+    expect(opened).toMatchObject({ id: "level.b.recovered", name: "B (recovered)" });
+    await session.getAssets();
+  });
+
+  it("returns null without a project", () => {
+    const session = new ProjectSession();
+    const draft = { document: { id: "level.a", name: "A" } as never, rootPath: null };
+    expect(session.recoveryTarget(draft)).toBeNull();
+    expect(session.recoverLevel(draft)).toBeNull();
   });
 
   it("never reuses the id (and file) of a level deleted this session", async () => {

@@ -19,7 +19,16 @@ export interface FileAccess {
   open(): Promise<OpenedFile | null>;
 }
 
-const RECOVERY_KEY = "mmx-studio.recovery.v1";
+/** `{ rootPath, document }`: the draft and the project it was edited in. */
+const RECOVERY_KEY = "mmx-studio.recovery.v2";
+/** Older drafts: the document alone, from an unknown project. */
+const LEGACY_RECOVERY_KEY = "mmx-studio.recovery.v1";
+
+export interface RecoveryDraft {
+  document: LevelDocument;
+  /** The open project's root when the draft was written: null for none, undefined when unknown. */
+  rootPath: string | null | undefined;
+}
 
 /** Native open/save via the Electron preload bridge. */
 export class ElectronFileAccess implements FileAccess {
@@ -80,7 +89,10 @@ export function serializeDocument(doc: LevelDocument): string {
 
 /** Parse + migrate a document from JSON text. Throws on malformed input. */
 export function parseDocument(json: string): LevelDocument {
-  const raw = JSON.parse(json);
+  return checkDocument(JSON.parse(json));
+}
+
+function checkDocument(raw: unknown): LevelDocument {
   const doc = migrateDocument(raw);
   if (!Array.isArray(doc.objects) || !Array.isArray(doc.tiles) || !Array.isArray(doc.decorations)) {
     throw new Error("Not a valid MMX Studio level document.");
@@ -88,19 +100,29 @@ export function parseDocument(json: string): LevelDocument {
   return doc;
 }
 
-/** Best-effort local recovery copy, written on every mutation. */
-export function writeRecovery(doc: LevelDocument): void {
+/** Best-effort local recovery copy, written on every mutation with the open project's root. */
+export function writeRecovery(doc: LevelDocument, rootPath: string | null): void {
   try {
-    localStorage.setItem(RECOVERY_KEY, serializeDocument(doc));
+    const document = { ...doc, schemaVersion: SCHEMA_VERSION };
+    localStorage.setItem(RECOVERY_KEY, JSON.stringify({ rootPath, document }));
+    localStorage.removeItem(LEGACY_RECOVERY_KEY);
   } catch {
     // Storage full or blocked (private mode) — recovery is best-effort.
   }
 }
 
-export function readRecovery(): LevelDocument | null {
+/** The recovery draft, or null when there is none or it cannot be read. */
+export function readRecovery(): RecoveryDraft | null {
   try {
     const json = localStorage.getItem(RECOVERY_KEY);
-    return json ? parseDocument(json) : null;
+    if (json) {
+      const { rootPath, document } = JSON.parse(json) as Record<string, unknown>;
+      // Anything but a string or null is an unknown origin, so it never replaces a level.
+      const origin = typeof rootPath === "string" || rootPath === null ? rootPath : undefined;
+      return { document: checkDocument(document), rootPath: origin };
+    }
+    const legacy = localStorage.getItem(LEGACY_RECOVERY_KEY);
+    return legacy ? { document: parseDocument(legacy), rootPath: undefined } : null;
   } catch {
     return null;
   }
@@ -109,23 +131,8 @@ export function readRecovery(): LevelDocument | null {
 export function clearRecovery(): void {
   try {
     localStorage.removeItem(RECOVERY_KEY);
+    localStorage.removeItem(LEGACY_RECOVERY_KEY);
   } catch {
     // ignore
-  }
-}
-
-export function hasRecovery(): boolean {
-  try {
-    return localStorage.getItem(RECOVERY_KEY) != null;
-  } catch {
-    return false;
-  }
-}
-
-export function readRecoveryJson(): string | null {
-  try {
-    return localStorage.getItem(RECOVERY_KEY);
-  } catch {
-    return null;
   }
 }
