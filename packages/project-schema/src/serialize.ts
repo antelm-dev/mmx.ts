@@ -104,9 +104,8 @@ function normalizeAsset(asset: ProjectAsset): ProjectAsset {
 }
 
 export function normalizeProject(project: ProjectDocument): ProjectDocument {
-  const levels = project.levels
-    .map((level) => ({ id: level.id, path: level.path }))
-    .sort((a, b) => compareId(a.id, b.id));
+  // Not sorted: the level list's order is the one Studio's Levels panel shows and edits.
+  const levels = project.levels.map((level) => ({ id: level.id, path: level.path }));
 
   const assets = project.assets.map(normalizeAsset).sort((a, b) => compareId(a.id, b.id));
 

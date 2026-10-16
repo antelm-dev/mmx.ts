@@ -31,7 +31,18 @@ vi.mock("../assets/studioAssets.js", () => {
   };
 });
 
-vi.mock("@mmx/project-io", () => ({ PROJECT_VALIDATION: {}, updateLevelDocument: vi.fn() }));
+vi.mock("@mmx/project-io", () => ({
+  PROJECT_VALIDATION: {},
+  levelManifestPath: (id: string) => `levels/${id}.json`,
+  updateLevelDocument: (
+    project: { levels: { id: string }[] },
+    levelId: string,
+    document: unknown,
+  ) => ({
+    ...project,
+    levels: project.levels.map((level) => (level.id === levelId ? { ...level, document } : level)),
+  }),
+}));
 vi.mock("@mmx/project-schema", () => ({ validateProject: () => ({ issues: [] }) }));
 
 const { ProjectSession } = await import("./projectSession.js");
@@ -308,6 +319,105 @@ describe("ProjectSession definition history", () => {
 
     session.close();
     expect(session.canUndoDefinitions).toBe(false);
+    await session.getAssets();
+  });
+});
+
+describe("ProjectSession levels", () => {
+  const twoLevels = () => {
+    const level = (id: string, name: string) => ({
+      id,
+      path: `levels/${id}.json`,
+      document: { id, name },
+    });
+    return {
+      manifest: {
+        assets: [],
+        entryLevelId: "level.a",
+        levels: [
+          { id: "level.a", path: "levels/level.a.json" },
+          { id: "level.b", path: "levels/level.b.json" },
+        ],
+      },
+      levels: [level("level.a", "A"), level("level.b", "B")],
+    };
+  };
+  const open = async () => {
+    const load = async () => ({
+      ok: true,
+      issues: [],
+      value: { rootPath: "/projects/b", project: twoLevels() },
+    });
+    vi.stubGlobal("window", { studio: { project: { ...bridge, load } } });
+    const session = new ProjectSession();
+    await session.openProject();
+    return session;
+  };
+  const ids = (session: InstanceType<typeof ProjectSession>) => {
+    const p = session.getSnapshot().project!;
+    const refs = p.manifest.levels.map((level) => level.id);
+    // The loaded levels follow the manifest's order.
+    expect(p.levels.map((level) => level.id)).toEqual(refs);
+    return refs;
+  };
+
+  it("starts on the entry level and marks the project unsaved only when a level changes", async () => {
+    const session = await open();
+    expect(session.getSnapshot().currentLevelId).toBe("level.a");
+    const a = session.getCurrentLevelDocument()!;
+    session.syncLevel("level.a", a);
+    expect(session.getSnapshot().dirty).toBeFalsy();
+
+    session.syncLevel("level.a", { ...a, name: "A2" });
+    session.setCurrentLevel("level.b");
+    expect(session.getSnapshot()).toMatchObject({ currentLevelId: "level.b", dirty: true });
+    // The level left keeps its edit; the entry level stays the entry.
+    expect(session.getSnapshot().project!.levels[0]!.document.name).toBe("A2");
+    expect(session.getSnapshot().project!.manifest.entryLevelId).toBe("level.a");
+    await session.getAssets();
+  });
+
+  it("adds levels with unique ids and moves, renames and sets the entry", async () => {
+    const session = await open();
+    expect(session.addLevel("Level 3")).toBe("level.3");
+    expect(session.addLevel("Level 3")).toBe("level.3.2");
+    expect(session.addLevel("B")).toBe("level.b.2");
+    expect(session.getSnapshot().dirty).toBe(true);
+    const added = session.getSnapshot().project!.levels[2]!;
+    expect(added).toMatchObject({
+      path: "levels/level.3.json",
+      document: { id: "level.3", name: "Level 3" },
+    });
+
+    session.moveLevel("level.3", 0);
+    expect(ids(session)).toEqual(["level.3", "level.a", "level.b", "level.3.2", "level.b.2"]);
+    session.moveLevel("level.a", 4);
+    expect(ids(session)).toEqual(["level.3", "level.b", "level.3.2", "level.b.2", "level.a"]);
+    session.moveLevel("level.a", 5);
+    expect(ids(session)).toEqual(["level.3", "level.b", "level.3.2", "level.b.2", "level.a"]);
+
+    session.renameLevel("level.b", "Boss");
+    const b = session.getSnapshot().project!.levels.find((level) => level.id === "level.b")!;
+    expect(b).toMatchObject({
+      path: "levels/level.b.json",
+      document: { id: "level.b", name: "Boss" },
+    });
+
+    session.setEntryLevel("level.b");
+    expect(session.getSnapshot().project!.manifest.entryLevelId).toBe("level.b");
+    await session.getAssets();
+  });
+
+  it("refuses to delete the entry or the last level and leaves a deleted current level", async () => {
+    const session = await open();
+    expect(session.deleteLevel("level.a")).toBe(false);
+    expect(session.getSnapshot().dirty).toBeFalsy();
+
+    session.setCurrentLevel("level.b");
+    expect(session.deleteLevel("level.b")).toBe(true);
+    expect(ids(session)).toEqual(["level.a"]);
+    expect(session.getSnapshot()).toMatchObject({ currentLevelId: "level.a", dirty: true });
+    expect(session.deleteLevel("level.a")).toBe(false);
     await session.getAssets();
   });
 });

@@ -152,15 +152,9 @@ test("animation sheetAssetId must resolve to image or sprite", () => {
   assert.ok(result.issues.some((issue) => issue.code === "animation.sheet.kind"));
 });
 
-test("serialization is deterministic regardless of input order", () => {
+test("serialization is deterministic regardless of asset order and keeps the level order", () => {
   const a = validProject();
-  const b = validProject({
-    levels: [
-      { id: "intro", path: "levels/intro.json" },
-      { id: "boss", path: "levels/boss.json" },
-    ],
-    assets: [...validProject().assets].reverse(),
-  });
+  const b = validProject({ assets: [...validProject().assets].reverse() });
 
   const left = serializeProject(a);
   const right = serializeProject(b);
@@ -169,11 +163,18 @@ test("serialization is deterministic regardless of input order", () => {
   const again = serializeProject(JSON.parse(left) as ProjectDocument);
   assert.equal(again, left);
 
-  const normalized = normalizeProject(b);
+  const reordered = validProject({
+    levels: [
+      { id: "intro", path: "levels/intro.json" },
+      { id: "boss", path: "levels/boss.json" },
+    ],
+  });
   assert.deepEqual(
-    normalized.levels.map((level) => level.id),
-    ["boss", "intro"],
+    normalizeProject(reordered).levels.map((level) => level.id),
+    ["intro", "boss"],
   );
+
+  const normalized = normalizeProject(b);
   assert.deepEqual(
     normalized.assets.map((asset) => asset.id),
     ["anim.hero", "font.ui", "image.bg", "sfx.jump", "sprite.hero"],
