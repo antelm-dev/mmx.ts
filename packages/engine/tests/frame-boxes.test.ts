@@ -4,15 +4,14 @@ import { readFileSync } from "node:fs";
 
 import type { AnimData, Box, FrameData } from "@mmx/contracts/animation";
 import { Input } from "../src/core/Input.js";
-import { DT, ENEMY_STATS } from "../src/core/constants.js";
-import { COMPILED_GAME_DATA } from "../src/data/index.js";
-import { makeBat, makeMetool } from "../src/game/enemies/index.js";
+import { DT } from "../src/core/constants.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Player } from "../src/game/Player.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Scene, type SceneClips } from "../src/game/Scene.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
+import { ENEMY_STATS, MMX_COMPILED, makeBat, makeMetool } from "./support/mmx.js";
 
 /**
  * Per-frame hurtboxes/hitboxes and engine-owned clip data (SceneOptions.clips).
@@ -176,13 +175,14 @@ function runScene(scene: Scene, frames = 600): string {
 }
 
 test("a headless scene with clips matches a run whose clips a renderer attached", () => {
-  const owned = Scene.create({ level: level(), seed: 3, clips: CLIPS });
+  const owned = Scene.create({ level: level(), gameData: MMX_COMPILED, seed: 3, clips: CLIPS });
   assert.equal(owned.player.sceneClips, true);
   assert.ok(owned.stage.enemies.every((e) => e.sceneClips));
 
   // The pre-clips path: onEnemySpawned attaches enemy clips, the presenter the player's.
   const attached = Scene.create({
     level: level(),
+    gameData: MMX_COMPILED,
     seed: 3,
     onEnemySpawned: (enemy) => enemy.loadAnimations(CLIPS.enemies![enemy.stats.sheet]!),
   });
@@ -193,17 +193,17 @@ test("a headless scene with clips matches a run whose clips a renderer attached"
   assert.equal(ownedDigest, runScene(attached));
   assert.notEqual(
     ownedDigest,
-    runScene(Scene.create({ level: level(), seed: 3 })),
+    runScene(Scene.create({ level: level(), gameData: MMX_COMPILED, seed: 3 })),
     "and the clips matter: a clip-less run of the same script ends elsewhere",
   );
 });
 
 test("without clips a scene keeps the game data hash; with clips the hash covers them", () => {
-  const plain = Scene.create({ level: level() });
-  assert.equal(plain.gameDataHash, COMPILED_GAME_DATA.hash);
+  const plain = Scene.create({ level: level(), gameData: MMX_COMPILED });
+  assert.equal(plain.gameDataHash, MMX_COMPILED.hash);
 
-  const withClips = Scene.create({ level: level(), clips: CLIPS });
-  assert.notEqual(withClips.gameDataHash, COMPILED_GAME_DATA.hash);
+  const withClips = Scene.create({ level: level(), gameData: MMX_COMPILED, clips: CLIPS });
+  assert.notEqual(withClips.gameDataHash, MMX_COMPILED.hash);
 
   // Art-only edits (regions, anchors) do not move it; timing and boxes do.
   const recropped = structuredClone(METOOL_CLIPS);
@@ -212,6 +212,7 @@ test("without clips a scene keeps the game data hash; with clips the hash covers
   }
   const sameHash = Scene.create({
     level: level(),
+    gameData: MMX_COMPILED,
     clips: { ...CLIPS, enemies: { metool: recropped } },
   }).gameDataHash;
   assert.equal(sameHash, withClips.gameDataHash);
@@ -219,13 +220,17 @@ test("without clips a scene keeps the game data hash; with clips the hash covers
   const moved = structuredClone(METOOL_CLIPS);
   moved.animations.idle!.frames[0]!.hurtbox = { x: -6, y: -14, w: 12, h: 13 };
   assert.notEqual(
-    Scene.create({ level: level(), clips: { ...CLIPS, enemies: { metool: moved } } }).gameDataHash,
+    Scene.create({
+      level: level(),
+      gameData: MMX_COMPILED,
+      clips: { ...CLIPS, enemies: { metool: moved } },
+    }).gameDataHash,
     withClips.gameDataHash,
   );
 });
 
 test("player frame boxes stay out of the hash until the engine reads them", () => {
-  const base = Scene.create({ level: level(), clips: CLIPS }).gameDataHash;
+  const base = Scene.create({ level: level(), gameData: MMX_COMPILED, clips: CLIPS }).gameDataHash;
   const boxed = structuredClone(X_ANIMS);
   for (const clip of Object.values(boxed.animations)) {
     clip.frames = clip.frames.map((f) => ({
@@ -235,7 +240,8 @@ test("player frame boxes stay out of the hash until the engine reads them", () =
     }));
   }
   assert.equal(
-    Scene.create({ level: level(), clips: { ...CLIPS, player: boxed } }).gameDataHash,
+    Scene.create({ level: level(), gameData: MMX_COMPILED, clips: { ...CLIPS, player: boxed } })
+      .gameDataHash,
     base,
   );
 
@@ -243,18 +249,19 @@ test("player frame boxes stay out of the hash until the engine reads them", () =
   const slower = structuredClone(X_ANIMS);
   slower.animations.idle!.frames[0]!.duration += 1;
   assert.notEqual(
-    Scene.create({ level: level(), clips: { ...CLIPS, player: slower } }).gameDataHash,
+    Scene.create({ level: level(), gameData: MMX_COMPILED, clips: { ...CLIPS, player: slower } })
+      .gameDataHash,
     base,
   );
 });
 
 test("a replay recorded with different clip boxes is refused", () => {
-  const recorder = new Recorder({ level: level(), seed: 5, clips: CLIPS });
+  const recorder = new Recorder({ level: level(), gameData: MMX_COMPILED, seed: 5, clips: CLIPS });
   for (let i = 0; i < 30; i++) recorder.step(script(i));
   const replay = recorder.toReplay();
 
   assert.equal(
-    Recorder.replay(replay, { level: level(), clips: CLIPS }).digest(),
+    Recorder.replay(replay, { level: level(), gameData: MMX_COMPILED, clips: CLIPS }).digest(),
     recorder.scene.digest(),
     "same clips: it replays",
   );
@@ -263,15 +270,22 @@ test("a replay recorded with different clip boxes is refused", () => {
   other.animations.idle!.frames[0]!.hitboxes = [{ x: 0, y: -8, w: 8, h: 8 }];
   assert.throws(
     () =>
-      Recorder.replay(replay, { level: level(), clips: { ...CLIPS, enemies: { metool: other } } }),
+      Recorder.replay(replay, {
+        level: level(),
+        gameData: MMX_COMPILED,
+        clips: { ...CLIPS, enemies: { metool: other } },
+      }),
     /recorded with game data/,
   );
-  assert.throws(() => Recorder.replay(replay, { level: level() }), /recorded with game data/);
+  assert.throws(
+    () => Recorder.replay(replay, { level: level(), gameData: MMX_COMPILED }),
+    /recorded with game data/,
+  );
 });
 
 test("scene clips must cover every spawned enemy's sheet", () => {
   assert.throws(
-    () => Scene.create({ level: level(), clips: { enemies: {} } }),
+    () => Scene.create({ level: level(), gameData: MMX_COMPILED, clips: { enemies: {} } }),
     /no table for enemy sheet 'metool'/,
   );
 });

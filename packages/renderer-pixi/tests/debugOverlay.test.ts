@@ -13,7 +13,7 @@ import {
   type ScenePresentationHost,
 } from "../src/presentation/ScenePresentation.js";
 import type { AssetCatalog } from "../src/editor/catalogCore.js";
-import { testLevel } from "./testLevel.js";
+import { MMX_COMPILED, testLevel } from "./testLevel.js";
 
 function mockCatalog(): AssetCatalog {
   return {
@@ -93,7 +93,7 @@ test("mergeDebugRenderOptions patches independently", () => {
 });
 
 test("setDebugOptions is independent per flag and render updates the overlay", () => {
-  const scene = Scene.create({ level: testLevel(), seed: 20 });
+  const scene = Scene.create({ level: testLevel(), seed: 20, gameData: MMX_COMPILED });
   const stub = stubOverlay();
   const presentation = createScenePresentationWithHost(mockHost(), scene, {
     assets: mockCatalog(),
@@ -120,7 +120,7 @@ test("setDebugOptions is independent per flag and render updates the overlay", (
 });
 
 test("debug overlay update path does not mutate scene digest", () => {
-  const scene = Scene.create({ level: testLevel(), seed: 21 });
+  const scene = Scene.create({ level: testLevel(), seed: 21, gameData: MMX_COMPILED });
   const before = scene.digest();
   const stub = stubOverlay();
   const presentation = createScenePresentationWithHost(mockHost(), scene, {
@@ -143,8 +143,8 @@ test("debug overlay update path does not mutate scene digest", () => {
 });
 
 test("rebinding resets the debug overlay", () => {
-  const first = Scene.create({ level: testLevel(), seed: 22 });
-  const second = Scene.create({ level: testLevel(), seed: 23 });
+  const first = Scene.create({ level: testLevel(), seed: 22, gameData: MMX_COMPILED });
+  const second = Scene.create({ level: testLevel(), seed: 23, gameData: MMX_COMPILED });
   const stub = stubOverlay();
   const presentation = createScenePresentationWithHost(mockHost(), first, {
     assets: mockCatalog(),

@@ -3,14 +3,14 @@
  * Source references are noted per constant.
  *
  * NOTE (data-driven refactor): the tunable values below — gravity and fall speed,
- * player movement, ability durations, charge thresholds, weapon/projectile stats,
- * enemy statistics and hitboxes, pickup values — no longer own their numbers.
+ * player movement, ability durations, charge thresholds, weapon/projectile stats —
+ * no longer own their numbers.
  * They are COMPATIBILITY EXPORTS that read from the compiled default game data
  * ({@link COMPILED_GAME_DATA}), which is now the single source of truth. Editing a
  * value means editing the corresponding definition under src/data, not here.
  *
- * The enemy and pickup tables only read when accessed: the runtime takes those
- * objects from the scene's game data, so the engine loads without them.
+ * Nothing here reads an enemy or a pickup: the runtime takes those objects from
+ * the scene's game data, so the engine loads without them.
  *
  * The genuine global invariants — the fixed step, tile size, and framebuffer
  * dimensions, whose configurability would violate simulation assumptions — stay
@@ -18,7 +18,7 @@
  */
 
 import { COMPILED_GAME_DATA } from "../data/index.js";
-import type { CompiledEnemy, PickupDefinition, ProjectileDefinition } from "../data/types.js";
+import type { CompiledEnemy, ProjectileDefinition } from "../data/types.js";
 
 // Fixed physics tick — Godot _physics_process default is 60 Hz. A true invariant:
 // changing it redefines what one recorded tick means. Stays in core.
@@ -350,14 +350,6 @@ export interface EnemyStats {
   flying: boolean;
 }
 
-type EnemyId = "metool" | "bat" | "pantheon";
-
-function _enemyStats(id: EnemyId): EnemyStats {
-  const e = _D.enemies.get(id);
-  if (!e) throw new Error(`constants: unknown enemy '${id}'`);
-  return enemyStats(e);
-}
-
 /** Rebuild the legacy {@link EnemyStats} shape from a compiled enemy definition. */
 export function enemyStats(e: CompiledEnemy): EnemyStats {
   return {
@@ -374,21 +366,6 @@ export function enemyStats(e: CompiledEnemy): EnemyStats {
     flying: e.movement === "flying",
   };
 }
-
-// Metool.tscn / SmallBat.tscn — see data/enemies.ts + data/actors.ts. Getters, so
-// importing the engine never requires these records: the runtime reads enemies
-// from the scene's game data, and only tests read this built-in table.
-export const ENEMY_STATS: Readonly<Record<EnemyId, EnemyStats>> = {
-  get metool() {
-    return _enemyStats("metool");
-  },
-  get bat() {
-    return _enemyStats("bat");
-  },
-  get pantheon() {
-    return _enemyStats("pantheon");
-  },
-};
 
 /** EnemyDamage.max_flash_time — how long the white hit flash stays on. */
 export const ENEMY_FLASH_TIME = 0.035;
@@ -443,44 +420,6 @@ export const PLAYER_INTRO_THUNDER_WINDOW = (
   _D.abilities.get("player.intro")!.config as { thunderWindow: readonly [number, number] }
 ).thunderWindow;
 
-// ---------------------------------------------------------------------------
-// Life Energy capsules
-// ---------------------------------------------------------------------------
-
-/**
- * Per-capsule data, read off Heal.tscn / SmallHeal.tscn.
- *
- * Both scenes are PickUp.gd with only the exported `heal` and the sprite
- * differing — see engine/Pickup.ts for the shared tick-heal behaviour.
- */
-export interface LifeCapsuleStats {
-  /** Key into pickup_anims.json's `actors` table. */
-  sheet: "heal" | "sheal";
-  heal: number;
-}
-
-// SmallHeal.tscn / Heal.tscn — see data/pickups.ts. Getters, like ENEMY_STATS:
-// capsules read their pickup from the scene's game data; only tests read this table.
-export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleStats>> = {
-  get small() {
-    return _lifeCapsule("life.small");
-  },
-  get large() {
-    return _lifeCapsule("life.large");
-  },
-};
-
-function _lifeCapsule(id: string): LifeCapsuleStats {
-  const p = _pickup(id);
-  return { sheet: p.sheet as LifeCapsuleStats["sheet"], heal: p.amount };
-}
-
-function _pickup(id: string): PickupDefinition {
-  const p = _D.pickups.get(id);
-  if (!p) throw new Error(`constants: unknown pickup '${id}'`);
-  return p;
-}
-
 /**
  * PickUp.gd's own shared behaviour — do_heal()'s `timer > last_time_increased +
  * 0.06` metering and process_gravity(gravity := 800) — inherited unchanged by
@@ -489,31 +428,6 @@ function _pickup(id: string): PickupDefinition {
  */
 export const PICKUP_TICK_INTERVAL = 0.06;
 export const PICKUP_GRAVITY = 800;
-
-// ---------------------------------------------------------------------------
-// Weapon Energy capsules (Objects/Pickups/AmmoPickup.gd / Ammo.tscn / SmallAmmo.tscn)
-// ---------------------------------------------------------------------------
-
-export interface WeaponCapsuleStats {
-  /** Key into pickup_anims.json's `actors` table. */
-  sheet: "ammo" | "sammo";
-  ammo: number;
-}
-
-// SmallAmmo.tscn / Ammo.tscn — see data/pickups.ts.
-export const WEAPON_CAPSULE_STATS: Readonly<Record<"small" | "large", WeaponCapsuleStats>> = {
-  get small() {
-    return _weaponCapsule("weapon.small");
-  },
-  get large() {
-    return _weaponCapsule("weapon.large");
-  },
-};
-
-function _weaponCapsule(id: string): WeaponCapsuleStats {
-  const p = _pickup(id);
-  return { sheet: p.sheet as WeaponCapsuleStats["sheet"], ammo: p.amount };
-}
 
 // World / rendering
 export const TILE_SIZE = 16;

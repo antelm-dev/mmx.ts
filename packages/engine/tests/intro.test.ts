@@ -7,6 +7,7 @@ import type { LevelData } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
 import { stage2 } from "./fixtures/levels.js";
+import { MMX_COMPILED } from "./support/mmx.js";
 
 /**
  * The level-start entrance (see engine/abilities/Intro.ts): a Scene begins with
@@ -66,13 +67,13 @@ function overhangLevel(): LevelData {
 }
 
 test("a fresh scene starts mid-Intro with control withheld", () => {
-  const scene = Scene.create({ level: stage2 });
+  const scene = Scene.create({ level: stage2, gameData: MMX_COMPILED });
   assert.ok(scene.player.is_executing("Intro"), scene.player.stateString());
   assert.equal(scene.player.listening_to_inputs, false);
 });
 
 test("Intro drops the player down to the spawn point before settling", () => {
-  const scene = Scene.create({ level: stage2 });
+  const scene = Scene.create({ level: stage2, gameData: MMX_COMPILED });
   const liftedY = scene.player.pos.y;
   scene.step(0);
   // Still descending, strictly downward from where it started.
@@ -80,7 +81,7 @@ test("Intro drops the player down to the spawn point before settling", () => {
 });
 
 test("the camera holds the room's framing still while Intro plays out", () => {
-  const scene = Scene.create({ level: stage2 });
+  const scene = Scene.create({ level: stage2, gameData: MMX_COMPILED });
   const x0 = scene.camera.x;
   const y0 = scene.camera.y;
   for (let i = 0; i < 30; i++) scene.step(0);
@@ -89,7 +90,7 @@ test("the camera holds the room's framing still while Intro plays out", () => {
 });
 
 test("Intro ends, hands control back, and fires gameplay_start exactly once", () => {
-  const scene = Scene.create({ level: stage2 });
+  const scene = Scene.create({ level: stage2, gameData: MMX_COMPILED });
   let gameplayStarts = 0;
   scene.player.events.on("gameplay_start", () => gameplayStarts++);
 
@@ -101,7 +102,7 @@ test("Intro ends, hands control back, and fires gameplay_start exactly once", ()
 });
 
 test("movement input is ignored during Intro and works immediately after", () => {
-  const scene = Scene.create({ level: stage2 });
+  const scene = Scene.create({ level: stage2, gameData: MMX_COMPILED });
   const startX = scene.player.pos.x;
 
   runIntroToCompletion(scene);
@@ -113,7 +114,7 @@ test("movement input is ignored during Intro and works immediately after", () =>
 });
 
 test("Intro beam ignores an overhang above the spawn and still reaches it", () => {
-  const scene = Scene.create({ level: overhangLevel() });
+  const scene = Scene.create({ level: overhangLevel(), gameData: MMX_COMPILED });
   const spawnY = scene.player.pos.y + PLAYER_INTRO_DROP_HEIGHT;
   assert.equal(scene.player.collisions_enabled, false);
 

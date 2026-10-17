@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { setProjectDefinitions } from "@mmx/content-schema";
+import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
 import { levelDocumentToLevelData } from "../src/compileLevel.js";
 import { loadProject, requireProject } from "../src/loadProject.js";
 import { resolveProjectPath } from "../src/paths.js";
@@ -267,6 +268,9 @@ test("loadProject registers project object definitions before checking levels", 
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "mmx-project-"));
   try {
     await fs.cp(syntheticProject, dir, { recursive: true });
+    // obj.fast derives from the MMX Starter pack's moving platform, which the project carries.
+    await fs.mkdir(path.join(dir, "data"), { recursive: true });
+    await fs.writeFile(path.join(dir, "data/game.json"), JSON.stringify(pack), "utf8");
     const manifestPath = path.join(dir, "project.json");
     const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
     const levelPath = path.join(dir, "levels/level.main.json");
