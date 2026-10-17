@@ -4,6 +4,8 @@ import { definitionsFromGameData } from "@mmx/content-schema";
 import { addEnemy, projectGameData } from "./gameData.js";
 import {
   abilityFields,
+  addBlankEnemy,
+  BLANK_ENEMY,
   deleteEnemy,
   duplicateEnemy,
   enemyForPrefab,
@@ -24,6 +26,7 @@ const crab = addEnemy(undefined, GAME_DATA, {
   touchDamage: 2,
 });
 const crabEnemy = crab.overlay.enemies!.crab!;
+const BLANK_PATROL = GAME_DATA.enemies.metool!.abilityConfig!.Patrol!;
 const compiles = (enemy = crabEnemy) => projectGameData(putEnemy(crab.overlay, enemy)).issues;
 
 describe("enemy editor", () => {
@@ -199,5 +202,84 @@ describe("enemy editor", () => {
       ),
     ).toBe(false);
     expect(() => deleteEnemy(override, "enemy.metool")).toThrow();
+  });
+
+  describe("blank enemy", () => {
+    const blank = (abilities: string[], extra: object = {}, overlay = crab.overlay) =>
+      addBlankEnemy(overlay, projectGameData(overlay).data, {
+        name: "Blob",
+        health: 2,
+        enemy: {
+          ...BLANK_ENEMY,
+          sheet: "anim.blob",
+          initialAnimation: "walk",
+          abilities,
+          ...extra,
+        },
+      });
+
+    it("compiles with no ability, as a complete enemy, actor and placeable prefab", () => {
+      const { overlay, id } = blank([]);
+      expect(id).toBe("enemy.blob");
+      expect(overlay.enemies?.crab).toBe(crabEnemy); // earlier records kept
+      expect(overlay.actors?.["enemy.blob"]).toEqual({
+        id: "enemy.blob",
+        body: { hw: 8, hh: 8 },
+        maxHealth: 2,
+      });
+      expect(overlay.enemies?.blob).toMatchObject({
+        id: "blob",
+        actor: "enemy.blob",
+        sheet: "anim.blob",
+        initialAnimation: "walk",
+        abilities: [],
+        reactions: {},
+      });
+      expect(overlay.prefabs?.["enemy.blob"]).toMatchObject({
+        name: "Blob",
+        runtime: "enemy",
+        source: { kind: "enemy", ref: "blob" },
+      });
+      const result = projectGameData(overlay);
+      expect(result.issues).toEqual([]);
+      expect(result.compiled.enemies.get("blob")?.movement).toBe("ground");
+    });
+
+    it("gives each ability a complete config and wires the first idle one to idle", () => {
+      const { overlay } = blank(["Death", "Pursuit", "Patrol", "Hover"], { movement: "flying" });
+      const enemy = overlay.enemies!.blob!;
+      expect(Object.keys(enemy.abilityConfig ?? {})).toEqual([
+        "Death",
+        "Pursuit",
+        "Patrol",
+        "Hover",
+      ]);
+      expect(enemy.reactions).toEqual({ idle: ["Patrol"] });
+      expect(projectGameData(overlay).issues).toEqual([]);
+      expect(blank(["Death", "Shoot"]).overlay.enemies!.blob!.reactions).toEqual({});
+      // Every ability at once still compiles.
+      expect(projectGameData(blank([...ENEMY_ABILITIES]).overlay).issues).toEqual([]);
+    });
+
+    it("keeps conflicts to abilities the enemy owns", () => {
+      const { overlay } = blank(["Patrol", "Stun", "Death"], {
+        abilityConfig: { Patrol: { ...BLANK_PATROL, conflicts: ["Stun", "Hide"] } },
+      });
+      expect(overlay.enemies!.blob!.abilityConfig?.Patrol?.conflicts).toEqual(["Stun"]);
+      // A config for an ability left out is dropped with it.
+      expect(overlay.enemies!.blob!.abilityConfig?.Hide).toBeUndefined();
+      expect(projectGameData(overlay).issues).toEqual([]);
+      // The default config keeps a built-in's conflicts only when owned.
+      const metoolLike = blank(["Patrol", "Hide", "Stun"]).overlay.enemies!.blob!;
+      expect(metoolLike.abilityConfig?.Patrol?.conflicts).toEqual(["Hide", "Stun"]);
+    });
+
+    it("takes a free id", () => {
+      const first = blank(["Patrol", "Death"]);
+      expect(blank([], {}, first.overlay).id).toBe("enemy.blob-2");
+      expect(
+        addBlankEnemy(undefined, GAME_DATA, { name: "Metool", health: 1, enemy: BLANK_ENEMY }).id,
+      ).toBe("enemy.metool-2");
+    });
   });
 });

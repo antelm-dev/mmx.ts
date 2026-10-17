@@ -7,8 +7,9 @@ import {
   type EnemyDefinition,
   type GameData,
   type GameDataOverlay,
+  type MovementModel,
 } from "@mmx/engine/data";
-import { addEnemy } from "./gameData.js";
+import { addEnemy, uniqueEnemySlug } from "./gameData.js";
 
 type ConfigValue = number | string | boolean | string[];
 type AbilityConfig = Record<string, ConfigValue>;
@@ -245,6 +246,91 @@ export function duplicateEnemy(
     health: actor.maxHealth,
     touchDamage: enemy.touchDamage,
   });
+}
+
+/** The movement models an enemy body can use (the engine's `MovementModel`). */
+export const MOVEMENTS: readonly MovementModel[] = ["ground", "flying"];
+
+/**
+ * The record a blank enemy starts from: no ability, 8×8 half-extent boxes (the smallest
+ * built-in half width) and the Pantheon Hunter's plain sight box.
+ */
+export const BLANK_ENEMY: EnemyDefinition = {
+  id: "",
+  sheet: "",
+  actor: "",
+  hurtbox: { hw: 8, hh: 8 },
+  // The built-ins' median (1, 2, 3).
+  touchDamage: 2,
+  movement: "ground",
+  perception: { hw: 140, hh: 48, oy: 0 },
+  abilities: [],
+  abilityConfig: {},
+  reactions: {},
+  initialAnimation: "idle",
+};
+
+/** What the built-in enemies do when idle (Patrol, Hover): a blank enemy's idle reaction. */
+const IDLE_ABILITIES = new Set(
+  Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions.idle ?? []),
+);
+
+export type BlankEnemyInput = {
+  name: string;
+  health: number;
+  /** Sheet, first clip, touch damage, movement and abilities (in order, with any configs set). */
+  enemy: Pick<
+    EnemyDefinition,
+    "sheet" | "initialAnimation" | "touchDamage" | "movement" | "abilities" | "abilityConfig"
+  >;
+};
+
+/**
+ * Add an enemy composed from abilities to the overlay: actor `enemy.<slug>`, enemy
+ * `<slug>` and prefab `enemy.<slug>`, with {@link BLANK_ENEMY}'s boxes, a complete
+ * config per ability, and its first idle ability answering `idle`. Returns the next
+ * overlay and the prefab id.
+ */
+export function addBlankEnemy(
+  overlay: GameDataOverlay | undefined,
+  data: GameData,
+  input: BlankEnemyInput,
+): { overlay: GameDataOverlay; id: string } {
+  const slug = uniqueEnemySlug(data, input.name);
+  const id = `enemy.${slug}`;
+  const name = input.name.trim();
+  const idle = input.enemy.abilities.find((ability) => IDLE_ABILITIES.has(ability));
+  const enemy = withAbilities(
+    {
+      ...BLANK_ENEMY,
+      ...input.enemy,
+      id: slug,
+      actor: id,
+      reactions: idle ? { idle: [idle] } : {},
+    },
+    input.enemy.abilities,
+  );
+  const next: GameDataOverlay = {
+    schemaVersion: GAME_DATA.schemaVersion,
+    ...overlay,
+    actors: {
+      ...overlay?.actors,
+      [id]: { id, body: { hw: 8, hh: 8 }, maxHealth: input.health },
+    },
+    enemies: { ...overlay?.enemies, [slug]: enemy },
+    prefabs: {
+      ...overlay?.prefabs,
+      [id]: {
+        id,
+        ...(name ? { name } : {}),
+        runtime: "enemy",
+        source: { kind: "enemy", ref: slug },
+        // As every built-in enemy prefab.
+        fields: [{ name: "FacesRight", type: "boolean", default: false }],
+      },
+    },
+  };
+  return { overlay: next, id };
 }
 
 /**
