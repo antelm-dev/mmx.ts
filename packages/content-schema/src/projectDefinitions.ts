@@ -1,4 +1,4 @@
-import { GAME_DATA, type GameData } from "@mmx/engine/data";
+import { GAME_DATA, type GameData, type GameDataOverlay } from "@mmx/engine/data";
 import {
   definitionsFromGameData,
   getDefinition,
@@ -120,6 +120,16 @@ export function setProjectDefinitions(
 }
 
 let catalogData: GameData = GAME_DATA;
+/** The prefab ids the project's data (its data/game.json) adds or overrides. */
+let overlayPrefabIds: ReadonlySet<string> = new Set();
+
+/**
+ * True for a definition of the palette's Base: neither one of the project's
+ * objects (manifest presets) nor a prefab its data/game.json adds or overrides.
+ */
+export function isBaseDefinition(def: GameObjectDefinition): boolean {
+  return !def.baseId && !overlayPrefabIds.has(def.id);
+}
 
 /** The game data the built-in catalog comes from: the last given to `setCatalogGameData`, else the engine's. */
 export function catalogGameData(): GameData {
@@ -130,9 +140,14 @@ export function catalogGameData(): GameData {
  * Regenerates the built-in part of the catalog from `data` (the project's game
  * data merged over the engine defaults, so project enemies become placeable)
  * and re-derives the project definitions against it. Returns their issues.
+ * `overlay`, the project's data merged into `data`, tells its prefabs from the Base.
  */
-export function setCatalogGameData(data: GameData): ProjectDefinitionIssue[] {
+export function setCatalogGameData(
+  data: GameData,
+  overlay?: GameDataOverlay,
+): ProjectDefinitionIssue[] {
   catalogData = data;
+  overlayPrefabIds = new Set(Object.keys(overlay?.prefabs ?? {}));
   replaceBuiltinDefinitions(definitionsFromGameData(data));
   return setProjectDefinitions(projectEntries);
 }
