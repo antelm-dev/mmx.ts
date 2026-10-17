@@ -43,6 +43,17 @@ describe("paletteRows", () => {
     expect(outline("li")).toBe("Platforms: platform.lift");
     expect(outline("slope")).toBe("Base: slope");
     expect(outline("base")).toBe("Base: spawn hazard slope camera-zone");
+    expect(outline("ba")).toBe("Base: spawn hazard slope camera-zone");
+    // A single letter only filters by name or category, as before.
+    for (const q of ["s", "a"]) {
+      const matches = allDefinitions()
+        .filter((d) => d.name.toLowerCase().includes(q) || d.category.includes(q))
+        .map((d) => d.id);
+      const listed = paletteRows(allDefinitions(), q).flatMap((row) =>
+        row.kind === "def" ? [row.def.id] : [],
+      );
+      expect([...listed].sort()).toEqual([...matches].sort());
+    }
   });
 
   it("keeps every built-in in Base for a project without data", () => {

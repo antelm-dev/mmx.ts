@@ -25,11 +25,12 @@ export function paletteRows(defs: readonly GameObjectDefinition[], query: string
     out.push({ kind: "header", key: `h:${key}`, label });
     for (const def of list) out.push({ kind: "def", key: def.id, def });
   };
-  // Searching "base" (or part of it) lists the whole Base section.
+  // Searching "base" (or a prefix of 2+ letters) lists the whole Base section.
+  const wholeBase = q.length >= 2 && "base".startsWith(q);
   section(
     "base",
     "Base",
-    defs.filter((d) => isBaseDefinition(d) && (shown.includes(d) || (!!q && "base".includes(q)))),
+    defs.filter((d) => isBaseDefinition(d) && (wholeBase || shown.includes(d))),
   );
   for (const category of CATEGORY_ORDER) {
     section(
