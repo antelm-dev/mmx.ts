@@ -289,3 +289,30 @@ test("scene clips must cover every spawned enemy's sheet", () => {
     /no table for enemy sheet 'metool'/,
   );
 });
+
+test("clips without segments keep their hash; segments enter it and replay", () => {
+  // Frozen on the base before segments existed (4f94232).
+  const plain = Scene.create({ level: level(), gameData: MMX_COMPILED, clips: CLIPS }).gameDataHash;
+  assert.equal(plain, "62ad888e1f5e9332");
+
+  const segmented = structuredClone(METOOL_CLIPS);
+  for (const clip of Object.values(segmented.animations)) {
+    clip.segments = [
+      { name: "rise", start: 0, end: 0, loop: false },
+      { name: "up", start: 1, end: 2, loop: true },
+    ];
+  }
+  const clips: SceneClips = { ...CLIPS, enemies: { metool: segmented } };
+  const recorder = new Recorder({ level: level(), gameData: MMX_COMPILED, seed: 5, clips });
+  assert.notEqual(recorder.scene.gameDataHash, plain, "segments are gameplay");
+  for (let i = 0; i < 600; i++) recorder.step(script(i));
+  assert.equal(
+    Recorder.replay(recorder.toReplay(), {
+      level: level(),
+      gameData: MMX_COMPILED,
+      clips,
+    }).digest(),
+    recorder.scene.digest(),
+    "a run with segmented clips replays identically",
+  );
+});

@@ -28,12 +28,25 @@ export interface FrameData {
   hitboxes?: Box[];
 }
 
+/**
+ * A named run of a clip's frames, bounds inclusive. A clip's segments partition its
+ * frames in order; a `loop` segment wraps on itself, a one-shot chains to the next.
+ */
+export interface ClipSegment {
+  name: string;
+  start: number;
+  end: number;
+  loop: boolean;
+}
+
 export interface ClipData {
   loop: boolean;
   /** Frame a looping clip wraps back to (default 0); ignored when not looping. */
   loopStart?: number;
   speed: number;
   frames: FrameData[];
+  /** When present, drives playback instead of `loop`/`loopStart`. */
+  segments?: ClipSegment[];
 }
 
 export interface AnimData {
@@ -80,6 +93,9 @@ export function assertAnimData(data: unknown, label = "animation data"): asserts
     ) {
       throw new Error(`${clipLabel}: loopStart must be an integer frame index`);
     }
+    const segments =
+      value.segments === undefined ? null : segmentsError(value.segments, value.frames.length);
+    if (segments) throw new Error(`${clipLabel}: ${segments}`);
     value.frames.forEach((frame, index) => {
       if (!isRecord(frame)) {
         throw new Error(`${label}: animation '${name}' frame ${index} is malformed`);
@@ -107,6 +123,37 @@ export function assertAnimData(data: unknown, label = "animation data"): asserts
       }
     });
   }
+}
+
+/**
+ * Why `segments` is not a valid partition of `frameCount` frames, or null when it is:
+ * non-empty, in order from frame 0 to the last frame, names unique, non-empty, no `#`.
+ */
+export function segmentsError(segments: unknown, frameCount: number): string | null {
+  if (!Array.isArray(segments) || segments.length === 0) {
+    return "segments must be a non-empty array";
+  }
+  const names = new Set<string>();
+  let next = 0;
+  for (const [index, segment] of segments.entries()) {
+    if (
+      !isRecord(segment) ||
+      typeof segment.name !== "string" ||
+      typeof segment.loop !== "boolean"
+    ) {
+      return `segment ${index} must be { name, start, end, loop }`;
+    }
+    const { name, start, end } = segment;
+    if (name === "" || name.includes("#"))
+      return `segment ${index} name must be non-empty, without '#'`;
+    if (names.has(name)) return `segment name '${name}' is used twice`;
+    names.add(name);
+    if (start !== next || !Number.isInteger(end) || Number(end) < next) {
+      return `segment '${name}' must start at frame ${next} and end at or after it`;
+    }
+    next = Number(end) + 1;
+  }
+  return next === frameCount ? null : `segments must end on the last frame (${frameCount - 1})`;
 }
 
 const BOX_RULE = "must be { x, y, w, h } integers with positive w and h";

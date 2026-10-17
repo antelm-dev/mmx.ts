@@ -66,10 +66,23 @@ export class AnimationPlayer {
     this.layer = layer;
   }
 
-  /** AbilityUser.play_animation — restarts even if the same clip is playing. */
+  /**
+   * AbilityUser.play_animation — restarts even if the same clip is playing.
+   * `clip#segment` starts at that segment (an exact clip name wins); `frame` counts
+   * from where `name` starts. An unknown segment plays like a missing clip.
+   */
   play(name: string, frame = 0): void {
     this.current = name;
-    this.cursor.play(this.clips.get(name) ?? null, frame);
+    let clip = this.clips.get(name);
+    let start = 0;
+    const hash = name.lastIndexOf("#");
+    if (!clip && hash >= 0) {
+      const segment = name.slice(hash + 1);
+      clip = this.clips.get(name.slice(0, hash));
+      start = clip?.segments?.find((s) => s.name === segment)?.start ?? -1;
+      if (start < 0) clip = undefined;
+    }
+    this.cursor.play(clip ?? null, start + frame);
     this.missingFinished = false;
   }
 
@@ -98,8 +111,7 @@ export class AnimationPlayer {
 
   /** Advance playback by `dt` seconds (driven from the fixed physics tick). */
   advance(dt: number): void {
-    const clip = this.clips.get(this.current);
-    if (!clip || clip.frames.length === 0) {
+    if (!this.cursor.currentFrame) {
       // No clip data (headless): report the clip as finished once, so handoffs
       // like walk_start -> walk and recover -> idle still resolve.
       if (!this.missingFinished) {

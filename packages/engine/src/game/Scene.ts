@@ -299,6 +299,15 @@ function hashWithClips(gameDataHash: string, clips: SceneClips): string {
               ? { duration: f.duration, hurtbox: f.hurtbox ?? null, hitboxes: f.hitboxes ?? [] }
               : { duration: f.duration },
           ),
+          // Only when present: stableStringify writes `undefined` as null, changing every hash.
+          ...(clip.segments && {
+            segments: clip.segments.map(({ name, start, end, loop }) => ({
+              name,
+              start,
+              end,
+              loop,
+            })),
+          }),
         },
       ]),
     );

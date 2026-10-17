@@ -44,6 +44,7 @@ function cloneClip(clip: AnimationClip): AnimationClip {
     frames: clip.frames.map(cloneFrame),
   };
   if (clip.loopStart !== undefined) next.loopStart = clip.loopStart;
+  if (clip.segments !== undefined) next.segments = clip.segments.map((s) => ({ ...s }));
   return next;
 }
 

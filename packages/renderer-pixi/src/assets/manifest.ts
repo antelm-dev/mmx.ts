@@ -1,4 +1,10 @@
-import { assertAnimData, assertRegion, type AnimData, type Region } from "@mmx/contracts/animation";
+import {
+  assertAnimData,
+  assertRegion,
+  type AnimData,
+  type ClipSegment,
+  type Region,
+} from "@mmx/contracts/animation";
 import { assertTimedClip, type SceneClips } from "@mmx/engine";
 import type { AnimationClip, AnimationAsset, ProjectDocument } from "@mmx/project-schema";
 import type { ClipActor } from "../editor/preview.js";
@@ -14,6 +20,7 @@ export interface ShotAnimManifest {
       loopStart?: number;
       speed: number;
       frames: { region: Region; duration: number }[];
+      segments?: ClipSegment[];
     }
   >;
 }
