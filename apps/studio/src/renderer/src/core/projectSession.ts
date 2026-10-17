@@ -18,7 +18,9 @@ import { levelManifestPath, PROJECT_VALIDATION, updateLevelDocument } from "@mmx
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
   buildStarterAssets,
+  buildStarterBasedAssets,
   buildStudioAssets,
+  starterGameData,
   starterAssets,
   type StudioAssets,
   type StudioGameData,
@@ -122,7 +124,8 @@ const bindingIssue = (error: unknown): ProjectIssue => ({
   message: error instanceof Error ? error.message : String(error),
 });
 
-type PlayData = { gameData: StudioGameData; urls: Record<string, string> };
+/** `gameData` is null when the project has no game/data.json yet. */
+type PlayData = { gameData: StudioGameData | null; urls: Record<string, string> };
 
 /** The project's definitions: its manifest objects and data/game.json records. */
 type Definitions = {
@@ -246,23 +249,27 @@ export class ProjectSession {
     let assets: StudioAssets | null = null;
     if (this.playData && project) {
       const { gameData, urls } = this.playData;
-      const playerAnimation = this.playerAnimation();
       try {
+        // No game/data.json yet (a new project) is no problem: the starter's, with its assets.
+        const base = gameData ?? starterGameData;
         const data = this.state.playerAnimation
           ? {
-              ...gameData,
-              bindings: { ...gameData.bindings, playerAnimation: this.state.playerAnimation },
+              ...base,
+              bindings: { ...base.bindings, playerAnimation: this.state.playerAnimation },
             }
-          : gameData;
+          : base;
+        // Read from disk: buildStudioAssets reports a missing `bindings`.
+        const playerAnimation = data.bindings?.playerAnimation;
         const { data: engineData, compiled } = projectGameData(project.gameData);
-        assets = buildStudioAssets(
-          project.manifest,
-          data,
-          (asset) => urls[asset.id] ?? "",
-          engineData.enemies,
-        );
+        const resolveUrl = (asset: { id: string }) => urls[asset.id] ?? "";
+        // Only then: a project of its own that lost a bound asset must say so, as its build would.
+        assets = gameData
+          ? buildStudioAssets(project.manifest, data, resolveUrl, engineData.enemies)
+          : buildStarterBasedAssets(project.manifest, data, resolveUrl, engineData.enemies);
         await assets.catalog.load();
-        const clips = this.animationAsset(playerAnimation ?? "")?.animations ?? {};
+        // Looked up in the assets Play uses: the player may still be the starter's.
+        const player = assets.project.assets.find((asset) => asset.id === playerAnimation);
+        const clips = player?.kind === "animation" ? player.animations : {};
         const missing = requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
           (name) => !clips[name],
         );
@@ -775,13 +782,17 @@ export class ProjectSession {
     }
     // After the manifest, so the bound animation asset is on disk first.
     const { playerAnimation } = this.state;
+    let seeded: StudioProject | null = null;
     if (playerAnimation) {
       const written = await bridge.writePlayerAnimation(rootPath, playerAnimation);
       if (!written.ok) {
         this.setState({ ...this.state, issues: written.issues });
         return written.issues;
       }
-      if (this.playData) {
+      if (written.value) {
+        // Seeded from the starter: its bound assets were added to the project, so Play reads them.
+        seeded = written.value;
+      } else if (this.playData?.gameData) {
         const { gameData } = this.playData;
         this.playData = {
           ...this.playData,
@@ -792,11 +803,16 @@ export class ProjectSession {
 
     this.setState({
       ...this.state,
-      project: result.value.project,
+      project: seeded ?? result.value.project,
       dirty: false,
       playerAnimation: undefined,
-      issues: [...result.issues, ...validateOpenProject(result.value.project)],
+      issues: [...result.issues, ...validateOpenProject(seeded ?? result.value.project)],
     });
+    if (seeded) {
+      // Awaited: the first Save of an untitled project moves the folder right after.
+      this.assets = this.assets.catch(() => null).then(() => this.loadAssets());
+      await this.assets;
+    }
     return this.state.issues;
   }
 

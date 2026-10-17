@@ -19,7 +19,7 @@ import {
   type StudioProject,
 } from "@mmx/project-io";
 import { createNodeFileSystem } from "@mmx/project-io/node";
-import { copyStarterProjectToDirectory } from "@mmx/starter-template";
+import { copyStarterProjectToDirectory, seedStarterGameData } from "@mmx/starter-template";
 import {
   deleteWorkProject,
   destinationPick,
@@ -223,9 +223,11 @@ export function createProjectIpc() {
       ): Promise<ProjectResult<{ gameData: unknown; urls: Record<string, string> }>> => {
         const fs = createNodeFileSystem(rootPath);
         const issues: ProjectIssue[] = [];
+        // Absent in a new project: null, not an issue (the renderer falls back to the starter).
         let gameData: unknown = null;
         try {
-          gameData = JSON.parse(await fs.readText(GAME_DATA_FILE));
+          if (await fs.exists(GAME_DATA_FILE))
+            gameData = JSON.parse(await fs.readText(GAME_DATA_FILE));
         } catch (error) {
           issues.push(
             issue("play-assets.game-data", errorMessage(error), `/${GAME_DATA_FILE}`, "warning"),
@@ -266,11 +268,23 @@ export function createProjectIpc() {
       },
     ),
 
-    /** Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key. */
+    /**
+     * Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key. A project
+     * without one gets the starter's, with the starter assets it binds: the project then comes
+     * back reloaded in `value` (null otherwise).
+     */
     "write-player-animation": handle(
-      async (_event, rootPath: string, animationId: string): Promise<ProjectResult<null>> => {
+      async (
+        _event,
+        rootPath: string,
+        animationId: string,
+      ): Promise<ProjectResult<StudioProject | null>> => {
         const fs = createNodeFileSystem(rootPath);
         try {
+          // A new project has none yet: Play used the starter's until now.
+          if (!(await fs.exists(GAME_DATA_FILE))) {
+            return await seedStarterGameData(rootPath, animationId);
+          }
           const data = JSON.parse(await fs.readText(GAME_DATA_FILE));
           data.bindings = { ...data.bindings, playerAnimation: animationId };
           await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);

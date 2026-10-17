@@ -153,5 +153,29 @@ export function buildStarterAssets(): StudioAssets {
   );
 }
 
+/** The starter's `game/data.json`: what a new project plays with until it has its own. */
+export const starterGameData = studioGameDataJson as StudioGameData;
+
+/**
+ * A project without `game/data.json` (a new one), played with `gameData` (the
+ * {@link starterGameData}, maybe with its own player animation): the starter's assets, plus the
+ * project's own, which win on an id clash and are resolved by `resolveUrl`.
+ */
+export function buildStarterBasedAssets(
+  project: ProjectDocument,
+  gameData: StudioGameData,
+  resolveUrl: (asset: ProjectAsset) => string,
+  enemies: Record<string, { sheet: string }> = {},
+): StudioAssets {
+  const own = new Set(project.assets.map((asset) => asset.id));
+  const starter = (starterProjectJson as ProjectDocument).assets.filter((a) => !own.has(a.id));
+  return buildStudioAssets(
+    { ...project, assets: [...starter, ...project.assets] },
+    gameData,
+    (asset) => (own.has(asset.id) ? resolveUrl(asset) : resolveStarterAssetUrl(asset)),
+    enemies,
+  );
+}
+
 /** The starter assets the viewport draws before any project is opened. */
 export const starterAssets = buildStarterAssets();

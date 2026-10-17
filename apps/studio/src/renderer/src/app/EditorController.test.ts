@@ -6,10 +6,16 @@ vi.mock("../core/EditorViewport.js", () => ({ EditorViewport: class {} }));
 vi.mock("./EditorPlaytestController.js", () => ({ EditorPlaytestController: class {} }));
 vi.mock("./dock.js", () => ({ focusPanel: () => {}, isPanelVisible: () => false }));
 vi.mock("../assets/studioAssets.js", () => {
-  const assets = { catalog: { load: async () => undefined }, manifest: {} };
+  const assets = {
+    catalog: { load: async () => undefined },
+    manifest: {},
+    project: { assets: [] },
+  };
   return {
     starterAssets: assets,
+    starterGameData: { bindings: {} },
     buildStarterAssets: () => assets,
+    buildStarterBasedAssets: () => assets,
     buildStudioAssets: () => assets,
   };
 });
@@ -200,6 +206,21 @@ describe("EditorController work project (C-WORK)", () => {
     expect(editor.hasRecoveryDraft()).toBe(false);
     expect(readRecentProjects()).toMatchObject([{ rootPath: "/games/hero", name: "Hero" }]);
     workProjects = [];
+    await projectSession.getAssets();
+  });
+
+  it("withProject runs nothing, with a toast, when creating the work project throws", async () => {
+    projectSession.close();
+    const editor = new EditorController();
+    project.createWorkProject.mockRejectedValueOnce(new Error("IPC gone"));
+    const create = vi.fn();
+    await editor.withProject(create);
+    expect(create).not.toHaveBeenCalled();
+    expect(useUiStore.getState().toasts.at(-1)?.message).toBe(
+      "Could not create a project: IPC gone",
+    );
+    await editor.withProject(create);
+    expect(create).toHaveBeenCalledTimes(1);
     await projectSession.getAssets();
   });
 

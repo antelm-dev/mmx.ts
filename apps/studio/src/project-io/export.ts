@@ -85,6 +85,21 @@ export async function exportProject(
 
   const levelDocuments = project.levels.map((level) => level.document);
   const bindingAssetIds = await readBindingAssetIds(sourceFs);
+  // A binding to an asset the manifest lacks would only fail later, at build.
+  const dangling = bindingAssetIds.filter(
+    (id) => !project.manifest.assets.some((asset) => asset.id === id),
+  );
+  if (dangling.length > 0) {
+    return fail(
+      dangling.map((id) =>
+        issue(
+          "asset.missing",
+          `${GAME_DATA_FILE} binds asset '${id}', which is not in the project.`,
+          `/${GAME_DATA_FILE}`,
+        ),
+      ),
+    );
+  }
   // A project enemy's sheet is an animation asset id (data/game.json).
   const enemySheets = Object.values(project.gameData?.enemies ?? {}).map((enemy) => enemy.sheet);
   const referencedAssets = filterReferencedAssets(project.manifest, levelDocuments, [

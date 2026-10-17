@@ -438,6 +438,8 @@ export class EditorController {
       }
       this.dropRecovery();
       this.store.markSaved();
+      // A Save that seeded game/data.json reloaded the sprites (projectSession.saveProject).
+      void this.applyProjectAssets();
       this.toast("Project saved.");
       return;
     }
@@ -485,6 +487,7 @@ export class EditorController {
     this.recoveryOffered = this.draftDiffersFromDocument();
     this.store.markSaved();
     addRecentProject({ rootPath, name: project.manifest.name });
+    void this.applyProjectAssets();
     const warning = issues.find((issue) => issue.code === "work-project.cleanup");
     this.toast(warning ? `Project saved. ${warning.message}` : "Project saved.");
   }
@@ -499,6 +502,23 @@ export class EditorController {
     // One work project for calls made while it is being created.
     this.ensuring ??= this.createWorkProject().finally(() => (this.ensuring = null));
     return this.ensuring;
+  }
+
+  /**
+   * AC-NOPROJECT: run a creation that needs a project (New object…, Import sprite sheet…, New
+   * animation…), making the untitled work project first when none is open. Nothing runs when that
+   * fails, and a toast says why.
+   */
+  async withProject(create: () => unknown): Promise<void> {
+    let ready = false;
+    try {
+      ready = await this.ensureProject();
+    } catch (error) {
+      this.toast(
+        `Could not create a project: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    if (ready) await create();
   }
 
   private async createWorkProject(): Promise<boolean> {
@@ -896,6 +916,8 @@ export class EditorController {
     const { overlay, id } = addEnemy(project.gameData, projectSession.gameData().data, input);
     this.setGameData(overlay);
     this.store.setTool("place", id);
+    // Placing needs the level in view: the Start tab or a document may be covering it.
+    focusPanel("viewport");
   }
 
   /** Replace the project's data/game.json records; saved with the project. */

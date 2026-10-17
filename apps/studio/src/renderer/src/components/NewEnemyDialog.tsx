@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { chakra, Dialog } from "@chakra-ui/react";
+import { Film, ImagePlus } from "lucide-react";
+import { openClipsDocument } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { uniqueEnemySlug } from "../core/gameData.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Field, FieldInput, FieldSelect } from "../ui/editor/field.js";
+import { ToolbarButton } from "../ui/editor/toolbar-button.js";
+import { importSpriteSheet } from "./SheetSlicerPanel.js";
 
 /** Defaults a new enemy copies from its base: health and touch damage. */
 function baseStats(base: string): { health: number; touchDamage: number } {
@@ -48,15 +52,49 @@ export function NewEnemyForm({
         <chakra.div color="studio.fgTertiary" fontSize="11px">
           Id: {id}
         </chakra.div>
-        <Field label="Animation" invalid={sheets.length === 0}>
-          <FieldSelect value={chosenSheet} onChange={(e) => setSheet(e.target.value)}>
-            {sheets.map((asset) => (
-              <option key={asset} value={asset}>
-                {asset}
-              </option>
-            ))}
-          </FieldSelect>
-        </Field>
+        {sheets.length === 0 ? (
+          // A new (or untitled) project has no animation yet: the ways to make one, in order.
+          <chakra.div
+            role="group"
+            aria-label="No animation"
+            display="flex"
+            flexDirection="column"
+            gap="1.5"
+          >
+            <chakra.div color="studio.fgTertiary" fontSize="11px">
+              An enemy is drawn from an animation, and the project has none yet. Import a sprite
+              sheet and slice it, then make an animation from it.
+            </chakra.div>
+            <chakra.div display="flex" flexWrap="wrap" gap="1">
+              <ToolbarButton
+                onClick={() => {
+                  onClose();
+                  void importSpriteSheet();
+                }}
+              >
+                <ImagePlus size={14} /> Import sprite sheet…
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => {
+                  onClose();
+                  openClipsDocument();
+                }}
+              >
+                <Film size={14} /> New animation…
+              </ToolbarButton>
+            </chakra.div>
+          </chakra.div>
+        ) : (
+          <Field label="Animation">
+            <FieldSelect value={chosenSheet} onChange={(e) => setSheet(e.target.value)}>
+              {sheets.map((asset) => (
+                <option key={asset} value={asset}>
+                  {asset}
+                </option>
+              ))}
+            </FieldSelect>
+          </Field>
+        )}
         <chakra.div display="flex" gap="3">
           <Field label="Health">
             <FieldInput
@@ -75,11 +113,6 @@ export function NewEnemyForm({
             />
           </Field>
         </chakra.div>
-        {sheets.length === 0 && (
-          <chakra.div color="studio.dangerFg">
-            Add an animation asset to the project first.
-          </chakra.div>
-        )}
       </Dialog.Body>
       <Dialog.Footer>
         <ActionButton onClick={onBack}>Back</ActionButton>
