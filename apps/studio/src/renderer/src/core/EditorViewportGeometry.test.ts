@@ -373,7 +373,7 @@ describe("environment travel gizmo", () => {
         lift: {
           id: "lift",
           behavior: "environment.moving-platform",
-          defaults: { travel: 96, speed: 48 },
+          defaults: { travel: 64, speed: 48 },
         },
       },
       prefabs: {
@@ -381,6 +381,13 @@ describe("environment travel gizmo", () => {
           ...GAME_DATA.prefabs["platform.moving"]!,
           id: "platform.lift",
           source: { kind: "environment", ref: "lift" },
+        },
+        // No Travel field: the gizmo falls back to the project's environment defaults.
+        "platform.lift-fixed": {
+          ...GAME_DATA.prefabs["platform.moving"]!,
+          id: "platform.lift-fixed",
+          source: { kind: "environment", ref: "lift" },
+          fields: GAME_DATA.prefabs["platform.moving"]!.fields.filter((f) => f.name !== "Travel"),
         },
       },
     };
@@ -394,6 +401,10 @@ describe("environment travel gizmo", () => {
       expect(environmentGeometry(lift).map((p) => p.kind)).toEqual(["line", "rect"]);
       expect(environmentGeometry(platform())).toEqual([]);
       expect(environmentGeometry({ ...lift, definitionId: "hazard" })).toEqual([]);
+      const fixed = { ...platform(), definitionId: "platform.lift-fixed" };
+      expect(travelGrip(environmentGeometry(fixed))).toEqual(
+        travelGrip(environmentGeometry({ ...lift, overrides: { Travel: 64 } })),
+      );
     } finally {
       setCatalogGameData(GAME_DATA);
     }

@@ -196,8 +196,9 @@ test("a moving platform's debug geometry is its travel path and end rectangle on
     from: { x: 124, y: 54 },
     to: { x: 164, y: 54 },
   });
-  // Unset Travel falls back to the built-in default; no travel, no path.
-  assert.equal((geometry({}, at)[1] as { x: number }).x, 196);
+  // Unset Travel falls back to the given definition's default; none, no path.
+  assert.equal((geometry({}, at, { travel: 64, speed: 48 })[1] as { x: number }).x, 164);
+  assert.deepEqual(geometry({}, at), []);
   assert.deepEqual(geometry({ Travel: 0 }, at), []);
   assert.equal(
     environmentBehaviorRegistry.get("environment.falling-platform").debugGeometry,

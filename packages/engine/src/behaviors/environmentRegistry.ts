@@ -2,7 +2,6 @@ import { Registry, notWired, type BehaviorFactory } from "./types.js";
 import { validateConfig, type Schema } from "./configValidation.js";
 import type { DebugPrimitive, EntityTransform } from "./geometryTypes.js";
 import type { EnvironmentDefinition } from "../data/types.js";
-import { environments } from "../data/environments.js";
 
 /** A placed environment instance's field values, keyed by prefab field name (Travel, Axis…). */
 export type EnvironmentFields = Readonly<Record<string, unknown>>;
@@ -17,12 +16,18 @@ export type EnvironmentFields = Readonly<Record<string, unknown>>;
  * `debugGeometry` describes one placed instance for the editor: `fields` are
  * its resolved prefab field values (prefab defaults merged with the instance's
  * overrides) and the transform is its rectangle, `x`/`y` its top-left corner.
+ * `defaults` are the resolved environment definition's (the project's data), for
+ * a field the instance leaves unset.
  */
 export interface EnvironmentBehaviorFactory extends Omit<
   BehaviorFactory<unknown, EnvironmentDefinition["defaults"], unknown>,
   "debugGeometry"
 > {
-  debugGeometry?(fields: EnvironmentFields, transform: EntityTransform): readonly DebugPrimitive[];
+  debugGeometry?(
+    fields: EnvironmentFields,
+    transform: EntityTransform,
+    defaults?: EnvironmentDefinition["defaults"],
+  ): readonly DebugPrimitive[];
 }
 
 /** Each behaviour's `defaults` schema. */
@@ -45,13 +50,10 @@ const DEFAULTS_SCHEMAS = {
 function movingPlatformGeometry(
   fields: EnvironmentFields,
   transform: EntityTransform,
+  defaults?: EnvironmentDefinition["defaults"],
 ): DebugPrimitive[] {
-  // shortcut: an unset Travel falls back to the built-in definition, not the project's;
-  // pass the resolved definition here once the editor reads environments from project data.
   const travel =
-    typeof fields.Travel === "number"
-      ? Math.max(0, fields.Travel)
-      : environments["moving-platform"].defaults.travel;
+    typeof fields.Travel === "number" ? Math.max(0, fields.Travel) : Number(defaults?.travel ?? 0);
   if (!(travel > 0)) return [];
   const vertical = fields.Axis === "vertical";
   const width = transform.width ?? 0;

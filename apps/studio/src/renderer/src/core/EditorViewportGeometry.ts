@@ -116,17 +116,15 @@ export function environmentGeometry(
   const data = catalogGameData();
   const source = data.prefabs[def.baseId ?? def.id]?.source;
   if (source?.kind !== "environment") return [];
-  const behavior = data.environments[source.ref]?.behavior;
-  if (!behavior || !environmentBehaviorRegistry.has(behavior)) return [];
-  const provider = environmentBehaviorRegistry.get(behavior).debugGeometry;
+  const environment = data.environments[source.ref];
+  if (!environment || !environmentBehaviorRegistry.has(environment.behavior)) return [];
+  const provider = environmentBehaviorRegistry.get(environment.behavior).debugGeometry;
   return (
-    provider?.(entityFields(inst), {
-      x: box.x,
-      y: box.y,
-      facing: 1,
-      width: box.w,
-      height: box.h,
-    }) ?? []
+    provider?.(
+      entityFields(inst),
+      { x: box.x, y: box.y, facing: 1, width: box.w, height: box.h },
+      environment.defaults,
+    ) ?? []
   );
 }
 
