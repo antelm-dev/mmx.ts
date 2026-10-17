@@ -223,9 +223,9 @@ export function EnemyEditorPanel({
     </chakra.div>
   );
 
-  const sheets = (project.manifest.assets ?? [])
-    .filter((a) => a.kind === "animation")
-    .map((a) => a.id);
+  const animations = (project.manifest.assets ?? []).filter((a) => a.kind === "animation");
+  const sheets = animations.map((a) => a.id);
+  const clips = Object.keys(animations.find((a) => a.id === enemy.sheet)?.animations ?? {});
   const projectiles = Object.keys(gameData.data.projectiles);
   const owned = enemy.abilities;
   const setAbilities = (abilities: string[]): void => save(withAbilities(enemy, abilities));
@@ -381,7 +381,7 @@ export function EnemyEditorPanel({
               <chakra.div key={ability} role="group" aria-label={ability}>
                 <SectionTitle divider>{ability}</SectionTitle>
                 <chakra.div px="3.5">{errors(configPath)}</chakra.div>
-                {abilityFields(ability, projectiles).map((prop) =>
+                {abilityFields(ability, projectiles, clips, config).map((prop) =>
                   field(
                     prop,
                     config[prop.key],

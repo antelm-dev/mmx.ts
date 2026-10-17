@@ -68,6 +68,8 @@ export function PropertyControl({
             defaultValue={text}
             key={`${prop.key}-${scope}-${text}`}
             onBlur={(e) => {
+              // Tabbing through an unset optional field leaves it unset.
+              if (e.target.value === "" && value === undefined) return;
               if (prop.type === "string") return commit(e.target.value);
               const next = Number(e.target.value);
               if (Number.isFinite(next)) commit(next);

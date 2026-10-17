@@ -162,6 +162,15 @@ describe("enemy clips", () => {
     expect(
       enemyClips({ ...BLANK_ENEMY, initialAnimation: "stand", abilities: ["Patrol", "Death"] }),
     ).toEqual(["stand", "walk", "idle"]);
+    // Roll's clip, and Death's weak clip once set.
+    const spiky = { ...BLANK_ENEMY, abilities: ["Roll", "Death"] };
+    expect(enemyClips(spiky)).toEqual(["idle", "roll"]);
+    expect(
+      enemyClips({
+        ...spiky,
+        abilityConfig: { Death: { explosionDuration: 0, weakHealth: 1, weakAnimation: "fall" } },
+      }),
+    ).toEqual(["idle", "roll", "fall"]);
     expect(enemyClips(GAME_DATA.enemies.metool!)).toEqual([
       "idle",
       "walk",
@@ -198,5 +207,19 @@ describe("enemy clips", () => {
     ).toEqual([]);
     expect(enemyClipIssues(blob, [])).toEqual([]);
     expect(enemyClipIssues(undefined, [sheet])).toEqual([]);
+    // A rolling enemy that falls over before exploding needs both clips.
+    const spiky = addBlankEnemy(undefined, GAME_DATA, {
+      name: "Spiky",
+      health: 3,
+      enemy: {
+        ...BLANK_ENEMY,
+        sheet: "anim.blob",
+        abilities: ["Roll", "Death"],
+        abilityConfig: { Death: { explosionDuration: 0, weakHealth: 1, weakAnimation: "fall" } },
+      },
+    }).overlay;
+    expect(enemyClipIssues(spiky, [sheet]).map((issue) => issue.message)).toEqual([
+      "Enemy 'spiky' animation 'anim.blob' has no clip for: roll, fall.",
+    ]);
   });
 });
