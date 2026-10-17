@@ -5,7 +5,13 @@ import {
   type GameDataOverlay,
 } from "@mmx/engine/data";
 import type { ProjectIssue } from "@mmx/project-io";
-import type { AnimationFrame, FrameBox, ProjectAsset, Region } from "@mmx/project-schema";
+import type {
+  AnimationClip,
+  AnimationFrame,
+  FrameBox,
+  ProjectAsset,
+  Region,
+} from "@mmx/project-schema";
 
 /**
  * Clip names each player behaviour plays: the `animation = "…"` and
@@ -49,7 +55,7 @@ export function requiredPlayerClips(
  * Clip names each enemy ability plays: the `animation = "…"` and `play_animation*("…")`
  * literals of `packages/engine/src/game/enemy/` (clips.test.ts checks them). Stun names
  * its clips in its config (`animation`, `recoverAnimation`), and Death its weak phase's
- * (`weakAnimation`).
+ * (`weakAnimation`); a config may name a `clip#segment`.
  */
 export const ENEMY_ABILITY_CLIPS: Readonly<Record<string, readonly string[]>> = {
   Patrol: ["walk", "idle"],
@@ -62,6 +68,14 @@ export const ENEMY_ABILITY_CLIPS: Readonly<Record<string, readonly string[]>> = 
   Death: [],
   Roll: ["roll"],
 };
+
+/** The names an animation can play: each clip, then `clip#segment` for each of its segments. */
+export function playableClips(animations: Readonly<Record<string, AnimationClip>>): string[] {
+  return Object.entries(animations).flatMap(([name, clip]) => [
+    name,
+    ...(clip.segments ?? []).map((segment) => `${name}#${segment.name}`),
+  ]);
+}
 
 /** The clips `enemy` plays: its first clip, its abilities', and those its configs name. */
 export function enemyClips(
@@ -80,8 +94,8 @@ export function enemyClips(
 
 /**
  * Problems: each project enemy (data/game.json, compiled without errors) drawn from a
- * project animation that lacks a clip it plays. Play still runs; the enemy is not drawn
- * during that clip.
+ * project animation that lacks a clip it plays, or the segment of a `clip#segment` it
+ * plays. Play still runs; the enemy is not drawn during that clip.
  */
 export function enemyClipIssues(
   overlay: GameDataOverlay | undefined,
@@ -90,7 +104,8 @@ export function enemyClipIssues(
   return Object.entries(overlay?.enemies ?? {}).flatMap(([id, enemy]): ProjectIssue[] => {
     const sheet = assets.find((asset) => asset.id === enemy?.sheet);
     if (sheet?.kind !== "animation") return [];
-    const missing = enemyClips(enemy).filter((name) => !sheet.animations[name]);
+    const playable = playableClips(sheet.animations);
+    const missing = enemyClips(enemy).filter((name) => !playable.includes(name));
     if (missing.length === 0) return [];
     return [
       {

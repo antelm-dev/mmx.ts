@@ -37,7 +37,7 @@ export function PropertyControl({
       return (
         <Select
           label={prop.label}
-          options={(prop.options ?? []).map((opt) => ({ label: opt, value: opt }))}
+          options={(prop.options ?? []).map((opt) => ({ label: opt || "(none)", value: opt }))}
           value={String(value ?? "")}
           onValueChange={commit}
           invalid={invalid}

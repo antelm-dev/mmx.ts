@@ -48,11 +48,19 @@ export function fieldLabel(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/** Config fields naming a clip (or `clip#segment`), with the choices they add: Stun's "" recovers on the stun clip. */
+const CLIP_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  weakAnimation: [],
+  animation: [],
+  recoverAnimation: [""],
+};
+
 /**
  * `ability`'s config fields as inspector properties. `projectile` picks one of
- * `projectiles`, Death's `weakAnimation` one of `clips` (when there are any, its
- * current value in `config` kept), and a field with `options` one of those;
- * `conflicts` (string[]) is edited apart, over the enemy's abilities.
+ * `projectiles`, a clip field (Death's `weakAnimation`, Stun's `animation` and
+ * `recoverAnimation`) one of `clips`, the animation's playable names (when there
+ * are any, its current value in `config` kept), and a field with `options` one of
+ * those; `conflicts` (string[]) is edited apart, over the enemy's abilities.
  */
 export function abilityFields(
   ability: string,
@@ -64,10 +72,12 @@ export function abilityFields(
     const { type, min, max, options } = fieldSpec(field);
     const label = fieldLabel(key);
     if (key === "projectile") return [{ key, label, type: "enum", options: projectiles }];
-    if (key === "weakAnimation" && clips.length > 0) {
+    const extra = CLIP_FIELDS[key];
+    if (extra && clips.length > 0) {
+      const options = [...extra, ...clips];
       const current = config[key];
-      const keep = typeof current === "string" && current !== "" && !clips.includes(current);
-      return [{ key, label, type: "enum", options: keep ? [current, ...clips] : [...clips] }];
+      const keep = typeof current === "string" && current !== "" && !options.includes(current);
+      return [{ key, label, type: "enum", options: keep ? [current, ...options] : options }];
     }
     if (options) return [{ key, label, type: "enum", options }];
     if (type === "number" || type === "boolean" || type === "string")

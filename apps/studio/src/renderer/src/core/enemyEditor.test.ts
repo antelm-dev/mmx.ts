@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { Scene, Tile } from "@mmx/engine";
 import { GAME_DATA, type GameDataOverlay } from "@mmx/engine/data";
 import { definitionsFromGameData } from "@mmx/content-schema";
+import type { AnimationAsset } from "@mmx/project-schema";
+import { enemyClipIssues } from "./clips.js";
 import { addEnemy, projectGameData } from "./gameData.js";
 import {
   abilitiesFor,
@@ -156,6 +158,21 @@ describe("enemy editor", () => {
         (p) => p.key === "weakAnimation",
       ),
     ).toMatchObject({ options: ["fall", "idle"] });
+    // Stun's clips too, its recovery also "" (it waits on the stun clip); clip#segment is a clip.
+    const clips = ["idle", "stun", "stun#end"];
+    expect(
+      abilityFields("Stun", [], clips, { animation: "stun", recoverAnimation: "" })
+        .filter((p) => p.type === "enum")
+        .map((p) => [p.key, p.options]),
+    ).toEqual([
+      ["animation", clips],
+      ["recoverAnimation", ["", ...clips]],
+    ]);
+    expect(
+      abilityFields("Stun", [], ["idle"], { animation: "stun#start" }).find(
+        (p) => p.key === "animation",
+      ),
+    ).toMatchObject({ options: ["stun#start", "idle"] });
     expect(abilityFields("Death", []).map((p) => p.key)).toEqual([
       "explosionDuration",
       "weakHealth",
@@ -459,6 +476,30 @@ describe("enemy editor", () => {
         weakHealth: 1,
         weakDuration: 1,
       });
+    });
+
+    it("compiles a weak phase that plays a clip's segment", () => {
+      const spiky = withWeakPhase(withAbilities(BLANK_ENEMY, ["Death"]), "fall#tombe");
+      const { overlay } = blank(spiky.abilities, { abilityConfig: spiky.abilityConfig });
+      const result = projectGameData(overlay);
+      expect(result.issues).toEqual([]);
+      expect(result.compiled.enemies.get("blob")?.abilityConfig.Death).toMatchObject({
+        weakAnimation: "fall#tombe",
+      });
+      const sheet = {
+        id: overlay.enemies!.blob!.sheet,
+        kind: "animation",
+        animations: {
+          walk: { loop: true, speed: 60, frames: [] },
+          fall: {
+            loop: false,
+            speed: 60,
+            frames: [],
+            segments: [{ name: "tombe", start: 0, end: 0, loop: true }],
+          },
+        },
+      } as unknown as AnimationAsset;
+      expect(enemyClipIssues(overlay, [sheet])).toEqual([]);
     });
 
     it("takes a free id", () => {

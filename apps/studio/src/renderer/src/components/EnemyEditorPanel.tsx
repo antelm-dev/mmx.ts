@@ -6,6 +6,7 @@ import type { ActorDefinition, EnemyDefinition, Hitbox, MovementModel } from "@m
 import type { DockviewPanelApi } from "dockview-react";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
+import { playableClips } from "../core/clips.js";
 import {
   abilityFields,
   AI_EVENTS,
@@ -225,7 +226,7 @@ export function EnemyEditorPanel({
 
   const animations = (project.manifest.assets ?? []).filter((a) => a.kind === "animation");
   const sheets = animations.map((a) => a.id);
-  const clips = Object.keys(animations.find((a) => a.id === enemy.sheet)?.animations ?? {});
+  const clips = playableClips(animations.find((a) => a.id === enemy.sheet)?.animations ?? {});
   const projectiles = Object.keys(gameData.data.projectiles);
   const owned = enemy.abilities;
   const setAbilities = (abilities: string[]): void =>
