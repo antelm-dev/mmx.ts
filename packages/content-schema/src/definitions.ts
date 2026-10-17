@@ -64,7 +64,7 @@ const ENGINE_KINDS: Record<
     color: string;
     placement: "point" | "rectangle";
     defaultSize: Size;
-    /** `sheet`: an enemy's sprite sheet key, which renderers look its clips up by. */
+    /** `sheet`: an enemy's or pickup's sprite sheet key, which renderers look its clips up by. */
     components: (kind: string, sheet?: string) => Record<string, unknown>;
   }
 > = {
@@ -93,7 +93,7 @@ const ENGINE_KINDS: Record<
     color: "#22c55e",
     placement: "point",
     defaultSize: SMALL,
-    components: (size) => ({ pickup: { kind: "life", size } }),
+    components: (size, sheet) => ({ pickup: { kind: "life", size, sheet } }),
   },
   "pickup.weapon-energy": {
     category: "pickup",
@@ -102,7 +102,7 @@ const ENGINE_KINDS: Record<
     color: "#22c55e",
     placement: "point",
     defaultSize: SMALL,
-    components: (size) => ({ pickup: { kind: "weapon", size } }),
+    components: (size, sheet) => ({ pickup: { kind: "weapon", size, sheet } }),
   },
   "environment.moving-platform": {
     category: "platform",
@@ -256,6 +256,7 @@ function definitionOf(data: GameData, prefab: PrefabDefinition): GameObjectDefin
   // ("life.small" → "small"); give PickupDefinition a size if that ever diverges.
   const entityKind = source.kind === "pickup" ? ref.slice(ref.lastIndexOf(".") + 1) : ref;
   const enemy = source.kind === "enemy" ? data.enemies[ref] : undefined;
+  const pickup = source.kind === "pickup" ? data.pickups[ref] : undefined;
   const hurtbox = enemy?.hurtbox;
   const look = PRESENTATION[prefab.id];
   const lastSegment = prefab.id.slice(prefab.id.lastIndexOf(".") + 1);
@@ -265,7 +266,7 @@ function definitionOf(data: GameData, prefab: PrefabDefinition): GameObjectDefin
     category: kind.category,
     icon: look?.icon ?? kind.icon,
     engineId: kind.engineId,
-    components: kind.components(entityKind, enemy?.sheet),
+    components: kind.components(entityKind, enemy?.sheet ?? pickup?.sheet),
     fields: kind.category === "enemy" || kind.category === "pickup" ? { Kind: entityKind } : {},
     defaultSize:
       look?.defaultSize ??

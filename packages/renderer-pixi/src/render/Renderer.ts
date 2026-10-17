@@ -404,17 +404,16 @@ export class Renderer {
    * position. A capsule that has not yet loaded clip data (headless sim,
    * tests) simply has no region to draw, same as an enemy or the player
    * without one. Drawn through the same pool: on screen they are the same
-   * kind of object, just filled from a different actor table — LifeCapsule is
-   * keyed by its own `kind` ("small"/"large"), WeaponCapsule by `sheet`
-   * ("ammo"/"sammo") since its `kind` collides with LifeCapsule's (see
-   * WeaponCapsule.sheet).
+   * kind of object, both keyed by their `sheet` like enemies. Older bindings
+   * key life capsules by their Kind ("small"/"large"), which stays a fallback.
    */
   private syncCapsules(stage: Stage): void {
     this.pickups.begin();
     for (const pickup of stage.pickups) {
       const region = pickup.currentRegion();
       if (!region) continue;
-      const actor = this.manifest.pickupActors[pickup.kind];
+      const actor =
+        this.manifest.pickupActors[pickup.sheet] ?? this.manifest.pickupActors[pickup.kind];
       if (!actor) continue;
       const texture = regionTexture(actor.sheet, region);
       if (!texture) continue;

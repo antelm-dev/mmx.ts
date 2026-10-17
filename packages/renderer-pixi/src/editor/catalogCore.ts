@@ -24,7 +24,7 @@ export interface AssetCatalog {
   getDecorationPreview(assetId: string): SpritePreview | null;
   attachPlayerAnimations(player: Animatable): void;
   attachEnemyAnimations(enemy: Animatable & { stats: { sheet: string } }): void;
-  attachLifeCapsuleAnimations(pickup: Animatable & { kind: string }): void;
+  attachLifeCapsuleAnimations(pickup: Animatable & { sheet: string; kind: string }): void;
   attachWeaponCapsuleAnimations(capsule: Animatable & { sheet: string }): void;
 }
 
@@ -98,13 +98,15 @@ export function createCatalog(deps: AssetCatalogDeps): AssetCatalog {
     },
 
     attachLifeCapsuleAnimations(pickup) {
-      const actor = deps.tables.pickupActors[pickup.kind];
-      const assetId = deps.pickupActorIds?.[pickup.kind];
+      // Older bindings key life capsules by their Kind ("small"/"large").
+      const key = deps.tables.pickupActors[pickup.sheet] ? pickup.sheet : pickup.kind;
+      const actor = deps.tables.pickupActors[key];
+      const assetId = deps.pickupActorIds?.[key];
       if (!actor) {
-        const detail = assetId ? `Renderer asset '${assetId}'` : `pickup kind '${pickup.kind}'`;
+        const detail = assetId ? `Renderer asset '${assetId}'` : `pickup sheet '${pickup.sheet}'`;
         throw new Error(`No pickup animations for ${detail}`);
       }
-      pickup.loadAnimations(deps.toAnimData(actor, `pickup animations '${pickup.kind}'`));
+      pickup.loadAnimations(deps.toAnimData(actor, `pickup animations '${key}'`));
     },
 
     attachWeaponCapsuleAnimations(capsule) {

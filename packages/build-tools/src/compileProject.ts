@@ -105,7 +105,12 @@ async function loadRendererBindingSource(
   if (!studio?.bindings) return null;
 
   return {
-    bindings: studioBindingsToRendererBindings(studio, project.manifest, project.gameData.enemies),
+    bindings: studioBindingsToRendererBindings(
+      studio,
+      project.manifest,
+      project.gameData.enemies,
+      project.gameData.pickups,
+    ),
     studioShotAnimations: studio.bindings.shotAnimations,
     studio,
   };
