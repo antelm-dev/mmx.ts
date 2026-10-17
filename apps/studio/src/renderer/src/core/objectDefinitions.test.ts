@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   allDefinitions,
   createLevelDocument,
+  definitionsFromGameData,
   getDefinition,
   setCatalogGameData,
 } from "@mmx/content-schema";
 import {
-  BEHAVIOUR_DESCRIPTIONS,
   addObject,
+  behaviourDescription,
   chosenBase,
   deleteBlocker,
   duplicateObject,
@@ -95,6 +96,19 @@ describe("project object definitions", () => {
     expect(chosenBase(bases("platform"), "platform.falling")?.id).toBe("platform.falling");
     // Every behaviour but an enemy's says what it does.
     const described = offered.filter((c) => c.category !== "enemy").flatMap((c) => c.bases);
-    expect(described.map((d) => d.id).filter((id) => !BEHAVIOUR_DESCRIPTIONS[id])).toEqual([]);
+    expect(
+      described.map((d) => d.id).filter((id) => !behaviourDescription(getDefinition(id)!)),
+    ).toEqual([]);
+  });
+
+  it("describes a project's old copied prefabs, which have no description, as before", () => {
+    const old = structuredClone(MMX_GAME_DATA);
+    for (const prefab of Object.values(old.prefabs)) delete prefab.description;
+    const describe = (defs: ReturnType<typeof definitionsFromGameData>) =>
+      Object.fromEntries(defs.map((d) => [d.id, behaviourDescription(d)]));
+    const now = describe(definitionsFromGameData(MMX_GAME_DATA));
+    expect(describe(definitionsFromGameData(old))).toEqual(now);
+    expect(now["pickup.life.small"]).toBe("Restores a little life.");
+    expect(now["enemy.metool"]).toBeUndefined();
   });
 });
