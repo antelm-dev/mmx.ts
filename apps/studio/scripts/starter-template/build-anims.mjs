@@ -4,7 +4,8 @@ import { dirname, join, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const templateRoot = resolve(here, "../../templates/mmx-starter");
-const godot = resolve(templateRoot, process.argv[2] ?? "../../../Mega-Man-X8-16-bit");
+// The Godot reference project: a sibling checkout of this repo, or an argument relative to the repo root.
+const godot = resolve(here, "../../../..", process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const sprites = join(godot, "src/Actors/Player/x_sprites");
 const assets = join(templateRoot, "assets/sprites/player");
 

@@ -17,7 +17,8 @@ const ALLOWED_REL_PREFIXES = [
   // Studio owns the starter/demo game assets; the guard protects the engine side only.
   "apps/studio/",
   // The MMX Starter pack owns its art and the manifest fragment naming it.
-  "packages/pack-mmx-starter/",
+  "packages/pack-mmx-starter/assets.json",
+  "packages/pack-mmx-starter/README.md",
 ];
 
 const FORBIDDEN_PATTERNS = [

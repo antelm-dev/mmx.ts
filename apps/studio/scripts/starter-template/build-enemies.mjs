@@ -5,7 +5,8 @@ import { dirname, join, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 // The MMX Starter pack owns this art; generate-manifest.mjs copies it into the templates.
 const packRoot = resolve(here, "../../../../packages/pack-mmx-starter");
-const godot = resolve(packRoot, process.argv[2] ?? "../../../Mega-Man-X8-16-bit");
+// The Godot reference project: a sibling checkout of this repo, or an argument relative to the repo root.
+const godot = resolve(here, "../../../..", process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const enemies = join(godot, "src/Actors/Enemies");
 const assets = join(packRoot, "assets/sprites/enemies");
 

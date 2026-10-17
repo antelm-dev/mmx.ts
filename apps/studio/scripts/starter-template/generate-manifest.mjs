@@ -179,6 +179,7 @@ const assets = [
 for (const name of TEMPLATES) {
   const root = join(templatesRoot, name);
   // Each template keeps its own identity, levels and pack marker; only the asset list is generated.
+  // Both templates get the same asset list: an asset only mmx-demo carries must be added above.
   const manifest = { ...readJson(root, "project.json"), assets };
   writeJson(join(root, "project.json"), manifest);
   cpSync(join(packRoot, "assets"), join(root, "assets"), { recursive: true });
