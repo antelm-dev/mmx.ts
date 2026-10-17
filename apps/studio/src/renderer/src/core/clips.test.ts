@@ -1,9 +1,16 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { AnimationFrame } from "@mmx/project-schema";
+import { ENEMY_BEHAVIOR_SCHEMAS } from "@mmx/engine/behaviors";
+import { GAME_DATA } from "@mmx/engine/data";
+import type { AnimationAsset, AnimationFrame } from "@mmx/project-schema";
+import { addBlankEnemy, BLANK_ENEMY } from "./enemyEditor.js";
 import {
   boxFromPoints,
   canDeleteClip,
   copyBoxes,
+  ENEMY_ABILITY_CLIPS,
+  enemyClipIssues,
+  enemyClips,
   feetAnchor,
   moveBox,
   moveItem,
@@ -133,5 +140,63 @@ describe("clips helpers", () => {
         anchor: [15, 29],
       });
     });
+  });
+});
+
+describe("enemy clips", () => {
+  it("lists every clip literal each enemy ability plays in the engine", () => {
+    const dir = new URL("../../../../../../packages/engine/src/game/enemy/", import.meta.url);
+    expect(Object.keys(ENEMY_ABILITY_CLIPS).sort()).toEqual(
+      Object.keys(ENEMY_BEHAVIOR_SCHEMAS).sort(),
+    );
+    for (const [ability, clips] of Object.entries(ENEMY_ABILITY_CLIPS)) {
+      const source = readFileSync(new URL(`${ability}.ts`, dir), "utf8");
+      const played = [
+        ...source.matchAll(/(?:animation = |play_animation(?:_once)?\()"(\w+)"/g),
+      ].map((m) => m[1]);
+      expect([...new Set(played)].sort(), ability).toEqual([...clips].sort());
+    }
+  });
+
+  it("names the clips an enemy plays, its configs' included", () => {
+    expect(
+      enemyClips({ ...BLANK_ENEMY, initialAnimation: "stand", abilities: ["Patrol", "Death"] }),
+    ).toEqual(["stand", "walk", "idle"]);
+    expect(enemyClips(GAME_DATA.enemies.metool!)).toEqual([
+      "idle",
+      "walk",
+      "defense",
+      "open",
+      "stun",
+    ]);
+  });
+
+  it("warns, per project enemy, about the clips its animation lacks", () => {
+    const sheet = {
+      id: "anim.blob",
+      kind: "animation",
+      animations: { idle: {}, walk: {} },
+    } as unknown as AnimationAsset;
+    const blob = addBlankEnemy(undefined, GAME_DATA, {
+      name: "Blob",
+      health: 2,
+      enemy: { ...BLANK_ENEMY, sheet: "anim.blob", abilities: ["Patrol", "Shoot", "Death"] },
+    }).overlay;
+    expect(enemyClipIssues(blob, [sheet])).toEqual([
+      {
+        severity: "warning",
+        code: "enemy.clips",
+        path: "/data/game.json",
+        message: "Enemy 'blob' animation 'anim.blob' has no clip for: aim, shoot.",
+      },
+    ]);
+    // Nothing to say with every clip, or for a sheet that is not a project animation.
+    expect(
+      enemyClipIssues(blob, [
+        { ...sheet, animations: { idle: {}, walk: {}, aim: {}, shoot: {} } } as never,
+      ]),
+    ).toEqual([]);
+    expect(enemyClipIssues(blob, [])).toEqual([]);
+    expect(enemyClipIssues(undefined, [sheet])).toEqual([]);
   });
 });

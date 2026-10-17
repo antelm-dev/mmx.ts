@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { chakra, Dialog, Portal } from "@chakra-ui/react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { CATEGORY_LABELS, allDefinitions, type GameObjectDefinition } from "@mmx/content-schema";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { focusPanel } from "../app/dock.js";
@@ -17,7 +17,8 @@ import { ActionButton } from "../ui/editor/action-button.js";
 import { Checkbox } from "../ui/editor/checkbox.js";
 import { Field, FieldInput } from "../ui/editor/field.js";
 import { ListRow } from "../ui/editor/list-row.js";
-import { NewEnemyForm } from "./NewEnemyDialog.js";
+import { SectionTitle } from "../ui/editor/section-title.js";
+import { BlankEnemyForm, NewEnemyForm } from "./NewEnemyDialog.js";
 import { PropertyControl } from "./PropertyControl.js";
 import { SpritePreview } from "./SpritePreview.js";
 
@@ -26,8 +27,9 @@ const Note = chakra("div", { base: { color: "studio.fgTertiary", fontSize: "11px
 /**
  * New object… (C-NEWOBJ): pick a category, then its behaviour (the built-in object
  * it is based on, skipped when there is only one), then its name and values. An
- * enemy goes on to the enemy form (data/game.json); anything else becomes a project
- * object. Either is picked for placing.
+ * enemy starts blank, composed from abilities, or from an enemy as a template, and
+ * goes on to an enemy form (data/game.json); anything else becomes a project object.
+ * Either is picked for placing.
  */
 export function NewObjectDialog() {
   const request = useUiStore((s) => s.newObject);
@@ -81,11 +83,26 @@ function NewObjectSteps({
     offered.some((c) => c.category === initialCategory) ? initialCategory : undefined,
   );
   const [baseId, setBaseId] = useState<string>();
+  const [blank, setBlank] = useState(false);
   const bases = offered.find((c) => c.category === category)?.bases ?? [];
   const base = chosenBase(bases, baseId);
   // With a single behaviour, Back from the values goes straight to the categories.
   const back = () => (bases.length === 1 ? setCategory(undefined) : setBaseId(undefined));
   const categoryLabel = category && (CATEGORY_LABELS[category] ?? category);
+  const enemies = category === "enemy";
+  const rows = bases.map((d, i) => (
+    <ListRow key={d.id} autoFocus={i === 0 && !enemies} onClick={() => setBaseId(d.id)}>
+      <SpritePreview definitionId={d.id} size={28} fallbackColor={d.editor.color} />
+      <chakra.span flex="1" display="flex" flexDirection="column">
+        {d.name}
+        {/* A span: a button holds phrasing content only. */}
+        <chakra.span color="studio.fgTertiary" fontSize="11px">
+          {BEHAVIOUR_DESCRIPTIONS[d.id]}
+        </chakra.span>
+      </chakra.span>
+      <ChevronRight size={14} />
+    </ListRow>
+  ));
 
   return (
     <>
@@ -94,11 +111,13 @@ function NewObjectSteps({
         <Dialog.Description color="studio.fgTertiary" fontSize="11px">
           {!category
             ? "Choose a category."
-            : !base
-              ? `${categoryLabel} · Behaviour`
-              : base.category === "enemy"
-                ? `${categoryLabel} · based on ${base.name}`
-                : `${categoryLabel} · ${base.name}`}
+            : enemies && blank
+              ? `${categoryLabel} · Blank enemy`
+              : !base
+                ? `${categoryLabel} · Behaviour`
+                : base.category === "enemy"
+                  ? `${categoryLabel} · based on ${base.name}`
+                  : `${categoryLabel} · ${base.name}`}
         </Dialog.Description>
       </Dialog.Header>
       {!category ? (
@@ -115,22 +134,33 @@ function NewObjectSteps({
             <ActionButton onClick={onClose}>Cancel</ActionButton>
           </Dialog.Footer>
         </>
+      ) : enemies && blank ? (
+        <BlankEnemyForm onBack={() => setBlank(false)} onClose={onClose} />
       ) : !base ? (
         <>
           <Dialog.Body px="2" role="group" aria-label="Behaviour">
-            {bases.map((d, i) => (
-              <ListRow key={d.id} autoFocus={i === 0} onClick={() => setBaseId(d.id)}>
-                <SpritePreview definitionId={d.id} size={28} fallbackColor={d.editor.color} />
-                <chakra.span flex="1" display="flex" flexDirection="column">
-                  {d.name}
-                  {/* A span: a button holds phrasing content only. */}
-                  <chakra.span color="studio.fgTertiary" fontSize="11px">
-                    {BEHAVIOUR_DESCRIPTIONS[d.id]}
+            {enemies ? (
+              <>
+                <ListRow autoFocus onClick={() => setBlank(true)}>
+                  <chakra.span display="grid" placeItems="center" w="28px" h="28px" flexShrink={0}>
+                    <Plus size={16} />
                   </chakra.span>
-                </chakra.span>
-                <ChevronRight size={14} />
-              </ListRow>
-            ))}
+                  <chakra.span flex="1" display="flex" flexDirection="column">
+                    Blank enemy
+                    <chakra.span color="studio.fgTertiary" fontSize="11px">
+                      Starts with no behaviour: compose it from abilities.
+                    </chakra.span>
+                  </chakra.span>
+                  <ChevronRight size={14} />
+                </ListRow>
+                <chakra.div role="group" aria-label="Templates">
+                  <SectionTitle px="2">Templates</SectionTitle>
+                  {rows}
+                </chakra.div>
+              </>
+            ) : (
+              rows
+            )}
           </Dialog.Body>
           <Dialog.Footer>
             <ActionButton onClick={() => setCategory(undefined)}>Back</ActionButton>

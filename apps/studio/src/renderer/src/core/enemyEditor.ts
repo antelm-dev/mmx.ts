@@ -7,8 +7,9 @@ import {
   type EnemyDefinition,
   type GameData,
   type GameDataOverlay,
+  type MovementModel,
 } from "@mmx/engine/data";
-import { addEnemy } from "./gameData.js";
+import { addEnemy, uniqueEnemySlug } from "./gameData.js";
 
 type ConfigValue = number | string | boolean | string[];
 type AbilityConfig = Record<string, ConfigValue>;
@@ -245,6 +246,131 @@ export function duplicateEnemy(
     health: actor.maxHealth,
     touchDamage: enemy.touchDamage,
   });
+}
+
+/** The movement models an enemy body can use (the engine's `MovementModel`). */
+export const MOVEMENTS: readonly MovementModel[] = ["ground", "flying"];
+
+/**
+ * The record a blank enemy starts from: no ability, 8×8 half-extent boxes (the smallest
+ * built-in half width) and the Pantheon Hunter's plain sight box.
+ */
+export const BLANK_ENEMY: EnemyDefinition = {
+  id: "",
+  sheet: "",
+  actor: "",
+  hurtbox: { hw: 8, hh: 8 },
+  // The built-ins' median (1, 2, 3).
+  touchDamage: 2,
+  movement: "ground",
+  perception: { hw: 140, hh: 48, oy: 0 },
+  abilities: [],
+  abilityConfig: {},
+  reactions: {},
+  initialAnimation: "idle",
+};
+
+/** The abilities the built-in enemies answer each AI event with (idle: Patrol or Hover, …). */
+const BUILT_IN_REACTIONS = AI_EVENTS.map(
+  (event) =>
+    [
+      event,
+      new Set(Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions[event] ?? [])),
+    ] as const,
+);
+
+/** Reactions for an enemy owning `abilities`: each event to the first that a built-in answers it with. */
+export function defaultReactions(abilities: readonly string[]): EnemyDefinition["reactions"] {
+  const reactions: EnemyDefinition["reactions"] = {};
+  for (const [event, answers] of BUILT_IN_REACTIONS) {
+    const first = abilities.find((ability) => answers.has(ability));
+    if (first) reactions[event] = [first];
+  }
+  return reactions;
+}
+
+/**
+ * The movement an ability needs. Patrol, Hide and Shoot apply gravity, which drops a
+ * flier through the floor (fliers skip terrain); Hover, Pursuit and Recoil steer in
+ * the air with none. Stun's gravity is a setting, and Death is either.
+ * shortcut: mirrors game/enemy's process_gravity calls; update it with those files.
+ */
+const ABILITY_MOVEMENT: Readonly<Record<string, MovementModel>> = {
+  Patrol: "ground",
+  Hide: "ground",
+  Shoot: "ground",
+  Hover: "flying",
+  Pursuit: "flying",
+  Recoil: "flying",
+};
+
+/** The abilities an enemy moving as `movement` can use, in registry order. */
+export function abilitiesFor(movement: MovementModel): string[] {
+  return ENEMY_ABILITIES.filter((ability) => (ABILITY_MOVEMENT[ability] ?? movement) === movement);
+}
+
+/** `enemy` moving as `movement`: abilities it can no longer use dropped, Stun falling on the ground only. */
+export function withMovement(enemy: EnemyDefinition, movement: MovementModel): EnemyDefinition {
+  const usable = abilitiesFor(movement);
+  const next = withAbilities(
+    { ...enemy, movement },
+    enemy.abilities.filter((ability) => usable.includes(ability)),
+  );
+  return next.abilities.includes("Stun")
+    ? withConfig(next, "Stun", "gravity", movement === "ground")
+    : next;
+}
+
+export type BlankEnemyInput = {
+  name: string;
+  health: number;
+  /** Sheet, first clip, touch damage, movement and abilities (in order, with any configs set). */
+  enemy: Pick<
+    EnemyDefinition,
+    "sheet" | "initialAnimation" | "touchDamage" | "movement" | "abilities" | "abilityConfig"
+  >;
+};
+
+/**
+ * Add an enemy composed from abilities to the overlay: actor `enemy.<slug>`, enemy
+ * `<slug>` and prefab `enemy.<slug>`, with {@link BLANK_ENEMY}'s boxes, a complete
+ * config per ability its movement allows, and {@link defaultReactions}. Returns the
+ * next overlay and the prefab id.
+ */
+export function addBlankEnemy(
+  overlay: GameDataOverlay | undefined,
+  data: GameData,
+  input: BlankEnemyInput,
+): { overlay: GameDataOverlay; id: string } {
+  const slug = uniqueEnemySlug(data, input.name);
+  const id = `enemy.${slug}`;
+  const name = input.name.trim();
+  const moving = withMovement(
+    { ...BLANK_ENEMY, ...input.enemy, id: slug, actor: id },
+    input.enemy.movement,
+  );
+  const enemy = { ...moving, reactions: defaultReactions(moving.abilities) };
+  const next: GameDataOverlay = {
+    schemaVersion: GAME_DATA.schemaVersion,
+    ...overlay,
+    actors: {
+      ...overlay?.actors,
+      [id]: { id, body: { hw: 8, hh: 8 }, maxHealth: input.health },
+    },
+    enemies: { ...overlay?.enemies, [slug]: enemy },
+    prefabs: {
+      ...overlay?.prefabs,
+      [id]: {
+        id,
+        ...(name ? { name } : {}),
+        runtime: "enemy",
+        source: { kind: "enemy", ref: slug },
+        // As every built-in enemy prefab.
+        fields: [{ name: "FacesRight", type: "boolean", default: false }],
+      },
+    },
+  };
+  return { overlay: next, id };
 }
 
 /**

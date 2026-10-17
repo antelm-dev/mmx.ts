@@ -164,7 +164,11 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     await expect(dialog).toHaveCount(0);
     await place("Crab", 64);
     // A new project has no game/data.json: not a problem, Play uses the starter's bindings.
-    await expect(page.getByText("No problems detected. Ready to play.")).toBeVisible();
+    // The Crab's clips are a warning only: its animation has idle alone.
+    await expect(page.getByRole("tab", { name: "Problems — 0 errors, 1 warning" })).toBeVisible();
+    await expect(
+      page.getByText(/Enemy 'crab' animation 'anim\.sheet' has no clip for: walk/),
+    ).toBeVisible();
     await expect(page.getByText(/game\/data\.json/)).toHaveCount(0);
     await play(page);
 

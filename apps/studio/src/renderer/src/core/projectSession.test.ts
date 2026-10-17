@@ -325,6 +325,52 @@ describe("ProjectSession game data", () => {
     expect(getDefinition("enemy.crab")).toBeUndefined();
     await session.getAssets();
   });
+
+  it("warns about the clips a project enemy's animation lacks, once its data compiles", async () => {
+    const { GAME_DATA } = await import("@mmx/engine/data");
+    const { addEnemy } = await import("./gameData.js");
+    const { overlay } = addEnemy(undefined, GAME_DATA, {
+      name: "Crab",
+      base: "metool",
+      sheet: "anim.crab",
+      health: 3,
+      touchDamage: 2,
+    });
+    const sheet = { id: "anim.crab", kind: "animation", animations: { idle: {}, walk: {} } };
+    const crabProject = {
+      ...project,
+      manifest: { ...project.manifest, assets: [sheet] },
+      gameData: overlay,
+    };
+    vi.stubGlobal("window", {
+      studio: {
+        project: {
+          ...bridge,
+          load: async () => ({
+            ok: true,
+            issues: [],
+            value: { rootPath: "/p", project: crabProject },
+          }),
+        },
+      },
+    });
+    const session = new ProjectSession();
+    await session.openProject();
+    const clipIssues = () => session.getSnapshot().issues.filter((i) => i.code === "enemy.clips");
+    expect(clipIssues()).toEqual([
+      expect.objectContaining({
+        severity: "warning",
+        message: "Enemy 'crab' animation 'anim.crab' has no clip for: defense, open, stun.",
+      }),
+    ]);
+    // A hand-edited ability is a compile error, never a crash of this check.
+    const crab = overlay.enemies!.crab!;
+    session.setGameData({ ...overlay, enemies: { crab: { ...crab, abilities: ["constructor"] } } });
+    expect(clipIssues()).toEqual([]);
+    expect(session.getSnapshot().issues.some((i) => i.severity === "error")).toBe(true);
+    session.close();
+    await session.getAssets();
+  });
 });
 
 describe("ProjectSession definition history", () => {

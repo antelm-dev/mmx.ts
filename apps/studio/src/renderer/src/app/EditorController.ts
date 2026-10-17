@@ -42,7 +42,7 @@ import type { ProjectIssue, StudioProject } from "@mmx/project-io";
 import { addRecentProject } from "../settings/recentProjects.js";
 import type { GameDataOverlay } from "@mmx/engine/data";
 import { addEnemy, type NewEnemyInput } from "../core/gameData.js";
-import { duplicateEnemy } from "../core/enemyEditor.js";
+import { addBlankEnemy, duplicateEnemy, type BlankEnemyInput } from "../core/enemyEditor.js";
 import { availableParts, trackRecentParts, type RecentPart } from "../core/recentParts.js";
 import { buildStarterAssets } from "../assets/studioAssets.js";
 import { EditorPlaytestController } from "./EditorPlaytestController.js";
@@ -918,6 +918,20 @@ export class EditorController {
     this.store.setTool("place", id);
     // Placing needs the level in view: the Start tab or a document may be covering it.
     focusPanel("viewport");
+  }
+
+  /**
+   * Add a project enemy composed from abilities and pick it for placing; `edit` opens
+   * it in the enemy editor instead of bringing the level forward.
+   */
+  createBlankEnemy(input: BlankEnemyInput, edit = false): void {
+    const project = projectSession.getSnapshot().project;
+    if (!project) return;
+    const { overlay, id } = addBlankEnemy(project.gameData, projectSession.gameData().data, input);
+    this.setGameData(overlay);
+    this.store.setTool("place", id);
+    if (edit) openEnemyDocument(id, overlay.prefabs?.[id]?.name ?? id);
+    else focusPanel("viewport");
   }
 
   /** Replace the project's data/game.json records; saved with the project. */
