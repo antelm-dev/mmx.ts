@@ -156,7 +156,9 @@ test("AC-USE: an enemy's weak phase plays clip#segment in Play", async () => {
   await expect
     .poll(
       async () => {
-        await page.keyboard.press("f");
+        // Held over a frame: a press with no delay can land key down and up in the same frame,
+        // which the engine's edge-detected input then misses.
+        await page.keyboard.press("f", { delay: 50 });
         return (await spiky(page))?.abilities;
       },
       { timeout: 15_000, intervals: [300] },
