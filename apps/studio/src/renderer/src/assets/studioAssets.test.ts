@@ -51,6 +51,24 @@ describe("buildStudioAssets", () => {
     });
   });
 
+  it("draws project pickups from their animation-asset sheet; explicit bindings win", () => {
+    const pickups = {
+      "life.huge": { sheet: "anim.player.fixture" },
+      "life.small": { sheet: "sheal" },
+    };
+    const { manifest } = buildStudioAssets(project, gameData, resolveUrl, {}, pickups);
+    expect(manifest.pickupActorIds).toEqual({ "anim.player.fixture": "anim.player.fixture" });
+    const bound = {
+      bindings: {
+        ...gameData.bindings,
+        pickupAnimations: { "anim.player.fixture": "anim.effect.fixture" },
+      },
+    };
+    expect(
+      buildStudioAssets(project, bound, resolveUrl, {}, pickups).manifest.pickupActorIds,
+    ).toEqual({ "anim.player.fixture": "anim.effect.fixture" });
+  });
+
   it("throws a readable error for missing or invalid bindings", () => {
     const broken = { bindings: { ...gameData.bindings, playerAnimation: "anim.nope" } };
     expect(() => buildStudioAssets(project, broken, resolveUrl)).toThrow(/anim\.nope/);
@@ -66,6 +84,15 @@ describe("buildStarterBasedAssets", () => {
     expect(manifest.playerSheet).toBe(starterAssets.manifest.playerSheet);
     expect(manifest.enemyActorIds["anim.player.fixture"]).toBe("anim.player.fixture");
     expect(manifest.sheetUrls["sprite.player.fixture"]).toBe("fixture://assets/sprites/player.png");
+  });
+
+  it("keys the starter's pickups by their sheet", () => {
+    expect(Object.keys(starterAssets.manifest.pickupActors).sort()).toEqual([
+      "ammo",
+      "heal",
+      "sammo",
+      "sheal",
+    ]);
   });
 
   it("keeps the project's own asset when it has a starter asset's id", () => {

@@ -73,6 +73,8 @@ export class LifeCapsule implements EnvironmentRect {
   readonly w: number;
   readonly h: number;
   readonly heal: number;
+  /** The sheet renderers draw this capsule from, from its pickup definition (like an enemy's). */
+  readonly sheet: string;
 
   /** PickUp.gd velocity.y — falls until process_gravity's move_and_slide lands it. */
   private velocityY = 0;
@@ -93,7 +95,9 @@ export class LifeCapsule implements EnvironmentRect {
     this.y = spawn.y;
     this.w = spawn.w;
     this.h = spawn.h;
-    this.heal = pickupDefinition(gameData, `life.${spawn.kind}`).amount;
+    const def = pickupDefinition(gameData, `life.${spawn.kind}`);
+    this.heal = def.amount;
+    this.sheet = def.sheet;
   }
 
   /** Whether the capsule has been touched and is currently ticking health in. */
@@ -173,12 +177,7 @@ export class WeaponCapsule implements EnvironmentRect {
   readonly w: number;
   readonly h: number;
   readonly ammo: number;
-  /**
-   * Which sheet this capsule draws from — "ammo" or "sammo" in pickup_anims.json,
-   * from its pickup definition. A separate key from {@link kind}: the Kind
-   * ("small"/"large") is already spent on LifeCapsule's own differently-sized
-   * sprites, so reusing it to key the sheet table would collide with those.
-   */
+  /** Which sheet this capsule draws from, from its pickup definition (like {@link LifeCapsule.sheet}). */
   readonly sheet: string;
 
   private velocityY = 0;

@@ -105,7 +105,8 @@
     "components": {
       "pickup": {
         "kind": "life",
-        "size": "small"
+        "size": "small",
+        "sheet": "sheal"
       }
     },
     "fields": {
@@ -130,7 +131,8 @@
     "components": {
       "pickup": {
         "kind": "life",
-        "size": "large"
+        "size": "large",
+        "sheet": "heal"
       }
     },
     "fields": {
@@ -155,7 +157,8 @@
     "components": {
       "pickup": {
         "kind": "weapon",
-        "size": "small"
+        "size": "small",
+        "sheet": "sammo"
       }
     },
     "fields": {
@@ -180,7 +183,8 @@
     "components": {
       "pickup": {
         "kind": "weapon",
-        "size": "large"
+        "size": "large",
+        "sheet": "ammo"
       }
     },
     "fields": {
