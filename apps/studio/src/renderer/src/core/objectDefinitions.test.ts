@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { OBJECT_DEFINITIONS, createLevelDocument, getDefinition } from "@mmx/content-schema";
-import { addObject, deleteBlocker, duplicateObject, newObjectBases } from "./objectDefinitions.js";
+import {
+  BEHAVIOUR_DESCRIPTIONS,
+  addObject,
+  chosenBase,
+  deleteBlocker,
+  duplicateObject,
+  newObjectBases,
+} from "./objectDefinitions.js";
 
 const fast = {
   id: "obj.platform.moving.1",
@@ -68,5 +75,17 @@ describe("project object definitions", () => {
       name: "Big",
       base: pickup.id,
     });
+  });
+
+  it("skips the Behaviour step where a category offers a single base", () => {
+    const offered = newObjectBases(OBJECT_DEFINITIONS);
+    const bases = (category: string) => offered.find((c) => c.category === category)!.bases;
+    for (const category of ["conveyor", "hazard", "slope", "camera"])
+      expect(chosenBase(bases(category), undefined)).toBe(bases(category)[0]);
+    expect(chosenBase(bases("platform"), undefined)).toBeUndefined();
+    expect(chosenBase(bases("platform"), "platform.falling")?.id).toBe("platform.falling");
+    // Every behaviour but an enemy's says what it does.
+    const described = offered.filter((c) => c.category !== "enemy").flatMap((c) => c.bases);
+    expect(described.map((d) => d.id).filter((id) => !BEHAVIOUR_DESCRIPTIONS[id])).toEqual([]);
   });
 });

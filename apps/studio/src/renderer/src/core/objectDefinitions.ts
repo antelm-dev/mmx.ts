@@ -17,6 +17,34 @@ export function newObjectBases(
 }
 
 /**
+ * New object…'s Behaviour step: what each built-in base does, by definition id.
+ * The catalog has no descriptions, so they live here; an enemy shows none.
+ */
+export const BEHAVIOUR_DESCRIPTIONS: Readonly<Record<string, string>> = {
+  "pickup.life.small": "Restores a little life.",
+  "pickup.life.large": "Restores a lot of life.",
+  "pickup.weapon.small": "Refills a little weapon energy.",
+  "pickup.weapon.large": "Refills a lot of weapon energy.",
+  "platform.moving": "One-way floor that travels between two points, carrying the player.",
+  "platform.falling": "One-way floor that drops a moment after the player lands on it.",
+  conveyor: "Strip that pushes the player along while they stand on it.",
+  hazard: "Lethal area: touching it kills the player at once.",
+  slope: "Ramp baked into the terrain, walked up and down.",
+  "camera-zone": "Area that holds the camera view while the player is inside.",
+};
+
+/**
+ * The base New object… goes on with: `id` among `bases`, or the only one, whose
+ * Behaviour step is skipped since there is nothing to choose.
+ */
+export function chosenBase(
+  bases: readonly GameObjectDefinition[],
+  id: string | undefined,
+): GameObjectDefinition | undefined {
+  return bases.length === 1 ? bases[0] : bases.find((d) => d.id === id);
+}
+
+/**
  * `objects` plus a new object based on `base` under a free id, and that id. `exposed`
  * is left out when every property stays editable per instance, as the manifest's default.
  */
