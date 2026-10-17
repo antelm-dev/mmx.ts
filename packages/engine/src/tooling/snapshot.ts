@@ -43,6 +43,10 @@ export interface ActorSnapshot {
   state: string;
   /** The currently executing ability names, in execution order. */
   abilities: string[];
+  /** Enemies only: the clip name last requested (`clip#segment` as asked). */
+  animation?: string;
+  /** Enemies only: the frame shown, as an index into the whole clip. */
+  frame?: number;
 }
 
 export interface ProjectileSnapshot {
@@ -110,6 +114,8 @@ function enemySnapshot(enemy: Enemy): ActorSnapshot {
     maxHealth: enemy.max_health,
     state: stateOf(abilities),
     abilities,
+    animation: enemy.anim.animation,
+    frame: enemy.anim.frame,
   };
   if (enemy.sourceEntityId !== undefined) snap.sourceEntityId = enemy.sourceEntityId;
   return snap;

@@ -79,6 +79,12 @@ test("snapshot ordering is stable and identity-carrying", () => {
     ["enemy-a", "enemy-b"],
   );
   assert.equal(snap.actors[0].sourceEntityId, "enemy-a");
+  // An enemy's clip as requested (a `clip#segment` too) and its whole-clip frame; not the player's.
+  assert.equal(snap.actors[0].animation, "idle");
+  assert.equal(snap.actors[0].frame, 0);
+  assert.equal(snap.player.animation, undefined);
+  session.scene.stage.enemies[0]!.play_animation("fall#tombe");
+  assert.equal(session.inspect().actors[0].animation, "fall#tombe");
   assert.equal(snap.camera.viewport.width, VIEW_WIDTH);
   assert.equal(snap.camera.viewport.height, VIEW_HEIGHT);
 });
