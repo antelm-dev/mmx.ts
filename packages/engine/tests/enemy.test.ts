@@ -2,14 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import { DT, ENEMY_STATS, PLAYER_HIT_INVULNERABILITY } from "../src/core/constants.js";
+import { DT, PLAYER_HIT_INVULNERABILITY } from "../src/core/constants.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { makeBat, makeMetool, spawnEnemy } from "../src/game/enemies/index.js";
+import { spawnEnemy } from "../src/game/enemies/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
-import { GAME_DATA, compileGameData, type GameData } from "../src/data/index.js";
+import { compileGameData, type GameData } from "../src/data/index.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
+import { ENEMY_STATS, MMX_GAME_DATA, makeBat, makeMetool } from "./support/mmx.js";
 
 /**
  * These run without any clip data loaded, which is the same deal the movement
@@ -19,9 +20,9 @@ import { buildCompileRegistries } from "../src/behaviors/index.js";
  * (Hide's "open", Stun's recovery) in one frame instead of several.
  */
 
-// The Metool's Hide and Stun beats, from its built-in definition.
-const HIDE_OPEN_DELAY = GAME_DATA.enemies.metool.abilityConfig!.Hide.openDelay as number;
-const STUN_DURATION = GAME_DATA.enemies.metool.abilityConfig!.Stun.duration as number;
+// The Metool's Hide and Stun beats, from the MMX Starter pack.
+const HIDE_OPEN_DELAY = MMX_GAME_DATA.enemies.metool.abilityConfig!.Hide.openDelay as number;
+const STUN_DURATION = MMX_GAME_DATA.enemies.metool.abilityConfig!.Stun.duration as number;
 
 const GROUND_ROW = 10;
 const FLOOR_Y = GROUND_ROW * 16;
@@ -404,7 +405,7 @@ test("Stun interrupts everything and blocks it from restarting", () => {
 // --- data-composed enemies -----------------------------------------------------
 
 test("an enemy composed from data walks at its configured travel speed", () => {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = structuredClone(MMX_GAME_DATA);
   data.enemies.crab = {
     ...data.enemies.metool,
     id: "crab",

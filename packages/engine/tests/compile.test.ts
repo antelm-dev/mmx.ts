@@ -10,6 +10,7 @@ import {
   type EngineDiagnostic,
 } from "../src/game/level.js";
 import { Scene } from "../src/game/Scene.js";
+import { MMX_COMPILED } from "./support/mmx.js";
 
 /**
  * A 12x8 grid with a solid floor along the bottom row — enough for a valid
@@ -119,6 +120,7 @@ test("a non-finite numeric field is an error attached to the field", () => {
       SPAWN,
       entity({ id: "Conveyor", iid: "c1", fields: { Speed: Number.POSITIVE_INFINITY } }),
     ]),
+    MMX_COMPILED,
   );
   assert.equal(find(badSpeed.diagnostics, "field.number")?.field, "Speed");
 });
@@ -126,10 +128,12 @@ test("a non-finite numeric field is an error attached to the field", () => {
 test("negative moving-platform Travel or Speed is an error", () => {
   const travel = compileLevel(
     level([SPAWN, entity({ id: "MovingPlatform", iid: "p1", fields: { Travel: -8 } })]),
+    MMX_COMPILED,
   );
   assert.equal(find(travel.diagnostics, "field.nonNegative")?.field, "Travel");
   const speed = compileLevel(
     level([SPAWN, entity({ id: "MovingPlatform", iid: "p2", fields: { Speed: -8 } })]),
+    MMX_COMPILED,
   );
   assert.equal(find(speed.diagnostics, "field.nonNegative")?.field, "Speed");
 });
@@ -137,10 +141,12 @@ test("negative moving-platform Travel or Speed is an error", () => {
 test("an unknown moving-platform Axis or a negative falling-platform Delay is an error", () => {
   const axis = compileLevel(
     level([SPAWN, entity({ id: "MovingPlatform", iid: "p1", fields: { Axis: "diagonal" } })]),
+    MMX_COMPILED,
   );
   assert.equal(find(axis.diagnostics, "field.enum")?.field, "Axis");
   const delay = compileLevel(
     level([SPAWN, entity({ id: "FallingPlatform", iid: "f1", fields: { Delay: -1 } })]),
+    MMX_COMPILED,
   );
   assert.equal(find(delay.diagnostics, "field.nonNegative")?.field, "Delay");
 });
@@ -153,6 +159,7 @@ test("Axis and FallingPlatform compile into platform spawns", () => {
       entity({ id: "MovingPlatform", iid: "h", fields: { Axis: "horizontal" } }),
       entity({ id: "FallingPlatform", iid: "f", w: 48, h: 8 }),
     ]),
+    MMX_COMPILED,
   );
   assert.equal(runtime.platforms[0].axis, "vertical");
   // Horizontal is the default, so it is left off and the spawn matches an untagged one.
@@ -164,6 +171,7 @@ test("the digest covers a vertical platform's y; an explicit horizontal Axis cha
   const digestAfter = (fields: Record<string, unknown>): string => {
     const scene = Scene.create({
       level: level([SPAWN, entity({ id: "MovingPlatform", iid: "p", x: 128, y: 16, fields })]),
+      gameData: MMX_COMPILED,
     });
     for (let i = 0; i < 10; i++) scene.step(0);
     return scene.digest();
@@ -235,7 +243,7 @@ test("authored entity ids survive compilation and Scene creation", () => {
     entity({ id: "CameraZone", iid: "zone-a", x: 0, y: 0, w: 192, h: 128 }),
   ]);
 
-  const scene = Scene.create({ level: data });
+  const scene = Scene.create({ level: data, gameData: MMX_COMPILED });
   assert.equal(scene.stage.enemies[0].runtimeId, "enemy-a");
   assert.equal(scene.stage.enemies[0].sourceEntityId, "enemy-a");
   assert.equal(scene.stage.pickups[0].id, "life-a");

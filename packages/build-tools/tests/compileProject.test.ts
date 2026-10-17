@@ -5,7 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { compileLevel } from "@mmx/engine";
-import { GAME_DATA } from "@mmx/engine/data";
+import { GAME_DATA, type GameDataOverlay } from "@mmx/engine/data";
+import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
 import {
   buildProjectToDisk,
   bundleContainsAbsolutePaths,
@@ -199,8 +200,23 @@ test("browser bundle carries tile layers, tileset geometry and the tileset sheet
   }
 });
 
-/** The studio-shaped fixture plus an animation asset `anim.enemy.crab` and a `data/game.json`. */
-async function createOverlayFixture(overlay: unknown) {
+const MMX_PACK = pack as GameDataOverlay;
+
+/** The MMX Starter pack with `overlay`'s records added per category, as a project made from the template would write it. */
+function withMmxPack(overlay: Record<string, unknown>): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...MMX_PACK };
+  for (const [key, value] of Object.entries(overlay)) {
+    const packed = merged[key];
+    merged[key] = typeof packed === "object" ? { ...packed, ...(value as object) } : value;
+  }
+  return merged;
+}
+
+/**
+ * The studio-shaped fixture plus an animation asset `anim.enemy.crab` and a
+ * `data/game.json`: the MMX Starter pack with `overlay` over it.
+ */
+async function createOverlayFixture(overlay: Record<string, unknown>) {
   const fixture = await createStudioShapedFixture("mmx-game-data-overlay-");
   const manifestPath = path.join(fixture.root, "project.json");
   const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
@@ -215,18 +231,22 @@ async function createOverlayFixture(overlay: unknown) {
   });
   await fs.writeFile(manifestPath, JSON.stringify(manifest), "utf8");
   await fs.mkdir(path.join(fixture.root, "data"), { recursive: true });
-  await fs.writeFile(path.join(fixture.root, "data/game.json"), JSON.stringify(overlay), "utf8");
+  await fs.writeFile(
+    path.join(fixture.root, "data/game.json"),
+    JSON.stringify(withMmxPack(overlay)),
+    "utf8",
+  );
   return fixture;
 }
 
-const crab = { ...GAME_DATA.enemies.metool!, id: "crab", sheet: "anim.enemy.crab" };
+const crab = { ...MMX_PACK.enemies!.metool!, id: "crab", sheet: "anim.enemy.crab" };
 
 test("a data/game.json overlay adds a project enemy to the bundle and auto-binds its sheet", async () => {
   const fixture = await createOverlayFixture({ schemaVersion: 1, enemies: { crab } });
   try {
     const project = await requireProject(fixture.root);
     assert.ok(project.compiledGameData.enemies.has("crab"));
-    assert.deepEqual(project.gameData.enemies.metool, GAME_DATA.enemies.metool);
+    assert.deepEqual(project.gameData.enemies.metool, MMX_PACK.enemies!.metool);
 
     const emission = await planAssetEmission(project);
     const bundle = await compileBrowserProjectBundle(project, emission);
@@ -252,7 +272,7 @@ test("a level can place the enemy.crab prefab a data/game.json overlay adds", as
     enemies: { crab },
     prefabs: {
       "enemy.crab": {
-        ...GAME_DATA.prefabs["enemy.metool"],
+        ...MMX_PACK.prefabs!["enemy.metool"],
         id: "enemy.crab",
         source: { kind: "enemy", ref: "crab" },
       },

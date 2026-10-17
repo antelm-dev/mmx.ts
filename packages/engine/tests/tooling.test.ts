@@ -7,6 +7,7 @@ import { ToolingSession } from "../src/tooling/ToolingSession.js";
 import { VIEW_WIDTH, VIEW_HEIGHT } from "../src/core/constants.js";
 import { Player } from "../src/game/Player.js";
 import { Input } from "../src/core/Input.js";
+import { MMX_COMPILED } from "./support/mmx.js";
 
 const COLS = 16;
 const ROWS = 8;
@@ -49,7 +50,7 @@ function testLevel(): LevelData {
 const RIGHT = 1 << 1; // move_right, per REPLAY_ACTIONS order
 
 test("step advances exactly one deterministic fixed step", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   assert.equal(session.frame, 0);
   const snap = session.step(0);
   assert.equal(session.frame, 1);
@@ -57,20 +58,20 @@ test("step advances exactly one deterministic fixed step", () => {
 });
 
 test("inspect is side-effect free", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   for (let i = 0; i < 20; i++) session.step(RIGHT);
   const a = session.inspect();
   const b = session.inspect();
   assert.equal(session.frame, 20);
   assert.deepEqual(a, b);
   // Stepping after two inspections must reach the same digest a single run would.
-  const control = new ToolingSession({ level: testLevel() });
+  const control = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   for (let i = 0; i < 20; i++) control.step(RIGHT);
   assert.equal(a.digest, control.inspect().digest);
 });
 
 test("snapshot ordering is stable and identity-carrying", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   const snap = session.inspect();
   assert.equal(snap.player.runtimeId, "player");
   assert.deepEqual(
@@ -83,7 +84,7 @@ test("snapshot ordering is stable and identity-carrying", () => {
 });
 
 test("restarting a checkpoint reaches the same digest deterministically", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   for (let i = 0; i < 30; i++) session.step(RIGHT);
   session.setCheckpoint();
   const atCheckpoint = session.inspect().digest;
@@ -95,7 +96,7 @@ test("restarting a checkpoint reaches the same digest deterministically", () => 
 });
 
 test("seek clamps and lands on the recorded state at that frame", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   const digests: string[] = [];
   for (let i = 0; i < 40; i++) {
     session.step(RIGHT);
@@ -112,7 +113,7 @@ test("seek clamps and lands on the recorded state at that frame", () => {
 });
 
 test("sceneRevision bumps only when the scene instance is replaced", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   assert.equal(session.sceneRevision, 0);
   for (let i = 0; i < 5; i++) session.step(0);
   assert.equal(session.sceneRevision, 0, "stepping must not replace the scene");
@@ -127,7 +128,7 @@ test("sceneRevision bumps only when the scene instance is replaced", () => {
 });
 
 test("restartLevel discards the recording and returns to frame zero", () => {
-  const session = new ToolingSession({ level: testLevel() });
+  const session = new ToolingSession({ level: testLevel(), gameData: MMX_COMPILED });
   for (let i = 0; i < 15; i++) session.step(RIGHT);
   session.setCheckpoint();
   const snap = session.restartLevel();

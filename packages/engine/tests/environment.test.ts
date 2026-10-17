@@ -9,9 +9,10 @@ import { World } from "../src/game/World.js";
 import { MovingPlatform } from "../src/game/Environment.js";
 import { loadLevel } from "../src/game/level.js";
 import { stage2 } from "./fixtures/levels.js";
+import { MMX_COMPILED } from "./support/mmx.js";
 
 test("the mechanics demo is larger than the original and authors every environment type", () => {
-  const level = loadLevel(stage2);
+  const level = loadLevel(stage2, MMX_COMPILED);
   assert.ok(level.data.cols > 100);
   assert.ok(level.data.rows > 32);
   assert.ok(level.hazards.length >= 1);

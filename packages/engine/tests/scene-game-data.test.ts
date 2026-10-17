@@ -5,7 +5,6 @@ import { buildCompileRegistries } from "../src/behaviors/index.js";
 import { decodeReplay, encodeReplay } from "../src/core/Replay.js";
 import {
   COMPILED_GAME_DATA,
-  GAME_DATA,
   compileGameData,
   type CompiledGameData,
   type GameData,
@@ -15,15 +14,16 @@ import { compileLevel } from "../src/game/level.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
+import { MMX_COMPILED, MMX_GAME_DATA } from "./support/mmx.js";
 
 /**
  * A scene is a function of (level, game data, seed): enemy kinds resolve against
  * the game data the scene was given, and replays refuse to cross it.
  */
 
-/** The built-in data plus a "crab": a Metool body that only patrols. */
+/** The MMX data plus a "crab": a Metool body that only patrols. */
 function crabData(): CompiledGameData {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = structuredClone(MMX_GAME_DATA);
   data.enemies.crab = {
     ...data.enemies.metool,
     id: "crab",
@@ -75,7 +75,7 @@ test("a scene spawns an enemy kind defined only in its game data", () => {
   const gameData = crabData();
   const scene = Scene.create({ level: level([CRAB]), gameData });
   assert.equal(scene.gameDataHash, gameData.hash);
-  assert.notEqual(scene.gameDataHash, COMPILED_GAME_DATA.hash);
+  assert.notEqual(scene.gameDataHash, MMX_COMPILED.hash);
 
   const [crab] = scene.stage.enemies;
   assert.equal(crab.kind, "crab");
