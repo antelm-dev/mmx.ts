@@ -56,6 +56,16 @@ test("a starter project carries the MMX Starter pack; an old project gets it on 
   await expect(page.getByText(/Pack Test/).first()).toBeVisible();
   expect(readJson(starterRoot, "project.json").packs).toEqual(STARTER);
   expect(readJson(starterRoot, "data/game.json")).toEqual(pack);
+  // The pack's enemies show their sprite in the palette (enemyAnimations → enemyActors): the
+  // template binds their sheets, which the engine no longer knows of itself.
+  await page.getByRole("tab", { name: "Object Palette" }).click();
+  for (const id of ["enemy.metool", "enemy.bat"]) {
+    const img = page.locator(`[title="${id}"] img`).first();
+    await expect(img).toHaveAttribute("src", /^(?!.*\/undefined(?:\?|$)).+/);
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth * el.naturalHeight))
+      .toBeGreaterThan(0);
+  }
 
   await pick(oldRoot);
   await page.getByRole("button", { name: "File menu" }).click();

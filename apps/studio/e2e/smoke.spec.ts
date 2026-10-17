@@ -141,9 +141,8 @@ test("toolbar tooltip, level menu, and toggles work above Dockview", async () =>
 });
 
 test("renders non-empty palette sprite previews", async () => {
-  const previews = page.locator(
-    '[title="spawn"] img, [title="enemy.metool"] img, [title="enemy.bat"] img',
-  );
+  // Without a project only Spawn has a sprite; starter-pack.spec checks the pack's enemies.
+  const previews = page.locator('[title="spawn"] img');
   await expect(previews.first()).toBeVisible({ timeout: 15_000 });
 
   const count = await previews.count();

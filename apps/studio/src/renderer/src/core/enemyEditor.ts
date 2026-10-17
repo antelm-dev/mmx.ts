@@ -285,12 +285,12 @@ export function enemyForPrefab(
   const prefab: unknown = overlay?.prefabs?.[prefabId] ?? GAME_DATA.prefabs[prefabId];
   if (!isObject(prefab) || !isObject(prefab.source) || prefab.source.kind !== "enemy") return null;
   const ref = String(prefab.source.ref);
-  const own = overlay?.enemies?.[ref];
-  const enemy = own ?? GAME_DATA.enemies[ref];
+  // The engine has no enemies of its own: an enemy is always the project's.
+  const enemy = overlay?.enemies?.[ref];
   if (!isObject(enemy)) return null;
   const actor = overlay?.actors?.[String(enemy.actor)] ?? GAME_DATA.actors[String(enemy.actor)];
   if (!editableShape(enemy, actor)) return null;
-  return { enemy, actor, editable: !!own };
+  return { enemy, actor, editable: true };
 }
 
 /**
@@ -462,10 +462,7 @@ export function addBlankEnemy(
 export function isProjectEnemy(overlay: GameDataOverlay | undefined, prefabId: string): boolean {
   const source = overlay?.prefabs?.[prefabId]?.source;
   return (
-    source?.kind === "enemy" &&
-    !!overlay?.enemies?.[source.ref] &&
-    !(prefabId in GAME_DATA.prefabs) &&
-    !(source.ref in GAME_DATA.enemies)
+    source?.kind === "enemy" && !!overlay?.enemies?.[source.ref] && !(prefabId in GAME_DATA.prefabs)
   );
 }
 

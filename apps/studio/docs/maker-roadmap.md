@@ -102,7 +102,8 @@ Un loadout Classic (sans dash, avec échelles) et un loadout ZX restent à écri
 
 ### Données d'ennemis
 
-Une définition d'ennemi (`packages/engine/src/data/enemies.ts`) relie un acteur à
+Une définition d'ennemi (pack MMX Starter, `packages/pack-mmx-starter/data/game.json`,
+copié dans le `data/game.json` du projet) relie un acteur à
 une liste d'abilities : `metool` (Patrol, Hide, Stun, Death), `bat` (Hover,
 Pursuit, Recoil, Death), `pantheon` (Patrol, Shoot, Stun, Death). Le projet lie
 la planche par `enemyAnimations.<id>`. Un nouvel ennemi demande encore du code

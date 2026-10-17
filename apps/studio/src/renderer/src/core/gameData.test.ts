@@ -52,6 +52,8 @@ describe("project game data", () => {
         path: "/data/game.json",
       }),
     ]);
+    // Everything the file defines falls back to the core: the message says so, once.
+    expect(unsupported.issues[0]!.message).toMatch(/unavailable until it is fixed$/);
     const { overlay } = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, crab);
     const badAbility = {
       ...overlay,
