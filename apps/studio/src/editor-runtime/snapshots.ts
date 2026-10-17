@@ -24,6 +24,10 @@ export type ActorSnapshot = Readonly<{
   maxHealth?: number;
   state: string;
   abilities: readonly string[];
+  /** Enemies only: the clip name last requested (`clip#segment` as asked). */
+  animation?: string;
+  /** Enemies only: the frame shown, as an index into the whole clip. */
+  frame?: number;
 }>;
 
 export type ProjectileSnapshot = Readonly<{

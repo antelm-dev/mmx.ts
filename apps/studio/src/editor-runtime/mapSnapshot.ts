@@ -37,6 +37,8 @@ function mapActor(actor: EngineActorSnapshot): ActorSnapshot {
   if (actor.sourceEntityId !== undefined) snap.sourceEntityId = actor.sourceEntityId;
   if (actor.health !== undefined) snap.health = actor.health;
   if (actor.maxHealth !== undefined) snap.maxHealth = actor.maxHealth;
+  if (actor.animation !== undefined) snap.animation = actor.animation;
+  if (actor.frame !== undefined) snap.frame = actor.frame;
   return snap;
 }
 

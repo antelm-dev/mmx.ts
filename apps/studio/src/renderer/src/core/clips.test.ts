@@ -15,6 +15,7 @@ import {
   feetAnchor,
   moveBox,
   moveItem,
+  playableClips,
   remapSegments,
   requiredPlayerClips,
   splitSegments,
@@ -294,6 +295,61 @@ describe("enemy clips", () => {
     }).overlay;
     expect(enemyClipIssues(spiky, [sheet]).map((issue) => issue.message)).toEqual([
       "Enemy 'spiky' animation 'anim.blob' has no clip for: roll, fall.",
+    ]);
+  });
+
+  // A clip split into segments: down once, then lying on the floor in a loop.
+  const fall = {
+    loop: false,
+    speed: 60,
+    frames: [],
+    segments: [
+      { name: "tombe", start: 0, end: 1, loop: false },
+      { name: "sol", start: 2, end: 2, loop: true },
+    ],
+  };
+
+  it("lists each clip, then its segments as clip#segment", () => {
+    expect(playableClips({})).toEqual([]);
+    expect(playableClips({ idle: { loop: true, speed: 60, frames: [] }, fall })).toEqual([
+      "idle",
+      "fall",
+      "fall#tombe",
+      "fall#sol",
+    ]);
+  });
+
+  it("checks both the clip and the segment of a clip#segment an enemy plays", () => {
+    const sheet = (animations: Record<string, unknown>) =>
+      ({ id: "anim.blob", kind: "animation", animations }) as unknown as AnimationAsset;
+    const spiky = (weakAnimation: string) =>
+      addBlankEnemy(undefined, GAME_DATA, {
+        name: "Spiky",
+        health: 3,
+        enemy: {
+          ...BLANK_ENEMY,
+          sheet: "anim.blob",
+          abilities: ["Death"],
+          abilityConfig: { Death: { explosionDuration: 0, weakHealth: 1, weakAnimation } },
+        },
+      }).overlay;
+    expect(enemyClips(spiky("fall#tombe").enemies!.spiky!)).toEqual(["idle", "fall#tombe"]);
+    expect(enemyClipIssues(spiky("fall#tombe"), [sheet({ idle: {}, fall })])).toEqual([]);
+    // The segment named, whether the clip lacks it or the animation lacks the clip.
+    const message = (weak: string, animations: Record<string, unknown>) =>
+      enemyClipIssues(spiky(weak), [sheet(animations)]).map((issue) => issue.message);
+    expect(message("fall#debout", { idle: {}, fall })).toEqual([
+      "Enemy 'spiky' animation 'anim.blob' has no segment for: fall#debout.",
+    ]);
+    expect(message("fall#debout", { fall })).toEqual([
+      "Enemy 'spiky' animation 'anim.blob' has no clip for: idle; no segment for: fall#debout.",
+    ]);
+    expect(message("fall#tombe", { idle: {} })).toEqual([
+      "Enemy 'spiky' animation 'anim.blob' has no clip for: fall#tombe.",
+    ]);
+    // A clip without segments has none to pick.
+    expect(message("idle#tombe", { idle: {} })).toEqual([
+      "Enemy 'spiky' animation 'anim.blob' has no segment for: idle#tombe.",
     ]);
   });
 });

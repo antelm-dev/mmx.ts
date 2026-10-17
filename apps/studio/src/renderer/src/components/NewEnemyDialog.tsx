@@ -5,7 +5,7 @@ import type { EnemyDefinition, MovementModel } from "@mmx/engine/data";
 import type { AnimationAsset } from "@mmx/project-schema";
 import { openClipsDocument } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
-import { enemyClips } from "../core/clips.js";
+import { enemyClips, playableClips } from "../core/clips.js";
 import {
   abilitiesFor,
   BLANK_ENEMY,
@@ -285,7 +285,7 @@ export function BlankEnemyForm({
   const [enemy, setEnemy] = useState(() => withAbilities(BLANK_ENEMY, ["Death"]));
 
   const chosenSheet = sheets.includes(sheet) ? sheet : (sheets[0] ?? "");
-  const clips = Object.keys(animations.find((a) => a.id === chosenSheet)?.animations ?? {});
+  const clips = playableClips(animations.find((a) => a.id === chosenSheet)?.animations ?? {});
   const valid =
     name.trim() !== "" &&
     chosenSheet !== "" &&
