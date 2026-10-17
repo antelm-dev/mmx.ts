@@ -11,9 +11,10 @@ import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
 import { spawnEnemy } from "../src/game/enemies/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
-import { GAME_DATA, compileGameData, type GameData } from "../src/data/index.js";
+import { compileGameData, type GameData } from "../src/data/index.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
 import type { RollConfig } from "../src/game/enemy/Roll.js";
+import { MMX_GAME_DATA } from "./support/mmx.js";
 
 // Headless: no clip data (see enemy.test.ts). A Spiky-like test enemy built on
 // the Metool's body, with Roll answering idle and nothing else.
@@ -22,7 +23,7 @@ const FLOOR_Y = 10 * 16;
 const SPEED = 60;
 
 function spikyData(roll: Partial<RollConfig> = {}): GameData {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = structuredClone(MMX_GAME_DATA);
   data.enemies.spiky = {
     ...data.enemies.metool!,
     id: "spiky",
@@ -210,7 +211,7 @@ test("a stun interrupts the roll, which resumes with its clip afterwards", () =>
   const data = spikyData({ facePlayer: false, conflicts: ["Stun"] });
   const spikyDef = data.enemies.spiky!;
   spikyDef.abilities = ["Roll", "Stun", "Death"];
-  spikyDef.abilityConfig!.Stun = { ...GAME_DATA.enemies.metool!.abilityConfig!.Stun! };
+  spikyDef.abilityConfig!.Stun = { ...MMX_GAME_DATA.enemies.metool!.abilityConfig!.Stun! };
   spikyDef.reactions = { idle: ["Roll"], get_hit: ["Stun"] };
   const { stage, spiky } = setup({ x: 30 * 16, facing: 1, playerX: 4 * 16, data });
   spiky.max_health = spiky.current_health = 10;

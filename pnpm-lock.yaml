@@ -284,6 +284,9 @@ importers:
         specifier: workspace:*
         version: link:../renderer-pixi
     devDependencies:
+      '@mmx/pack-mmx-starter':
+        specifier: workspace:*
+        version: link:../pack-mmx-starter
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
@@ -409,6 +412,9 @@ importers:
         specifier: workspace:*
         version: link:../project-schema
     devDependencies:
+      '@mmx/pack-mmx-starter':
+        specifier: workspace:*
+        version: link:../pack-mmx-starter
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3

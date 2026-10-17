@@ -2,13 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import { DT, ENEMY_STATS } from "../src/core/constants.js";
+import { DT } from "../src/core/constants.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { makeBat, makeMetool } from "../src/game/enemies/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
 import type { MeleeSpec } from "../src/game/Character.js";
+import { ENEMY_STATS, makeBat, makeMetool } from "./support/mmx.js";
 
 const FLOOR_Y = 10 * 16;
 const SWING: MeleeSpec = { box: { hw: 12, hh: 12, ox: 24 }, damage: 2, activeFrames: 3 };

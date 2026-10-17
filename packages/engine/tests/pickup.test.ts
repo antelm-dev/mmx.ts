@@ -1,12 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { DT, PICKUP_TICK_INTERVAL, LIFE_CAPSULE_STATS } from "../src/core/constants.js";
+import { DT, PICKUP_TICK_INTERVAL } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
 import { Actor } from "../src/game/Actor.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
+import { LIFE_CAPSULE_STATS, MMX_COMPILED } from "./support/mmx.js";
 
 function room(): World {
   return World.fromRows(["....", "....", "...."]);
@@ -37,9 +38,14 @@ test("a small Life Energy capsule heals 2 HP over several ticks, then despawns",
   const world = room();
   const player = new Player(world, 16, 16, new Input());
   player.current_health = player.max_health - 10;
-  const stage = new Stage(world, player, {
-    pickups: [{ id: "cap", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      pickups: [{ id: "cap", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   assert.equal(LIFE_CAPSULE_STATS.small.heal, 2);
 
@@ -67,9 +73,14 @@ test("a large capsule picked up near full health discards the unused overflow", 
   const world = room();
   const player = new Player(world, 16, 16, new Input());
   player.current_health = player.max_health - 1;
-  const stage = new Stage(world, player, {
-    pickups: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      pickups: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   assert.equal(LIFE_CAPSULE_STATS.large.heal, 8);
 
@@ -84,10 +95,15 @@ test("the stage freezes while a Life Energy capsule restores health, then resume
   const input = new Input();
   const player = new Player(world, 16, 16, input);
   player.current_health = player.max_health - LIFE_CAPSULE_STATS.large.heal;
-  const stage = new Stage(world, player, {
-    platforms: [{ id: "platform", x: 48, y: 16, w: 16, h: 8, travel: 32, speed: 60 }],
-    pickups: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      platforms: [{ id: "platform", x: 48, y: 16, w: 16, h: 8, travel: 32, speed: 60 }],
+      pickups: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   stage.tick(DT); // overlap detected; recovery pause begins
   assert.equal(stage.pickups[0].collecting, true);
@@ -117,9 +133,14 @@ test("a Life Energy capsule falls under gravity and settles on the floor", () =>
     "####################",
   ]);
   const player = new Player(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
-  const stage = new Stage(world, player, {
-    pickups: [{ id: "drop", kind: "small", x: 32, y: 0, w: 16, h: 16 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      pickups: [{ id: "drop", kind: "small", x: 32, y: 0, w: 16, h: 16 }],
+    },
+    MMX_COMPILED,
+  );
 
   for (let i = 0; i < 30; i++) stage.tick(DT);
 
@@ -134,9 +155,14 @@ test("a Life Energy capsule falls under gravity and settles on the floor", () =>
 test("a capsule outside the player's reach is left untouched", () => {
   const world = room();
   const player = new Player(world, 16, 16, new Input());
-  const stage = new Stage(world, player, {
-    pickups: [{ id: "far", kind: "small", x: 200, y: 200, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      pickups: [{ id: "far", kind: "small", x: 200, y: 200, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   for (let i = 0; i < 10; i++) stage.tick(DT);
 

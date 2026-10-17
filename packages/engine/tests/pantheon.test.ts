@@ -2,14 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import { DT, ENEMY_STATS } from "../src/core/constants.js";
+import { DT } from "../src/core/constants.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Player } from "../src/game/Player.js";
 import { Scene } from "../src/game/Scene.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
-import { makePantheon } from "../src/game/enemies/index.js";
 import type { MeleeSpec } from "../src/game/Character.js";
+import { ENEMY_STATS, MMX_COMPILED, makePantheon } from "./support/mmx.js";
 
 // Headless: no clip data, so "aim" finishes on the next tick (see enemy.test.ts).
 
@@ -126,7 +126,7 @@ test("a run with a Pantheon replays to the same digest", () => {
   const FIRE = 1 << 6;
   const RIGHT = 1 << 1;
   const play = () => {
-    const scene = Scene.create({ level });
+    const scene = Scene.create({ level, gameData: MMX_COMPILED });
     let shots = 0;
     for (let i = 0; i < 600; i++) {
       scene.step(i > 240 && i % 30 === 0 ? FIRE : i > 400 ? RIGHT : 0);

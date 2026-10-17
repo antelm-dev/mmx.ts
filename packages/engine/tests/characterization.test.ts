@@ -5,19 +5,23 @@ import { Tile } from "../src/game/World.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { levelCatalog } from "./fixtures/levels.js";
-import { makeBat, makeMetool } from "../src/game/enemies/index.js";
 import { World } from "../src/game/World.js";
 import {
   BUSTER_SHOTS,
   DARK_ARROW_SHOT,
   DT,
-  ENEMY_STATS,
-  LIFE_CAPSULE_STATS,
   MAX_HEALTH,
   SUB_WEAPON_CONFIG,
-  WEAPON_CAPSULE_STATS,
   WEAPON_ORDER,
 } from "../src/core/constants.js";
+import {
+  ENEMY_STATS,
+  LIFE_CAPSULE_STATS,
+  MMX_COMPILED,
+  WEAPON_CAPSULE_STATS,
+  makeBat,
+  makeMetool,
+} from "./support/mmx.js";
 
 /**
  * Characterization tests — a behavioural snapshot of the engine *as it is today*,
@@ -285,7 +289,7 @@ test("a moving platform oscillates within its authored travel range", () => {
       fields: { Travel: 96, Speed: 48 },
     },
   ]);
-  const scene = Scene.create({ level });
+  const scene = Scene.create({ level, gameData: MMX_COMPILED });
   const platform = scene.stage.platforms[0];
   const startX = platform.x;
 
@@ -310,7 +314,7 @@ test("a moving platform oscillates within its authored travel range", () => {
 
 test("every catalog level loads into a scene", () => {
   for (const level of levelCatalog) {
-    const scene = Scene.create({ level });
+    const scene = Scene.create({ level, gameData: MMX_COMPILED });
     assert.ok(scene.player, `${level.identifier} produced a player`);
     // One tick must not throw on any shipped level.
     scene.step(0);

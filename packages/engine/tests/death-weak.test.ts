@@ -5,13 +5,7 @@ import { buildCompileRegistries } from "../src/behaviors/index.js";
 import { Input } from "../src/core/Input.js";
 import { REPLAY_ACTIONS } from "../src/core/Replay.js";
 import { DT } from "../src/core/constants.js";
-import {
-  COMPILED_GAME_DATA,
-  GAME_DATA,
-  compileGameData,
-  type CompiledGameData,
-  type GameData,
-} from "../src/data/index.js";
+import { compileGameData, type CompiledGameData, type GameData } from "../src/data/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
 import type { LevelData } from "../src/game/LevelData.js";
 import { Player } from "../src/game/Player.js";
@@ -19,6 +13,7 @@ import { Recorder } from "../src/game/Recorder.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
 import { spawnEnemy } from "../src/game/enemies/index.js";
+import { MMX_COMPILED, MMX_GAME_DATA } from "./support/mmx.js";
 
 /**
  * Death's optional weak phase (MMX1 Spiky): below `weakHealth` the enemy stops,
@@ -31,9 +26,9 @@ const FLOOR_Y = GROUND_ROW * 16;
 
 type DeathFields = Record<string, unknown>;
 
-/** The built-in data plus a "spiky": a 2 HP Metool body that only patrols. */
+/** The MMX data plus a "spiky": a 2 HP Metool body that only patrols. */
 function spikyData(death: DeathFields): ReturnType<typeof compileGameData> {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = structuredClone(MMX_GAME_DATA);
   data.enemies.spiky = {
     ...data.enemies.metool,
     id: "spiky",
@@ -181,8 +176,8 @@ test("compileGameData validates the weak fields and keeps them optional", () => 
   }
 });
 
-test("the built-in Death configs carry no weak fields", () => {
-  for (const enemy of COMPILED_GAME_DATA.enemies.values()) {
+test("the MMX Starter Death configs carry no weak fields", () => {
+  for (const enemy of MMX_COMPILED.enemies.values()) {
     const death = enemy.abilityConfig?.Death as DeathFields | undefined;
     if (death) assert.deepEqual(Object.keys(death), ["explosionDuration"], enemy.id);
   }

@@ -10,6 +10,7 @@ import {
   definitionFor,
   definitionsFromGameData,
   getDefinition,
+  isBaseDefinition,
   isBuiltinDefinition,
   setCatalogGameData,
   setProjectDefinitions,
@@ -158,4 +159,22 @@ test("a base without the pack's objects gives the primitives' catalog, and new p
   assert.equal(def.engineId, "MovingPlatform");
   assert.deepEqual(def.defaultSize, { width: 48, height: 8 });
   assert.equal(definitionFor("enemy.metool").category, "unknown");
+});
+
+test("Base is what neither the project's data nor its objects add", (t) => {
+  t.after(() => {
+    setProjectDefinitions([]);
+    setCatalogGameData(GAME_DATA);
+  });
+  const overlay = { prefabs: { "enemy.crab": withCrab().prefabs["enemy.crab"]! } };
+  setCatalogGameData(withCrab(), overlay);
+  setProjectDefinitions([{ id: "obj.crab.right", name: "Crab (right)", base: "enemy.crab" }]);
+  const base = (id: string) => isBaseDefinition(definitionFor(id));
+  assert.equal(base("enemy.crab"), false);
+  assert.equal(base("obj.crab.right"), false);
+  for (const id of ["spawn", "hazard", "slope", "camera-zone", "enemy.metool"])
+    assert.equal(base(id), true, id);
+  // Without an overlay (none, or a broken one) every built-in is Base again.
+  setCatalogGameData(withCrab());
+  assert.equal(base("enemy.crab"), true);
 });

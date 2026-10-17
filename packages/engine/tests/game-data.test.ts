@@ -10,9 +10,15 @@ import {
   type GameData,
   type GameDataDiagnostic,
 } from "../src/data/index.js";
+import { MMX_COMPILED, MMX_GAME_DATA } from "./support/mmx.js";
 
 function clone(): GameData {
   return structuredClone(GAME_DATA);
+}
+
+/** For the cases that edit an MMX object: core + the MMX Starter pack. */
+function cloneMmx(): GameData {
+  return structuredClone(MMX_GAME_DATA);
 }
 
 function compile(data: GameData) {
@@ -63,7 +69,7 @@ test("COMPILED_GAME_DATA is available and reference-resolved", () => {
 });
 
 test("compiled enemy reaction tables are precomputed and hitboxes normalized", () => {
-  const metool = COMPILED_GAME_DATA.enemies.get("metool");
+  const metool = MMX_COMPILED.enemies.get("metool");
   assert.ok(metool);
   assert.deepEqual(metool.reactions.see_player, ["Hide"]);
   assert.equal(metool.perception.ox, 0);
@@ -106,15 +112,15 @@ test("the hash is invariant to authoring key order", () => {
 });
 
 test("a prefab's display name is presentation: it never changes the hash", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.prefabs["enemy.metool"].name = "Hard Hat";
   const result = compile(data);
   assert.equal(result.ok, true);
-  if (result.ok) assert.equal(result.value.hash, COMPILED_GAME_DATA.hash);
+  if (result.ok) assert.equal(result.value.hash, MMX_COMPILED.hash);
 });
 
 test("a blank prefab name is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.prefabs["enemy.metool"].name = "  ";
   assert.ok(codes(compile(data).diagnostics).includes("value.string"));
 });
@@ -184,19 +190,19 @@ test("a missing projectile reference is an error", () => {
 });
 
 test("a missing prefab runtime is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.prefabs["enemy.metool"].runtime = "ghost";
   assert.ok(codes(compile(data).diagnostics).includes("prefab.runtime"));
 });
 
 test("an AI reaction naming an absent ability is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.metool.reactions.see_player = ["Teleport"];
   assert.ok(codes(compile(data).diagnostics).includes("reaction.missing"));
 });
 
 test("a hook referencing an unknown effect is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.bat.hooks = [{ on: "ability_end", ability: "Recoil", effect: "ghost" }];
   assert.ok(codes(compile(data).diagnostics).includes("behavior.unknown"));
 });
