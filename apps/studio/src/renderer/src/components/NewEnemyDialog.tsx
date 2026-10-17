@@ -14,6 +14,7 @@ import {
   withAbilities,
   withConfig,
   withMovement,
+  weakPhaseProblem,
   withWeakPhase,
 } from "../core/enemyEditor.js";
 import { uniqueEnemySlug } from "../core/gameData.js";
@@ -165,6 +166,7 @@ function WeakPhaseFields({
   // On while the key is there, so clearing the field to retype it keeps the fields open.
   const on = death.weakHealth !== undefined;
   const clip = String(death.weakAnimation ?? "");
+  const problem = weakPhaseProblem(death, health);
   const set = (key: string, value: number | string) =>
     onChange(withConfig(enemy, "Death", key, value));
   return (
@@ -191,7 +193,7 @@ function WeakPhaseFields({
       />
       {on && (
         <chakra.div display="grid" gridTemplateColumns="repeat(3, minmax(0, 1fr))" gap="2">
-          <Field label="At health" invalid={!validWeakPhase(death, health)}>
+          <Field label="At health" invalid={problem !== null}>
             <FieldInput
               type="number"
               min={1}
@@ -220,16 +222,10 @@ function WeakPhaseFields({
           </Field>
         </chakra.div>
       )}
+      {problem && <Note>{problem}</Note>}
     </chakra.div>
   );
 }
-
-/** A weak phase (if any) starts between 1 and below the enemy's health, and lasts a non-negative time. */
-const validWeakPhase = (death: Record<string, unknown>, health: number) =>
-  death.weakHealth === undefined ||
-  (Number(death.weakHealth) >= 1 &&
-    Number(death.weakHealth) < health &&
-    Number(death.weakDuration ?? 0) >= 0);
 
 /**
  * New object… → Enemy, last step: a project enemy copied from enemy `base` (an
@@ -294,7 +290,7 @@ export function BlankEnemyForm({
     name.trim() !== "" &&
     chosenSheet !== "" &&
     validStats(stats) &&
-    validWeakPhase(enemy.abilityConfig?.Death ?? {}, stats.health);
+    weakPhaseProblem(enemy.abilityConfig?.Death ?? {}, stats.health) === null;
   const owned = enemy.abilities;
   const setAbilities = (abilities: string[]) => setEnemy(withAbilities(enemy, abilities));
   const move = (i: number, by: number) => {

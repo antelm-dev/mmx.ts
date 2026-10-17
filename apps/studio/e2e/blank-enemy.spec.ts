@@ -165,8 +165,10 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
   // Below the enemy's health only.
   await weak.getByLabel("At health").fill("3");
   await expect(create).toBeDisabled();
+  await expect(weak.getByText("At health must be between 1 and 2.")).toBeVisible();
   await weak.getByLabel("At health").fill("2");
   await expect(create).toBeEnabled();
+  await expect(weak.getByText("At health must be between 1 and 2.")).toHaveCount(0);
   await create.click();
   await expect(dialog).toHaveCount(0);
   await expect(row("Spiky")).toHaveAttribute("aria-current", "true");
@@ -227,7 +229,7 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
     .toContain("Roll");
   let last = (await spiky())!;
   for (let i = 0; i < 5; i++) {
-    await expect.poll(async () => (await spiky())!.frame).toBeGreaterThan(last.frame + 10);
+    await expect.poll(async () => (await spiky())?.frame ?? -1).toBeGreaterThan(last.frame + 10);
     const next = (await spiky())!;
     expect(next.abilities).toContain("Roll");
     expect(next.x).not.toBe(last.x);

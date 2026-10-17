@@ -9,6 +9,7 @@ import {
   addBlankEnemy,
   BLANK_ENEMY,
   defaultReactions,
+  weakPhaseProblem,
   deleteEnemy,
   duplicateEnemy,
   enemyForPrefab,
@@ -144,6 +145,12 @@ describe("enemy editor", () => {
       abilityFields("Death", [], clips).find((p) => p.key === "weakAnimation");
     expect(weakClip(["idle", "fall"])).toMatchObject({ type: "enum", options: ["idle", "fall"] });
     expect(weakClip()).toMatchObject({ type: "string" });
+    // A clip the animation lacks (after a sheet change) stays shown.
+    expect(
+      abilityFields("Death", [], ["idle"], { weakAnimation: "fall" }).find(
+        (p) => p.key === "weakAnimation",
+      ),
+    ).toMatchObject({ options: ["fall", "idle"] });
     expect(abilityFields("Death", []).map((p) => p.key)).toEqual([
       "explosionDuration",
       "weakHealth",
@@ -173,6 +180,15 @@ describe("enemy editor", () => {
       weakDuration: 1,
     });
     expect(withWeakPhase(weak, undefined)).toEqual(base);
+    // The form says why a weak phase cannot be made.
+    expect(weakPhaseProblem({}, 1)).toBeNull();
+    expect(weakPhaseProblem({ weakHealth: 1, weakDuration: 1 }, 3)).toBeNull();
+    expect(weakPhaseProblem({ weakHealth: 1 }, 1)).toBe("Needs more than 1 health.");
+    expect(weakPhaseProblem({ weakHealth: 3 }, 3)).toBe("At health must be between 1 and 2.");
+    expect(weakPhaseProblem({ weakHealth: 0 }, 3)).toBe("At health must be between 1 and 2.");
+    expect(weakPhaseProblem({ weakHealth: 1, weakDuration: -1 }, 3)).toBe(
+      "Seconds must be 0 or more.",
+    );
   });
 
   it("re-applies a default conflict with an ability added later, not one the user dropped", () => {

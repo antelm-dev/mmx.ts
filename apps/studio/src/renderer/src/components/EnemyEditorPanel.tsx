@@ -381,7 +381,7 @@ export function EnemyEditorPanel({
               <chakra.div key={ability} role="group" aria-label={ability}>
                 <SectionTitle divider>{ability}</SectionTitle>
                 <chakra.div px="3.5">{errors(configPath)}</chakra.div>
-                {abilityFields(ability, projectiles, clips).map((prop) =>
+                {abilityFields(ability, projectiles, clips, config).map((prop) =>
                   field(
                     prop,
                     config[prop.key],
