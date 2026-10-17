@@ -5,6 +5,7 @@ import type {
   AnimationAsset,
   AnimationClip,
   AnimationFrame,
+  AnimationSegment,
   FrameBox,
   Region,
 } from "@mmx/project-schema";
@@ -20,7 +21,9 @@ import {
   feetAnchor,
   moveBox,
   moveItem,
+  remapSegments,
   requiredPlayerClips,
+  splitSegments,
   withBoxes,
 } from "../core/clips.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -76,6 +79,9 @@ type BoxDrag = {
   from: FrameBox | null;
   box: FrameBox;
 };
+
+/** Timeline marks, one colour per segment in turn. */
+const SEGMENT_COLORS = ["#22c55e", "#f59e0b", "#a855f7", "#06b6d4", "#ec4899"];
 
 /** Hurtbox blue, hitboxes red. */
 const BOX_COLORS = { hurtbox: "#3b82f6", hitbox: "#ef4444" } as const;
@@ -155,6 +161,8 @@ export function ClipEditorPanel({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [playFrame, setPlayFrame] = useState(0);
+  /** Segment the preview starts from ("" or an unknown name: the clip start). */
+  const [previewSegment, setPreviewSegment] = useState("");
   const [tool, setTool] = useState<PreviewTool>("anchor");
   const [boxSel, setBoxSel] = useState<BoxRef | null>(null);
   const [drag, setDrag] = useState<BoxDrag | null>(null);
@@ -177,7 +185,10 @@ export function ClipEditorPanel({
   const anim = isNew ? null : docAnim;
   const clips = anim?.animations ?? {};
   const clip: AnimationClip | undefined = clips[clipName];
+  const previewStart =
+    clip?.segments?.find((segment) => segment.name === previewSegment)?.start ?? 0;
   const frames = clip?.frames ?? [];
+  const indices = frames.map((_, i) => i);
   const isPlayer = projectSession.playerAnimation() === animId;
   const required = requiredPlayerClips(
     session.project?.manifest.player?.loadout,
@@ -203,7 +214,10 @@ export function ClipEditorPanel({
     };
   }, [sheetId, session.rootPath]);
 
-  useEffect(() => setFrameSel([]), [clipName, animId]);
+  useEffect(() => {
+    setFrameSel([]);
+    setPreviewSegment("");
+  }, [clipName, animId]);
   useEffect(() => {
     setBoxSel(null);
     setDrag(null);
@@ -213,7 +227,7 @@ export function ClipEditorPanel({
   useEffect(() => {
     if (!playing || !clip) return;
     const cursor = new AnimationCursor();
-    cursor.play(clip);
+    cursor.play(clip, previewStart);
     let last = performance.now();
     let raf = requestAnimationFrame(function tick(now) {
       cursor.advance(((now - last) / 1000) * speed);
@@ -222,7 +236,7 @@ export function ClipEditorPanel({
       raf = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(raf);
-  }, [playing, clip, speed]);
+  }, [playing, clip, speed, previewStart]);
 
   if (!session.open) return <PanelNote>Open a project to edit its animation clips.</PanelNote>;
   if (!isNew && !docAnim)
@@ -248,13 +262,75 @@ export function ClipEditorPanel({
   };
   const writeClip = (label: string, next: AnimationClip): void =>
     writeAll(label, { ...clips, [clipName]: next });
-  const writeFrames = (label: string, next: AnimationFrame[]): void => {
-    const { loopStart, ...rest } = clip!;
+  /** Write `next` frames; `origins[i]` is the old index of frame `i`, so segments follow. */
+  const writeFrames = (
+    label: string,
+    next: AnimationFrame[],
+    origins: readonly number[] = next.map((_, i) => i),
+  ): void => {
+    const { loopStart, segments, ...rest } = clip!;
     writeClip(label, {
       ...rest,
       frames: next,
       ...(loopStart !== undefined && loopStart < next.length ? { loopStart } : {}),
+      ...(segments ? { segments: remapSegments(segments, origins) } : {}),
     });
+  };
+  /** Write the clip's segments; none restores a plain clip (`loop`, no `loopStart`). */
+  const writeSegments = (label: string, next: AnimationSegment[] | null): void => {
+    const { loopStart: _loopStart, segments: _segments, ...rest } = clip!;
+    writeClip(label, next ? { ...rest, segments: next } : rest);
+  };
+  const segments = clip?.segments;
+  const segmentAt = (frame: number): number =>
+    segments?.findIndex((segment) => frame <= segment.end) ?? -1;
+  // The cut needs one selected frame inside a segment (the whole clip without any), after
+  // its first: a single whole-clip segment would only drop loopStart.
+  const splitAt = frameSel.length === 1 ? frameSel[0]! : 0;
+  const canSplit =
+    splitAt > 0 &&
+    (!segments || segments.some((segment) => splitAt > segment.start && splitAt <= segment.end));
+  const renameSegment = (index: number, raw: string, input: HTMLInputElement): void => {
+    // An undo can remount the focused input, whose blur then carries this render's stale clip.
+    if (!input.isConnected) return;
+    const name = raw.trim();
+    const current = segments![index]!;
+    if (name === current.name) return;
+    const problem =
+      name === ""
+        ? "A segment needs a name."
+        : name.includes("#")
+          ? "A segment name cannot contain '#'."
+          : segments!.some((segment) => segment.name === name)
+            ? `Segment “${name}” already exists.`
+            : null;
+    if (problem) {
+      editor.toast(problem);
+      input.value = current.name;
+      return;
+    }
+    writeSegments(
+      "Rename segment",
+      segments!.map((segment, i) => (i === index ? { ...segment, name } : segment)),
+    );
+  };
+  /** Delete segment `index`: its frames join the previous segment (the next one for the first). */
+  const deleteSegment = (index: number): void => {
+    const all = segments!;
+    if (all.length === 1) return writeSegments("Delete segment", null);
+    const removed = all[index]!;
+    const rest = all.filter((_, i) => i !== index);
+    const into = Math.max(0, index - 1);
+    writeSegments(
+      "Delete segment",
+      rest.map((segment, i) =>
+        i !== into
+          ? segment
+          : index > 0
+            ? { ...segment, end: removed.end }
+            : { ...segment, start: removed.start },
+      ),
+    );
   };
 
   const newFrame = (region: Region): AnimationFrame => ({
@@ -494,7 +570,12 @@ export function ClipEditorPanel({
               <ActionButton
                 disabled={!clip || regionSel.length === 0}
                 onClick={() => {
-                  writeFrames("Add frames", [...frames, ...pickedFrames()]);
+                  const added = pickedFrames();
+                  writeFrames(
+                    "Add frames",
+                    [...frames, ...added],
+                    [...indices, ...added.map(() => frames.length - 1)],
+                  );
                   setRegionSel([]);
                 }}
               >
@@ -520,7 +601,7 @@ export function ClipEditorPanel({
             <FieldInput
               type="number"
               min={0}
-              disabled={!clip?.loop}
+              disabled={!clip?.loop || !!segments}
               value={clip?.loopStart ?? 0}
               onChange={(e) => {
                 const value = int(e.target.value, 0);
@@ -535,6 +616,7 @@ export function ClipEditorPanel({
             <chakra.div display="flex" gap="3" alignItems="center" py="1" px="3.5">
               <Checkbox
                 label="Loop"
+                disabled={!!segments}
                 checked={clip.loop}
                 onCheckedChange={(loop) =>
                   writeClip(loop ? "Loop clip" : "Play clip once", { ...clip, loop })
@@ -569,6 +651,7 @@ export function ClipEditorPanel({
                       aria-label={`Frame ${i + 1}`}
                       aria-pressed={on}
                       borderColor={playing && playFrame === i ? "studio.warning" : undefined}
+                      aria-current={playing && playFrame === i ? "step" : undefined}
                       onClick={(e) =>
                         setFrameSel(
                           e.shiftKey || e.ctrlKey
@@ -582,6 +665,23 @@ export function ClipEditorPanel({
                       {sheet && <RegionView sheet={sheet} region={frame.region} zoom={1} />}
                       {i + 1}
                     </Tile>
+                    {segments && (
+                      <chakra.div
+                        data-testid={`frame-${i + 1}-segment`}
+                        title={segments[segmentAt(i)]?.name}
+                        fontSize="9px"
+                        fontFamily="mono"
+                        color="studio.fgSecondary"
+                        textAlign="center"
+                        truncate
+                        borderTop="3px solid"
+                        style={{
+                          borderColor: SEGMENT_COLORS[segmentAt(i) % SEGMENT_COLORS.length],
+                        }}
+                      >
+                        {segments[segmentAt(i)]?.name}
+                      </chakra.div>
+                    )}
                     <FieldInput
                       type="number"
                       min={1}
@@ -605,7 +705,12 @@ export function ClipEditorPanel({
               <ActionButton
                 disabled={frameSel.length !== 1 || frameSel[0] === 0}
                 onClick={() => {
-                  writeFrames("Move frame", moveItem(frames, frameSel[0]!, frameSel[0]! - 1));
+                  const from = frameSel[0]!;
+                  writeFrames(
+                    "Move frame",
+                    moveItem(frames, from, from - 1),
+                    moveItem(indices, from, from - 1),
+                  );
                   setFrameSel([frameSel[0]! - 1]);
                 }}
               >
@@ -614,7 +719,12 @@ export function ClipEditorPanel({
               <ActionButton
                 disabled={frameSel.length !== 1 || frameSel[0] === frames.length - 1}
                 onClick={() => {
-                  writeFrames("Move frame", moveItem(frames, frameSel[0]!, frameSel[0]! + 1));
+                  const from = frameSel[0]!;
+                  writeFrames(
+                    "Move frame",
+                    moveItem(frames, from, from + 1),
+                    moveItem(indices, from, from + 1),
+                  );
                   setFrameSel([frameSel[0]! + 1]);
                 }}
               >
@@ -626,6 +736,7 @@ export function ClipEditorPanel({
                   writeFrames(
                     "Duplicate frames",
                     frames.flatMap((f, i) => (frameSel.includes(i) ? [f, { ...f }] : [f])),
+                    frames.flatMap((_, i) => (frameSel.includes(i) ? [i, i] : [i])),
                   )
                 }
               >
@@ -634,14 +745,108 @@ export function ClipEditorPanel({
               <ActionButton
                 disabled={frameSel.length === 0 || frameSel.length === frames.length}
                 onClick={() => {
+                  const kept = indices.filter((i) => !frameSel.includes(i));
                   writeFrames(
                     "Remove frames",
-                    frames.filter((_, i) => !frameSel.includes(i)),
+                    kept.map((i) => frames[i]!),
+                    kept,
                   );
                   setFrameSel([]);
                 }}
               >
                 Remove
+              </ActionButton>
+            </PanelActions>
+
+            <SectionTitle divider>Segments</SectionTitle>
+            <PanelNote>
+              {segments
+                ? "Segments drive playback, so Loop and Loop start are ignored: a looping segment repeats, a one-shot one plays on into the next."
+                : "Split the clip into named segments (an intro, a loop, an end) at the selected frame."}
+            </PanelNote>
+            {segments?.map((segment, i) => (
+              <chakra.div
+                key={i}
+                role="group"
+                aria-label={`Segment ${i + 1}`}
+                borderLeft="3px solid"
+                ml="3.5"
+                style={{ borderColor: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }}
+              >
+                <Grid2 pl="2">
+                  <Field label="Name">
+                    <FieldInput
+                      key={`${clipName}-${i}-${segment.name}`}
+                      defaultValue={segment.name}
+                      onBlur={(e) => renameSegment(i, e.target.value, e.currentTarget)}
+                    />
+                  </Field>
+                  <Field label="Last frame">
+                    <FieldInput
+                      type="number"
+                      min={segment.start + 1}
+                      max={segments[i + 1]?.end ?? frames.length}
+                      disabled={i === segments.length - 1}
+                      title={
+                        i === segments.length - 1
+                          ? "The last segment ends on the last frame."
+                          : undefined
+                      }
+                      value={segment.end + 1}
+                      onChange={(e) => {
+                        const end = int(e.target.value, segment.start + 1);
+                        const after = segments[i + 1];
+                        if (end === null || !after || end - 1 >= after.end) return;
+                        writeSegments(
+                          "Resize segment",
+                          segments.map((s, j) =>
+                            j === i
+                              ? { ...s, end: end - 1 }
+                              : j === i + 1
+                                ? { ...s, start: end }
+                                : s,
+                          ),
+                        );
+                      }}
+                    />
+                  </Field>
+                </Grid2>
+                <chakra.div display="flex" gap="3" alignItems="center" py="1" pl="2" pr="3.5">
+                  <Checkbox
+                    label="Loop"
+                    checked={segment.loop}
+                    onCheckedChange={(loop) =>
+                      writeSegments(
+                        loop ? "Loop segment" : "Play segment once",
+                        segments.map((s, j) => (j === i ? { ...s, loop } : s)),
+                      )
+                    }
+                  />
+                  <chakra.span fontSize="xs" color="studio.fgTertiary" flex="1">
+                    Frames {segment.start + 1}–{segment.end + 1}
+                  </chakra.span>
+                  <ActionButton onClick={() => deleteSegment(i)}>Delete segment</ActionButton>
+                </chakra.div>
+              </chakra.div>
+            ))}
+            <PanelActions flexWrap="wrap">
+              <ActionButton
+                disabled={!canSplit}
+                title="Cut the segment holding the selected frame there: the first half plays once, the second keeps the segment's loop"
+                onClick={() =>
+                  writeSegments(
+                    "Add segment",
+                    splitSegments(segments, frames.length, clip.loop, splitAt),
+                  )
+                }
+              >
+                Add segment
+              </ActionButton>
+              <ActionButton
+                disabled={!segments}
+                onClick={() => writeSegments("Remove all segments", null)}
+              >
+                Remove all segments
               </ActionButton>
             </PanelActions>
 
@@ -681,6 +886,20 @@ export function ClipEditorPanel({
                   <option value="hitbox">Draw hitbox</option>
                 </FieldSelect>
               </Field>
+              {segments && (
+                <Field label="Preview from">
+                  <FieldSelect
+                    value={segments[segmentAt(previewStart)]!.name}
+                    onChange={(e) => setPreviewSegment(e.target.value)}
+                  >
+                    {segments.map((segment) => (
+                      <option key={segment.name} value={segment.name}>
+                        {segment.name}
+                      </option>
+                    ))}
+                  </FieldSelect>
+                </Field>
+              )}
             </Grid2>
             <chakra.div px="3.5" py="1" fontSize="xs" color="studio.fgTertiary">
               Anchor{" "}

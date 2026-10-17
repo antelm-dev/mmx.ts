@@ -16,7 +16,9 @@ import {
   moveBox,
   moveItem,
   playableClips,
+  remapSegments,
   requiredPlayerClips,
+  splitSegments,
   withBoxes,
 } from "./clips.js";
 
@@ -39,6 +41,77 @@ describe("clips helpers", () => {
   it("moves a frame", () => {
     expect(moveItem(["a", "b", "c"], 0, 2)).toEqual(["b", "c", "a"]);
     expect(moveItem(["a", "b", "c"], 2, 1)).toEqual(["a", "c", "b"]);
+  });
+
+  describe("segments", () => {
+    const seg = (name: string, start: number, end: number, loop = false) => ({
+      name,
+      start,
+      end,
+      loop,
+    });
+    const intro = seg("intro", 0, 1);
+    const body = seg("loop", 2, 4, true);
+    const end = seg("end", 5, 5);
+    const segments = [intro, body, end];
+
+    it("keeps segments through same-length edits and an in-segment move", () => {
+      expect(remapSegments(segments, [0, 1, 2, 3, 4, 5])).toEqual(segments);
+      expect(remapSegments(segments, moveItem([0, 1, 2, 3, 4, 5], 3, 4))).toEqual(segments);
+    });
+
+    it("moves a frame across a boundary into the neighbouring segment", () => {
+      // Frame 2 (first of "loop") moved left: it ends "intro", frame 1 starts "loop".
+      const origins = moveItem([0, 1, 2, 3, 4, 5], 2, 1);
+      expect(origins).toEqual([0, 2, 1, 3, 4, 5]);
+      expect(remapSegments(segments, origins)).toEqual(segments);
+    });
+
+    it("grows with duplicated frames and shrinks with removed ones", () => {
+      expect(remapSegments(segments, [0, 0, 1, 2, 3, 4, 4, 5])).toEqual([
+        seg("intro", 0, 2),
+        seg("loop", 3, 6, true),
+        seg("end", 7, 7),
+      ]);
+      expect(remapSegments(segments, [0, 3, 4, 5])).toEqual([
+        seg("intro", 0, 0),
+        seg("loop", 1, 2, true),
+        seg("end", 3, 3),
+      ]);
+    });
+
+    it("drops a segment whose frames are all removed", () => {
+      expect(remapSegments(segments, [2, 3, 4, 5])).toEqual([
+        seg("loop", 0, 2, true),
+        seg("end", 3, 3),
+      ]);
+      expect(remapSegments(segments, [0, 1, 2])).toEqual([intro, seg("loop", 2, 2, true)]);
+    });
+
+    it("splits the segment holding a frame, or makes the first segments", () => {
+      expect(splitSegments(undefined, 4, true, 0)).toEqual([seg("segment 1", 0, 3, true)]);
+      expect(splitSegments(undefined, 4, true, 2)).toEqual([
+        seg("segment 1", 0, 1),
+        seg("segment 2", 2, 3, true),
+      ]);
+      expect(splitSegments(segments, 6, false, 3)).toEqual([
+        intro,
+        seg("loop", 2, 2),
+        seg("segment 4", 3, 4, true),
+        end,
+      ]);
+      // A cut on a segment's first frame changes nothing.
+      expect(splitSegments(segments, 6, false, 2)).toEqual(segments);
+    });
+
+    it("names a new segment apart from the existing ones", () => {
+      const named = [seg("segment 2", 0, 1), seg("segment 3", 2, 3)];
+      expect(splitSegments(named, 4, false, 3).map((s) => s.name)).toEqual([
+        "segment 2",
+        "segment 3",
+        "segment 4",
+      ]);
+    });
   });
 
   it("lists the clips each loadout plays", () => {
