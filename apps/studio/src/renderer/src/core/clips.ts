@@ -1,5 +1,11 @@
-import { COMPILED_GAME_DATA, type CompiledGameData } from "@mmx/engine/data";
-import type { AnimationFrame, FrameBox, Region } from "@mmx/project-schema";
+import {
+  COMPILED_GAME_DATA,
+  type CompiledGameData,
+  type EnemyDefinition,
+  type GameDataOverlay,
+} from "@mmx/engine/data";
+import type { ProjectIssue } from "@mmx/project-io";
+import type { AnimationFrame, FrameBox, ProjectAsset, Region } from "@mmx/project-schema";
 
 /**
  * Clip names each player behaviour plays: the `animation = "…"` and
@@ -37,6 +43,62 @@ export function requiredPlayerClips(
     }
   }
   return [...names];
+}
+
+/**
+ * Clip names each enemy ability plays: the `animation = "…"` and `play_animation*("…")`
+ * literals of `packages/engine/src/game/enemy/` (clips.test.ts checks them). Death plays
+ * none; Stun names its clips in its config (`animation`, `recoverAnimation`).
+ */
+export const ENEMY_ABILITY_CLIPS: Readonly<Record<string, readonly string[]>> = {
+  Patrol: ["walk", "idle"],
+  Hide: ["defense", "open", "walk"],
+  Stun: [],
+  Hover: ["idle"],
+  Pursuit: ["idle"],
+  Recoil: ["jump", "idle"],
+  Shoot: ["aim", "shoot", "idle"],
+  Death: [],
+};
+
+/** The clips `enemy` plays: its first clip, its abilities', and those its configs name. */
+export function enemyClips(
+  enemy: Pick<EnemyDefinition, "initialAnimation" | "abilities" | "abilityConfig">,
+): string[] {
+  const names = new Set([enemy.initialAnimation]);
+  for (const ability of enemy.abilities) {
+    for (const name of ENEMY_ABILITY_CLIPS[ability] ?? []) names.add(name);
+    const config = enemy.abilityConfig?.[ability];
+    for (const value of [config?.animation, config?.recoverAnimation]) {
+      if (typeof value === "string" && value !== "") names.add(value);
+    }
+  }
+  return [...names];
+}
+
+/**
+ * Problems: each project enemy (data/game.json) drawn from a project animation that
+ * lacks a clip it plays. Play still runs; the enemy is not drawn during that clip.
+ */
+export function enemyClipIssues(
+  overlay: GameDataOverlay | undefined,
+  assets: readonly ProjectAsset[],
+): ProjectIssue[] {
+  return Object.entries(overlay?.enemies ?? {}).flatMap(([id, enemy]): ProjectIssue[] => {
+    const sheet = assets.find((asset) => asset.id === enemy?.sheet);
+    // Hand-edited records are checked by compilation, not here.
+    if (sheet?.kind !== "animation" || !Array.isArray(enemy.abilities)) return [];
+    const missing = enemyClips(enemy).filter((name) => !sheet.animations[name]);
+    if (missing.length === 0) return [];
+    return [
+      {
+        severity: "warning",
+        code: "enemy.clips",
+        path: "/data/game.json",
+        message: `Enemy '${id}' animation '${sheet.id}' has no clip for: ${missing.join(", ")}.`,
+      },
+    ];
+  });
 }
 
 /** Deleting the only clip removes the asset, which must not leave the player binding dangling. */

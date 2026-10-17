@@ -77,7 +77,20 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
     await expect(dialog.getByLabel("Movement")).toHaveValue("ground");
     const abilities = dialog.getByRole("group", { name: "Abilities" });
     await expect(abilities.getByRole("button", { pressed: true })).toHaveText(["Death"]);
+    // Only what the movement allows: a flier has no Patrol, and Hover is for fliers.
+    await expect(abilities.getByRole("button", { name: "Hover" })).toHaveCount(0);
+    await dialog.getByLabel("Movement").selectOption("flying");
+    await expect(abilities.getByRole("button", { name: "Patrol" })).toHaveCount(0);
+    await dialog.getByLabel("Movement").selectOption("ground");
+    const deathNote = dialog.getByText("Without Death, the enemy stays on stage at zero health.");
+    await expect(deathNote).toHaveCount(0);
+    await abilities.getByRole("button", { name: "Death" }).click();
+    await expect(deathNote).toBeVisible();
+    await abilities.getByRole("button", { name: "Death" }).click();
+    await expect(deathNote).toHaveCount(0);
     await abilities.getByRole("button", { name: "Patrol" }).click();
+    // The fixture animation has idle alone.
+    await expect(dialog.getByText("Your animation has no clip for: walk")).toBeVisible();
     const order = dialog.getByRole("group", { name: "Order" });
     await expect(order).toContainText("1. Death");
     await order.getByRole("button", { name: "Move Patrol up" }).click();
@@ -116,6 +129,10 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
   await page.getByRole("tab", { name: "Level", exact: true }).click();
   const box = (await canvas.boundingBox())!;
   await canvas.click({ position: { x: box.width / 2, y: box.height / 2 } });
+  // Problems says which clips its animation lacks; Play still runs.
+  await expect(
+    page.getByText("Enemy 'blob' animation 'anim.player.fixture' has no clip for: walk."),
+  ).toBeVisible();
 
   // A template still goes through the enemy form, as before.
   await toEnemies();

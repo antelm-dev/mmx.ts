@@ -25,7 +25,7 @@ import {
   type StudioAssets,
   type StudioGameData,
 } from "../assets/studioAssets.js";
-import { requiredPlayerClips } from "./clips.js";
+import { enemyClipIssues, requiredPlayerClips } from "./clips.js";
 import { projectGameData, type ProjectGameData } from "./gameData.js";
 import type { RecoveryDraft } from "./persistence.js";
 
@@ -103,6 +103,7 @@ function validateOpenProject(project: StudioProject): ProjectIssue[] {
   const validation = { ...PROJECT_VALIDATION, loadoutIds: [...gameData.compiled.loadouts.keys()] };
   return [
     ...gameData.issues,
+    ...enemyClipIssues(project.gameData, project.manifest.assets ?? []),
     ...mapSchemaIssues(validateProject(project.manifest, validation).issues),
     ...projectDefinitionIssues(objects).map((issue) => ({
       severity: "error" as const,

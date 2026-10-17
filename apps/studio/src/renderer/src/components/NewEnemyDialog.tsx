@@ -5,13 +5,15 @@ import type { MovementModel } from "@mmx/engine/data";
 import type { AnimationAsset } from "@mmx/project-schema";
 import { openClipsDocument } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
+import { enemyClips } from "../core/clips.js";
 import {
+  abilitiesFor,
   BLANK_ENEMY,
-  ENEMY_ABILITIES,
   MOVEMENTS,
   toggled,
   withAbilities,
   withConfig,
+  withMovement,
 } from "../core/enemyEditor.js";
 import { uniqueEnemySlug } from "../core/gameData.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -21,6 +23,8 @@ import { Chips, IconButton } from "./EnemyEditorPanel.js";
 import { importSpriteSheet } from "./SheetSlicerPanel.js";
 
 type Stats = { health: number; touchDamage: number };
+
+const Note = chakra("div", { base: { color: "studio.fgTertiary", fontSize: "11px" } });
 
 /** Defaults a new enemy copies from its base: health and touch damage. */
 function baseStats(base: string): Stats {
@@ -208,18 +212,16 @@ export function BlankEnemyForm({
     setAbilities(next);
   };
 
+  // Idle is what the built-ins start in and the abilities return to.
+  const initialAnimation = clips.includes("idle") ? "idle" : (clips[0] ?? "idle");
+  const missing = enemyClips({ ...enemy, initialAnimation }).filter((n) => !clips.includes(n));
+
   const create = (edit: boolean) => {
     editor.createBlankEnemy(
       {
         name,
         health: stats.health,
-        enemy: {
-          ...enemy,
-          sheet: chosenSheet,
-          touchDamage: stats.touchDamage,
-          // Idle is what the built-ins start in and the abilities return to.
-          initialAnimation: clips.includes("idle") ? "idle" : (clips[0] ?? "idle"),
-        },
+        enemy: { ...enemy, sheet: chosenSheet, touchDamage: stats.touchDamage, initialAnimation },
       },
       edit,
     );
@@ -235,7 +237,8 @@ export function BlankEnemyForm({
         <Field label="Movement">
           <FieldSelect
             value={enemy.movement}
-            onChange={(e) => setEnemy({ ...enemy, movement: e.target.value as MovementModel })}
+            // Abilities the new movement cannot use are dropped.
+            onChange={(e) => setEnemy(withMovement(enemy, e.target.value as MovementModel))}
           >
             {MOVEMENTS.map((movement) => (
               <option key={movement} value={movement}>
@@ -246,13 +249,21 @@ export function BlankEnemyForm({
         </Field>
         <Chips
           label="Abilities"
-          options={ENEMY_ABILITIES}
+          options={abilitiesFor(enemy.movement)}
           selected={owned}
           onToggle={(ability, on) => setAbilities(toggled(owned, ability, on))}
         />
+        {!owned.includes("Death") && (
+          <Note>Without Death, the enemy stays on stage at zero health.</Note>
+        )}
+        {chosenSheet !== "" && missing.length > 0 && (
+          <Note>Your animation has no clip for: {missing.join(", ")}</Note>
+        )}
         {owned.length > 0 && (
           <chakra.div role="group" aria-label="Order" display="flex" flexDirection="column" gap="1">
-            <chakra.div {...labelStyle}>In order: the first is where the AI starts.</chakra.div>
+            <chakra.div {...labelStyle}>
+              In order: each AI event goes to the first ability that answers it.
+            </chakra.div>
             {owned.map((ability, i) => {
               const conflicts = enemy.abilityConfig?.[ability]?.conflicts;
               return (
