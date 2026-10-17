@@ -40,6 +40,7 @@ export {
   type ImportAssetResult,
 } from "./assets.js";
 export {
+  collectGameBindingAssetIds,
   collectReferencedAssetIds,
   filterReferencedAssets,
   findOrphanAssets,

@@ -6,12 +6,16 @@ vi.mock("../core/EditorViewport.js", () => ({ EditorViewport: class {} }));
 vi.mock("./EditorPlaytestController.js", () => ({ EditorPlaytestController: class {} }));
 vi.mock("./dock.js", () => ({ focusPanel: () => {}, isPanelVisible: () => false }));
 vi.mock("../assets/studioAssets.js", () => {
-  const assets = { catalog: { load: async () => undefined }, manifest: {} };
+  const assets = {
+    catalog: { load: async () => undefined },
+    manifest: {},
+    project: { assets: [] },
+  };
   return {
     starterAssets: assets,
+    starterGameData: { bindings: {} },
     buildStarterAssets: () => assets,
-    buildStarterBasedAssets: () => assets,
-    buildStudioAssets: () => assets,
+    buildProjectAssets: () => assets,
   };
 });
 vi.mock("../settings/studioClientSettings.js", () => ({

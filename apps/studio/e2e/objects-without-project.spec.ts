@@ -49,6 +49,16 @@ const pick = (app: ElectronApplication, path: string) =>
   app.evaluate(({ dialog }, picked) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [picked] })) as never;
   }, path);
+/** Play starts, with the crab, and stops. */
+async function play(page: Page) {
+  await page.getByRole("button", { name: /^Play$/ }).click();
+  await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute("data-enemy-kinds", /\bcrab\b/);
+  await expect(page.getByText(/Could not start Play|Play error|Fix \d+ error/)).toHaveCount(0);
+  await page.getByRole("button", { name: /^Stop$/ }).click();
+  await expect(page.locator("#viewport-canvas")).toBeVisible();
+}
+
 type LevelObject = { definitionId: string; x: number; y: number };
 const levelObjects = (page: Page) =>
   page.evaluate(() =>
@@ -155,15 +165,18 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     // A new project has no game/data.json: not a problem, Play uses the starter's bindings.
     await expect(page.getByText("No problems detected. Ready to play.")).toBeVisible();
     await expect(page.getByText(/game\/data\.json/)).toHaveCount(0);
-    await page.getByRole("button", { name: /^Play$/ }).click();
-    await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute(
-      "data-enemy-kinds",
-      /\bcrab\b/,
-    );
-    await expect(page.getByText(/Could not start Play|Play error|Fix \d+ error/)).toHaveCount(0);
-    await page.getByRole("button", { name: /^Stop$/ }).click();
-    await expect(canvas).toBeVisible();
+    await play(page);
+
+    // The new animation becomes the player's: Play still runs, and Save writes game/data.json.
+    await page.getByRole("tab", { name: "anim.sheet", exact: true }).click();
+    await page.getByRole("button", { name: "Use as player animation" }).click();
+    await expect(page.getByRole("button", { name: "Player animation" })).toBeDisabled();
+    // Its clips are checked (it has only idle); the starter's game data itself is fine.
+    await expect(
+      page.getByText(/Player animation 'anim\.sheet' has no clip for: recover/),
+    ).toBeVisible();
+    await expect(page.getByText(/ENOENT|'bindings'|Cannot read|has no animation/)).toHaveCount(0);
+    await play(page);
 
     // First Save: a name, then a new folder; the whole project moves there.
     await page.getByRole("button", { name: "File menu" }).click();
@@ -187,6 +200,9 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     expect(placed).toHaveLength(before.length + 2);
     const gameData = JSON.parse(readFileSync(join(destination, "data/game.json"), "utf8"));
     expect(gameData.enemies.crab).toMatchObject({ actor: "enemy.crab", sheet: "anim.sheet" });
+    const bindings = JSON.parse(readFileSync(join(destination, "game/data.json"), "utf8"));
+    expect(bindings.bindings).toMatchObject({ playerAnimation: "anim.sheet" });
+    await play(page);
     expect(pageErrors, pageErrors.join("\n")).toEqual([]);
     await app.evaluate(({ session }) => session.defaultSession.flushStorageData());
   } finally {
@@ -209,6 +225,10 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     await page.getByRole("tab", { name: "Object Palette" }).click();
     await expect(page.getByTitle("Place Big Life", { exact: true })).toBeVisible();
     await expect(page.getByTitle("Place Crab", { exact: true })).toBeVisible();
+    // Reopened with the game/data.json seeded on Save: only the clip warning, and Play runs.
+    await expect(page.getByText(/Player animation 'anim\.sheet' has no clip for/)).toBeVisible();
+    await expect(page.getByText(/ENOENT|'bindings'|Cannot read|has no animation/)).toHaveCount(0);
+    await play(page);
   } finally {
     await second.app.close();
   }

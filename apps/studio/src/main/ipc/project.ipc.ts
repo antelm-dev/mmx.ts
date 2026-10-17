@@ -19,7 +19,11 @@ import {
   type StudioProject,
 } from "@mmx/project-io";
 import { createNodeFileSystem } from "@mmx/project-io/node";
-import { copyStarterProjectToDirectory } from "@mmx/starter-template";
+import {
+  copyStarterProjectToDirectory,
+  resolveStarterTemplateRoot,
+  STARTER_GAME_DATA,
+} from "@mmx/starter-template";
 import {
   deleteWorkProject,
   destinationPick,
@@ -268,12 +272,19 @@ export function createProjectIpc() {
       },
     ),
 
-    /** Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key. */
+    /**
+     * Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key; a project
+     * without one gets the starter's.
+     */
     "write-player-animation": handle(
       async (_event, rootPath: string, animationId: string): Promise<ProjectResult<null>> => {
         const fs = createNodeFileSystem(rootPath);
         try {
-          const data = JSON.parse(await fs.readText(GAME_DATA_FILE));
+          // A new project has none yet: seeded from the starter's, which Play used until now.
+          const text = (await fs.exists(GAME_DATA_FILE))
+            ? await fs.readText(GAME_DATA_FILE)
+            : await readFile(join(resolveStarterTemplateRoot(), STARTER_GAME_DATA), "utf8");
+          const data = JSON.parse(text);
           data.bindings = { ...data.bindings, playerAnimation: animationId };
           await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);
           return { ok: true, value: null, issues: [] };

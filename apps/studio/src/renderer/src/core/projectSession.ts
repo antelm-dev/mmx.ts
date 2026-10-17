@@ -17,9 +17,9 @@ import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io"
 import { levelManifestPath, PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
+  buildProjectAssets,
   buildStarterAssets,
-  buildStarterBasedAssets,
-  buildStudioAssets,
+  starterGameData,
   starterAssets,
   type StudioAssets,
   type StudioGameData,
@@ -123,7 +123,8 @@ const bindingIssue = (error: unknown): ProjectIssue => ({
   message: error instanceof Error ? error.message : String(error),
 });
 
-type PlayData = { gameData: StudioGameData; urls: Record<string, string> };
+/** `gameData` is null when the project has no game/data.json yet. */
+type PlayData = { gameData: StudioGameData | null; urls: Record<string, string> };
 
 /** The project's definitions: its manifest objects and data/game.json records. */
 type Definitions = {
@@ -247,27 +248,31 @@ export class ProjectSession {
     let assets: StudioAssets | null = null;
     if (this.playData && project) {
       const { gameData, urls } = this.playData;
-      const playerAnimation = this.playerAnimation();
       try {
+        // No game/data.json yet (a new project) is no problem: the starter's, as its first Save writes.
+        const base = gameData ?? starterGameData;
         const data = this.state.playerAnimation
           ? {
-              ...gameData,
-              bindings: { ...gameData.bindings, playerAnimation: this.state.playerAnimation },
+              ...base,
+              bindings: { ...base.bindings, playerAnimation: this.state.playerAnimation },
             }
-          : gameData;
+          : base;
+        // Read from disk: buildProjectAssets reports a missing `bindings`.
+        const playerAnimation = data.bindings?.playerAnimation;
         const { data: engineData, compiled } = projectGameData(project.gameData);
-        const resolveUrl = (asset: { id: string }) => urls[asset.id] ?? "";
-        // No game/data.json yet (a new project) is no problem: the starter's player, HUD and shots.
-        assets = data
-          ? buildStudioAssets(project.manifest, data, resolveUrl, engineData.enemies)
-          : buildStarterBasedAssets(project.manifest, resolveUrl, engineData.enemies);
+        assets = buildProjectAssets(
+          project.manifest,
+          data,
+          (asset) => urls[asset.id] ?? "",
+          engineData.enemies,
+        );
         await assets.catalog.load();
-        const clips = this.animationAsset(playerAnimation ?? "")?.animations ?? {};
-        const missing = !data
-          ? []
-          : requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
-              (name) => !clips[name],
-            );
+        // Looked up in the assets Play uses: the player may still be the starter's.
+        const player = assets.project.assets.find((asset) => asset.id === playerAnimation);
+        const clips = player?.kind === "animation" ? player.animations : {};
+        const missing = requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
+          (name) => !clips[name],
+        );
         if (missing.length > 0) {
           issues.push({
             severity: "warning",
@@ -784,7 +789,8 @@ export class ProjectSession {
         return written.issues;
       }
       if (this.playData) {
-        const { gameData } = this.playData;
+        // Without game/data.json, main wrote the starter's with this binding: so does Play.
+        const gameData = this.playData.gameData ?? starterGameData;
         this.playData = {
           ...this.playData,
           gameData: { ...gameData, bindings: { ...gameData.bindings, playerAnimation } },
