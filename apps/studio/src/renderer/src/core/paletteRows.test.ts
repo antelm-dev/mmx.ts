@@ -42,6 +42,7 @@ describe("paletteRows", () => {
     // Search filters every section and drops the empty ones.
     expect(outline("li")).toBe("Platforms: platform.lift");
     expect(outline("slope")).toBe("Base: slope");
+    expect(outline("base")).toBe("Base: spawn hazard slope camera-zone");
   });
 
   it("keeps every built-in in Base for a project without data", () => {

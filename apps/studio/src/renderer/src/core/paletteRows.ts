@@ -25,7 +25,12 @@ export function paletteRows(defs: readonly GameObjectDefinition[], query: string
     out.push({ kind: "header", key: `h:${key}`, label });
     for (const def of list) out.push({ kind: "def", key: def.id, def });
   };
-  section("base", "Base", shown.filter(isBaseDefinition));
+  // Searching "base" (or part of it) lists the whole Base section.
+  section(
+    "base",
+    "Base",
+    defs.filter((d) => isBaseDefinition(d) && (shown.includes(d) || (!!q && "base".includes(q)))),
+  );
   for (const category of CATEGORY_ORDER) {
     section(
       category,
