@@ -151,6 +151,8 @@ export interface GameObjectDefinition {
   id: string;
   /** Display name, e.g. "Metool". */
   name: string;
+  /** What it does, in one line (New object…'s Behaviour step); none for an enemy. */
+  description?: string;
   /** Palette category: spawn | enemy | pickup | platform | hazard | conveyor | slope | camera. */
   category: string;
   /** Optional emoji/glyph icon for the palette and viewport label. */

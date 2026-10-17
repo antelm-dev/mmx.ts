@@ -264,6 +264,8 @@ export interface PrefabDefinition {
    * a prefab keeps replays valid.
    */
   name?: string;
+  /** One-line summary of what it does, for authoring tools. Presentation only, like `name`. */
+  description?: string;
   /** References a {@link PrefabRuntimeRegistry} entry that spawns it. */
   runtime: string;
   /** Which definition category this prefab draws from, and the id within it. */

@@ -17,9 +17,9 @@ export function newObjectBases(
 }
 
 /**
- * New object…'s Behaviour step: what each built-in base does, by definition id.
- * The catalog has no descriptions, so they live here; an enemy shows none.
- * Presentation only (C-INDEP): an id with no entry, such as a pack's object, shows none either.
+ * Fallback for New object…'s Behaviour step, by definition id: what each MMX Starter base
+ * did before its prefab carried a `description`, for a project whose copied data has none.
+ * Presentation only (C-INDEP): an id with no entry, such as an enemy, shows none.
  */
 export const BEHAVIOUR_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "pickup.life.small": "Restores a little life.",
@@ -30,9 +30,13 @@ export const BEHAVIOUR_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "platform.falling": "One-way floor that drops after a delay once the player lands on it.",
   conveyor: "Strip that pushes the player along while they stand on it.",
   hazard: "Lethal area: touching it kills the player at once.",
-  slope: "Ramp baked into the terrain, walked up and down.",
   "camera-zone": "Keeps the camera inside its area while the player is in it.",
 };
+
+/** What `def` does, from its data, else {@link BEHAVIOUR_DESCRIPTIONS}. */
+export function behaviourDescription(def: GameObjectDefinition): string | undefined {
+  return def.description ?? BEHAVIOUR_DESCRIPTIONS[def.id];
+}
 
 /**
  * The base New object… goes on with: `id` among `bases`, or the only one, whose

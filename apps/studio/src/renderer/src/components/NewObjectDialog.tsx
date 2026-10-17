@@ -6,8 +6,8 @@ import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { focusPanel } from "../app/dock.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import {
-  BEHAVIOUR_DESCRIPTIONS,
   addObject,
+  behaviourDescription,
   chosenBase,
   freeObjectId,
   newObjectBases,
@@ -97,7 +97,7 @@ function NewObjectSteps({
         {d.name}
         {/* A span: a button holds phrasing content only. */}
         <chakra.span color="studio.fgTertiary" fontSize="11px">
-          {BEHAVIOUR_DESCRIPTIONS[d.id]}
+          {behaviourDescription(d)}
         </chakra.span>
       </chakra.span>
       <ChevronRight size={14} />
