@@ -266,14 +266,17 @@ describe("enemy clips", () => {
     const message = (weak: string, animations: Record<string, unknown>) =>
       enemyClipIssues(spiky(weak), [sheet(animations)]).map((issue) => issue.message);
     expect(message("fall#debout", { idle: {}, fall })).toEqual([
-      "Enemy 'spiky' animation 'anim.blob' has no clip for: fall#debout.",
+      "Enemy 'spiky' animation 'anim.blob' has no segment for: fall#debout.",
+    ]);
+    expect(message("fall#debout", { fall })).toEqual([
+      "Enemy 'spiky' animation 'anim.blob' has no clip for: idle; no segment for: fall#debout.",
     ]);
     expect(message("fall#tombe", { idle: {} })).toEqual([
       "Enemy 'spiky' animation 'anim.blob' has no clip for: fall#tombe.",
     ]);
     // A clip without segments has none to pick.
     expect(message("idle#tombe", { idle: {} })).toEqual([
-      "Enemy 'spiky' animation 'anim.blob' has no clip for: idle#tombe.",
+      "Enemy 'spiky' animation 'anim.blob' has no segment for: idle#tombe.",
     ]);
   });
 });

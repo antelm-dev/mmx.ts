@@ -35,38 +35,24 @@ async function screenAt(page: Page, wx: number, wy: number): Promise<{ x: number
   return { x: box.x + (wx - vx) * zoom, y: box.y + (wy - vy) * zoom };
 }
 
+type SpikySnapshot = { abilities: string[]; animation?: string; frame?: number };
 type Studio = {
-  getPlaytestSnapshot(): { runtime: { actors: { kind: string; abilities: string[] }[] } | null };
+  getPlaytestSnapshot(): {
+    runtime: { actors: (SpikySnapshot & { kind: string })[] } | null;
+  };
   playtestTogglePause(): void;
   playtestStep(): void;
 };
 
-/** The Spiky's Death state from the debugger's snapshot. */
-const spikyAbilities = (page: Page) =>
-  page.evaluate(() => {
+/** The Spiky in the debugger's snapshot: its running abilities, its clip and the frame shown. */
+const spiky = (page: Page) =>
+  page.evaluate((): SpikySnapshot | null => {
     const editor = (window as unknown as { studioEditor: Studio }).studioEditor;
     const actors = editor.getPlaytestSnapshot().runtime?.actors ?? [];
-    return actors.find((a) => a.kind === "spiky")?.abilities ?? null;
-  });
-
-/**
- * The clip the running Spiky plays, read from the debugger's live scene (the snapshot
- * carries no animation): the requested name and the clip frame shown.
- */
-const spikyClip = (page: Page) =>
-  page.evaluate(() => {
-    type Enemy = { kind: string; anim: { animation: string; frame: number } };
-    const editor = (
-      window as unknown as {
-        studioEditor: {
-          playtest: { play: { runtime: { session: { scene: { stage: { enemies: Enemy[] } } } } } };
-        };
-      }
-    ).studioEditor;
-    const enemy = editor.playtest.play.runtime.session.scene.stage.enemies.find(
-      (e) => e.kind === "spiky",
-    );
-    return enemy ? { animation: enemy.anim.animation, frame: enemy.anim.frame } : null;
+    const actor = actors.find((a) => a.kind === "spiky");
+    return actor
+      ? { abilities: actor.abilities, animation: actor.animation, frame: actor.frame }
+      : null;
   });
 
 test("AC-USE: an enemy's weak phase plays clip#segment in Play", async () => {
@@ -164,14 +150,14 @@ test("AC-USE: an enemy's weak phase plays clip#segment in Play", async () => {
   await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute("data-enemy-kinds", /\bspiky\b/);
   await expect(page.getByText(/Could not start Play|Play error|Fix \d+ error/)).toHaveCount(0);
-  await expect.poll(() => spikyAbilities(page), { timeout: 15_000 }).not.toBeNull();
+  await expect.poll(() => spiky(page), { timeout: 15_000 }).not.toBeNull();
 
   // Shoot it once (health 2 -> 1): the weak phase starts.
   await expect
     .poll(
       async () => {
         await page.keyboard.press("f");
-        return spikyAbilities(page);
+        return (await spiky(page))?.abilities;
       },
       { timeout: 15_000, intervals: [300] },
     )
@@ -181,15 +167,15 @@ test("AC-USE: an enemy's weak phase plays clip#segment in Play", async () => {
   await page.evaluate(() =>
     (window as unknown as { studioEditor: Studio }).studioEditor.playtestTogglePause(),
   );
-  const clip = await spikyClip(page);
-  expect(clip?.animation).toBe("fall#tombe");
-  expect([1, 2]).toContain(clip?.frame);
+  const fallen = await spiky(page);
+  expect(fallen?.animation).toBe("fall#tombe");
+  expect([1, 2]).toContain(fallen?.frame);
   await page.evaluate(() => {
     const editor = (window as unknown as { studioEditor: Studio }).studioEditor;
     for (let i = 0; i < 40; i++) editor.playtestStep();
   });
-  expect(await spikyClip(page)).toEqual({ animation: "fall#tombe", frame: 2 });
-  expect(await spikyAbilities(page)).toContain("Death");
+  expect(await spiky(page)).toMatchObject({ animation: "fall#tombe", frame: 2 });
+  expect((await spiky(page))?.abilities).toContain("Death");
 
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
   await page.getByRole("button", { name: /^Stop$/ }).click();

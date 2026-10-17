@@ -48,10 +48,13 @@ export function fieldLabel(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** Config fields naming a clip (or `clip#segment`), with the choices they add: Stun's "" recovers on the stun clip. */
+/**
+ * Config fields naming a clip (or `clip#segment`), with the choices they add: Stun's ""
+ * keeps the current clip (`animation`) or recovers on the stun clip (`recoverAnimation`).
+ */
 const CLIP_FIELDS: Readonly<Record<string, readonly string[]>> = {
   weakAnimation: [],
-  animation: [],
+  animation: [""],
   recoverAnimation: [""],
 };
 

@@ -107,12 +107,22 @@ export function enemyClipIssues(
     const playable = playableClips(sheet.animations);
     const missing = enemyClips(enemy).filter((name) => !playable.includes(name));
     if (missing.length === 0) return [];
+    // A `clip#segment` whose clip is there lacks only the segment.
+    const noSegment = missing.filter(
+      (name) =>
+        name.includes("#") && Object.hasOwn(sheet.animations, name.slice(0, name.lastIndexOf("#"))),
+    );
+    const noClip = missing.filter((name) => !noSegment.includes(name));
+    const lacks = [
+      ...(noClip.length > 0 ? [`no clip for: ${noClip.join(", ")}`] : []),
+      ...(noSegment.length > 0 ? [`no segment for: ${noSegment.join(", ")}`] : []),
+    ];
     return [
       {
         severity: "warning",
         code: "enemy.clips",
         path: "/data/game.json",
-        message: `Enemy '${id}' animation '${sheet.id}' has no clip for: ${missing.join(", ")}.`,
+        message: `Enemy '${id}' animation '${sheet.id}' has ${lacks.join("; ")}.`,
       },
     ];
   });

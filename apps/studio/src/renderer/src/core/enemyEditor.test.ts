@@ -158,21 +158,21 @@ describe("enemy editor", () => {
         (p) => p.key === "weakAnimation",
       ),
     ).toMatchObject({ options: ["fall", "idle"] });
-    // Stun's clips too, its recovery also "" (it waits on the stun clip); clip#segment is a clip.
+    // Stun's clips too, also "" (keep the current clip; recover on the stun clip); clip#segment is a clip.
     const clips = ["idle", "stun", "stun#end"];
     expect(
       abilityFields("Stun", [], clips, { animation: "stun", recoverAnimation: "" })
         .filter((p) => p.type === "enum")
         .map((p) => [p.key, p.options]),
     ).toEqual([
-      ["animation", clips],
+      ["animation", ["", ...clips]],
       ["recoverAnimation", ["", ...clips]],
     ]);
     expect(
       abilityFields("Stun", [], ["idle"], { animation: "stun#start" }).find(
         (p) => p.key === "animation",
       ),
-    ).toMatchObject({ options: ["stun#start", "idle"] });
+    ).toMatchObject({ options: ["stun#start", "", "idle"] });
     expect(abilityFields("Death", []).map((p) => p.key)).toEqual([
       "explosionDuration",
       "weakHealth",
