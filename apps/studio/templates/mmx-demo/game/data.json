@@ -29,8 +29,8 @@
       "bat": "anim.enemy.bat"
     },
     "pickupAnimations": {
-      "large": "anim.pickup.large",
-      "small": "anim.pickup.small",
+      "heal": "anim.pickup.large",
+      "sheal": "anim.pickup.small",
       "ammo": "anim.pickup.ammo",
       "sammo": "anim.pickup.sammo"
     },

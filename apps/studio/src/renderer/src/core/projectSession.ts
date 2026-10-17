@@ -269,9 +269,10 @@ export class ProjectSession {
         const { data: engineData, compiled } = projectGameData(project.gameData);
         const resolveUrl = (asset: { id: string }) => urls[asset.id] ?? "";
         // Only then: a project of its own that lost a bound asset must say so, as its build would.
+        const { enemies, pickups } = engineData;
         assets = gameData
-          ? buildStudioAssets(project.manifest, data, resolveUrl, engineData.enemies)
-          : buildStarterBasedAssets(project.manifest, data, resolveUrl, engineData.enemies);
+          ? buildStudioAssets(project.manifest, data, resolveUrl, enemies, pickups)
+          : buildStarterBasedAssets(project.manifest, data, resolveUrl, enemies, pickups);
         await assets.catalog.load();
         // Looked up in the assets Play uses: the player may still be the starter's.
         const player = assets.project.assets.find((asset) => asset.id === playerAnimation);
