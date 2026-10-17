@@ -143,6 +143,36 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
   await expect(dialog).toHaveCount(0);
   await expect(row("Crab")).toHaveAttribute("aria-current", "true");
 
+  // A Spiky (MMX1): rolls without resting, and falls over at low health before exploding.
+  await toEnemies();
+  await behaviour.first().click();
+  await dialog.getByLabel("Name").fill("Spiky");
+  await dialog.getByLabel("Animation").selectOption("anim.player.fixture");
+  await dialog.getByLabel("Health", { exact: true }).fill("3");
+  await dialog
+    .getByRole("group", { name: "Abilities" })
+    .getByRole("button", { name: "Roll" })
+    .click();
+  await expect(dialog.getByText("Your animation has no clip for: roll")).toBeVisible();
+  const weak = dialog.getByRole("group", { name: "Weak phase" });
+  await expect(weak.getByLabel("At health")).toHaveCount(0);
+  await weak.getByText("Fall before exploding").click();
+  // On with one health point, a one-second fall and the animation's clip (the fixture has idle alone).
+  await expect(weak.getByLabel("At health")).toHaveValue("1");
+  await expect(weak.getByLabel("Clip")).toHaveValue("idle");
+  await expect(weak.getByLabel("Seconds")).toHaveValue("1");
+  const create = dialog.getByRole("button", { name: "Create" });
+  // Below the enemy's health only.
+  await weak.getByLabel("At health").fill("3");
+  await expect(create).toBeDisabled();
+  await weak.getByLabel("At health").fill("2");
+  await expect(create).toBeEnabled();
+  await create.click();
+  await expect(dialog).toHaveCount(0);
+  await expect(row("Spiky")).toHaveAttribute("aria-current", "true");
+  await page.getByRole("tab", { name: "Level", exact: true }).click();
+  await canvas.click({ position: { x: box.width / 2 + 48, y: box.height / 2 } });
+
   await page.keyboard.press("Control+s");
   await expect(page.getByText("Project saved.").last()).toBeVisible();
   const gameData = JSON.parse(readFileSync(join(projectRoot, "data/game.json"), "utf8"));
@@ -161,11 +191,48 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
     initialAnimation: "idle",
   });
   expect(gameData.enemies.crab.abilities).toEqual(["Patrol", "Hide", "Stun", "Death"]);
+  expect(gameData.enemies.spiky).toMatchObject({
+    abilities: ["Death", "Roll"],
+    abilityConfig: {
+      Roll: { speed: 60, facePlayer: true, atWall: "turn", conflicts: [] },
+      Death: { explosionDuration: 0, weakHealth: 2, weakAnimation: "idle", weakDuration: 1 },
+    },
+    reactions: { idle: ["Roll"] },
+  });
 
   await page.getByRole("button", { name: /^Play$/ }).click();
   await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute("data-enemy-kinds", /\bblob\b/);
+  await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute("data-enemy-kinds", /\bspiky\b/);
   await expect(page.getByText(/Could not start Play|Play error|Fix \d+ error/)).toHaveCount(0);
+  // The debugger's snapshot: the Spiky rolls, and has moved at every sample (no rest).
+  const spiky = () =>
+    page.evaluate(() => {
+      type Actor = { kind: string; bounds: { x: number }; abilities: string[] };
+      const editor = (
+        window as unknown as {
+          studioEditor: {
+            getPlaytestSnapshot(): { frame: number; runtime: { actors: Actor[] } | null };
+          };
+        }
+      ).studioEditor;
+      const snapshot = editor.getPlaytestSnapshot();
+      const actor = snapshot.runtime?.actors.find((a) => a.kind === "spiky");
+      return actor
+        ? { frame: snapshot.frame, x: actor.bounds.x, abilities: actor.abilities }
+        : null;
+    });
+  await expect
+    .poll(async () => (await spiky())?.abilities ?? [], { timeout: 15_000 })
+    .toContain("Roll");
+  let last = (await spiky())!;
+  for (let i = 0; i < 5; i++) {
+    await expect.poll(async () => (await spiky())!.frame).toBeGreaterThan(last.frame + 10);
+    const next = (await spiky())!;
+    expect(next.abilities).toContain("Roll");
+    expect(next.x).not.toBe(last.x);
+    last = next;
+  }
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
   await page.getByRole("button", { name: /^Stop$/ }).click();
   await expect(canvas).toBeVisible();

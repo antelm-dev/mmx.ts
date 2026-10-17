@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { chakra, Dialog } from "@chakra-ui/react";
 import { ArrowDown, ArrowUp, Film, ImagePlus } from "lucide-react";
-import type { MovementModel } from "@mmx/engine/data";
+import type { EnemyDefinition, MovementModel } from "@mmx/engine/data";
 import type { AnimationAsset } from "@mmx/project-schema";
 import { openClipsDocument } from "../app/dock.js";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
@@ -14,9 +14,11 @@ import {
   withAbilities,
   withConfig,
   withMovement,
+  withWeakPhase,
 } from "../core/enemyEditor.js";
 import { uniqueEnemySlug } from "../core/gameData.js";
 import { ActionButton } from "../ui/editor/action-button.js";
+import { Checkbox } from "../ui/editor/checkbox.js";
 import { Field, FieldInput, FieldSelect, labelStyle } from "../ui/editor/field.js";
 import { ToolbarButton } from "../ui/editor/toolbar-button.js";
 import { Chips, IconButton } from "./EnemyEditorPanel.js";
@@ -145,6 +147,91 @@ function StatsFields({
 const validStats = (stats: Stats) => stats.health >= 1 && stats.touchDamage >= 0;
 
 /**
+ * Under Death: "Fall before exploding", Death's weak phase. Hit down to its weak
+ * health (or less), the enemy stops, plays a clip of the animation, then blows itself up.
+ */
+function WeakPhaseFields({
+  enemy,
+  health,
+  clips,
+  onChange,
+}: Readonly<{
+  enemy: EnemyDefinition;
+  health: number;
+  clips: readonly string[];
+  onChange: (enemy: EnemyDefinition) => void;
+}>) {
+  const death = enemy.abilityConfig?.Death ?? {};
+  // On while the key is there, so clearing the field to retype it keeps the fields open.
+  const on = death.weakHealth !== undefined;
+  const clip = String(death.weakAnimation ?? "");
+  const set = (key: string, value: number | string) =>
+    onChange(withConfig(enemy, "Death", key, value));
+  return (
+    <chakra.div
+      role="group"
+      aria-label="Weak phase"
+      pl="3.5"
+      pb="1"
+      display="flex"
+      flexDirection="column"
+      gap="1.5"
+    >
+      <Checkbox
+        label="Fall before exploding"
+        checked={on}
+        onCheckedChange={(checked) =>
+          onChange(
+            withWeakPhase(
+              enemy,
+              checked ? (clips.includes("fall") ? "fall" : (clips[0] ?? "")) : undefined,
+            ),
+          )
+        }
+      />
+      {on && (
+        <chakra.div display="grid" gridTemplateColumns="repeat(3, minmax(0, 1fr))" gap="2">
+          <Field label="At health" invalid={!validWeakPhase(death, health)}>
+            <FieldInput
+              type="number"
+              min={1}
+              max={health - 1}
+              value={Number(death.weakHealth)}
+              onChange={(e) => set("weakHealth", Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Clip">
+            <FieldSelect value={clip} onChange={(e) => set("weakAnimation", e.target.value)}>
+              {(clips.includes(clip) ? clips : [clip, ...clips]).map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </FieldSelect>
+          </Field>
+          <Field label="Seconds">
+            <FieldInput
+              type="number"
+              min={0}
+              step={0.1}
+              value={Number(death.weakDuration ?? 0)}
+              onChange={(e) => set("weakDuration", Number(e.target.value))}
+            />
+          </Field>
+        </chakra.div>
+      )}
+    </chakra.div>
+  );
+}
+
+/** A weak phase (if any) starts between 1 and below the enemy's health, and lasts a non-negative time. */
+const validWeakPhase = (death: Record<string, unknown>, health: number) =>
+  death.weakHealth === undefined ||
+  (Number(death.weakHealth) >= 1 &&
+    Number(death.weakHealth) < health &&
+    Number(death.weakDuration ?? 0) >= 0);
+
+/**
  * New object… → Enemy, last step: a project enemy copied from enemy `base` (an
  * enemy kind), drawn from an animation asset. The body and footer of the dialog.
  */
@@ -203,7 +290,11 @@ export function BlankEnemyForm({
 
   const chosenSheet = sheets.includes(sheet) ? sheet : (sheets[0] ?? "");
   const clips = Object.keys(animations.find((a) => a.id === chosenSheet)?.animations ?? {});
-  const valid = name.trim() !== "" && chosenSheet !== "" && validStats(stats);
+  const valid =
+    name.trim() !== "" &&
+    chosenSheet !== "" &&
+    validStats(stats) &&
+    validWeakPhase(enemy.abilityConfig?.Death ?? {}, stats.health);
   const owned = enemy.abilities;
   const setAbilities = (abilities: string[]) => setEnemy(withAbilities(enemy, abilities));
   const move = (i: number, by: number) => {
@@ -302,6 +393,14 @@ export function BlankEnemyForm({
                         }
                       />
                     </chakra.div>
+                  )}
+                  {ability === "Death" && (
+                    <WeakPhaseFields
+                      enemy={enemy}
+                      health={stats.health}
+                      clips={clips}
+                      onChange={setEnemy}
+                    />
                   )}
                 </chakra.div>
               );
