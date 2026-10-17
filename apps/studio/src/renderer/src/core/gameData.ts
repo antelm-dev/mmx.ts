@@ -129,7 +129,7 @@ export function addEnemy(
   const slug = uniqueEnemySlug(data, input.name);
   const id = `enemy.${slug}`;
   const name = input.name.trim();
-  const { name: _baseName, ...prefab } = basePrefab;
+  const { name: _n, description: _d, ...prefab } = basePrefab;
   const next: GameDataOverlay = {
     schemaVersion: GAME_DATA.schemaVersion,
     ...overlay,

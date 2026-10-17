@@ -10,7 +10,8 @@ import type { GameObjectDefinition, LevelObjectInstance, PropertyMeta } from "./
  * The catalog of every authorable object, one definition per palette entry,
  * generated from the engine's level-facing prefabs (`GameData.prefabs`): the
  * prefab id is the definition id and its typed fields are the properties.
- * Only presentation (names, icons, colours, help) lives here.
+ * Only presentation (icons, colours, help, and fallback names) lives here: a
+ * prefab's own `name` and `description` come first.
  *
  * Kind is folded into the definition identity rather than left as an editable
  * field: a Metool and a Bat are two palette entries (`enemy.metool` /
@@ -153,8 +154,9 @@ const ENGINE_KINDS: Record<
 
 /**
  * Per-prefab presentation over the {@link ENGINE_KINDS} fallbacks; property help by field name.
- * Presentation only (C-INDEP): a prefab with no entry falls back to its name (or last id
- * segment), its kind's icon and its hurtbox or kind's size, so no object needs to be listed.
+ * Presentation only (C-INDEP): a prefab with no entry falls back to its last id segment, its
+ * kind's icon and its hurtbox or kind's size, so no object needs to be listed. `name` only
+ * stands in for a prefab without one, such as a project's copy made before prefabs had names.
  */
 const PRESENTATION: Record<
   string,
@@ -202,6 +204,7 @@ const PRESENTATION: Record<
 const SLOPE: GameObjectDefinition = {
   id: "slope",
   name: "Slope",
+  description: "Ramp baked into the terrain, walked up and down.",
   category: "slope",
   icon: "◿",
   engineId: "Slope",
@@ -262,7 +265,8 @@ function definitionOf(data: GameData, prefab: PrefabDefinition): GameObjectDefin
   const lastSegment = prefab.id.slice(prefab.id.lastIndexOf(".") + 1);
   return {
     id: prefab.id,
-    name: look?.name ?? prefab.name ?? lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1),
+    name: prefab.name ?? look?.name ?? lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1),
+    ...(prefab.description ? { description: prefab.description } : {}),
     category: kind.category,
     icon: look?.icon ?? kind.icon,
     engineId: kind.engineId,

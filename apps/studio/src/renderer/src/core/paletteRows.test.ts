@@ -19,6 +19,7 @@ const lift: GameDataOverlay = {
     "platform.lift": {
       ...MMX_GAME_DATA.prefabs["platform.moving"]!,
       id: "platform.lift",
+      name: "Lift",
       source: { kind: "environment", ref: "lift" },
     },
   },
