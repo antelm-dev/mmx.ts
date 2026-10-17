@@ -5,7 +5,13 @@ import {
   type GameDataOverlay,
 } from "@mmx/engine/data";
 import type { ProjectIssue } from "@mmx/project-io";
-import type { AnimationFrame, FrameBox, ProjectAsset, Region } from "@mmx/project-schema";
+import type {
+  AnimationFrame,
+  AnimationSegment,
+  FrameBox,
+  ProjectAsset,
+  Region,
+} from "@mmx/project-schema";
 
 /**
  * Clip names each player behaviour plays: the `animation = "…"` and
@@ -213,5 +219,51 @@ export function copyBoxes(
     i !== from && targets.includes(i)
       ? withBoxes(frame, source.hurtbox, source.hitboxes ?? [])
       : frame,
+  );
+}
+
+// --- Clip segments (C-SEG): a partition of the frames in order, bounds inclusive. ---
+
+/**
+ * `segments` after a frame edit, where `origins[i]` is the old index of new frame `i`
+ * (moved, duplicated or removed frames). Each segment keeps as many frames as came from
+ * it, laid out again in order, so a frame moved across a boundary changes segment; a
+ * segment left without frames disappears.
+ */
+export function remapSegments(
+  segments: readonly AnimationSegment[],
+  origins: readonly number[],
+): AnimationSegment[] {
+  const next: AnimationSegment[] = [];
+  let start = 0;
+  for (const segment of segments) {
+    const count = origins.filter((o) => o >= segment.start && o <= segment.end).length;
+    if (count > 0) next.push({ ...segment, start, end: start + count - 1 });
+    start += count;
+  }
+  return next;
+}
+
+/**
+ * `segments` (one segment over all `frameCount` frames, looping like `loop`, when there
+ * are none) with the segment holding frame `at` cut there: its first half plays once and
+ * keeps its name, the second half takes a new name and the segment's loop.
+ */
+export function splitSegments(
+  segments: readonly AnimationSegment[] | undefined,
+  frameCount: number,
+  loop: boolean,
+  at: number,
+): AnimationSegment[] {
+  const base = segments ?? [{ name: "segment 1", start: 0, end: frameCount - 1, loop }];
+  let n = base.length + 1;
+  while (base.some((segment) => segment.name === `segment ${n}`)) n++;
+  return base.flatMap((segment) =>
+    at > segment.start && at <= segment.end
+      ? [
+          { ...segment, end: at - 1, loop: false },
+          { name: `segment ${n}`, start: at, end: segment.end, loop: segment.loop },
+        ]
+      : [segment],
   );
 }
