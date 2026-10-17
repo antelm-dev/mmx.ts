@@ -3,6 +3,7 @@ import { chakra, Dialog, Portal } from "@chakra-ui/react";
 import { ChevronRight } from "lucide-react";
 import { CATEGORY_LABELS, allDefinitions, type GameObjectDefinition } from "@mmx/content-schema";
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
+import { focusPanel } from "../app/dock.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import { addObject, freeObjectId, newObjectBases } from "../core/objectDefinitions.js";
 import { useUiStore } from "../store/uiStore.js";
@@ -152,6 +153,8 @@ function NewProjectObjectForm({
     // Undoable in the definitions history; placing it also makes it a recent part.
     projectSession.setObjects(next.objects);
     editor.store.setTool("place", next.id);
+    // Placing needs the level in view: the Start tab or a document may be covering it.
+    focusPanel("viewport");
     onClose();
   };
 

@@ -504,10 +504,18 @@ export class EditorController {
   /**
    * AC-NOPROJECT: run a creation that needs a project (New object…, Import sprite sheet…, New
    * animation…), making the untitled work project first when none is open. Nothing runs when that
-   * fails: ensureProject has said why.
+   * fails, and a toast says why.
    */
   async withProject(create: () => unknown): Promise<void> {
-    if (await this.ensureProject()) await create();
+    let ready = false;
+    try {
+      ready = await this.ensureProject();
+    } catch (error) {
+      this.toast(
+        `Could not create a project: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    if (ready) await create();
   }
 
   private async createWorkProject(): Promise<boolean> {
@@ -905,6 +913,8 @@ export class EditorController {
     const { overlay, id } = addEnemy(project.gameData, projectSession.gameData().data, input);
     this.setGameData(overlay);
     this.store.setTool("place", id);
+    // Placing needs the level in view: the Start tab or a document may be covering it.
+    focusPanel("viewport");
   }
 
   /** Replace the project's data/game.json records; saved with the project. */

@@ -10,6 +10,7 @@ vi.mock("../assets/studioAssets.js", () => {
   return {
     starterAssets: assets,
     buildStarterAssets: () => assets,
+    buildStarterBasedAssets: () => assets,
     buildStudioAssets: () => assets,
   };
 });
@@ -200,6 +201,21 @@ describe("EditorController work project (C-WORK)", () => {
     expect(editor.hasRecoveryDraft()).toBe(false);
     expect(readRecentProjects()).toMatchObject([{ rootPath: "/games/hero", name: "Hero" }]);
     workProjects = [];
+    await projectSession.getAssets();
+  });
+
+  it("withProject runs nothing, with a toast, when creating the work project throws", async () => {
+    projectSession.close();
+    const editor = new EditorController();
+    project.createWorkProject.mockRejectedValueOnce(new Error("IPC gone"));
+    const create = vi.fn();
+    await editor.withProject(create);
+    expect(create).not.toHaveBeenCalled();
+    expect(useUiStore.getState().toasts.at(-1)?.message).toBe(
+      "Could not create a project: IPC gone",
+    );
+    await editor.withProject(create);
+    expect(create).toHaveBeenCalledTimes(1);
     await projectSession.getAssets();
   });
 
