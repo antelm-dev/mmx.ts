@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
@@ -68,5 +68,38 @@ test("seeding never writes over a file of the project's own", async () => {
     assert.equal(await createNodeFileSystem(root).exists("game/data.json"), false);
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("Export refuses a game/data.json binding an asset the project does not have", async () => {
+  const root = await newProject();
+  const exportRoot = await mkdtemp(join(tmpdir(), "mmx-seed-export-"));
+  try {
+    const seeded = await seedStarterGameData(root, "anim.player.fixture");
+    assert.equal(seeded.ok, true);
+    // As if the bound HUD sprite was deleted from the project afterwards.
+    const fs = createNodeFileSystem(root);
+    const manifest = JSON.parse(await fs.readText("project.json"));
+    manifest.assets = manifest.assets.filter(
+      (asset: { id: string }) => asset.id !== "sprite.hud.x-bar",
+    );
+    await writeFile(join(root, "project.json"), JSON.stringify(manifest, null, 2));
+    const loaded = await loadProject(fs);
+    assert.equal(loaded.ok, true);
+    if (!loaded.ok) return;
+    const exported = await exportProject(fs, createNodeFileSystem(exportRoot), loaded.value);
+    assert.equal(exported.ok, false);
+    assert.deepEqual(
+      exported.issues.map((entry) => [entry.code, entry.message]),
+      [
+        [
+          "asset.missing",
+          "game/data.json binds asset 'sprite.hud.x-bar', which is not in the project.",
+        ],
+      ],
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(exportRoot, { recursive: true, force: true });
   }
 });
