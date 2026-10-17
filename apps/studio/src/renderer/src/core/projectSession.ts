@@ -88,18 +88,20 @@ function mapSchemaIssues(issues: ValidationIssue[]): ProjectIssue[] {
 
 let catalogData: GameData | null = null;
 
-/** Point the object catalog at `data` (only when it changed: that regenerates it). */
-function applyCatalogData(data: GameData): void {
+/** Point the object catalog at the project's data (only when it changed: that regenerates it). */
+function applyCatalogData(overlay: GameDataOverlay | undefined): void {
+  const { data, issues } = projectGameData(overlay);
   if (data === catalogData) return;
   catalogData = data;
-  setCatalogGameData(data);
+  // The overlay's prefabs leave the palette's Base; a broken overlay adds none.
+  setCatalogGameData(data, issues.length === 0 ? overlay : undefined);
 }
 
 function validateOpenProject(project: StudioProject): ProjectIssue[] {
   const objects = project.manifest.objects ?? [];
   const gameData = projectGameData(project.gameData);
   // Project objects may derive from the project's enemies: the catalog comes first.
-  applyCatalogData(gameData.data);
+  applyCatalogData(project.gameData);
   const validation = { ...PROJECT_VALIDATION, loadoutIds: [...gameData.compiled.loadouts.keys()] };
   return [
     ...gameData.issues,
@@ -180,7 +182,7 @@ export class ProjectSession {
 
   private setState(next: ProjectSessionState): void {
     // Before listeners run: the palette, levels and validation resolve instances against these.
-    applyCatalogData(projectGameData(next.project?.gameData).data);
+    applyCatalogData(next.project?.gameData);
     setProjectDefinitions(next.project?.manifest.objects ?? []);
     this.state = next;
     this.emit();

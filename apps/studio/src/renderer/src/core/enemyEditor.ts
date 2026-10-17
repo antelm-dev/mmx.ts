@@ -95,17 +95,37 @@ export function defaultAbilityConfig(ability: string, owned: readonly string[]):
 }
 
 /**
- * `enemy` owning exactly `abilities`, in that order: a new ability gets a complete
- * default config, and a removed one takes its config, reactions, conflicts and
- * hooks with it, so the enemy keeps compiling.
+ * `config` shooting a projectile of `projectiles` (the project's): Shoot's default
+ * (`pantheon_shot`) may be one the project lacks, which shoots the first instead.
  */
-export function withAbilities(enemy: EnemyDefinition, abilities: string[]): EnemyDefinition {
+function shootingOwn(config: AbilityConfig, projectiles: readonly string[]): AbilityConfig {
+  const projectile = config.projectile;
+  return typeof projectile === "string" &&
+    projectiles.length > 0 &&
+    !projectiles.includes(projectile)
+    ? { ...config, projectile: projectiles[0]! }
+    : config;
+}
+
+/**
+ * `enemy` owning exactly `abilities`, in that order: a new ability gets a complete
+ * default config (its projectile one of `projectiles`, the project's, when given),
+ * and a removed one takes its config, reactions, conflicts and hooks with it, so
+ * the enemy keeps compiling.
+ */
+export function withAbilities(
+  enemy: EnemyDefinition,
+  abilities: string[],
+  projectiles: readonly string[] = [],
+): EnemyDefinition {
   const keep = (names: readonly string[]): string[] =>
     names.filter((name) => abilities.includes(name));
   const added = abilities.filter((name) => !enemy.abilities.includes(name));
   const abilityConfig = Object.fromEntries(
     abilities.map((ability) => {
-      const config = enemy.abilityConfig?.[ability] ?? defaultAbilityConfig(ability, abilities);
+      const config =
+        enemy.abilityConfig?.[ability] ??
+        shootingOwn(defaultAbilityConfig(ability, abilities), projectiles);
       if (!Array.isArray(config.conflicts)) return [ability, config];
       // An ability just added joins the conflicts the default config lists (a new Stun
       // interrupts Roll); one the user dropped while it was owned stays dropped.
@@ -401,13 +421,17 @@ export function addBlankEnemy(
     input.enemy.movement,
   );
   const wired = { ...moving, reactions: defaultReactions(moving.abilities) };
-  // Shoot's default projectile may be one the project lacks: it shoots the project's first instead.
-  const projectile = wired.abilityConfig?.Shoot?.projectile;
-  const first = Object.keys(data.projectiles)[0];
-  const enemy =
-    typeof projectile === "string" && !(projectile in data.projectiles) && first
-      ? withConfig(wired, "Shoot", "projectile", first)
-      : wired;
+  // A Shoot config given with the input may still name a projectile the project lacks.
+  const shoot = wired.abilityConfig?.Shoot;
+  const enemy = shoot
+    ? {
+        ...wired,
+        abilityConfig: {
+          ...wired.abilityConfig,
+          Shoot: shootingOwn(shoot, Object.keys(data.projectiles)),
+        },
+      }
+    : wired;
   const next: GameDataOverlay = {
     schemaVersion: GAME_DATA.schemaVersion,
     ...overlay,

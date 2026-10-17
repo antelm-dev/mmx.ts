@@ -2,15 +2,11 @@ import { useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { chakra } from "@chakra-ui/react";
 import { Copy, Pencil, Search, Trash2, X } from "lucide-react";
-import {
-  CATEGORY_LABELS,
-  CATEGORY_ORDER,
-  allDefinitions,
-  type GameObjectDefinition,
-} from "@mmx/content-schema";
+import { allDefinitions, type GameObjectDefinition } from "@mmx/content-schema";
 import { openEnemyDocument } from "../app/dock.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
 import { duplicateObject, freeObjectId } from "../core/objectDefinitions.js";
+import { paletteRows, type PaletteRow } from "../core/paletteRows.js";
 import { editor, projectSession, useEditorSnapshot, useProjectSession } from "../app/useEditor.js";
 import { useUiStore } from "../store/uiStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
@@ -19,10 +15,6 @@ import { Panel, PanelActions, PanelNote, PanelScroll, SearchBox } from "../ui/ed
 import { CategoryHeader } from "../ui/editor/section-title.js";
 import { definitionDeleteBlocker } from "./ObjectDefinitionSection.js";
 import { SpritePreview } from "./SpritePreview.js";
-
-type PaletteRow =
-  | { kind: "header"; key: string; label: string }
-  | { kind: "def"; key: string; def: GameObjectDefinition };
 
 /**
  * Palette → Duplicate: a project object or enemy is copied under a new id; any
@@ -111,26 +103,11 @@ function PaletteList({
   // Enemy copies get ids picked against the merged data, the engine's alone while data/game.json has errors.
   const broken = projectOpen && projectSession.gameData().issues.length > 0;
 
-  const rows = useMemo<PaletteRow[]>(() => {
-    const q = query.trim().toLowerCase();
-    const out: PaletteRow[] = [];
-    for (const category of CATEGORY_ORDER) {
-      const defs = allDefinitions().filter(
-        (d) =>
-          d.category === category &&
-          (!q || d.name.toLowerCase().includes(q) || d.category.includes(q)),
-      );
-      if (defs.length === 0) continue;
-      out.push({
-        kind: "header",
-        key: `h:${category}`,
-        label: CATEGORY_LABELS[category] ?? category,
-      });
-      for (const def of defs) out.push({ kind: "def", key: def.id, def });
-    }
-    return out;
+  const rows = useMemo<PaletteRow[]>(
+    () => paletteRows(allDefinitions(), query),
     // The project's objects and game data change whenever the definitions allDefinitions reads do.
-  }, [query, project?.manifest.objects, project?.gameData]);
+    [query, project?.manifest.objects, project?.gameData],
+  );
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -166,7 +143,7 @@ function PaletteList({
           };
           if (row.kind === "header") {
             return (
-              <CategoryHeader key={v.key} style={style}>
+              <CategoryHeader key={v.key} style={style} role="heading" aria-level={3}>
                 {row.label}
               </CategoryHeader>
             );

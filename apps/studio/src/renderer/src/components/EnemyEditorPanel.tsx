@@ -228,7 +228,8 @@ export function EnemyEditorPanel({
   const clips = Object.keys(animations.find((a) => a.id === enemy.sheet)?.animations ?? {});
   const projectiles = Object.keys(gameData.data.projectiles);
   const owned = enemy.abilities;
-  const setAbilities = (abilities: string[]): void => save(withAbilities(enemy, abilities));
+  const setAbilities = (abilities: string[]): void =>
+    save(withAbilities(enemy, abilities, projectiles));
   const move = (i: number, by: number): void => {
     const next = [...owned];
     [next[i], next[i + by]] = [next[i + by]!, next[i]!];
