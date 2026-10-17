@@ -364,6 +364,14 @@ export function compileGameData(
       });
     }
     num(p.amount, `pickups.${p.id}.amount`, p.id, { gt: 0 });
+    if (typeof p.sheet !== "string" || p.sheet.trim() === "") {
+      error({
+        code: "value.string",
+        definitionId: p.id,
+        fieldPath: `pickups.${p.id}.sheet`,
+        message: `Pickup sheet must be a non-empty string.`,
+      });
+    }
   }
 
   // --- environments ----------------------------------------------------------
@@ -375,8 +383,17 @@ export function compileGameData(
         fieldPath: `environments.${env.id}.behavior`,
         message: `Unknown environment behavior '${env.behavior}'.`,
       });
+    } else {
+      validateBehaviorConfig(
+        registries.environments,
+        env.behavior,
+        env.defaults,
+        `environments.${env.id}.defaults`,
+        env.id,
+        error,
+      );
     }
-    for (const [k, v] of Object.entries(env.defaults)) {
+    for (const [k, v] of Object.entries(env.defaults ?? {})) {
       if (typeof v === "number" && !Number.isFinite(v)) {
         error({
           code: "value.number",

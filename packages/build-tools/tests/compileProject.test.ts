@@ -292,7 +292,7 @@ test("an invalid data/game.json overlay fails loadProject with the compile diagn
 });
 
 test("a data/game.json overlay with an unsupported category fails loadProject", async () => {
-  const fixture = await createOverlayFixture({ pickups: {} });
+  const fixture = await createOverlayFixture({ weapons: {} });
   try {
     const result = await loadProject(fixture.root);
     assert.equal(result.ok, false);

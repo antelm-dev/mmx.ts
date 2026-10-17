@@ -58,7 +58,8 @@ export interface SceneOptions {
   /** Compiled player loadout id (a project's `player.loadout`); the Player default when omitted. */
   loadoutId?: string;
   /**
-   * Compiled game data the scene is built from — enemy definitions, loadouts.
+   * Compiled game data the scene is built from — enemy, pickup, environment and
+   * projectile definitions, loadouts.
    * Defaults to the built-in {@link COMPILED_GAME_DATA}.
    */
   gameData?: CompiledGameData;
@@ -126,14 +127,19 @@ export class Scene {
     this.camera = new Camera(this.world.widthPx, this.world.heightPx);
     this.camera.setZones(level.cameraZones);
     this.camera.snapTo(this.player.pos.x, this.player.pos.y);
-    this.stage = new Stage(this.world, this.player, {
-      hazards: level.hazards,
-      conveyors: level.conveyors,
-      platforms: level.platforms,
-      fallingPlatforms: level.fallingPlatforms,
-      pickups: level.pickups,
-      weaponCapsules: level.weaponCapsules,
-    });
+    this.stage = new Stage(
+      this.world,
+      this.player,
+      {
+        hazards: level.hazards,
+        conveyors: level.conveyors,
+        platforms: level.platforms,
+        fallingPlatforms: level.fallingPlatforms,
+        pickups: level.pickups,
+        weaponCapsules: level.weaponCapsules,
+      },
+      gameData,
+    );
 
     for (const [i, spawn] of level.enemies.entries()) {
       // Each enemy needs its own stream — they draw from it at different rates,
