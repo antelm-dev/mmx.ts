@@ -2,14 +2,21 @@ import type { GameData, GameDataDiagnostic } from "./types.js";
 
 /**
  * Categories a project overlay may add to or replace records in. Only categories
- * the runtime reads from the scene's compiled game data (enemies and their
- * actors; player loadouts resolve actors the same way) plus the level-facing
- * prefab catalog. Everything else — physics, abilities, loadouts, weapons,
- * projectiles, pickups, environments — is still read, at least in part, from
- * the default-data compat constants, so overriding it would change
- * `gameDataHash` without changing gameplay; those keys are rejected.
+ * the runtime reads from the scene's compiled game data — enemies and their
+ * actors (player loadouts resolve actors the same way), pickups, environments,
+ * the projectiles enemies fire — plus the level-facing prefab catalog.
+ * Everything else — physics, abilities, loadouts, weapons — is still read, at
+ * least in part, from the default-data compat constants, so overriding it would
+ * change `gameDataHash` without changing gameplay; those keys are rejected.
  */
-export const GAME_DATA_OVERLAY_CATEGORIES = ["actors", "enemies", "prefabs"] as const;
+export const GAME_DATA_OVERLAY_CATEGORIES = [
+  "actors",
+  "enemies",
+  "prefabs",
+  "pickups",
+  "environments",
+  "projectiles",
+] as const;
 
 export type GameDataOverlayCategory = (typeof GAME_DATA_OVERLAY_CATEGORIES)[number];
 
@@ -27,6 +34,10 @@ export type MergeGameDataResult =
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** The id of a base weapon that fires `projectile`, if any. */
+const firingWeapon = (base: GameData, projectile: string): string | undefined =>
+  Object.values(base.weapons).find((w) => w.projectiles.includes(projectile))?.id;
 
 /**
  * Merge a project overlay over `base`: per accepted category, overlay records
@@ -74,6 +85,16 @@ export function mergeGameData(base: GameData, overlay: GameDataOverlay): MergeGa
         error(
           "overlay.invalid",
           `Game data overlay '${key}.${id}' must be an object.`,
+          `${key}.${id}`,
+        );
+      }
+      // shortcut: player weapons still fire the compat constants' shots (BUSTER_SHOTS), so their
+      // projectiles are not overridable; drop this once Projectile.ts reads the scene's weapons.
+      const weapon = key === "projectiles" ? firingWeapon(base, id) : undefined;
+      if (weapon) {
+        error(
+          "overlay.projectile",
+          `Game data overlay cannot replace projectile '${id}': weapon '${weapon}' fires it.`,
           `${key}.${id}`,
         );
       }

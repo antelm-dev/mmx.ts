@@ -9,13 +9,16 @@
  * ({@link COMPILED_GAME_DATA}), which is now the single source of truth. Editing a
  * value means editing the corresponding definition under src/data, not here.
  *
+ * The enemy and pickup tables only read when accessed: the runtime takes those
+ * objects from the scene's game data, so the engine loads without them.
+ *
  * The genuine global invariants — the fixed step, tile size, and framebuffer
  * dimensions, whose configurability would violate simulation assumptions — stay
  * defined here as real constants.
  */
 
 import { COMPILED_GAME_DATA } from "../data/index.js";
-import type { CompiledEnemy, ProjectileDefinition } from "../data/types.js";
+import type { CompiledEnemy, PickupDefinition, ProjectileDefinition } from "../data/types.js";
 
 // Fixed physics tick — Godot _physics_process default is 60 Hz. A true invariant:
 // changing it redefines what one recorded tick means. Stays in core.
@@ -28,10 +31,6 @@ const _D = COMPILED_GAME_DATA;
 function _ac(abilityId: string, key: string): number {
   const cfg = _D.abilities.get(abilityId)?.config as Record<string, unknown> | undefined;
   return cfg?.[key] as number;
-}
-/** Read a numeric field off a compiled enemy's per-ability config. */
-function _ec(enemyId: string, abilityId: string, key: string): number {
-  return _D.enemies.get(enemyId)?.abilityConfig[abilityId]?.[key] as number;
 }
 
 // --- Actor.gd (→ data/physics.ts) ---
@@ -376,15 +375,20 @@ export function enemyStats(e: CompiledEnemy): EnemyStats {
   };
 }
 
-// Metool.tscn / SmallBat.tscn — see data/enemies.ts + data/actors.ts.
+// Metool.tscn / SmallBat.tscn — see data/enemies.ts + data/actors.ts. Getters, so
+// importing the engine never requires these records: the runtime reads enemies
+// from the scene's game data, and only tests read this built-in table.
 export const ENEMY_STATS: Readonly<Record<EnemyId, EnemyStats>> = {
-  metool: _enemyStats("metool"),
-  bat: _enemyStats("bat"),
-  pantheon: _enemyStats("pantheon"),
+  get metool() {
+    return _enemyStats("metool");
+  },
+  get bat() {
+    return _enemyStats("bat");
+  },
+  get pantheon() {
+    return _enemyStats("pantheon");
+  },
 };
-
-/** The Pantheon Hunter's shot — see data/projectiles.ts. */
-export const PANTHEON_SHOT: ShotStats = _shotStats("pantheon_shot");
 
 /** EnemyDamage.max_flash_time — how long the white hit flash stays on. */
 export const ENEMY_FLASH_TIME = 0.035;
@@ -414,29 +418,6 @@ export const ENEMY_DEBRIS_SPEED_RANDOM = 0.69; // initial_velocity_random
 export const ENEMY_DEBRIS_SPREAD_DEGREES = 45; // ParticleProcessMaterial default spread
 export const ENEMY_DEBRIS_GRAVITY = 800; // RemainsParticle.tres gravity.y
 export const ENEMY_DEBRIS_LIFETIME = 1.1; // remains_particles lifetime 2.0, trimmed — see EnemyDebris.ts
-
-// --- Patrol.gd (CrabPatrol, as configured on Metool.tscn's Patrol node → data/enemies.ts) ---
-export const PATROL_TRAVEL_TIME = _ec("metool", "Patrol", "travelTime"); // Patrol.travel_time
-export const PATROL_SPEED = _ec("metool", "Patrol", "travelSpeed"); // Patrol.travel_speed
-export const PATROL_REST_TIME = 2.0; // Metool.tscn Patrol.rest_time (overwritten by random_rest_time)
-
-// --- Hide.gd (Metool → data/enemies.ts) ---
-export const HIDE_OPEN_DELAY = _ec("metool", "Hide", "openDelay"); // attack_stage 0, timer > 3
-export const HIDE_ADVANCE_RANGE_X = _ec("metool", "Hide", "advanceRangeX"); // nearby_horizontally(64)
-export const HIDE_ADVANCE_RANGE_Y = _ec("metool", "Hide", "advanceRangeY"); // nearby_vertically(16)
-export const HIDE_GIVE_UP_RANGE_X = _ec("metool", "Hide", "giveUpRangeX"); // stage 2: not nearby 80
-export const HIDE_RESHIELD_DELAY = _ec("metool", "Hide", "reshieldDelay"); // Tools.timer(0.1, ...)
-
-// --- EnemyStun.gd (as configured on Metool.tscn's EnemyStun node → data/enemies.ts) ---
-export const STUN_DURATION = _ec("metool", "Stun", "duration"); // EnemyStun.stun_duration
-
-// --- BatPursuit.gd / BatJump.gd (→ data/enemies.ts) ---
-export const BAT_PURSUIT_SPEED = _ec("bat", "Pursuit", "speed"); // BatPursuit.gd pursuit_speed
-export const BAT_PURSUIT_GIVE_UP_DISTANCE = _ec("bat", "Pursuit", "giveUpDistance"); // _EndCondition
-/** The vertical weave: cos(timer * BAT_WEAVE_RATE) remapped to [-0.25, 1]. */
-export const BAT_WEAVE_RATE = _ec("bat", "Pursuit", "weaveRate");
-export const BAT_JUMP_SPEED = _ec("bat", "Recoil", "speed"); // BatJump.gd current_vertical_speed = -200
-export const BAT_JUMP_TIME = _ec("bat", "Recoil", "duration"); // BatJump.gd jump_timne
 
 // --- Damage.gd (Player.tscn's Damage node → data/abilities.ts player.damage) ---
 export const PLAYER_DAMAGE_DURATION = _ac("player.damage", "duration");
@@ -478,17 +459,27 @@ export interface LifeCapsuleStats {
   heal: number;
 }
 
+// SmallHeal.tscn / Heal.tscn — see data/pickups.ts. Getters, like ENEMY_STATS:
+// capsules read their pickup from the scene's game data; only tests read this table.
 export const LIFE_CAPSULE_STATS: Readonly<Record<"small" | "large", LifeCapsuleStats>> = {
-  // SmallHeal.tscn / Heal.tscn — see data/pickups.ts.
-  small: {
-    sheet: _D.pickups.get("life.small")!.sheet as "sheal",
-    heal: _D.pickups.get("life.small")!.amount,
+  get small() {
+    return _lifeCapsule("life.small");
   },
-  large: {
-    sheet: _D.pickups.get("life.large")!.sheet as "heal",
-    heal: _D.pickups.get("life.large")!.amount,
+  get large() {
+    return _lifeCapsule("life.large");
   },
 };
+
+function _lifeCapsule(id: string): LifeCapsuleStats {
+  const p = _pickup(id);
+  return { sheet: p.sheet as LifeCapsuleStats["sheet"], heal: p.amount };
+}
+
+function _pickup(id: string): PickupDefinition {
+  const p = _D.pickups.get(id);
+  if (!p) throw new Error(`constants: unknown pickup '${id}'`);
+  return p;
+}
 
 /**
  * PickUp.gd's own shared behaviour — do_heal()'s `timer > last_time_increased +
@@ -509,17 +500,20 @@ export interface WeaponCapsuleStats {
   ammo: number;
 }
 
+// SmallAmmo.tscn / Ammo.tscn — see data/pickups.ts.
 export const WEAPON_CAPSULE_STATS: Readonly<Record<"small" | "large", WeaponCapsuleStats>> = {
-  // SmallAmmo.tscn / Ammo.tscn — see data/pickups.ts.
-  small: {
-    sheet: _D.pickups.get("weapon.small")!.sheet as "sammo",
-    ammo: _D.pickups.get("weapon.small")!.amount,
+  get small() {
+    return _weaponCapsule("weapon.small");
   },
-  large: {
-    sheet: _D.pickups.get("weapon.large")!.sheet as "ammo",
-    ammo: _D.pickups.get("weapon.large")!.amount,
+  get large() {
+    return _weaponCapsule("weapon.large");
   },
 };
+
+function _weaponCapsule(id: string): WeaponCapsuleStats {
+  const p = _pickup(id);
+  return { sheet: p.sheet as WeaponCapsuleStats["sheet"], ammo: p.amount };
+}
 
 // World / rendering
 export const TILE_SIZE = 16;

@@ -25,11 +25,15 @@ export interface LevelRuntime {
   cameraZones: CameraZone[];
 }
 
-// shortcut: capsule runtime stats are still keyed by size (Pickup.ts), so a Kind must be one of
-// these sizes *and* defined in the game data (`life.<Kind>` / `weapon.<Kind>`); drop the size
-// lists once capsules read their amount and sheet from the compiled pickup.
-const LIFE_CAPSULE_KINDS: readonly string[] = ["small", "large"];
-const WEAPON_CAPSULE_KINDS: readonly string[] = ["small", "large"];
+/**
+ * Environment entities and the game-data definition each reads its defaults from.
+ * The definition must run the matching behaviour (`environment.<definition id>`).
+ */
+const ENVIRONMENT_DEFINITIONS: ReadonlyMap<string, string> = new Map([
+  ["Conveyor", "conveyor"],
+  ["MovingPlatform", "moving-platform"],
+  ["FallingPlatform", "falling-platform"],
+]);
 
 /** Authored entity ids the runtime knows how to instantiate (or, for Slope, bakes upstream). */
 const KNOWN_ENTITY_IDS: ReadonlySet<string> = new Set([
@@ -101,8 +105,9 @@ export class LevelCompileError extends Error {
  * problems — including warnings that do not block — are returned together, so a
  * tool reports the whole list rather than one-thrown-error-at-a-time.
  *
- * Enemy and capsule kinds are checked against `gameData`, which must be the same
- * compiled data the scene is built from.
+ * Enemy and capsule kinds, and the environment definitions platforms and conveyors
+ * read their defaults from, are checked against `gameData`, which must be the
+ * same compiled data the scene is built from.
  */
 export function compileLevel(
   data: LevelData,
@@ -220,8 +225,7 @@ export function compileLevel(
       const kind = e.fields.Kind;
       if (
         typeof kind !== "string" ||
-        !LIFE_CAPSULE_KINDS.includes(kind) ||
-        !gameData.pickups.has(`life.${kind}`)
+        gameData.pickups.get(`life.${kind}`)?.behavior !== "pickup.life"
       ) {
         error({
           code: "pickup.kind",
@@ -235,8 +239,7 @@ export function compileLevel(
       const kind = e.fields.Kind;
       if (
         typeof kind !== "string" ||
-        !WEAPON_CAPSULE_KINDS.includes(kind) ||
-        !gameData.pickups.has(`weapon.${kind}`)
+        gameData.pickups.get(`weapon.${kind}`)?.behavior !== "pickup.weapon-energy"
       ) {
         error({
           code: "pickup.kind",
@@ -246,7 +249,20 @@ export function compileLevel(
           position: pos,
         });
       }
-    } else if (e.id === "Conveyor") {
+    }
+    const environment = ENVIRONMENT_DEFINITIONS.get(e.id);
+    if (
+      environment !== undefined &&
+      gameData.environments.get(environment)?.behavior !== `environment.${environment}`
+    ) {
+      error({
+        code: "environment.missing",
+        entityId: e.iid,
+        message: `${e.id}: the game data has no '${environment}' environment.`,
+        position: pos,
+      });
+    }
+    if (e.id === "Conveyor") {
       checkNumberField(e, "Speed", false);
     } else if (e.id === "MovingPlatform") {
       checkNumberField(e, "Travel", true);
@@ -282,12 +298,15 @@ export function compileLevel(
   if (diagnostics.some((d) => d.severity === "error")) {
     return { ok: false, diagnostics };
   }
-  return { ok: true, value: buildRuntime(data), diagnostics };
+  return { ok: true, value: buildRuntime(data, gameData), diagnostics };
 }
 
 /** Assemble the runtime objects. Only ever called once {@link compileLevel} finds no errors. */
-function buildRuntime(data: LevelData): LevelRuntime {
+function buildRuntime(data: LevelData, gameData: CompiledGameData): LevelRuntime {
   const matching = (id: string): LevelEntity[] => data.entities.filter((e) => e.id === id);
+  // An omitted field falls back to its environment definition's default.
+  const fallback = (id: string, key: string): number =>
+    gameData.environments.get(ENVIRONMENT_DEFINITIONS.get(id)!)!.defaults[key] as number;
   const spawn = matching("Spawn")[0];
   return {
     data,
@@ -300,7 +319,7 @@ function buildRuntime(data: LevelData): LevelRuntime {
       y: e.y,
       w: e.w,
       h: e.h,
-      speed: numberField(e, "Speed", 60),
+      speed: numberField(e, "Speed", fallback("Conveyor", "speed")),
     })),
     platforms: matching("MovingPlatform").map((e) => ({
       id: e.iid,
@@ -308,8 +327,8 @@ function buildRuntime(data: LevelData): LevelRuntime {
       y: e.y,
       w: e.w,
       h: e.h,
-      travel: Math.max(0, numberField(e, "Travel", 96)),
-      speed: Math.max(0, numberField(e, "Speed", 48)),
+      travel: Math.max(0, numberField(e, "Travel", fallback("MovingPlatform", "travel"))),
+      speed: Math.max(0, numberField(e, "Speed", fallback("MovingPlatform", "speed"))),
       ...(e.fields.Axis === "vertical" ? { axis: "vertical" as const } : {}),
     })),
     fallingPlatforms: matching("FallingPlatform").map((e) => ({
@@ -318,7 +337,7 @@ function buildRuntime(data: LevelData): LevelRuntime {
       y: e.y,
       w: e.w,
       h: e.h,
-      delay: Math.max(0, numberField(e, "Delay", 0.5)),
+      delay: Math.max(0, numberField(e, "Delay", fallback("FallingPlatform", "delay"))),
     })),
     enemies: matching("Enemy").map((e) => ({
       id: e.iid,

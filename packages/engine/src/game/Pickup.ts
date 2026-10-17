@@ -4,13 +4,9 @@ import { AnimationPlayer } from "./Animation.js";
 import type { AnimData, Region } from "@mmx/contracts/animation";
 import type { EnvironmentRect } from "./Environment.js";
 import type { World } from "./World.js";
-import {
-  LIFE_CAPSULE_STATS,
-  PICKUP_GRAVITY,
-  PICKUP_TICK_INTERVAL,
-  SUB_WEAPON_MAX_AMMO,
-  WEAPON_CAPSULE_STATS,
-} from "../core/constants.js";
+import { PICKUP_GRAVITY, PICKUP_TICK_INTERVAL, SUB_WEAPON_MAX_AMMO } from "../core/constants.js";
+import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { CompiledGameData, PickupDefinition } from "../data/types.js";
 
 /**
  * PickUp.process_gravity + process_movement — a plain vertical fall (the
@@ -38,7 +34,18 @@ function fallUnderGravity(
   return { y: pos - hh, velocityY: hit ? 0 : nextVelocityY };
 }
 
-export type LifeCapsuleKind = "small" | "large";
+/**
+ * A capsule's pickup definition: `<prefix>.<kind>` in the game data, as the level
+ * compiler checks before a scene is built.
+ */
+function pickupDefinition(gameData: CompiledGameData, id: string): PickupDefinition {
+  const def = gameData.pickups.get(id);
+  if (!def) throw new Error(`game data has no pickup '${id}'`);
+  return def;
+}
+
+/** The authored Kind field: `life.<Kind>` names the capsule's pickup definition. */
+export type LifeCapsuleKind = string;
 
 export interface LifeCapsuleSpawn extends EnvironmentRect {
   kind: LifeCapsuleKind;
@@ -79,14 +86,14 @@ export class LifeCapsule implements EnvironmentRect {
   /** Godot's AnimatedSprite "idle" bob — optional, like Player/Enemy clip data. */
   private readonly anim = new AnimationPlayer();
 
-  constructor(spawn: LifeCapsuleSpawn) {
+  constructor(spawn: LifeCapsuleSpawn, gameData: CompiledGameData = COMPILED_GAME_DATA) {
     this.id = spawn.id;
     this.kind = spawn.kind;
     this.x = spawn.x;
     this.y = spawn.y;
     this.w = spawn.w;
     this.h = spawn.h;
-    this.heal = LIFE_CAPSULE_STATS[spawn.kind].heal;
+    this.heal = pickupDefinition(gameData, `life.${spawn.kind}`).amount;
   }
 
   /** Whether the capsule has been touched and is currently ticking health in. */
@@ -138,7 +145,8 @@ export class LifeCapsule implements EnvironmentRect {
   }
 }
 
-export type WeaponCapsuleKind = "small" | "large";
+/** The authored Kind field: `weapon.<Kind>` names the capsule's pickup definition. */
+export type WeaponCapsuleKind = string;
 
 export interface WeaponCapsuleSpawn extends EnvironmentRect {
   kind: WeaponCapsuleKind;
@@ -165,6 +173,13 @@ export class WeaponCapsule implements EnvironmentRect {
   readonly w: number;
   readonly h: number;
   readonly ammo: number;
+  /**
+   * Which sheet this capsule draws from — "ammo" or "sammo" in pickup_anims.json,
+   * from its pickup definition. A separate key from {@link kind}: the Kind
+   * ("small"/"large") is already spent on LifeCapsule's own differently-sized
+   * sprites, so reusing it to key the sheet table would collide with those.
+   */
+  readonly sheet: string;
 
   private velocityY = 0;
 
@@ -175,28 +190,20 @@ export class WeaponCapsule implements EnvironmentRect {
 
   private readonly anim = new AnimationPlayer();
 
-  constructor(spawn: WeaponCapsuleSpawn) {
+  constructor(spawn: WeaponCapsuleSpawn, gameData: CompiledGameData = COMPILED_GAME_DATA) {
     this.id = spawn.id;
     this.kind = spawn.kind;
     this.x = spawn.x;
     this.y = spawn.y;
     this.w = spawn.w;
     this.h = spawn.h;
-    this.ammo = WEAPON_CAPSULE_STATS[spawn.kind].ammo;
+    const def = pickupDefinition(gameData, `weapon.${spawn.kind}`);
+    this.ammo = def.amount;
+    this.sheet = def.sheet;
   }
 
   get collecting(): boolean {
     return this.consuming;
-  }
-
-  /**
-   * Which sheet this capsule draws from — "ammo" or "sammo" in pickup_anims.json.
-   * A separate key from {@link kind}: WeaponCapsuleKind ("small"/"large") is
-   * already spent on LifeCapsule's own differently-sized sprites, so reusing
-   * it to key the sheet table would collide with those.
-   */
-  get sheet(): "ammo" | "sammo" {
-    return WEAPON_CAPSULE_STATS[this.kind].sheet;
   }
 
   loadAnimations(data: AnimData): void {

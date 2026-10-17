@@ -8,6 +8,8 @@ import {
 } from "./Pickup.js";
 import type { World } from "./World.js";
 import { HIT_FX_FPS, HIT_FX_FRAME_COUNT } from "../core/constants.js";
+import { COMPILED_GAME_DATA } from "../data/index.js";
+import type { CompiledGameData } from "../data/types.js";
 import {
   FallingPlatform,
   MovingPlatform,
@@ -67,6 +69,8 @@ export class Stage {
     readonly world: World,
     readonly player: Player,
     environment: StageEnvironment = {},
+    /** Where capsules read their pickup definitions — the scene's game data. */
+    gameData: CompiledGameData = COMPILED_GAME_DATA,
   ) {
     this.hazards = environment.hazards ?? [];
     this.conveyors = environment.conveyors ?? [];
@@ -74,9 +78,9 @@ export class Stage {
     this.fallingPlatforms = (environment.fallingPlatforms ?? []).map(
       (spawn) => new FallingPlatform(spawn),
     );
-    this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn));
+    this.pickups = (environment.pickups ?? []).map((spawn) => new LifeCapsule(spawn, gameData));
     this.weaponCapsules = (environment.weaponCapsules ?? []).map(
-      (spawn) => new WeaponCapsule(spawn),
+      (spawn) => new WeaponCapsule(spawn, gameData),
     );
     this.player.setPlatforms([...this.platforms, ...this.fallingPlatforms]);
   }
