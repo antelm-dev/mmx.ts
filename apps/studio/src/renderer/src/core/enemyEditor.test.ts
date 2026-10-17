@@ -286,7 +286,7 @@ describe("enemy editor", () => {
     });
 
     it("keeps to the abilities its movement allows", () => {
-      expect(abilitiesFor("ground")).toEqual(["Patrol", "Hide", "Stun", "Shoot", "Death"]);
+      expect(abilitiesFor("ground")).toEqual(["Patrol", "Hide", "Stun", "Shoot", "Death", "Roll"]);
       expect(abilitiesFor("flying")).toEqual(["Stun", "Hover", "Pursuit", "Recoil", "Death"]);
       // A flier never gets a gravity ability, and its stun does not fall.
       const flier = blank(["Patrol", "Stun", "Hover", "Death"], { movement: "flying" }).overlay

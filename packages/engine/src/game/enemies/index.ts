@@ -17,6 +17,7 @@ import { Hover, type HoverConfig } from "../enemy/Hover.js";
 import { Patrol, type PatrolConfig } from "../enemy/Patrol.js";
 import { Pursuit, type PursuitConfig } from "../enemy/Pursuit.js";
 import { Recoil, type RecoilConfig } from "../enemy/Recoil.js";
+import { Roll, type RollConfig } from "../enemy/Roll.js";
 import { Shoot, type ShootConfig } from "../enemy/Shoot.js";
 import { Stun, type StunConfig } from "../enemy/Stun.js";
 
@@ -45,6 +46,7 @@ const FACTORIES: Readonly<Record<string, Ctor>> = {
   Hover: (o, c) => new Hover(o, c as unknown as HoverConfig),
   Pursuit: (o, c) => new Pursuit(o, c as unknown as PursuitConfig),
   Recoil: (o, c) => new Recoil(o, c as unknown as RecoilConfig),
+  Roll: (o, c) => new Roll(o, c as unknown as RollConfig),
   Shoot: (o, c, ctx) => {
     const config = c as unknown as ShootConfig;
     return new Shoot(o, config, shotStats(ctx.gameData.projectiles.get(config.projectile)!));

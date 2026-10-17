@@ -25,6 +25,10 @@ export interface FieldSpec {
   type: FieldType;
   min?: number;
   max?: number;
+  /** The only values a `string` field accepts. */
+  options?: readonly string[];
+  /** What tooling seeds a new config with; compilation still requires the key. */
+  default?: number | boolean | string;
 }
 export type Schema = Readonly<Record<string, FieldType | FieldSpec>>;
 
@@ -48,7 +52,10 @@ export function validateConfig<T>(schema: Schema, input: unknown): ValidationRes
       continue;
     }
     const spec = typeof field === "string" ? { type: field } : field;
-    const err = checkField(spec.type, value) ?? checkRange(spec, value as number);
+    const err =
+      checkField(spec.type, value) ??
+      checkRange(spec, value as number) ??
+      checkOptions(spec, value);
     if (err) issues.push({ fieldPath: key, message: err });
   }
 
@@ -64,6 +71,11 @@ function checkRange(spec: FieldSpec, value: number): string | null {
   if (spec.min !== undefined && value < spec.min) return `must be >= ${spec.min}.`;
   if (spec.max !== undefined && value > spec.max) return `must be <= ${spec.max}.`;
   return null;
+}
+
+function checkOptions(spec: FieldSpec, value: unknown): string | null {
+  if (!spec.options || spec.options.includes(value as string)) return null;
+  return `must be one of ${spec.options.map((o) => `'${o}'`).join(", ")}.`;
 }
 
 function checkField(type: FieldType, value: unknown): string | null {

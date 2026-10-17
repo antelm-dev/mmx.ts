@@ -71,6 +71,12 @@ export const ENEMY_BEHAVIOR_SCHEMAS = {
   Death: {
     explosionDuration: { type: "number", min: 0 },
   },
+  Roll: {
+    speed: { type: "number", min: 0, default: 60 },
+    facePlayer: { type: "boolean", default: true },
+    atWall: { type: "string", options: ["turn", "stop"], default: "turn" },
+    conflicts: "string[]",
+  },
 } as const satisfies Readonly<Record<string, Schema>>;
 
 export type EnemyBehaviorId = keyof typeof ENEMY_BEHAVIOR_SCHEMAS;
