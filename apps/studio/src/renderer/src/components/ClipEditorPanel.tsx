@@ -284,12 +284,15 @@ export function ClipEditorPanel({
   const segments = clip?.segments;
   const segmentAt = (frame: number): number =>
     segments?.findIndex((segment) => frame <= segment.end) ?? -1;
-  // A clip without segments gets its first ones from any frame; else the cut needs a frame
-  // inside a segment, after its first.
+  // The cut needs one selected frame inside a segment (the whole clip without any), after
+  // its first: a single whole-clip segment would only drop loopStart.
   const splitAt = frameSel.length === 1 ? frameSel[0]! : 0;
   const canSplit =
-    !segments || segments.some((segment) => splitAt > segment.start && splitAt <= segment.end);
+    splitAt > 0 &&
+    (!segments || segments.some((segment) => splitAt > segment.start && splitAt <= segment.end));
   const renameSegment = (index: number, raw: string, input: HTMLInputElement): void => {
+    // An undo can remount the focused input, whose blur then carries this render's stale clip.
+    if (!input.isConnected) return;
     const name = raw.trim();
     const current = segments![index]!;
     if (name === current.name) return;
@@ -782,7 +785,7 @@ export function ClipEditorPanel({
                     <FieldInput
                       type="number"
                       min={segment.start + 1}
-                      max={frames.length}
+                      max={segments[i + 1]?.end ?? frames.length}
                       disabled={i === segments.length - 1}
                       title={
                         i === segments.length - 1
@@ -829,7 +832,7 @@ export function ClipEditorPanel({
             <PanelActions flexWrap="wrap">
               <ActionButton
                 disabled={!canSplit}
-                title="Cut the segment holding the selected frame there"
+                title="Cut the segment holding the selected frame there: the first half plays once, the second keeps the segment's loop"
                 onClick={() =>
                   writeSegments(
                     "Add segment",

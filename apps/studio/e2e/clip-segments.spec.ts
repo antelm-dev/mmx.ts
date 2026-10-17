@@ -114,6 +114,10 @@ test("AC-EDITOR: a clip split into intro/loop/end is edited, undone, previewed, 
   const addSegment = panel.getByRole("button", { name: "Add segment" });
 
   // Cut at frame 3, then at frame 6: three segments; Loop and Loop start no longer apply.
+  // No cut without a later frame selected: a whole-clip segment would only drop loopStart.
+  await expect(addSegment).toBeDisabled();
+  await frame(1).click();
+  await expect(addSegment).toBeDisabled();
   await frame(3).click();
   await addSegment.click();
   await expect(segment(2)).toBeVisible();
@@ -163,6 +167,7 @@ test("AC-EDITOR: a clip split into intro/loop/end is edited, undone, previewed, 
 
   // Resize: intro takes frame 3 from loop; the last segment always ends on the last frame.
   await expect(lastFrame(3)).toBeDisabled();
+  await expect(lastFrame(1)).toHaveAttribute("max", "4"); // loop keeps at least frame 5
   await lastFrame(1).fill("3");
   await expect(frames(1)).toHaveText("Frames 1–3");
   await expect(frames(2)).toHaveText("Frames 4–5");
