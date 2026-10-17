@@ -19,7 +19,13 @@ import {
   travelTarget,
   travelsVertically,
 } from "./EditorViewportGeometry.js";
-import { setProjectDefinitions, type LevelObjectInstance } from "@mmx/content-schema";
+import {
+  setCatalogGameData,
+  setProjectDefinitions,
+  type LevelObjectInstance,
+} from "@mmx/content-schema";
+import { GAME_DATA } from "@mmx/engine/data";
+import { baseWithoutPack } from "./baseWithoutPack.test-support.js";
 
 describe("normalizeBox", () => {
   it("returns same box when already normalized", () => {
@@ -357,6 +363,34 @@ describe("environment travel gizmo", () => {
       expect(travelEditable(platform())).toBe(true);
     } finally {
       setProjectDefinitions([]);
+    }
+  });
+
+  it("draws an environment the project's data adds over a base without the pack's", () => {
+    const base = baseWithoutPack();
+    const moving = GAME_DATA.prefabs["platform.moving"]!;
+    setCatalogGameData({
+      ...base,
+      environments: {
+        ...base.environments,
+        lift: { id: "lift", behavior: "environment.moving-platform", defaults: {} },
+      },
+      prefabs: {
+        ...base.prefabs,
+        "platform.lift": {
+          ...moving,
+          id: "platform.lift",
+          source: { kind: "environment", ref: "lift" },
+        },
+      },
+    });
+    try {
+      const lift = { ...platform({ Travel: 80 }), definitionId: "platform.lift" };
+      expect(environmentGeometry(lift).map((p) => p.kind)).toEqual(["line", "rect"]);
+      expect(environmentGeometry(platform())).toEqual([]);
+      expect(environmentGeometry({ ...lift, definitionId: "hazard" })).toEqual([]);
+    } finally {
+      setCatalogGameData(GAME_DATA);
     }
   });
 

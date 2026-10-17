@@ -8,6 +8,7 @@ import {
   abilityFields,
   addBlankEnemy,
   BLANK_ENEMY,
+  defaultAbilityConfig,
   defaultReactions,
   weakPhaseProblem,
   deleteEnemy,
@@ -24,6 +25,7 @@ import {
   withReaction,
   withWeakPhase,
 } from "./enemyEditor.js";
+import { baseWithoutPack, compileIssues } from "./baseWithoutPack.test-support.js";
 
 const crab = addEnemy(undefined, GAME_DATA, {
   name: "Crab",
@@ -463,6 +465,87 @@ describe("enemy editor", () => {
       expect(
         addBlankEnemy(undefined, GAME_DATA, { name: "Metool", health: 1, enemy: BLANK_ENEMY }).id,
       ).toBe("enemy.metool-2");
+    });
+  });
+
+  describe("without the pack's objects", () => {
+    // Frozen: what a new ability got when it copied the first built-in enemy's config.
+    const BEFORE = {
+      Patrol: {
+        travelSpeed: 25,
+        travelTime: 0.8,
+        restMin: 0.8,
+        randomTurn: false,
+        conflicts: ["Hide", "Stun"],
+      },
+      Hide: {
+        openDelay: 3,
+        advanceRangeX: 64,
+        advanceRangeY: 16,
+        giveUpRangeX: 80,
+        reshieldDelay: 0.1,
+        speed: 90,
+      },
+      Stun: {
+        duration: 1.65,
+        animation: "stun",
+        recoverAnimation: "",
+        reactivateShield: false,
+        gravity: true,
+        conflicts: [],
+      },
+      Hover: { area: 16, travelTime: 0.5, restDuration: 0.5 },
+      Pursuit: { speed: 80, giveUpDistance: 200, weaveRate: 4 },
+      Recoil: { speed: 200, duration: 0.7 },
+      Shoot: { projectile: "pantheon_shot", cooldown: 100 / 60, recoverTime: 24 / 60 },
+      Death: { explosionDuration: 0 },
+      Roll: { speed: 60, facePlayer: true, atWall: "turn", conflicts: ["Stun"] },
+    };
+
+    it("seeds each ability with the config it got before, from the schema alone", () => {
+      expect(Object.keys(BEFORE)).toEqual(ENEMY_ABILITIES);
+      for (const ability of ENEMY_ABILITIES) {
+        expect(defaultAbilityConfig(ability, ENEMY_ABILITIES)).toStrictEqual(
+          BEFORE[ability as keyof typeof BEFORE],
+        );
+      }
+      expect(defaultAbilityConfig("Patrol", ["Stun"]).conflicts).toEqual(["Stun"]);
+    });
+
+    it("wires the reactions it did before", () => {
+      expect(defaultReactions(["Patrol", "Hide", "Stun", "Death"])).toStrictEqual({
+        idle: ["Patrol"],
+        see_player: ["Hide"],
+        guard_break: ["Stun"],
+        get_hit: ["Stun"],
+      });
+      expect(defaultReactions(["Hover", "Pursuit", "Recoil", "Shoot", "Death"])).toStrictEqual({
+        idle: ["Hover"],
+        see_player: ["Pursuit"],
+        touch_player: ["Recoil"],
+      });
+    });
+
+    it("composes a blank enemy that compiles over a base with none of them", () => {
+      const base = baseWithoutPack();
+      expect(Object.keys(base.enemies)).toEqual([]);
+      for (const movement of MOVEMENTS) {
+        const abilities = abilitiesFor(movement);
+        const { overlay, id } = addBlankEnemy(undefined, base, {
+          name: "Blob",
+          health: 2,
+          enemy: { ...withAbilities({ ...BLANK_ENEMY, movement }, abilities), sheet: "anim.blob" },
+        });
+        expect(compileIssues(base, overlay)).toEqual([]);
+        const enemy = overlay.enemies!.blob!;
+        expect(enemy.abilities).toEqual(abilities);
+        // The default shot is the pack's: it shoots the project's first projectile instead.
+        if (abilities.includes("Shoot"))
+          expect(enemy.abilityConfig?.Shoot?.projectile).toBe(Object.keys(base.projectiles)[0]);
+        expect(isProjectEnemy(overlay, id)).toBe(true);
+        expect(enemyForPrefab(overlay, id)).toMatchObject({ editable: true });
+        expect(deleteEnemy(overlay, id)).toMatchObject({ prefabs: {}, enemies: {}, actors: {} });
+      }
     });
   });
 });

@@ -76,27 +76,19 @@ export function abilityFields(
   });
 }
 
-/** A complete config for `ability`: a built-in enemy's, else the schema's defaults or minimums; conflicts kept to `owned`. */
+/** A complete config for `ability`: the schema's defaults, else minimums; conflicts kept to `owned`. */
 export function defaultAbilityConfig(ability: string, owned: readonly string[]): AbilityConfig {
-  const builtIn = Object.values(GAME_DATA.enemies).find((enemy) => enemy.abilityConfig?.[ability])
-    ?.abilityConfig?.[ability];
-  const config: AbilityConfig = builtIn
-    ? { ...builtIn }
-    : Object.fromEntries(
-        Object.entries(SCHEMAS[ability] ?? {}).map(([key, field]) => {
-          const { type, min, default: preset } = fieldSpec(field);
-          if (preset !== undefined) return [key, typeof preset === "object" ? [...preset] : preset];
-          const value: ConfigValue =
-            type === "number"
-              ? (min ?? 0)
-              : type === "boolean"
-                ? false
-                : type === "string[]"
-                  ? []
-                  : "";
-          return [key, value];
-        }),
-      );
+  const config: AbilityConfig = Object.fromEntries(
+    Object.entries(SCHEMAS[ability] ?? {}).flatMap(([key, field]): [string, ConfigValue][] => {
+      const { type, min, optional, default: preset } = fieldSpec(field);
+      if (preset !== undefined) return [[key, typeof preset === "object" ? [...preset] : preset]];
+      // An optional field left unset keeps the ability's behaviour without it (Death's weak phase).
+      if (optional) return [];
+      const value: ConfigValue =
+        type === "number" ? (min ?? 0) : type === "boolean" ? false : type === "string[]" ? [] : "";
+      return [[key, value]];
+    }),
+  );
   if (Array.isArray(config.conflicts))
     config.conflicts = config.conflicts.filter((name) => owned.includes(name));
   return config;
@@ -325,26 +317,23 @@ export const BLANK_ENEMY: EnemyDefinition = {
   initialAnimation: "idle",
 };
 
-/** Answers no built-in enemy gives yet: Roll starts on idle, as Patrol does (C-ROLL). */
-const NEW_REACTIONS: Partial<Record<AIEvent, readonly string[]>> = { idle: ["Roll"] };
+/**
+ * The abilities that may answer each AI event, as the built-in enemies wire them (idle:
+ * Patrol or Hover, …), plus Roll on idle as Patrol (C-ROLL).
+ */
+const DEFAULT_ANSWERS: Partial<Record<AIEvent, readonly string[]>> = {
+  idle: ["Roll", "Patrol", "Hover"],
+  see_player: ["Hide", "Pursuit", "Shoot"],
+  touch_player: ["Recoil"],
+  guard_break: ["Stun"],
+  get_hit: ["Stun"],
+};
 
-/** The abilities the built-in enemies answer each AI event with (idle: Patrol or Hover, …), and Roll. */
-const BUILT_IN_REACTIONS = AI_EVENTS.map(
-  (event) =>
-    [
-      event,
-      new Set([
-        ...(NEW_REACTIONS[event] ?? []),
-        ...Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions[event] ?? []),
-      ]),
-    ] as const,
-);
-
-/** Reactions for an enemy owning `abilities`: each event to the first that a built-in answers it with. */
+/** Reactions for an enemy owning `abilities`: each event to the first of them that may answer it. */
 export function defaultReactions(abilities: readonly string[]): EnemyDefinition["reactions"] {
   const reactions: EnemyDefinition["reactions"] = {};
-  for (const [event, answers] of BUILT_IN_REACTIONS) {
-    const first = abilities.find((ability) => answers.has(ability));
+  for (const [event, answers] of Object.entries(DEFAULT_ANSWERS) as [AIEvent, string[]][]) {
+    const first = abilities.find((ability) => answers.includes(ability));
     if (first) reactions[event] = [first];
   }
   return reactions;
@@ -411,7 +400,14 @@ export function addBlankEnemy(
     { ...BLANK_ENEMY, ...input.enemy, id: slug, actor: id },
     input.enemy.movement,
   );
-  const enemy = { ...moving, reactions: defaultReactions(moving.abilities) };
+  const wired = { ...moving, reactions: defaultReactions(moving.abilities) };
+  // Shoot's default projectile may be one the project lacks: it shoots the project's first instead.
+  const projectile = wired.abilityConfig?.Shoot?.projectile;
+  const first = Object.keys(data.projectiles)[0];
+  const enemy =
+    typeof projectile === "string" && !(projectile in data.projectiles) && first
+      ? withConfig(wired, "Shoot", "projectile", first)
+      : wired;
   const next: GameDataOverlay = {
     schemaVersion: GAME_DATA.schemaVersion,
     ...overlay,

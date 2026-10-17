@@ -151,7 +151,11 @@ const ENGINE_KINDS: Record<
   },
 };
 
-/** Per-prefab presentation over the {@link ENGINE_KINDS} fallbacks; property help by field name. */
+/**
+ * Per-prefab presentation over the {@link ENGINE_KINDS} fallbacks; property help by field name.
+ * Presentation only (C-INDEP): a prefab with no entry falls back to its name (or last id
+ * segment), its kind's icon and its hurtbox or kind's size, so no object needs to be listed.
+ */
 const PRESENTATION: Record<
   string,
   { name: string; icon?: string; defaultSize?: Size; help?: Record<string, string> }

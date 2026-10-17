@@ -1,6 +1,7 @@
 import { definitionsFromGameData } from "@mmx/content-schema";
-import { GAME_DATA, type GameData } from "@mmx/engine/data";
+import type { GameData, GameDataOverlay } from "@mmx/engine/data";
 import type { ProjectDocument } from "@mmx/project-schema";
+import { isProjectEnemy } from "./enemyEditor.js";
 
 /** What a row is, which decides the document it opens (fonts and sounds open none). */
 export type AssetEntryKind =
@@ -30,14 +31,16 @@ const GROUPS: [AssetEntryKind, string][] = [
 
 /**
  * The Assets panel's groups, in browser order: the project's manifest assets and
- * objects (none without a project) and every enemy of the merged game data, built-in
- * ones flagged. Entries are sorted by label and filtered on label or id by `query`;
- * groups left empty are dropped.
+ * objects (none without a project) and every enemy of the merged game data, flagged
+ * built-in unless the project's `overlay` adds it (as the Enemy editor tells them apart).
+ * Entries are sorted by label and filtered on label or id by `query`; groups left empty
+ * are dropped.
  */
 export function assetGroups(
   project: Pick<ProjectDocument, "assets" | "objects"> | undefined,
   data: GameData,
   query: string,
+  overlay?: GameDataOverlay,
 ): AssetGroup[] {
   const entries: AssetEntry[] = [
     ...(project?.assets ?? []).map((a) => ({
@@ -52,7 +55,7 @@ export function assetGroups(
         kind: "enemy" as const,
         id: def.id,
         label: def.name,
-        builtIn: def.id in GAME_DATA.prefabs,
+        builtIn: !isProjectEnemy(overlay, def.id),
       })),
     ...(project?.objects ?? []).map((o) => ({
       kind: "object" as const,

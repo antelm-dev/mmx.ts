@@ -6,6 +6,8 @@ import { GAME_DATA, mergeGameData, type GameData } from "@mmx/engine/data";
 import {
   OBJECT_DEFINITIONS,
   allDefinitions,
+  catalogGameData,
+  definitionFor,
   definitionsFromGameData,
   getDefinition,
   isBuiltinDefinition,
@@ -108,4 +110,52 @@ test("setCatalogGameData makes a project enemy placeable and derivable", (t) => 
   );
   assert.equal(getDefinition("enemy.crab"), undefined);
   assert.equal(getDefinition("obj.crab.right"), undefined);
+});
+
+/** The default data with only spawn, hazard and camera zone placeable: none of the pack's objects (C-INDEP). */
+function baseWithoutPack(): GameData {
+  const keep = (id: string) => id === "hazard" || id === "camera-zone";
+  const environments = Object.fromEntries(
+    Object.entries(GAME_DATA.environments).filter(([id]) => keep(id)),
+  );
+  const prefabs = Object.fromEntries(
+    Object.entries(GAME_DATA.prefabs).filter(
+      ([, { source }]) =>
+        source.kind === "loadout" || (source.kind === "environment" && keep(source.ref)),
+    ),
+  );
+  return { ...GAME_DATA, enemies: {}, pickups: {}, environments, prefabs };
+}
+
+test("a base without the pack's objects gives the primitives' catalog, and new prefabs fall back", (t) => {
+  t.after(() => setCatalogGameData(GAME_DATA));
+  const base = baseWithoutPack();
+  assert.deepEqual(
+    definitionsFromGameData(base).map((d) => d.id),
+    ["spawn", "hazard", "slope", "camera-zone"],
+  );
+  const lift = {
+    ...base,
+    environments: {
+      ...base.environments,
+      lift: { id: "lift", behavior: "environment.moving-platform", defaults: {} },
+    },
+    prefabs: {
+      ...base.prefabs,
+      "platform.lift": {
+        id: "platform.lift",
+        runtime: "environment",
+        source: { kind: "environment", ref: "lift" },
+        fields: [],
+      },
+    },
+  } satisfies GameData;
+  assert.deepEqual(setCatalogGameData(lift), []);
+  assert.equal(catalogGameData(), lift);
+  const def = definitionFor("platform.lift");
+  assert.equal(def.name, "Lift");
+  assert.equal(def.icon, "▭");
+  assert.equal(def.engineId, "MovingPlatform");
+  assert.deepEqual(def.defaultSize, { width: 48, height: 8 });
+  assert.equal(definitionFor("enemy.metool").category, "unknown");
 });

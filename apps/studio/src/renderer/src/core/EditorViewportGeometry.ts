@@ -1,4 +1,5 @@
 import {
+  catalogGameData,
   instanceSize,
   definitionFor,
   effectiveValue,
@@ -7,7 +8,6 @@ import {
   type LevelObjectInstance,
 } from "@mmx/content-schema";
 import { environmentBehaviorRegistry, type DebugPrimitive } from "@mmx/engine/behaviors";
-import { GAME_DATA } from "@mmx/engine/data";
 
 // ---------- Types ----------
 
@@ -112,9 +112,11 @@ export function environmentGeometry(
 ): readonly DebugPrimitive[] {
   const def = getDefinition(inst.definitionId);
   if (!def) return [];
-  const source = GAME_DATA.prefabs[def.baseId ?? def.id]?.source;
+  // The catalog's game data, so an environment the project's data adds draws as a built-in one.
+  const data = catalogGameData();
+  const source = data.prefabs[def.baseId ?? def.id]?.source;
   if (source?.kind !== "environment") return [];
-  const behavior = GAME_DATA.environments[source.ref]?.behavior;
+  const behavior = data.environments[source.ref]?.behavior;
   if (!behavior || !environmentBehaviorRegistry.has(behavior)) return [];
   const provider = environmentBehaviorRegistry.get(behavior).debugGeometry;
   return (
