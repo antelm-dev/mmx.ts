@@ -1,12 +1,27 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { execSync } from "node:child_process";
+import { cpSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// The MMX Starter pack owns the enemy and pickup art (packages/pack-mmx-starter/assets + assets.json).
+// This script rebuilds the pack's manifest fragment, then writes both templates: the shared
+// assets (player, effects, HUD, sounds, font) read from mmx-starter, plus the pack's entries
+// and a physical copy of its files, since Studio bundles the template and ships only out/**.
 const here = dirname(fileURLToPath(import.meta.url));
-const templateRoot = join(here, "../../templates/mmx-starter");
+const templatesRoot = join(here, "../../templates");
+const starterRoot = join(templatesRoot, "mmx-starter");
+const repoRoot = join(here, "../../../..");
+const packRoot = join(repoRoot, "packages/pack-mmx-starter");
+const TEMPLATES = ["mmx-starter", "mmx-demo"];
 
-const readJson = (relativePath) =>
-  JSON.parse(readFileSync(join(templateRoot, relativePath), "utf8"));
+const readJson = (root, relativePath) => JSON.parse(readFileSync(join(root, relativePath), "utf8"));
+const writeJson = (path, value) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+// Leave files as `pnpm fmt:check` wants them, so a run on unchanged sources changes nothing.
+const format = (paths) =>
+  execSync(`pnpm exec oxfmt ${paths.map((path) => relative(repoRoot, path)).join(" ")}`, {
+    cwd: repoRoot,
+    stdio: "inherit",
+  });
 
 const spriteSheets = [
   ["sprite.player.x", "assets/sprites/player/x.png"],
@@ -22,12 +37,15 @@ const spriteSheets = [
   ["sprite.effects.lemon-hit", "assets/sprites/effects/lemon_hit.png"],
   ["sprite.effects.medium-shot", "assets/sprites/effects/medium_shot.png"],
   ["sprite.effects.remains", "assets/sprites/effects/remains.png"],
-  ["sprite.enemies.metool", "assets/sprites/enemies/metool.png"],
-  ["sprite.enemies.sbat", "assets/sprites/enemies/sbat.png"],
   ["sprite.hud.hp-fill", "assets/sprites/hud/hp_fill.png"],
   ["sprite.hud.weapon-bar", "assets/sprites/hud/weapon_bar.png"],
   ["sprite.hud.weapon-icon-dark-arrow", "assets/sprites/hud/weapon_icon_dark_arrow.png"],
   ["sprite.hud.x-bar", "assets/sprites/hud/x_bar.png"],
+];
+
+const packSpriteSheets = [
+  ["sprite.enemies.metool", "assets/sprites/enemies/metool.png"],
+  ["sprite.enemies.sbat", "assets/sprites/enemies/sbat.png"],
   ["sprite.pickups.ammo", "assets/sprites/pickups/ammo.png"],
   ["sprite.pickups.heal", "assets/sprites/pickups/heal.png"],
   ["sprite.pickups.sammo", "assets/sprites/pickups/sammo.png"],
@@ -78,10 +96,10 @@ function animationAsset(id, sheetAssetId, sheetPath, animations) {
   return { id, kind: "animation", path: sheetPath, sheetAssetId, animations };
 }
 
-const playerAnims = readJson("assets/sprites/player/x_anims.json");
-const enemyAnims = readJson("assets/sprites/enemies/enemy_anims.json");
-const pickupAnims = readJson("assets/sprites/pickups/pickup_anims.json");
-const shotAnims = readJson("assets/sprites/effects/shot_anims.json");
+const playerAnims = readJson(starterRoot, "assets/sprites/player/x_anims.json");
+const enemyAnims = readJson(packRoot, "assets/sprites/enemies/enemy_anims.json");
+const pickupAnims = readJson(packRoot, "assets/sprites/pickups/pickup_anims.json");
+const shotAnims = readJson(starterRoot, "assets/sprites/effects/shot_anims.json");
 
 const animationAssets = [
   animationAsset(
@@ -90,6 +108,12 @@ const animationAssets = [
     "assets/sprites/player/x.png",
     playerAnims.animations,
   ),
+];
+
+const byId = (a, b) => a.id.localeCompare(b.id);
+
+const packAssets = [
+  ...packSpriteSheets.map(([id, path]) => spriteAsset(id, path)),
   animationAsset(
     "anim.enemy.metool",
     "sprite.enemies.metool",
@@ -126,7 +150,11 @@ const animationAssets = [
     "assets/sprites/pickups/sammo.png",
     pickupAnims.actors.sammo.animations,
   ),
-];
+].sort(byId);
+writeJson(join(packRoot, "assets.json"), { assets: packAssets });
+// Formatted before the templates copy it, so they get the same bytes.
+format([join(packRoot, "assets.json"), join(packRoot, "assets")]);
+console.log(`pack assets.json: ${packAssets.length} assets`);
 
 for (const [clipName, clip] of Object.entries(shotAnims.animations)) {
   const sheetFile = shotAnims.sheets[clipName];
@@ -140,25 +168,22 @@ for (const [clipName, clip] of Object.entries(shotAnims.animations)) {
   );
 }
 
-const manifest = {
-  schemaVersion: 1,
-  id: "mmx.starter",
-  name: "MMX Starter",
-  gameVersion: "1.0.0",
-  compatibleRuntime: { min: "1.0.0" },
-  entryLevelId: "level.starter",
-  levels: [{ id: "level.starter", path: "levels/level.starter.json" }],
-  assets: [
-    ...spriteSheets.map(([id, path]) => spriteAsset(id, path)),
-    ...animationAssets,
-    ...sounds.map(([id, path]) => soundAsset(id, path)),
-    ...fonts.map(([id, path]) => fontAsset(id, path)),
-  ],
-};
+const assets = [
+  ...spriteSheets.map(([id, path]) => spriteAsset(id, path)),
+  ...animationAssets,
+  ...sounds.map(([id, path]) => soundAsset(id, path)),
+  ...fonts.map(([id, path]) => fontAsset(id, path)),
+  ...packAssets,
+].sort(byId);
 
-manifest.assets.sort((a, b) => a.id.localeCompare(b.id));
-// Contract C-MARK: the template ships the MMX Starter pack in data/game.json; last, as serializeProject writes it.
-manifest.packs = [{ id: "mmx-starter", version: 1 }];
+for (const name of TEMPLATES) {
+  const root = join(templatesRoot, name);
+  // Each template keeps its own identity, levels and pack marker; only the asset list is generated.
+  // Both templates get the same asset list: an asset only mmx-demo carries must be added above.
+  const manifest = { ...readJson(root, "project.json"), assets };
+  writeJson(join(root, "project.json"), manifest);
+  cpSync(join(packRoot, "assets"), join(root, "assets"), { recursive: true });
+  console.log(`${name}/project.json: ${assets.length} assets`);
+}
 
-writeFileSync(join(templateRoot, "project.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-console.log(`project.json: ${manifest.assets.length} assets`);
+format(TEMPLATES.map((name) => join(templatesRoot, name, "project.json")));

@@ -22,8 +22,7 @@
     "test:oracle": "node --import tsx --test --test-name-pattern=oracle tests/project-io/steam.test.ts tests/project-io/mmx1.test.ts tests/project-io/mmz1.test.ts tests/project-io/zero-project.test.ts",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "generate:manifest": "node scripts/starter-template/generate-manifest.mjs",
-    "sync:resources": "node scripts/starter-template/sync-resources.mjs"
+    "generate:manifest": "node scripts/starter-template/generate-manifest.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.36.1",

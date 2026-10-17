@@ -3,10 +3,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const templateRoot = resolve(here, "../../templates/mmx-starter");
-const godot = resolve(templateRoot, process.argv[2] ?? "../../../Mega-Man-X8-16-bit");
+// The MMX Starter pack owns this art; generate-manifest.mjs copies it into the templates.
+const packRoot = resolve(here, "../../../../packages/pack-mmx-starter");
+// The Godot reference project: a sibling checkout of this repo, or an argument relative to the repo root.
+const godot = resolve(here, "../../../..", process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const enemies = join(godot, "src/Actors/Enemies");
-const assets = join(templateRoot, "assets/sprites/enemies");
+const assets = join(packRoot, "assets/sprites/enemies");
 
 const ACTORS = {
   metool: {
@@ -63,4 +65,6 @@ for (const [name, actor] of Object.entries(out.actors)) {
     .join(" ");
   console.log(`${name}: ${clips}`);
 }
-console.log("enemy_anims.json + sheets written to templates/mmx-starter/assets/sprites/enemies");
+console.log(
+  "enemy_anims.json + sheets written to packages/pack-mmx-starter/assets/sprites/enemies; run generate-manifest.mjs next",
+);
