@@ -14,6 +14,7 @@ import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { compileLevel } from "../src/game/level.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
+import { MMX_COMPILED, MMX_GAME_DATA } from "./support/mmx.js";
 
 /**
  * The runtime reads every game object from the scene's game data: the engine
@@ -141,7 +142,7 @@ test("a level placing a pack object the game data lacks fails to compile, by ent
 });
 
 test("a capsule Kind is any pickup of the matching behaviour", () => {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = structuredClone(MMX_GAME_DATA);
   data.pickups["life.huge"] = { ...data.pickups["life.large"]!, id: "life.huge", amount: 20 };
   const gameData = compile(data);
   const huge = level([entity("LifeCapsule", 20, { Kind: "huge" })]);
@@ -179,21 +180,21 @@ function overlayScene(gameData: CompiledGameData) {
 }
 
 test("an overlay changing a pickup, the moving-platform defaults and a projectile changes the game", () => {
-  const merged = mergeGameData(GAME_DATA, {
-    pickups: { "life.small": { ...GAME_DATA.pickups["life.small"]!, amount: 5 } },
+  const merged = mergeGameData(MMX_GAME_DATA, {
+    pickups: { "life.small": { ...MMX_GAME_DATA.pickups["life.small"]!, amount: 5 } },
     environments: {
       "moving-platform": {
-        ...GAME_DATA.environments["moving-platform"]!,
+        ...MMX_GAME_DATA.environments["moving-platform"]!,
         defaults: { travel: 10, speed: 20 },
       },
     },
-    projectiles: { pantheon_shot: { ...GAME_DATA.projectiles.pantheon_shot!, damage: 5 } },
+    projectiles: { pantheon_shot: { ...MMX_GAME_DATA.projectiles.pantheon_shot!, damage: 5 } },
   });
   assert.ok(merged.ok, JSON.stringify(!merged.ok && merged.diagnostics));
   const gameData = compile(merged.value);
-  assert.notEqual(gameData.hash, COMPILED_GAME_DATA.hash);
+  assert.notEqual(gameData.hash, MMX_COMPILED.hash);
 
-  const built = overlayScene(COMPILED_GAME_DATA);
+  const built = overlayScene(MMX_COMPILED);
   assert.equal(built.heal, 2);
   assert.deepEqual([built.platform.travel, built.platform.speed], [96, 48]);
   assert.equal(built.shotDamage, 2);
@@ -206,7 +207,7 @@ test("an overlay changing a pickup, the moving-platform defaults and a projectil
 });
 
 test("compileGameData validates pickup sheets and each environment's defaults", () => {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = structuredClone(MMX_GAME_DATA);
   data.pickups["life.small"]!.sheet = "";
   data.environments["moving-platform"]!.defaults = { travel: -1, speed: 48 };
   data.environments.conveyor!.defaults = {};

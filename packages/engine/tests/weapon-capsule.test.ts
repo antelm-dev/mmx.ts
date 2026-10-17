@@ -1,16 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  DT,
-  PICKUP_TICK_INTERVAL,
-  SUB_WEAPON_MAX_AMMO,
-  WEAPON_CAPSULE_STATS,
-} from "../src/core/constants.js";
+import { DT, PICKUP_TICK_INTERVAL, SUB_WEAPON_MAX_AMMO } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
+import { MMX_COMPILED, WEAPON_CAPSULE_STATS } from "./support/mmx.js";
 
 function room(): World {
   return World.fromRows(["....", "....", "...."]);
@@ -52,9 +48,14 @@ function darkArrowPlayer(startingAmmo: number): Player {
 test("a small Weapon Energy capsule refills 2 ammo over several ticks, then despawns", () => {
   const world = room();
   const player = darkArrowPlayer(0);
-  const stage = new Stage(world, player, {
-    weaponCapsules: [{ id: "cap", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      weaponCapsules: [{ id: "cap", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   assert.equal(WEAPON_CAPSULE_STATS.small.ammo, 2);
 
@@ -81,9 +82,14 @@ test("a small Weapon Energy capsule refills 2 ammo over several ticks, then desp
 test("a large capsule collected near a full tank discards the unused overflow", () => {
   const world = room();
   const player = darkArrowPlayer(SUB_WEAPON_MAX_AMMO - 1);
-  const stage = new Stage(world, player, {
-    weaponCapsules: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      weaponCapsules: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   assert.equal(WEAPON_CAPSULE_STATS.large.ammo, 8);
 
@@ -96,10 +102,15 @@ test("a large capsule collected near a full tank discards the unused overflow", 
 test("the stage freezes while a Weapon Energy capsule refills ammo, then resumes", () => {
   const world = room();
   const player = darkArrowPlayer(0);
-  const stage = new Stage(world, player, {
-    platforms: [{ id: "platform", x: 48, y: 16, w: 16, h: 8, travel: 32, speed: 60 }],
-    weaponCapsules: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      platforms: [{ id: "platform", x: 48, y: 16, w: 16, h: 8, travel: 32, speed: 60 }],
+      weaponCapsules: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   stage.tick(DT); // overlap detected; recovery pause begins
   assert.equal(stage.weaponCapsules[0].collecting, true);
@@ -123,9 +134,14 @@ test("collecting a Weapon Energy capsule with the buster equipped wastes it", ()
   const world = room();
   const player = new Player(world, 16, 16, new Input());
   assert.equal(player.activeWeapon, "buster");
-  const stage = new Stage(world, player, {
-    weaponCapsules: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      weaponCapsules: [{ id: "cap", kind: "large", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   for (let i = 0; i < 10; i++) stage.tick(DT);
 
@@ -138,10 +154,15 @@ test("collecting a Weapon Energy capsule with the buster equipped wastes it", ()
 test("a Life and a Weapon Energy capsule never recover at the same time", () => {
   const world = room();
   const player = darkArrowPlayer(0);
-  const stage = new Stage(world, player, {
-    pickups: [{ id: "life", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-    weaponCapsules: [{ id: "ammo", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      pickups: [{ id: "life", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+      weaponCapsules: [{ id: "ammo", kind: "small", x: 16 - 6, y: 16 - 6, w: 12, h: 12 }],
+    },
+    MMX_COMPILED,
+  );
 
   stage.tick(DT);
   const lifeCollecting = stage.pickups[0].collecting;
@@ -157,9 +178,14 @@ test("a Weapon Energy capsule falls under gravity and settles on the floor", () 
     "####################",
   ]);
   const player = new Player(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
-  const stage = new Stage(world, player, {
-    weaponCapsules: [{ id: "drop", kind: "small", x: 32, y: 0, w: 16, h: 16 }],
-  });
+  const stage = new Stage(
+    world,
+    player,
+    {
+      weaponCapsules: [{ id: "drop", kind: "small", x: 32, y: 0, w: 16, h: 16 }],
+    },
+    MMX_COMPILED,
+  );
 
   for (let i = 0; i < 30; i++) stage.tick(DT);
 

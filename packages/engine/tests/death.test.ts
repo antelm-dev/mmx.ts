@@ -14,7 +14,7 @@ import type { AnimData } from "@mmx/contracts/animation";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { makeMetool } from "../src/game/enemies/index.js";
+import { makeMetool } from "./support/mmx.js";
 
 const animData = JSON.parse(
   readFileSync(new URL("./fixtures/x_anims.json", import.meta.url), "utf8"),

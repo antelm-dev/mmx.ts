@@ -2,13 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import { DT, ENEMY_STATS, ONE_WAY_DROP_TICKS, TILE_SIZE } from "../src/core/constants.js";
+import { DT, ONE_WAY_DROP_TICKS, TILE_SIZE } from "../src/core/constants.js";
 import { Actor } from "../src/game/Actor.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
-import { makeMetool } from "../src/game/enemies/index.js";
 import { LifeCapsule } from "../src/game/Pickup.js";
+import { ENEMY_STATS, MMX_COMPILED, makeMetool } from "./support/mmx.js";
 
 // Solid floor on row 11 (top 176); a OneWay ledge on row 8 (top 128), columns 3..12.
 const FLOOR_Y = 11 * TILE_SIZE;
@@ -206,7 +206,7 @@ test("a tapped-then-released dash does not stop down + jump from dropping", () =
 });
 
 function capsuleAt(y: number): LifeCapsule {
-  return new LifeCapsule({ id: "c", kind: "small", x: 5 * TILE_SIZE, y, w: 8, h: 8 });
+  return new LifeCapsule({ id: "c", kind: "small", x: 5 * TILE_SIZE, y, w: 8, h: 8 }, MMX_COMPILED);
 }
 
 test("a capsule falling onto a OneWay ledge rests on its top edge", () => {

@@ -2,17 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input, type Action } from "../src/core/Input.js";
-import { DT, ENEMY_STATS } from "../src/core/constants.js";
+import { DT } from "../src/core/constants.js";
 import { Actor } from "../src/game/Actor.js";
 import { Player } from "../src/game/Player.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { makeMetool } from "../src/game/enemies/index.js";
 import { stage2 } from "./fixtures/levels.js";
 import { GAME_DATA } from "../src/data/gameData.js";
 import { compileGameData } from "../src/data/compileGameData.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
+import { ENEMY_STATS, MMX_COMPILED, makeMetool } from "./support/mmx.js";
 
 const FLOOR_Y = 11 * 16;
 
@@ -159,7 +159,12 @@ test("getting hit cancels the swing and its blade", () => {
 });
 
 test("a swing does not survive a restart, rewind or level load", () => {
-  const recorder = new Recorder({ level: stage2, seed: 1, loadoutId: "player.zero" });
+  const recorder = new Recorder({
+    level: stage2,
+    seed: 1,
+    loadoutId: "player.zero",
+    gameData: MMX_COMPILED,
+  });
   const swing = { box: { hw: 8, hh: 8 }, damage: 1, activeFrames: 60 };
   for (const reset of [
     () => recorder.restart(),

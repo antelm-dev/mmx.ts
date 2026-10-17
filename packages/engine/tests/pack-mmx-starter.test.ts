@@ -1,8 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
-
 import { buildCompileRegistries } from "../src/behaviors/index.js";
 import {
   COMPILED_GAME_DATA,
@@ -11,12 +9,12 @@ import {
   mergeGameData,
   type CompiledGameData,
   type GameData,
-  type GameDataOverlay,
 } from "../src/data/index.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
 import { stage1, stage2 } from "./fixtures/levels.js";
+import { MMX_PACK as PACK, coreGameData as core } from "./support/mmx.js";
 
 /**
  * The MMX Starter pack is the built-in MMX objects as data: the base without
@@ -25,19 +23,7 @@ import { stage1, stage2 } from "./fixtures/levels.js";
  * moment either side changes without the other.
  */
 
-const PACK = pack as GameDataOverlay;
 const BUILTIN_HASH = "36e5bb6d8c3547a6";
-
-/** GAME_DATA without any record the pack ships. */
-function core(): GameData {
-  const data: GameData = structuredClone(GAME_DATA);
-  for (const [category, records] of Object.entries(PACK)) {
-    if (category === "schemaVersion") continue;
-    const table = data[category as keyof GameData] as Record<string, unknown>;
-    for (const id of Object.keys(records as object)) delete table[id];
-  }
-  return data;
-}
 
 function compile(data: GameData): CompiledGameData {
   const result = compileGameData(data, buildCompileRegistries());
@@ -148,7 +134,7 @@ for (const [name, level, missing] of [
 }
 
 test("the pack-objects run collects its capsule while hurt", () => {
-  const { scene } = run(OBJECTS);
+  const { scene } = run(OBJECTS, compile(withPack()));
   assert.equal(scene.stage.pickups.length, 0, "the capsule was collected");
   assert.equal(scene.player.current_health, scene.player.max_health - 12 + 2);
 });

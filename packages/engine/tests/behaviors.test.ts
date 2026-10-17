@@ -17,9 +17,14 @@ import {
   type GameData,
   type GameDataDiagnostic,
 } from "../src/data/index.js";
+import { MMX_GAME_DATA } from "./support/mmx.js";
 
 function clone(): GameData {
   return structuredClone(GAME_DATA);
+}
+/** For the cases that edit an MMX enemy: core + the MMX Starter pack. */
+function cloneMmx(): GameData {
+  return structuredClone(MMX_GAME_DATA);
 }
 function compile(data: GameData) {
   return compileGameData(data, buildCompileRegistries());
@@ -100,7 +105,7 @@ test("the ability registry knows every player ability's behaviour", () => {
 });
 
 test("the enemy-behaviour registry knows every enemy ability id", () => {
-  for (const enemy of Object.values(GAME_DATA.enemies)) {
+  for (const enemy of Object.values(MMX_GAME_DATA.enemies)) {
     for (const ability of enemy.abilities) {
       assert.equal(enemyBehaviorRegistry.has(ability), true, `missing ${ability}`);
     }
@@ -114,7 +119,7 @@ test("an unknown ability behaviour fails compilation against the real registries
 });
 
 test("an unknown enemy behaviour fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.metool.abilities = ["Patrol", "Levitate", "Death"];
   data.enemies.metool.reactions = { idle: ["Patrol"], guard_break: ["Death"] };
   assert.ok(errorCodes(compile(data).diagnostics).includes("behavior.unknown"));
@@ -133,7 +138,7 @@ test("an ability config missing a required key fails compilation", () => {
 });
 
 test("an enemy ability config with an unknown key fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.metool.abilityConfig!.Patrol.travelSpeeed = 30;
   const diagnostics = compile(data).diagnostics;
   assert.ok(
@@ -146,13 +151,13 @@ test("an enemy ability config with an unknown key fails compilation", () => {
 });
 
 test("an enemy ability config for an ability the enemy does not own fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.bat.abilityConfig!.Hide = { ...data.enemies.metool.abilityConfig!.Hide };
   assert.ok(errorCodes(compile(data).diagnostics).includes("config.invalid"));
 });
 
 test("an enemy ability config missing a key or out of range fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   delete data.enemies.bat.abilityConfig!.Recoil.duration;
   data.enemies.bat.abilityConfig!.Hover.area = 0;
   const paths = compile(data).diagnostics.map((d) => d.fieldPath);
@@ -161,7 +166,7 @@ test("an enemy ability config missing a key or out of range fails compilation", 
 });
 
 test("an enemy ability config whose conflicts name an ability the enemy does not own fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.metool.abilityConfig!.Patrol.conflicts = ["Hide", "Stunn"];
   const missing = compile(data).diagnostics.filter((d) => d.code === "reaction.missing");
   assert.deepEqual(
@@ -171,7 +176,7 @@ test("an enemy ability config whose conflicts name an ability the enemy does not
 });
 
 test("a Shoot config naming an unknown projectile fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.enemies.pantheon.abilityConfig!.Shoot.projectile = "ghost_shot";
   const missing = compile(data).diagnostics.filter((d) => d.code === "reference.missing");
   assert.deepEqual(
