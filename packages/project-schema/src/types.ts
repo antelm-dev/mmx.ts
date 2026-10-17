@@ -110,6 +110,16 @@ export type ProjectObjectDefinition = {
   exposed?: string[];
 };
 
+/**
+ * A data pack copied into the project (contract C-MARK): a trace of what was
+ * copied, not a dependency. A manifest without `packs` predates packs and gets
+ * the MMX Starter on load; `packs: []` is a project on the base data only.
+ */
+export type ProjectPack = {
+  id: string;
+  version: number;
+};
+
 export type ProjectDocument = {
   schemaVersion: number;
   id: string;
@@ -121,6 +131,7 @@ export type ProjectDocument = {
   assets: ProjectAsset[];
   player?: ProjectPlayer;
   objects?: ProjectObjectDefinition[];
+  packs?: ProjectPack[];
 };
 
 export type ValidateProjectOptions = {

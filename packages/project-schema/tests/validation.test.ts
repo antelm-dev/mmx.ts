@@ -659,6 +659,34 @@ test("objects are optional, shape-checked and serialized sorted", () => {
   );
 });
 
+test("packs are optional, kept in order and kept when empty, and shape-checked", () => {
+  assert.equal(serializeProject(validProject()).includes('"packs"'), false);
+  const roundTrip = (packs: ProjectDocument["packs"]) =>
+    parseProject(JSON.parse(serializeProject(validProject({ packs })))).project?.packs;
+  assert.deepEqual(roundTrip([]), []);
+  const packs = [
+    { id: "mmx-starter", version: 1 },
+    { id: "a.pack", version: 3 },
+  ];
+  assert.deepEqual(roundTrip(packs), packs);
+
+  const codes = (value: unknown) =>
+    validateProject({ ...validProject(), packs: value } as unknown as ProjectDocument).issues.map(
+      (issue) => [issue.code, issue.path],
+    );
+  assert.deepEqual(codes({}), [["packs.array", "/packs"]]);
+  assert.deepEqual(
+    codes([packs[0], { ...packs[0] }, { id: "", version: 0 }, { id: "x", version: 1.5 }, "nope"]),
+    [
+      ["id.duplicate", "/packs/1/id"],
+      ["id.missing", "/packs/2/id"],
+      ["pack.version", "/packs/2/version"],
+      ["pack.version", "/packs/3/version"],
+      ["pack.shape", "/packs/4"],
+    ],
+  );
+});
+
 test("frame hurtbox and hitboxes are validated and survive serialization", () => {
   const withBoxes = (frame: Record<string, unknown>): ProjectDocument =>
     validProject({

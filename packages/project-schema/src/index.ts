@@ -14,6 +14,7 @@ export {
   type ProjectAsset,
   type ProjectDocument,
   type ProjectObjectDefinition,
+  type ProjectPack,
   type ProjectPlayer,
   type Region,
   type Severity,

@@ -7,6 +7,7 @@ import {
   TerrainTile,
   validateImageLayers,
   validateTileLayers,
+  withStarterPack,
 } from "@mmx/content-schema";
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
 import {
@@ -25,6 +26,9 @@ import { validateLevelObjects } from "./compileLevel.js";
 import { ProjectLoadError } from "./errors.js";
 import { containAbsolutePath, resolveContainedProjectPath } from "./paths.js";
 import type { LoadProjectResult, LoadedProject, ProjectIssue } from "./types.js";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 function toIssues(
   issues: Array<{ severity?: "error" | "warning"; code: string; message: string; path: string }>,
@@ -89,13 +93,16 @@ type ProjectGameData = { gameData: GameData; compiledGameData: CompiledGameData 
 
 /**
  * `data/game.json` merged as an overlay over the engine's {@link GAME_DATA} and
- * compiled; without the file, the built-in data unchanged. Problems are reported
- * to `issues` against the file and yield undefined.
+ * compiled; without the file, the built-in data unchanged. A `manifest` without
+ * `packs` gets the MMX Starter (`withStarterPack`, in memory: nothing is written),
+ * returned as `manifest`. Problems are reported to `issues` against the file and
+ * yield undefined.
  */
 async function loadGameData(
   root: string,
   issues: ProjectIssue[],
-): Promise<ProjectGameData | undefined> {
+  manifest: unknown,
+): Promise<{ data: ProjectGameData; manifest: unknown } | undefined> {
   const report = (code: string, message: string): undefined => {
     issues.push({ severity: "error", code, path: `/${GAME_DATA_FILE}`, message });
     return undefined;
@@ -108,17 +115,27 @@ async function loadGameData(
     return undefined;
   };
 
-  let overlay: GameDataOverlay;
+  let file: GameDataOverlay | undefined;
   try {
     const contained = await resolveContainedProjectPath(root, GAME_DATA_FILE);
-    if (!contained.exists) return { gameData: GAME_DATA, compiledGameData: COMPILED_GAME_DATA };
-    overlay = JSON.parse(await fs.readFile(contained.absolutePath, "utf8")) as GameDataOverlay;
+    if (contained.exists) {
+      file = JSON.parse(await fs.readFile(contained.absolutePath, "utf8")) as GameDataOverlay;
+    }
   } catch (error) {
     if (error instanceof ProjectLoadError) return report(error.code, error.message);
     const message = error instanceof Error ? error.message : String(error);
     return report("gameData.parse", `Failed to read '${GAME_DATA_FILE}': ${message}`);
   }
 
+  // Not an object: no `packs` to read; parseProject reports it.
+  const packed = isRecord(manifest) ? withStarterPack(manifest, file) : { manifest, overlay: file };
+  const overlay = packed.overlay;
+  if (!overlay) {
+    return {
+      data: { gameData: GAME_DATA, compiledGameData: COMPILED_GAME_DATA },
+      manifest: packed.manifest,
+    };
+  }
   const merged = mergeGameData(GAME_DATA, overlay);
   if (!merged.ok) return reportDiagnostics(merged.diagnostics);
   let compiled;
@@ -130,7 +147,10 @@ async function loadGameData(
     return report("gameData.invalid", `${GAME_DATA_FILE} is malformed: ${message}`);
   }
   if (!compiled.ok) return reportDiagnostics(compiled.diagnostics);
-  return { gameData: merged.value, compiledGameData: compiled.value };
+  return {
+    data: { gameData: merged.value, compiledGameData: compiled.value },
+    manifest: packed.manifest,
+  };
 }
 
 export async function loadProject(root: string): Promise<LoadProjectResult> {
@@ -190,8 +210,9 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   }
 
   const gameDataIssues: ProjectIssue[] = [];
-  const projectGameData = await loadGameData(rootResolved, gameDataIssues);
-  const parsed = parseProject(raw, {
+  const loaded = await loadGameData(rootResolved, gameDataIssues, raw);
+  const projectGameData = loaded?.data;
+  const parsed = parseProject(loaded?.manifest ?? raw, {
     loadoutIds: (projectGameData?.compiledGameData ?? COMPILED_GAME_DATA).loadouts.keys(),
     terrainTiles: Object.values(TerrainTile),
   });

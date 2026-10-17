@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "@mmx/contracts": "workspace:*",
-    "@mmx/engine": "workspace:*"
+    "@mmx/engine": "workspace:*",
+    "@mmx/pack-mmx-starter": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

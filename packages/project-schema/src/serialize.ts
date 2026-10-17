@@ -137,6 +137,10 @@ export function normalizeProject(project: ProjectDocument): ProjectDocument {
             .sort((a, b) => compareId(a.id, b.id)),
         }
       : {}),
+    // Kept when empty: `packs: []` (base data only) is not a manifest without `packs`.
+    ...(project.packs !== undefined
+      ? { packs: project.packs.map((pack) => ({ id: pack.id, version: pack.version })) }
+      : {}),
   };
 }
 
