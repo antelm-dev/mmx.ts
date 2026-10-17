@@ -27,6 +27,14 @@ describe("project game data", () => {
     expect(projectGameData(overlay)).toBe(result); // memoized per overlay
   });
 
+  it("never gives the new enemy its base's name or description", () => {
+    const data = structuredClone(MMX_GAME_DATA);
+    data.prefabs["enemy.metool"]!.description = "Hides under its helmet.";
+    const prefab = addEnemy(MMX_OVERLAY, data, crab).overlay.prefabs?.["enemy.crab"];
+    expect(prefab?.name).toBe("Crab");
+    expect(prefab).not.toHaveProperty("description");
+  });
+
   it("picks a free id and keeps earlier records", () => {
     const first = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, crab);
     const data = projectGameData(first.overlay).data;

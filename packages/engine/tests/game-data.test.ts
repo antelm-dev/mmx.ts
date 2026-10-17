@@ -111,18 +111,34 @@ test("the hash is invariant to authoring key order", () => {
   if (result.ok) assert.equal(result.value.hash, COMPILED_GAME_DATA.hash);
 });
 
-test("a prefab's display name is presentation: it never changes the hash", () => {
+test("a prefab's display name and description are presentation: they never change the hash", () => {
   const data = cloneMmx();
   data.prefabs["enemy.metool"].name = "Hard Hat";
+  data.prefabs["hazard"].description = "Spikes.";
   const result = compile(data);
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.value.hash, MMX_COMPILED.hash);
+  // Nor does dropping them all, as in a project copied before prefabs had any.
+  for (const prefab of Object.values(data.prefabs)) {
+    delete prefab.name;
+    delete prefab.description;
+  }
+  const bare = compile(data);
+  assert.equal(bare.ok, true);
+  if (bare.ok) assert.equal(bare.value.hash, MMX_COMPILED.hash);
 });
 
-test("a blank prefab name is an error", () => {
-  const data = cloneMmx();
-  data.prefabs["enemy.metool"].name = "  ";
-  assert.ok(codes(compile(data).diagnostics).includes("value.string"));
+test("a blank prefab name or description is an error", () => {
+  for (const key of ["name", "description"] as const) {
+    const data = cloneMmx();
+    data.prefabs["enemy.metool"][key] = "  ";
+    const diagnostics = compile(data).diagnostics;
+    assert.ok(
+      diagnostics.some(
+        (d) => d.code === "value.string" && d.fieldPath === `prefabs.enemy.metool.${key}`,
+      ),
+    );
+  }
 });
 
 // --- diagnostics ------------------------------------------------------------
