@@ -19,6 +19,10 @@ vi.mock("../assets/studioAssets.js", () => {
       calls.push("build:starter");
       return fakeAssets("starter");
     },
+    buildStarterBasedAssets: () => {
+      calls.push("build:starter-based");
+      return fakeAssets("starter-based");
+    },
     buildStudioAssets: (
       _project: unknown,
       gameData: { bindings?: { playerAnimation?: string } },
@@ -85,6 +89,25 @@ describe("ProjectSession asset switch", () => {
     session.close();
     await session.getAssets();
     expect(calls).toEqual(["release", "reset", "build:starter", "load:starter"]);
+  });
+});
+
+describe("ProjectSession without game/data.json", () => {
+  it("draws with the starter's bindings and reports no issue, as a new project has none yet", async () => {
+    const noData = {
+      ...bridge,
+      readPlayAssets: async () => {
+        calls.push("read");
+        return { ok: true, issues: [], value: { gameData: null, urls: {} } };
+      },
+    };
+    vi.stubGlobal("window", { studio: { project: noData } });
+    const session = new ProjectSession();
+
+    await session.openProject();
+    expect(await session.getAssets()).not.toBeNull();
+    expect(calls).toEqual(["reset", "read", "build:starter-based", "load:starter-based"]);
+    expect(session.getSnapshot().issues).toEqual([]);
   });
 });
 

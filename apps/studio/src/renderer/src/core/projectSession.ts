@@ -18,6 +18,7 @@ import { levelManifestPath, PROJECT_VALIDATION, updateLevelDocument } from "@mmx
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
   buildStarterAssets,
+  buildStarterBasedAssets,
   buildStudioAssets,
   starterAssets,
   type StudioAssets,
@@ -255,17 +256,18 @@ export class ProjectSession {
             }
           : gameData;
         const { data: engineData, compiled } = projectGameData(project.gameData);
-        assets = buildStudioAssets(
-          project.manifest,
-          data,
-          (asset) => urls[asset.id] ?? "",
-          engineData.enemies,
-        );
+        const resolveUrl = (asset: { id: string }) => urls[asset.id] ?? "";
+        // No game/data.json yet (a new project) is no problem: the starter's player, HUD and shots.
+        assets = data
+          ? buildStudioAssets(project.manifest, data, resolveUrl, engineData.enemies)
+          : buildStarterBasedAssets(project.manifest, resolveUrl, engineData.enemies);
         await assets.catalog.load();
         const clips = this.animationAsset(playerAnimation ?? "")?.animations ?? {};
-        const missing = requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
-          (name) => !clips[name],
-        );
+        const missing = !data
+          ? []
+          : requiredPlayerClips(project.manifest.player?.loadout, compiled).filter(
+              (name) => !clips[name],
+            );
         if (missing.length > 0) {
           issues.push({
             severity: "warning",

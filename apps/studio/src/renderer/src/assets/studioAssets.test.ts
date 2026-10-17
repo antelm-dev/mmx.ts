@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ProjectDocument } from "@mmx/project-schema";
 import { describe, expect, it } from "vitest";
-import { buildStudioAssets, starterAssets, type StudioGameData } from "./studioAssets.js";
+import {
+  buildStarterBasedAssets,
+  buildStudioAssets,
+  starterAssets,
+  type StudioGameData,
+} from "./studioAssets.js";
 
 const fixtureRoot = resolve(__dirname, "../../../../tests/project-io/fixtures/minimal-project");
 const readJson = (path: string): unknown =>
@@ -50,5 +55,15 @@ describe("buildStudioAssets", () => {
     expect(() => buildStudioAssets(project, broken, resolveUrl)).toThrow(/anim\.nope/);
     expect(() => buildStudioAssets(project, {} as StudioGameData, resolveUrl)).toThrow(/bindings/);
     expect(() => buildStudioAssets(project, gameData, () => "")).toThrow(/empty string/);
+  });
+});
+
+describe("buildStarterBasedAssets", () => {
+  it("draws a project without game/data.json with the starter's bindings and its own enemies", () => {
+    const enemies = { crab: { sheet: "anim.player.fixture" } };
+    const { manifest } = buildStarterBasedAssets(project, resolveUrl, enemies);
+    expect(manifest.playerSheet).toBe(starterAssets.manifest.playerSheet);
+    expect(manifest.enemyActorIds["anim.player.fixture"]).toBe("anim.player.fixture");
+    expect(manifest.sheetUrls["sprite.player.fixture"]).toBe("fixture://assets/sprites/player.png");
   });
 });

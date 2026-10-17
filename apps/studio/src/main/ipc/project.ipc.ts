@@ -223,9 +223,11 @@ export function createProjectIpc() {
       ): Promise<ProjectResult<{ gameData: unknown; urls: Record<string, string> }>> => {
         const fs = createNodeFileSystem(rootPath);
         const issues: ProjectIssue[] = [];
+        // Absent in a new project: null, not an issue (the renderer falls back to the starter).
         let gameData: unknown = null;
         try {
-          gameData = JSON.parse(await fs.readText(GAME_DATA_FILE));
+          if (await fs.exists(GAME_DATA_FILE))
+            gameData = JSON.parse(await fs.readText(GAME_DATA_FILE));
         } catch (error) {
           issues.push(
             issue("play-assets.game-data", errorMessage(error), `/${GAME_DATA_FILE}`, "warning"),

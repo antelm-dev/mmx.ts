@@ -84,7 +84,8 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
         "aria-current",
         "true",
       );
-      await levelTab.click();
+      // Brought over the Start tab or the Clip Editor by the creation itself.
+      await expect(levelTab).toHaveAttribute("aria-selected", "true");
       const box = (await canvas.boundingBox())!;
       await canvas.click({ position: { x: box.width / 2 + dx, y: box.height / 2 } });
     };
@@ -151,6 +152,18 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     await dialog.getByRole("button", { name: "Create" }).click();
     await expect(dialog).toHaveCount(0);
     await place("Crab", 64);
+    // A new project has no game/data.json: not a problem, Play uses the starter's bindings.
+    await expect(page.getByText("No problems detected. Ready to play.")).toBeVisible();
+    await expect(page.getByText(/game\/data\.json/)).toHaveCount(0);
+    await page.getByRole("button", { name: /^Play$/ }).click();
+    await expect(page.locator("#play-canvas")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("[data-enemy-kinds]")).toHaveAttribute(
+      "data-enemy-kinds",
+      /\bcrab\b/,
+    );
+    await expect(page.getByText(/Could not start Play|Play error|Fix \d+ error/)).toHaveCount(0);
+    await page.getByRole("button", { name: /^Stop$/ }).click();
+    await expect(canvas).toBeVisible();
 
     // First Save: a name, then a new folder; the whole project moves there.
     await page.getByRole("button", { name: "File menu" }).click();
