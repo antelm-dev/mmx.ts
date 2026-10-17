@@ -75,8 +75,9 @@ export async function createProject(
   await fs.mkdir("assets/sounds");
   await fs.mkdir("assets/fonts");
   await fs.writeText(levelPath, `${JSON.stringify(levelDocument, null, 2)}\n`);
-  await fs.writeText(PROJECT_MANIFEST, serializeProject(manifest));
+  // Records before the manifest's `packs`, as in saveProject.
   await fs.writeText(CANONICAL_GAME_DATA_FILE, `${JSON.stringify(gameData, null, 2)}\n`);
+  await fs.writeText(PROJECT_MANIFEST, serializeProject(manifest));
 
   return succeed({
     root: ".",
@@ -217,7 +218,8 @@ export async function saveProject(
   for (const level of project.levels) {
     await fs.writeText(level.path, `${JSON.stringify(level.document, null, 2)}\n`);
   }
-  await fs.writeText(PROJECT_MANIFEST, serializeProject(project.manifest));
+  // Records before the manifest: a save cut short then leaves no `packs` without its records,
+  // and the next load migrates again (withStarterPack only adds missing ids).
   if (project.gameData) {
     await fs.writeText(
       CANONICAL_GAME_DATA_FILE,
@@ -225,6 +227,7 @@ export async function saveProject(
 `,
     );
   }
+  await fs.writeText(PROJECT_MANIFEST, serializeProject(project.manifest));
   return succeed(project);
 }
 

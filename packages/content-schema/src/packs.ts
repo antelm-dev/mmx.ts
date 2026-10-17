@@ -48,7 +48,8 @@ export function withStarterPack<M extends { packs?: readonly PackRef[] }>(
     const existing = own[category];
     if (existing !== undefined && !isRecord(existing)) return unchanged;
     // Pack records first, so a migrated file reads like a template's; the project's win.
-    next[category] = { ...(records as object), ...(existing as object | undefined) };
+    // Cloned: a caller mutating the result in place must not change the next migration.
+    next[category] = { ...structuredClone(records as object), ...(existing as object | undefined) };
   }
   return {
     manifest: { ...manifest, packs: [{ ...MMX_STARTER_PACK }] },

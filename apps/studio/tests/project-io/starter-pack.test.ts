@@ -11,6 +11,7 @@ import {
   exportProject,
   loadProject,
   saveProject,
+  type FileSystem,
 } from "../../src/project-io/index.js";
 import { createNodeFileSystem } from "../../src/project-io/node.js";
 import { createMemoryFileSystem } from "./memfs.js";
@@ -122,4 +123,31 @@ test("a new project carries the pack, and an export of a migrated, unsaved proje
     assert.deepEqual(JSON.parse(await dest.readText("project.json")).packs, STARTER);
     assert.deepEqual(JSON.parse(await dest.readText("data/game.json")), PACK);
   });
+});
+
+/** `fs` with a disk that fills up at data/game.json. */
+const full = (fs: FileSystem): FileSystem => ({
+  ...fs,
+  async writeText(path, content) {
+    if (path === "data/game.json") throw new Error("ENOSPC: no space left on device");
+    return fs.writeText(path, content);
+  },
+});
+
+test("a save or create cut short at data/game.json leaves no packs marker, so the next load migrates again", async () => {
+  await withOldProject(async (root) => {
+    const fs = createNodeFileSystem(root);
+    const loaded = await loadProject(fs);
+    assert.ok(loaded.ok);
+    await assert.rejects(saveProject(full(fs), loaded.value), /ENOSPC/);
+    assert.equal((await readJson(root, "project.json")).packs, undefined);
+    const again = await loadProject(fs);
+    assert.ok(again.ok);
+    assert.deepEqual(again.value.manifest.packs, STARTER);
+    assert.deepEqual(again.value.gameData, PACK);
+  });
+
+  const fresh = createMemoryFileSystem();
+  await assert.rejects(createProject(full(fresh), { id: "x.project", name: "X" }), /ENOSPC/);
+  assert.equal(await fresh.exists("project.json"), false);
 });

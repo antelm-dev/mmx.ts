@@ -82,3 +82,14 @@ test("before the flip, a migrated project compiles to the built-in hash", () => 
   assert.equal(hashOf(withStarterPack({}, undefined).overlay), "36e5bb6d8c3547a6");
   assert.equal(hashOf(withStarterPack({}, { schemaVersion: 1 }).overlay), "36e5bb6d8c3547a6");
 });
+
+test("records added from the pack are copies: mutating a result leaves the next migration intact", () => {
+  const expected = structuredClone(pack);
+  const first = withStarterPack({}, undefined).overlay as Record<
+    string,
+    Record<string, { id: string }>
+  >;
+  first.enemies!.metool!.id = "changed";
+  delete first.pickups!["life.small"];
+  assert.deepEqual(withStarterPack({}, undefined).overlay, expected);
+});
