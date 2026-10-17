@@ -103,7 +103,10 @@ function validateOpenProject(project: StudioProject): ProjectIssue[] {
   const validation = { ...PROJECT_VALIDATION, loadoutIds: [...gameData.compiled.loadouts.keys()] };
   return [
     ...gameData.issues,
-    ...enemyClipIssues(project.gameData, project.manifest.assets ?? []),
+    // Only on data that compiles: its enemies own known abilities with full configs.
+    ...(gameData.issues.length === 0
+      ? enemyClipIssues(project.gameData, project.manifest.assets ?? [])
+      : []),
     ...mapSchemaIssues(validateProject(project.manifest, validation).issues),
     ...projectDefinitionIssues(objects).map((issue) => ({
       severity: "error" as const,

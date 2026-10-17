@@ -77,8 +77,9 @@ export function enemyClips(
 }
 
 /**
- * Problems: each project enemy (data/game.json) drawn from a project animation that
- * lacks a clip it plays. Play still runs; the enemy is not drawn during that clip.
+ * Problems: each project enemy (data/game.json, compiled without errors) drawn from a
+ * project animation that lacks a clip it plays. Play still runs; the enemy is not drawn
+ * during that clip.
  */
 export function enemyClipIssues(
   overlay: GameDataOverlay | undefined,
@@ -86,8 +87,7 @@ export function enemyClipIssues(
 ): ProjectIssue[] {
   return Object.entries(overlay?.enemies ?? {}).flatMap(([id, enemy]): ProjectIssue[] => {
     const sheet = assets.find((asset) => asset.id === enemy?.sheet);
-    // Hand-edited records are checked by compilation, not here.
-    if (sheet?.kind !== "animation" || !Array.isArray(enemy.abilities)) return [];
+    if (sheet?.kind !== "animation") return [];
     const missing = enemyClips(enemy).filter((name) => !sheet.animations[name]);
     if (missing.length === 0) return [];
     return [
