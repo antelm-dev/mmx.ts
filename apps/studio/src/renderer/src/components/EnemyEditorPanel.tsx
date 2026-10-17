@@ -53,7 +53,8 @@ const Chip = chakra("button", {
     _disabled: { opacity: 0.5, cursor: "default" },
   },
 });
-const IconButton = chakra("button", {
+/** A small icon-only button (the abilities' Move up / Move down). */
+export const IconButton = chakra("button", {
   base: {
     display: "grid",
     placeItems: "center",
@@ -83,7 +84,7 @@ const shieldOf = (enemy: EnemyDefinition): string =>
   !enemy.shield ? "none" : enemy.shield.breakable ? "breakable" : "unbreakable";
 
 /** Toggle buttons picking any of `options` (an ability multi-select). */
-function Chips({
+export function Chips({
   label,
   options,
   selected,

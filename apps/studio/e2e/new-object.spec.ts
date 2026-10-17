@@ -166,7 +166,11 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
   const browser = page.getByTestId("asset-browser");
   await browser.getByRole("button", { name: "New object…" }).click();
   await categories.filter({ hasText: "Enemies" }).click();
-  await expect(bases).toHaveText(["Metool", "Bat", "Pantheon Hunter"]);
+  await expect(dialog.getByRole("group", { name: "Templates" }).getByRole("button")).toHaveText([
+    "Metool",
+    "Bat",
+    "Pantheon Hunter",
+  ]);
   await bases.filter({ hasText: "Bat" }).click();
   await dialog.getByLabel("Name").fill("Night Bat");
   await expect(dialog.getByText("Id: enemy.night-bat")).toBeVisible();
