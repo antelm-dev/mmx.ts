@@ -270,10 +270,56 @@ export const BLANK_ENEMY: EnemyDefinition = {
   initialAnimation: "idle",
 };
 
-/** What the built-in enemies do when idle (Patrol, Hover): a blank enemy's idle reaction. */
-const IDLE_ABILITIES = new Set(
-  Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions.idle ?? []),
+/** The abilities the built-in enemies answer each AI event with (idle: Patrol or Hover, …). */
+const BUILT_IN_REACTIONS = AI_EVENTS.map(
+  (event) =>
+    [
+      event,
+      new Set(Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions[event] ?? [])),
+    ] as const,
 );
+
+/** Reactions for an enemy owning `abilities`: each event to the first that a built-in answers it with. */
+export function defaultReactions(abilities: readonly string[]): EnemyDefinition["reactions"] {
+  const reactions: EnemyDefinition["reactions"] = {};
+  for (const [event, answers] of BUILT_IN_REACTIONS) {
+    const first = abilities.find((ability) => answers.has(ability));
+    if (first) reactions[event] = [first];
+  }
+  return reactions;
+}
+
+/**
+ * The movement an ability needs. Patrol, Hide and Shoot apply gravity, which drops a
+ * flier through the floor (fliers skip terrain); Hover, Pursuit and Recoil steer in
+ * the air with none. Stun's gravity is a setting, and Death is either.
+ * shortcut: mirrors game/enemy's process_gravity calls; update it with those files.
+ */
+const ABILITY_MOVEMENT: Readonly<Record<string, MovementModel>> = {
+  Patrol: "ground",
+  Hide: "ground",
+  Shoot: "ground",
+  Hover: "flying",
+  Pursuit: "flying",
+  Recoil: "flying",
+};
+
+/** The abilities an enemy moving as `movement` can use, in registry order. */
+export function abilitiesFor(movement: MovementModel): string[] {
+  return ENEMY_ABILITIES.filter((ability) => (ABILITY_MOVEMENT[ability] ?? movement) === movement);
+}
+
+/** `enemy` moving as `movement`: abilities it can no longer use dropped, Stun falling on the ground only. */
+export function withMovement(enemy: EnemyDefinition, movement: MovementModel): EnemyDefinition {
+  const usable = abilitiesFor(movement);
+  const next = withAbilities(
+    { ...enemy, movement },
+    enemy.abilities.filter((ability) => usable.includes(ability)),
+  );
+  return next.abilities.includes("Stun")
+    ? withConfig(next, "Stun", "gravity", movement === "ground")
+    : next;
+}
 
 export type BlankEnemyInput = {
   name: string;
@@ -288,8 +334,8 @@ export type BlankEnemyInput = {
 /**
  * Add an enemy composed from abilities to the overlay: actor `enemy.<slug>`, enemy
  * `<slug>` and prefab `enemy.<slug>`, with {@link BLANK_ENEMY}'s boxes, a complete
- * config per ability, and its first idle ability answering `idle`. Returns the next
- * overlay and the prefab id.
+ * config per ability its movement allows, and {@link defaultReactions}. Returns the
+ * next overlay and the prefab id.
  */
 export function addBlankEnemy(
   overlay: GameDataOverlay | undefined,
@@ -299,17 +345,11 @@ export function addBlankEnemy(
   const slug = uniqueEnemySlug(data, input.name);
   const id = `enemy.${slug}`;
   const name = input.name.trim();
-  const idle = input.enemy.abilities.find((ability) => IDLE_ABILITIES.has(ability));
-  const enemy = withAbilities(
-    {
-      ...BLANK_ENEMY,
-      ...input.enemy,
-      id: slug,
-      actor: id,
-      reactions: idle ? { idle: [idle] } : {},
-    },
-    input.enemy.abilities,
+  const moving = withMovement(
+    { ...BLANK_ENEMY, ...input.enemy, id: slug, actor: id },
+    input.enemy.movement,
   );
+  const enemy = { ...moving, reactions: defaultReactions(moving.abilities) };
   const next: GameDataOverlay = {
     schemaVersion: GAME_DATA.schemaVersion,
     ...overlay,
