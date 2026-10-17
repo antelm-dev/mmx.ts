@@ -220,8 +220,11 @@ export class Enemy extends AbilityUser {
     }
   }
 
-  /** Enemy.gd:emit_zero_health_signal — fires once, then the AI runs on_death. */
-  private emit_zero_health(): void {
+  /**
+   * Enemy.gd:emit_zero_health_signal — fires once, then the AI runs on_death.
+   * Public so Death's weak phase can end through it, as a killing shot would.
+   */
+  emit_zero_health(): void {
     if (this.emitted_zero_health) return;
     this.emitted_zero_health = true;
     this.current_health = 0;

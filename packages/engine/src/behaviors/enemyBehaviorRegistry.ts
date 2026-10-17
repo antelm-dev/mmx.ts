@@ -18,8 +18,9 @@ const ONE_TICK = 1 / 60;
 
 /**
  * Config contract per enemy ability, keyed by ability id. Exported so tooling
- * (the Studio enemy editor) can build forms from it; every key here must appear
- * in an enemy's `abilityConfig` entry and vice versa, or compilation fails.
+ * (the Studio enemy editor) can build forms from it; every required key here
+ * must appear in an enemy's `abilityConfig` entry, and every key there must be
+ * declared here, or compilation fails.
  * Times are seconds, distances pixels, speeds pixels per second.
  */
 export const ENEMY_BEHAVIOR_SCHEMAS = {
@@ -70,6 +71,12 @@ export const ENEMY_BEHAVIOR_SCHEMAS = {
   },
   Death: {
     explosionDuration: { type: "number", min: 0 },
+    /** Health at or below which the weak phase starts; 0 or absent never starts it. */
+    weakHealth: { type: "number", min: 0, optional: true },
+    /** Clip the weak phase plays; absent or "" keeps the current one. */
+    weakAnimation: { type: "string", optional: true },
+    /** Seconds the weak phase lasts before the enemy self-destructs. */
+    weakDuration: { type: "number", min: 0, optional: true },
   },
   Roll: {
     speed: { type: "number", min: 0, default: 60 },

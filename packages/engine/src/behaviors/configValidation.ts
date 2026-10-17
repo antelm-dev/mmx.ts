@@ -20,14 +20,19 @@ export type FieldType =
 /** The exact keys of a `slashStep` (data/types.ts SlashStep). */
 const SLASH_STEP_NUMBERS = ["duration", "activeFrom", "activeTo", "damage", "chainWindow"];
 const BOX_KEYS = ["x", "y", "w", "h"];
-/** A field with bounds, for numbers an editor should clamp (both ends inclusive). */
+/**
+ * A field with bounds, for numbers an editor should clamp (both ends inclusive).
+ * `optional` lets a config omit the key, so a field added to an existing
+ * behaviour leaves every config written before it (and its hash) untouched.
+ */
 export interface FieldSpec {
   type: FieldType;
   min?: number;
   max?: number;
+  optional?: boolean;
   /** The only values a `string` field accepts. */
   options?: readonly string[];
-  /** What tooling seeds a new config with; compilation still requires the key. */
+  /** What tooling seeds a new config with; compilation still requires the key unless `optional`. */
   default?: number | boolean | string | readonly string[];
 }
 export type Schema = Readonly<Record<string, FieldType | FieldSpec>>;
@@ -47,11 +52,11 @@ export function validateConfig<T>(schema: Schema, input: unknown): ValidationRes
   }
   for (const [key, field] of Object.entries(schema)) {
     const value = record[key];
+    const spec: FieldSpec = typeof field === "string" ? { type: field } : field;
     if (value === undefined) {
-      issues.push({ fieldPath: key, message: `missing config '${key}'.` });
+      if (!spec.optional) issues.push({ fieldPath: key, message: `missing config '${key}'.` });
       continue;
     }
-    const spec = typeof field === "string" ? { type: field } : field;
     const err =
       checkField(spec.type, value) ??
       checkRange(spec, value as number) ??

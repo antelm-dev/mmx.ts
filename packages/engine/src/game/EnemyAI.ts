@@ -66,11 +66,12 @@ export class EnemyAI {
   }
 
   private onZeroHealth(): void {
-    if (!this.active) return;
     // Order matters and is taken from AI.on_zero_health: deactivate first so the
     // idle/vision events cannot restart a patrol underneath the death sequence,
     // *then* start the death ability — which is why `fire` below bypasses the
-    // active check that everything else goes through.
+    // active check that everything else goes through. Not gated on `active`:
+    // zero_health fires once, and Death's weak phase has already switched the AI
+    // off by the time it does, yet on_death must still run.
     this.deactivate();
     this.start(this.events.on_death);
   }
