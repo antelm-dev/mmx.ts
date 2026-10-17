@@ -7,6 +7,7 @@ import "dockview-react/dist/styles/dockview.css";
 import "./app/theme.js";
 import "./styles.css";
 import { App } from "./App.js";
+import { editor } from "./app/useEditor.js";
 import { initStudioClientSettings } from "./settings/studioClientSettings.js";
 import { useUiStore } from "./store/uiStore.js";
 import { StudioProvider } from "./ui/provider.js";
@@ -22,6 +23,9 @@ import { StudioProvider } from "./ui/provider.js";
  */
 const container = document.getElementById("root");
 if (!container) throw new Error("Missing #root element");
+
+// Under automation (e2e) only: drives commands that no control calls yet, like ensureProject.
+if (navigator.webdriver) Object.assign(window, { studioEditor: editor });
 
 void initStudioClientSettings((message) => useUiStore.getState().addToast(message));
 createRoot(container).render(

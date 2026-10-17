@@ -105,6 +105,7 @@ export class EditorController {
   private recoveryOffered = false;
   /** The stored draft is this session's own edit, so a save may clear it (never a crash draft). */
   private draftWritten = false;
+  private ensuring: Promise<boolean> | null = null;
 
   constructor() {
     this.playtest = new EditorPlaytestController(this.store, {
@@ -177,6 +178,13 @@ export class EditorController {
       this.emit();
     });
     this.syncPageTitle(this.snapshot.levelTitle);
+    // A draft of a work project left from an earlier run is offered with it on the Start tab.
+    void projectSession.listWorkProjects().then(() => {
+      if (!this.recoveryOffered || this.draftDiffersFromDocument()) return;
+      this.recoveryOffered = false;
+      this.snapshot = this.build("ui");
+      this.emit();
+    });
   }
 
   // ---------- React binding ----------
@@ -303,9 +311,10 @@ export class EditorController {
       ) {
         this.draftWritten = true;
       }
-      this.recoveryOffered = reason === "open" && this.draftDiffersFromDocument();
       const { currentLevelId } = projectSession.getSnapshot();
       if (currentLevelId) projectSession.syncLevel(currentLevelId, this.store.get().document);
+      // After the sync: a restored draft now matches its level and is not offered again.
+      this.recoveryOffered = reason === "open" && this.draftDiffersFromDocument();
     }
     this.snapshot = this.build(reason);
     this.emit();
@@ -415,6 +424,11 @@ export class EditorController {
   private async saveAsync(): Promise<void> {
     const doc = this.store.get().document;
     const projectState = projectSession.getSnapshot();
+    if (projectState.untitled) {
+      // The first Save asks for a name, then a folder (saveUntitledProject).
+      useUiStore.getState().setSaveProjectOpen(true);
+      return;
+    }
     if (projectState.open && projectState.project) {
       if (projectState.currentLevelId) projectSession.syncLevel(projectState.currentLevelId, doc);
       const issues = await projectSession.saveProject();
@@ -433,6 +447,116 @@ export class EditorController {
     this.dropRecovery();
     this.store.markSaved();
     this.toast("Level saved.");
+  }
+
+  /**
+   * Save an untitled project as `name` in a folder the user picks, moving it out of the work
+   * folder; it then opens from Recent like any project. Cancelling the picker changes nothing.
+   */
+  async saveUntitledProject(name: string): Promise<void> {
+    const before = projectSession.getSnapshot();
+    if (!before.untitled || !before.rootPath) return;
+    const workRoot = before.rootPath;
+    if (before.currentLevelId) {
+      projectSession.syncLevel(before.currentLevelId, this.store.get().document);
+    }
+    const issues = await projectSession.saveUntitled(name.trim());
+    if (!issues) return;
+    const error = issues.find((issue) => issue.severity === "error");
+    if (error) {
+      // Only the move reports `work-project.*`: the save to the work folder went through.
+      this.toast(
+        error.code.startsWith("work-project.")
+          ? `Project saved among the unsaved projects but could not be moved: ${error.message}`
+          : `Project save failed: ${error.message}`,
+      );
+      return;
+    }
+    const { rootPath, project, untitled } = projectSession.getSnapshot();
+    if (untitled || !rootPath || !project || rootPath === workRoot) return;
+    const draft = readRecovery();
+    if (draft?.rootPath === workRoot) {
+      // Save wrote every level: the draft is redundant, unless its level is not in the project,
+      // then it follows the project and stays offered as a "(recovered)" level.
+      if (project.levels.some((level) => level.id === draft.document.id)) clearRecovery();
+      else writeRecovery(draft.document, rootPath);
+    }
+    this.draftWritten = false;
+    this.recoveryOffered = this.draftDiffersFromDocument();
+    this.store.markSaved();
+    addRecentProject({ rootPath, name: project.manifest.name });
+    const warning = issues.find((issue) => issue.code === "work-project.cleanup");
+    this.toast(warning ? `Project saved. ${warning.message}` : "Project saved.");
+  }
+
+  /**
+   * Contract C-WORK: make sure a project is open. Without one, the current level becomes the
+   * entry level of a new untitled project in Studio's work folder (no confirmation, nothing
+   * discarded, not a recent project). False, with a toast, when it could not be created.
+   */
+  ensureProject(): Promise<boolean> {
+    if (projectSession.getSnapshot().open) return Promise.resolve(true);
+    // One work project for calls made while it is being created.
+    this.ensuring ??= this.createWorkProject().finally(() => (this.ensuring = null));
+    return this.ensuring;
+  }
+
+  private async createWorkProject(): Promise<boolean> {
+    if (this.store.get().mode === "play") this.togglePlay();
+    const issues = await projectSession.createWorkProject(this.store.get().document);
+    const error = issues.find((issue) => issue.severity === "error");
+    if (error || !projectSession.getSnapshot().open) {
+      this.toast(`Could not create a project: ${error?.message ?? "unknown error"}`);
+      return false;
+    }
+    void this.applyProjectAssets();
+    // This session's draft of the level is in the work folder now: not offered back.
+    this.dropRecovery();
+    const entry = projectSession.getCurrentLevelDocument();
+    if (entry) {
+      // shortcut: store.open restarts the undo history (the level's id becomes the entry's) and resets the
+      // selection, tool, placing ids, layer visibility/lock and the Play trail; keep them if users miss it.
+      this.store.open(entry);
+      this.syncPageTitle(this.computeTitle());
+    }
+    return true;
+  }
+
+  /** Start tab: reopen a work project left from an earlier run, with its newer recovery draft. */
+  async restoreWorkProject(rootPath: string): Promise<ProjectOpenResult> {
+    if (!this.confirmDiscardIfDirty("Restore an unsaved project?")) return { opened: false };
+    if (this.store.get().mode === "play") this.togglePlay();
+    const before = projectSession.getSnapshot().project;
+    const issues = await projectSession.openProject(rootPath, true);
+    void this.applyProjectAssets();
+    const result = this.enterProject(
+      before,
+      issues,
+      {
+        failed: "Restore failed",
+        opened: () => "Unsaved project restored.",
+        noEntry: "Unsaved project restored but no entry level was found.",
+      },
+      false,
+    );
+    // Level edits made after the work folder was written are in the draft: put them back.
+    const draft = readRecovery();
+    if (result.opened && draft?.rootPath === rootPath && projectSession.recoveryTarget(draft)) {
+      if (this.draftDiffersFromDocument()) this.openDocument(projectSession.recoverLevel(draft)!);
+    }
+    return result;
+  }
+
+  /** Start tab: delete a work project for good, and its recovery draft. */
+  async deleteWorkProject(rootPath: string): Promise<void> {
+    const issues = await projectSession.deleteWorkProject(rootPath);
+    const error = issues.find((issue) => issue.severity === "error");
+    if (error) {
+      this.toast(`Delete failed: ${error.message}`);
+      return;
+    }
+    if (readRecovery()?.rootPath === rootPath) clearRecovery();
+    this.toast("Unsaved project deleted.");
   }
 
   async createProject(): Promise<ProjectOpenResult> {
@@ -505,6 +629,7 @@ export class EditorController {
     before: StudioProject | null,
     issues: ProjectIssue[],
     messages: { failed: string; opened: (name: string) => string; noEntry: string },
+    recent = true,
   ): ProjectOpenResult {
     const error = issues.find((issue) => issue.severity === "error");
     if (error) {
@@ -513,7 +638,7 @@ export class EditorController {
     }
     const { rootPath, project } = projectSession.getSnapshot();
     if (project === before || !rootPath || !project) return { opened: false };
-    addRecentProject({ rootPath, name: project.manifest.name });
+    if (recent) addRecentProject({ rootPath, name: project.manifest.name });
     const entry = projectSession.getCurrentLevelDocument();
     if (!entry) {
       this.toast(messages.noEntry);
@@ -612,6 +737,11 @@ export class EditorController {
   private draftDiffersFromDocument(): boolean {
     const draft = readRecovery();
     if (!draft) return false;
+    // Restored with its work project from the Start tab, not on its own.
+    const { rootPath } = draft;
+    if (projectSession.leftoverWorkProjects().some((entry) => entry.rootPath === rootPath)) {
+      return false;
+    }
     const current = projectSession.recoveryTarget(draft) ?? this.store.get().document;
     return serializeDocument(draft.document) !== serializeDocument(current);
   }

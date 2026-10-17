@@ -41,6 +41,8 @@ interface UiState {
   /** The last place tools picked, newest first; session memory only, so e2e captures stay stable. */
   recentParts: RecentPart[];
   partWheelOpen: boolean;
+  /** The first Save of an untitled project asks for its name (SaveProjectDialog). */
+  saveProjectOpen: boolean;
   /** The open New object… dialog, starting at `category` when given; null when closed. */
   newObject: { category?: string } | null;
 
@@ -58,6 +60,7 @@ interface UiState {
   setSelectedLayer: (key: LayerKey | undefined) => void;
   addRecentPart: (part: RecentPart) => void;
   setPartWheelOpen: (open: boolean) => void;
+  setSaveProjectOpen: (open: boolean) => void;
   /** New object… (C-NEWOBJ); the dialog assumes a project is open. */
   openNewObject: (category?: string) => void;
   closeNewObject: () => void;
@@ -82,6 +85,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   playtestInspectorVisible: true,
   recentParts: [],
   partWheelOpen: false,
+  saveProjectOpen: false,
   newObject: null,
   minimapVisible: minimapVisibleAtLaunch(),
 
@@ -114,6 +118,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   setSelectedLayer: (selectedLayer) => set({ selectedLayer }),
   addRecentPart: (part) => set((s) => ({ recentParts: pushRecentPart(s.recentParts, part) })),
   setPartWheelOpen: (partWheelOpen) => set({ partWheelOpen }),
+  setSaveProjectOpen: (saveProjectOpen) => set({ saveProjectOpen }),
   openNewObject: (category) => set({ newObject: { category } }),
   closeNewObject: () => set({ newObject: null }),
   toggleMinimap: () => {

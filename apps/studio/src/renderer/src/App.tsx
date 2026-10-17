@@ -25,6 +25,7 @@ import { Toasts } from "./components/Toasts.js";
 import { NewObjectDialog } from "./components/NewObjectDialog.js";
 import { ActivityBar } from "./components/ActivityBar.js";
 import { StartPage } from "./components/StartPage.js";
+import { SaveProjectDialog } from "./components/SaveProjectDialog.js";
 import { useUiStore } from "./store/uiStore.js";
 
 import {
@@ -135,6 +136,7 @@ export function App() {
         </chakra.div>
       </chakra.div>
       <Toasts />
+      <SaveProjectDialog />
       <NewObjectDialog />
     </>
   );

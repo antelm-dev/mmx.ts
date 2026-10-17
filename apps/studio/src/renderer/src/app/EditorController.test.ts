@@ -51,14 +51,46 @@ const project = {
     return { ok: true, issues: [], value: { rootPath, project: { manifest, levels } } };
   },
   readPlayAssets: async () => ({ ok: true, issues: [], value: { gameData: {}, urls: {} } }),
-  save: async () => ({ ok: true, issues: [] }),
+  save: async (rootPath: string, saved: unknown) => ({
+    ok: true,
+    issues: [],
+    value: { rootPath, project: saved },
+  }),
+  // Work projects (C-WORK): one at WORK, saved to /games/hero.
+  createWorkProject: vi.fn(async (input: { initialLevel: { name: string } }) => {
+    const document = { ...input.initialLevel, id: "level.main" };
+    const levels = [{ id: "level.main", path: "levels/level.main.json", document }];
+    const manifest = {
+      schemaVersion: 1,
+      id: "untitled.project",
+      name: "Untitled Project",
+      gameVersion: "0.1.0",
+      compatibleRuntime: { min: "1.0.0" },
+      entryLevelId: "level.main",
+      assets: [],
+      levels: [{ id: "level.main", path: "levels/level.main.json" }],
+    };
+    return { ok: true, issues: [], value: { rootPath: WORK, project: { manifest, levels } } };
+  }),
+  listWorkProjects: async () => workProjects,
+  pickWorkDestination: async () => "/games/hero",
+  moveWorkProject: vi.fn(async () => ({
+    ok: true,
+    issues: [] as unknown[],
+    value: { rootPath: "/games/hero" },
+  })),
 };
+const WORK = "/userData/work-projects/w1";
+let workProjects: { rootPath: string; name: string; modifiedAt: number }[] = [];
 vi.stubGlobal("window", { studio: { files: { saveFile }, project }, confirm: () => true });
 vi.stubGlobal("document", { title: "", documentElement: { dataset: {}, style: {} } });
 beforeEach(() => storage.clear());
 
 const { EditorController } = await import("./EditorController.js");
 const { setRoomSettings } = await import("../core/actions.js");
+const { projectSession } = await import("../core/projectSession.js");
+const { readRecentProjects } = await import("../settings/recentProjects.js");
+const { useUiStore } = await import("../store/uiStore.js");
 
 describe("EditorController recovery draft", () => {
   const crash = { ...createLevelDocument(), id: "level.crash", name: "Crash" };
@@ -115,5 +147,112 @@ describe("EditorController recovery draft", () => {
     editor.openProjectLevel("level.b");
     expect(editor.store.get().document.id).toBe("level.b");
     expect(editor.hasRecoveryDraft()).toBe(false);
+  });
+});
+
+describe("EditorController work project (C-WORK)", () => {
+  it("ensureProject keeps the current level as the entry level of an untitled project", async () => {
+    projectSession.close();
+    const editor = new EditorController();
+    const doc = editor.store.get().document;
+    const { gridSize, cols } = doc;
+    editor.store.execute(setRoomSettings(doc, { name: "Mine", gridSize, cols, rows: 20 }));
+
+    const [first, second] = await Promise.all([editor.ensureProject(), editor.ensureProject()]);
+    expect([first, second]).toEqual([true, true]);
+    expect(project.createWorkProject).toHaveBeenCalledTimes(1);
+    expect(editor.store.get().document).toMatchObject({ id: "level.main", name: "Mine", rows: 20 });
+    expect(projectSession.getSnapshot()).toMatchObject({ rootPath: WORK, untitled: true });
+    // The level's draft is in the work folder now, so it is not offered back.
+    expect(storage.has(V2)).toBe(false);
+    expect(editor.hasRecoveryDraft()).toBe(false);
+    expect(await editor.ensureProject()).toBe(true);
+    expect(project.createWorkProject).toHaveBeenCalledTimes(1);
+    expect(readRecentProjects()).toEqual([]);
+    await projectSession.getAssets();
+  });
+
+  it("restores a leftover work project with its draft, which then follows the project on Save", async () => {
+    projectSession.close();
+    workProjects = [{ rootPath: WORK, name: "Untitled Project", modifiedAt: 1 }];
+    const edited = { ...createLevelDocument(), id: "level.a", name: "A", rows: 20 };
+    storage.set(V2, JSON.stringify({ rootPath: WORK, document: edited }));
+    const editor = new EditorController();
+    // Offered by the Start tab's Restore, not on its own.
+    await vi.waitFor(() => expect(projectSession.leftoverWorkProjects()).toHaveLength(1));
+    expect(editor.hasRecoveryDraft()).toBe(false);
+
+    expect(await editor.restoreWorkProject(WORK)).toEqual({ opened: true });
+    expect(editor.store.get().document).toMatchObject({ id: "level.a", rows: 20 });
+    expect(projectSession.getSnapshot()).toMatchObject({ untitled: true, dirty: true });
+    expect(editor.hasRecoveryDraft()).toBe(false);
+    expect(readRecentProjects()).toEqual([]);
+
+    editor.save();
+    expect(useUiStore.getState().saveProjectOpen).toBe(true);
+    await editor.saveUntitledProject("Hero");
+    expect(projectSession.getSnapshot()).toMatchObject({
+      rootPath: "/games/hero",
+      untitled: false,
+    });
+    // Save wrote every level: the draft is redundant and not offered at the next launch.
+    expect(storage.has(V2)).toBe(false);
+    expect(editor.hasRecoveryDraft()).toBe(false);
+    expect(readRecentProjects()).toMatchObject([{ rootPath: "/games/hero", name: "Hero" }]);
+    workProjects = [];
+    await projectSession.getAssets();
+  });
+
+  it("a failed move says the project was saved among the unsaved projects, still unsaved", async () => {
+    projectSession.close();
+    const editor = new EditorController();
+    expect(await editor.ensureProject()).toBe(true);
+    project.moveWorkProject.mockResolvedValueOnce({
+      ok: false,
+      issues: [
+        {
+          severity: "error",
+          code: "work-project.move",
+          path: "/",
+          message: "Choose an empty folder.",
+        },
+      ],
+    } as never);
+    await editor.saveUntitledProject("Hero");
+    expect(projectSession.getSnapshot()).toMatchObject({
+      rootPath: WORK,
+      untitled: true,
+      dirty: true,
+    });
+    expect(useUiStore.getState().toasts.at(-1)?.message).toBe(
+      "Project saved among the unsaved projects but could not be moved: Choose an empty folder.",
+    );
+    expect(readRecentProjects()).toEqual([]);
+    await projectSession.getAssets();
+  });
+
+  it("keeps, for its new folder, a draft whose level the saved project does not have", async () => {
+    projectSession.close();
+    workProjects = [{ rootPath: WORK, name: "Untitled Project", modifiedAt: 1 }];
+    const stray = { ...createLevelDocument(), id: "level.gone", name: "Gone", rows: 20 };
+    storage.set(V2, JSON.stringify({ rootPath: WORK, document: stray }));
+    const editor = new EditorController();
+    await vi.waitFor(() => expect(projectSession.leftoverWorkProjects()).toHaveLength(1));
+    expect(await editor.restoreWorkProject(WORK)).toEqual({ opened: true });
+    expect(editor.store.get().document.id).toBe("level.a");
+
+    await editor.saveUntitledProject("Hero");
+    expect(projectSession.getSnapshot()).toMatchObject({
+      rootPath: "/games/hero",
+      untitled: false,
+    });
+    expect(JSON.parse(storage.get(V2)!)).toMatchObject({
+      rootPath: "/games/hero",
+      document: { id: "level.gone", rows: 20 },
+    });
+    // Still offered, now as a "(recovered)" level of the moved project.
+    expect(editor.hasRecoveryDraft()).toBe(true);
+    workProjects = [];
+    await projectSession.getAssets();
   });
 });

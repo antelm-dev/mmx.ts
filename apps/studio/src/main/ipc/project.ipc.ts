@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { basename, extname } from "node:path";
-import { dialog } from "electron";
+import { readFile, rm } from "node:fs/promises";
+import { basename, extname, join } from "node:path";
+import { app, dialog } from "electron";
 import { defineIpcModule, handle } from "electron-ipc-module";
 import type { AssetKind } from "@mmx/project-schema";
 import {
@@ -12,6 +12,7 @@ import {
   loadProject,
   mergeImportedAsset,
   saveProject,
+  type CreateProjectInput,
   type ProjectIssue,
   type ProjectPayload,
   type ProjectResult,
@@ -19,6 +20,15 @@ import {
 } from "@mmx/project-io";
 import { createNodeFileSystem } from "@mmx/project-io/node";
 import { copyStarterProjectToDirectory } from "@mmx/starter-template";
+import {
+  deleteWorkProject,
+  destinationPick,
+  listWorkProjects,
+  moveWorkProject,
+  newWorkRoot,
+  WORK_PROJECTS_DIR,
+  type WorkProject,
+} from "../workProjects.js";
 
 const DATA_URL_MIME: Record<string, string> = {
   ".png": "image/png",
@@ -38,6 +48,10 @@ function errorMessage(error: unknown): string {
 export function createProjectIpc() {
   // Only a file the user just picked may be copied in from outside the project.
   let pickedImportPath: string | null = null;
+  // Likewise, an unsaved project only moves to the folder the user just picked for it.
+  const pickedDestination = destinationPick();
+  // Computed here, never taken from the renderer.
+  const workBase = () => join(app.getPath("userData"), WORK_PROJECTS_DIR);
 
   return defineIpcModule("project", {
     "pick-directory": handle(async (_event, title: string): Promise<string | null> => {
@@ -105,6 +119,81 @@ export function createProjectIpc() {
           value: { rootPath, project: created.value },
           issues: created.issues,
         };
+      },
+    ),
+
+    /** An untitled project in Studio's work folder whose entry level is `initialLevel`. */
+    "create-work-project": handle(
+      async (
+        _event,
+        // Through project-io: the bridge generator cannot reference external package types.
+        input: Required<Pick<CreateProjectInput, "name" | "initialLevel">>,
+      ): Promise<ProjectResult<ProjectPayload>> => {
+        let rootPath: string | null = null;
+        try {
+          rootPath = await newWorkRoot(workBase());
+          const created = await createProject(createNodeFileSystem(rootPath), {
+            id: "untitled.project",
+            name: input.name,
+            initialLevel: input.initialLevel,
+          });
+          if (!created.ok) throw new Error(created.issues[0]?.message ?? "Create failed.");
+          return { ok: true, value: { rootPath, project: created.value }, issues: created.issues };
+        } catch (error) {
+          if (rootPath) await rm(rootPath, { recursive: true, force: true }).catch(() => undefined);
+          return { ok: false, issues: [issue("work-project.create", errorMessage(error), "/")] };
+        }
+      },
+    ),
+
+    "list-work-projects": handle(async (): Promise<WorkProject[]> => listWorkProjects(workBase())),
+
+    "pick-work-destination": handle(
+      async (_event, title: string, workRoot: string): Promise<string | null> => {
+        pickedDestination.set(null);
+        const result = await dialog.showOpenDialog({
+          title,
+          properties: ["openDirectory", "createDirectory"],
+        });
+        const destination = result.canceled ? undefined : result.filePaths[0];
+        if (!destination) return null;
+        pickedDestination.set({ destination, workRoot });
+        return destination;
+      },
+    ),
+
+    /** Move an unsaved project to the folder just picked (empty or absent); returns its new root. */
+    "move-work-project": handle(
+      async (
+        _event,
+        input: { workRoot: string; destination: string },
+      ): Promise<ProjectResult<{ rootPath: string }>> => {
+        if (!pickedDestination.take(input.destination, input.workRoot)) {
+          return {
+            ok: false,
+            issues: [issue("work-project.destination", "Pick the folder first.", "/destination")],
+          };
+        }
+        try {
+          const moved = await moveWorkProject(workBase(), input.workRoot, input.destination);
+          const issues = moved.warning
+            ? [issue("work-project.cleanup", moved.warning, "/", "warning")]
+            : [];
+          return { ok: true, value: { rootPath: moved.rootPath }, issues };
+        } catch (error) {
+          return { ok: false, issues: [issue("work-project.move", errorMessage(error), "/")] };
+        }
+      },
+    ),
+
+    "delete-work-project": handle(
+      async (_event, workRoot: string): Promise<ProjectResult<null>> => {
+        try {
+          await deleteWorkProject(workBase(), workRoot);
+          return { ok: true, value: null, issues: [] };
+        } catch (error) {
+          return { ok: false, issues: [issue("work-project.delete", errorMessage(error), "/")] };
+        }
       },
     ),
 
