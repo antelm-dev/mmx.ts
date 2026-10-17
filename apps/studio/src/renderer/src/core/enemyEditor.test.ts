@@ -355,6 +355,11 @@ describe("enemy editor", () => {
       // The default config keeps a built-in's conflicts only when owned.
       const metoolLike = blank(["Patrol", "Hide", "Stun"]).overlay.enemies!.blob!;
       expect(metoolLike.abilityConfig?.Patrol?.conflicts).toEqual(["Hide", "Stun"]);
+      // Without a built-in, the schema default (Roll's ["Stun"]) is filtered the same way.
+      const roller = (abilities: string[]) =>
+        blank(abilities).overlay.enemies!.blob!.abilityConfig?.Roll?.conflicts;
+      expect(roller(["Roll", "Stun"])).toEqual(["Stun"]);
+      expect(roller(["Roll"])).toEqual([]);
     });
 
     it("takes a free id", () => {

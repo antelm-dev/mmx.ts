@@ -28,7 +28,7 @@ export interface FieldSpec {
   /** The only values a `string` field accepts. */
   options?: readonly string[];
   /** What tooling seeds a new config with; compilation still requires the key. */
-  default?: number | boolean | string;
+  default?: number | boolean | string | readonly string[];
 }
 export type Schema = Readonly<Record<string, FieldType | FieldSpec>>;
 

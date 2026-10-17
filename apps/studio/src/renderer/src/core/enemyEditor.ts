@@ -72,7 +72,7 @@ export function defaultAbilityConfig(ability: string, owned: readonly string[]):
     : Object.fromEntries(
         Object.entries(SCHEMAS[ability] ?? {}).map(([key, field]) => {
           const { type, min, default: preset } = fieldSpec(field);
-          if (preset !== undefined) return [key, preset];
+          if (preset !== undefined) return [key, typeof preset === "object" ? [...preset] : preset];
           const value: ConfigValue =
             type === "number"
               ? (min ?? 0)

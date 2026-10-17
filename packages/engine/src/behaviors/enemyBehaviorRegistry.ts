@@ -75,7 +75,8 @@ export const ENEMY_BEHAVIOR_SCHEMAS = {
     speed: { type: "number", min: 0, default: 60 },
     facePlayer: { type: "boolean", default: true },
     atWall: { type: "string", options: ["turn", "stop"], default: "turn" },
-    conflicts: "string[]",
+    /** Stun must interrupt the roll, or the enemy rolls on through it. */
+    conflicts: { type: "string[]", default: ["Stun"] },
   },
 } as const satisfies Readonly<Record<string, Schema>>;
 

@@ -52,7 +52,9 @@ function setup(opts: {
   roll?: Partial<RollConfig>;
   rows?: string[];
   spawnY?: number;
-}): { stage: Stage; spiky: Enemy } {
+  /** Game data defining `spiky`; built from `roll` when absent. */
+  data?: GameData;
+}): { stage: Stage; player: Player; spiky: Enemy } {
   const rows = opts.rows ?? [
     ...Array.from({ length: 10 }, () => "#" + ".".repeat(78) + "#"),
     "#".repeat(80),
@@ -60,11 +62,11 @@ function setup(opts: {
   const world = World.fromRows(rows);
   const player = new Player(world, opts.playerX, FLOOR_Y - 14, new Input());
   const stage = new Stage(world, player);
-  const data = compiled(spikyData(opts.roll));
+  const data = compiled(opts.data ?? spikyData(opts.roll));
   const def = data.enemies.get("spiky")!;
   const y = (opts.spawnY ?? FLOOR_Y) - def.actor.body.hh;
   const spiky = stage.add(spawnEnemy(def, world, opts.x, y, opts.facing, 1234, data));
-  return { stage, spiky };
+  return { stage, player, spiky };
 }
 
 function run(stage: Stage, seconds: number): void {
@@ -88,6 +90,28 @@ test("a roller turns to face the player, then rolls at full speed without a paus
   assert.ok(spiky.is_executing("Roll"), "the roll never ends on its own");
 });
 
+test("a roller faces a player who comes into view after it spawned, once", () => {
+  // The player starts out of vision (> 158px) to the right; the roller heads left.
+  const { stage, player, spiky } = setup({ x: 40 * 16, facing: -1, playerX: 40 * 16 + 300 });
+  run(stage, 0.5);
+  assert.equal(spiky.get_facing_direction(), -1, "nobody to face yet");
+
+  // The player steps into vision behind it: one turn toward them.
+  player.pos.x = spiky.pos.x + 100;
+  stage.tick(DT);
+  assert.equal(spiky.get_facing_direction(), 1, "turned to face the player");
+
+  // Then it rolls straight, even past the player.
+  const facings = new Set<number>();
+  for (let i = 0; i < 30; i++) {
+    player.pos.x = spiky.pos.x - 60;
+    stage.tick(DT);
+    facings.add(spiky.get_facing_direction());
+  }
+  assert.deepEqual([...facings], [1], "no re-facing once it has turned");
+  assert.equal(spiky.velocity.x, SPEED);
+});
+
 test("without facePlayer, a roller keeps its spawn direction", () => {
   const { stage, spiky } = setup({
     x: 20 * 16,
@@ -106,12 +130,16 @@ test("a roller turns around at a wall and keeps rolling", () => {
   const { stage, spiky } = setup({ x: 74 * 16, facing: 1, playerX: 4 * 16 });
   const facings: number[] = [];
   let maxX = -Infinity;
+  let stalls = 0;
   for (let i = 0; i < Math.round(3 / DT); i++) {
     stage.tick(DT);
     facings.push(spiky.get_facing_direction());
     maxX = Math.max(maxX, spiky.pos.x);
-    if (i > 0) assert.equal(Math.abs(spiky.velocity.x), SPEED, `still rolling on tick ${i}`);
+    if (Math.abs(spiky.velocity.x) !== SPEED) stalls++;
   }
+  // The turn comes the tick after the wall sensor reads contact; at most that
+  // contact tick can lose its speed to the sweep, never more (no double turn).
+  assert.ok(stalls <= 1, `stalled ${stalls} ticks`);
   assert.equal(facings[0], 1);
   assert.equal(facings.at(-1), -1, "it turned back at the wall");
   assert.ok(maxX + spiky.hw <= 79 * 16, "and never sank into it");
@@ -133,6 +161,74 @@ test("with atWall 'stop', a roller halts against the wall and stays rolling", ()
   run(stage, 1);
   assert.equal(spiky.pos.x, x, "it holds still");
   assert.ok(x + spiky.hw <= 79 * 16);
+});
+
+/** A body taller than the 16px step it rolls into (a centre ray would pass over it). */
+function tallData(roll: Partial<RollConfig>): GameData {
+  const data = spikyData({ facePlayer: false, ...roll });
+  data.actors["enemy.tall"] = {
+    ...data.actors["enemy.metool"]!,
+    id: "enemy.tall",
+    body: { hw: 8, hh: 20 },
+  };
+  data.enemies.spiky!.actor = "enemy.tall";
+  return data;
+}
+
+for (const atWall of ["turn", "stop"] as const) {
+  test(`a tall roller against a one-tile step: atWall '${atWall}'`, () => {
+    // A single solid tile on the floor at column 50.
+    const rows = Array.from({ length: 10 }, (_, y) =>
+      y === 9 ? "#" + ".".repeat(49) + "#" + ".".repeat(28) + "#" : "#" + ".".repeat(78) + "#",
+    );
+    rows.push("#".repeat(80));
+    const { stage, spiky } = setup({
+      x: 45 * 16,
+      facing: 1,
+      playerX: 4 * 16,
+      rows,
+      data: tallData({ atWall }),
+    });
+    assert.equal(spiky.hh, 20);
+    run(stage, 2);
+    assert.ok(spiky.pos.x + spiky.hw <= 50 * 16, "it never climbed or sank into the step");
+    if (atWall === "turn") {
+      assert.equal(spiky.get_facing_direction(), -1, "turned at the step");
+      assert.equal(spiky.velocity.x, -SPEED, "and rolls away");
+    } else {
+      const x = spiky.pos.x;
+      run(stage, 0.5);
+      assert.equal(spiky.get_facing_direction(), 1);
+      assert.equal(spiky.velocity.x, 0, "held at the step");
+      assert.equal(spiky.pos.x, x);
+      assert.ok(spiky.is_executing("Roll"));
+    }
+  });
+}
+
+test("a stun interrupts the roll, which resumes with its clip afterwards", () => {
+  const data = spikyData({ facePlayer: false, conflicts: ["Stun"] });
+  const spikyDef = data.enemies.spiky!;
+  spikyDef.abilities = ["Roll", "Stun", "Death"];
+  spikyDef.abilityConfig!.Stun = { ...GAME_DATA.enemies.metool!.abilityConfig!.Stun! };
+  spikyDef.reactions = { idle: ["Roll"], get_hit: ["Stun"] };
+  const { stage, spiky } = setup({ x: 30 * 16, facing: 1, playerX: 4 * 16, data });
+  spiky.max_health = spiky.current_health = 10;
+
+  run(stage, 0.2);
+  assert.equal(spiky.anim.animation, "roll");
+  spiky.damage(1);
+  stage.tick(DT);
+  assert.ok(spiky.is_executing("Stun"));
+  assert.equal(spiky.is_executing("Roll"), false, "Roll was interrupted");
+  assert.equal(spiky.velocity.x, 0, "and the stunned enemy holds still");
+  assert.equal(spiky.anim.animation, "stun");
+
+  run(stage, 2); // past the Metool's 1.65s stun
+  assert.equal(spiky.is_executing("Stun"), false);
+  assert.ok(spiky.is_executing("Roll"), "the idle restart picked the roll back up");
+  assert.equal(spiky.anim.animation, "roll", "with its clip");
+  assert.equal(spiky.velocity.x, SPEED);
 });
 
 test("a roller drops off a ledge and keeps rolling on the floor below", () => {
