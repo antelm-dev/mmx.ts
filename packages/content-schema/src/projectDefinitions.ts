@@ -1,4 +1,4 @@
-import type { GameData } from "@mmx/engine/data";
+import { GAME_DATA, type GameData } from "@mmx/engine/data";
 import {
   definitionsFromGameData,
   getDefinition,
@@ -119,12 +119,20 @@ export function setProjectDefinitions(
   return issues;
 }
 
+let catalogData: GameData = GAME_DATA;
+
+/** The game data the built-in catalog comes from: the last given to `setCatalogGameData`, else the engine's. */
+export function catalogGameData(): GameData {
+  return catalogData;
+}
+
 /**
  * Regenerates the built-in part of the catalog from `data` (the project's game
  * data merged over the engine defaults, so project enemies become placeable)
  * and re-derives the project definitions against it. Returns their issues.
  */
 export function setCatalogGameData(data: GameData): ProjectDefinitionIssue[] {
+  catalogData = data;
   replaceBuiltinDefinitions(definitionsFromGameData(data));
   return setProjectDefinitions(projectEntries);
 }

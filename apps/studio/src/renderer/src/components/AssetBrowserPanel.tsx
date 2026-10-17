@@ -81,7 +81,7 @@ export function AssetBrowserPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const groups = useMemo(
-    () => assetGroups(project?.manifest, projectSession.gameData().data, query),
+    () => assetGroups(project?.manifest, projectSession.gameData().data, query, project?.gameData),
     // The merged game data changes with the project's data/game.json.
     [project?.manifest, project?.gameData, query],
   );

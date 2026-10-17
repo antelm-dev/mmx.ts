@@ -19,7 +19,13 @@ import {
   travelTarget,
   travelsVertically,
 } from "./EditorViewportGeometry.js";
-import { setProjectDefinitions, type LevelObjectInstance } from "@mmx/content-schema";
+import {
+  setCatalogGameData,
+  setProjectDefinitions,
+  type LevelObjectInstance,
+} from "@mmx/content-schema";
+import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
+import { baseWithoutPack, compileIssues } from "./baseWithoutPack.test-support.js";
 
 describe("normalizeBox", () => {
   it("returns same box when already normalized", () => {
@@ -357,6 +363,39 @@ describe("environment travel gizmo", () => {
       expect(travelEditable(platform())).toBe(true);
     } finally {
       setProjectDefinitions([]);
+    }
+  });
+
+  it("draws an environment the project's data adds over a base without the pack's", () => {
+    const base = baseWithoutPack();
+    const overlay: GameDataOverlay = {
+      environments: {
+        lift: {
+          id: "lift",
+          behavior: "environment.moving-platform",
+          defaults: { travel: 96, speed: 48 },
+        },
+      },
+      prefabs: {
+        "platform.lift": {
+          ...GAME_DATA.prefabs["platform.moving"]!,
+          id: "platform.lift",
+          source: { kind: "environment", ref: "lift" },
+        },
+      },
+    };
+    // The real path: the overlay merged over the base, as the project's data/game.json is.
+    const merged = mergeGameData(base, overlay);
+    if (!merged.ok) throw new Error(merged.diagnostics.map((d) => d.message).join("; "));
+    expect(compileIssues(base, overlay)).toEqual([]);
+    setCatalogGameData(merged.value);
+    try {
+      const lift = { ...platform({ Travel: 80 }), definitionId: "platform.lift" };
+      expect(environmentGeometry(lift).map((p) => p.kind)).toEqual(["line", "rect"]);
+      expect(environmentGeometry(platform())).toEqual([]);
+      expect(environmentGeometry({ ...lift, definitionId: "hazard" })).toEqual([]);
+    } finally {
+      setCatalogGameData(GAME_DATA);
     }
   });
 

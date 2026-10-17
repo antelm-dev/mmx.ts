@@ -5,6 +5,7 @@ import {
   TERRAIN_TILE_BY_NAME,
   TERRAIN_TILE_NAME,
   TerrainTile,
+  allDefinitions,
   effectiveValue,
   entityFields,
   getDefinition,
@@ -46,32 +47,20 @@ function assertTerrainMapsToEngine(): void {
 
 assertTerrainMapsToEngine();
 
+/**
+ * The built-in definition placing `entity`: the one with its engine id and, when kinded,
+ * its Kind. None (an unknown Kind) gives an id with no definition, which `definitionFor`
+ * shows as a missing object and validation reports.
+ */
 function definitionIdFor(entity: LevelEntity): string {
-  const kind = typeof entity.fields.Kind === "string" ? entity.fields.Kind : undefined;
-  switch (entity.id) {
-    case "Spawn":
-      return "spawn";
-    case "Enemy":
-      return kind && getDefinition(`enemy.${kind}`) ? `enemy.${kind}` : "enemy.metool";
-    case "LifeCapsule":
-      return kind === "large" ? "pickup.life.large" : "pickup.life.small";
-    case "WeaponCapsule":
-      return kind === "large" ? "pickup.weapon.large" : "pickup.weapon.small";
-    case "MovingPlatform":
-      return "platform.moving";
-    case "FallingPlatform":
-      return "platform.falling";
-    case "Conveyor":
-      return "conveyor";
-    case "Hazard":
-      return "hazard";
-    case "Slope":
-      return "slope";
-    case "CameraZone":
-      return "camera-zone";
-    default:
-      return entity.id;
-  }
+  const kind = entity.fields.Kind;
+  const def = allDefinitions().find(
+    (d) =>
+      !d.baseId &&
+      d.engineId === entity.id &&
+      (d.fields.Kind === undefined || d.fields.Kind === kind),
+  );
+  return def?.id ?? (typeof kind === "string" ? `${entity.id}.${kind}` : entity.id);
 }
 
 function isResizable(def: GameObjectDefinition | undefined): boolean {

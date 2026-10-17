@@ -19,6 +19,7 @@ export function newObjectBases(
 /**
  * New object…'s Behaviour step: what each built-in base does, by definition id.
  * The catalog has no descriptions, so they live here; an enemy shows none.
+ * Presentation only (C-INDEP): an id with no entry, such as a pack's object, shows none either.
  */
 export const BEHAVIOUR_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "pickup.life.small": "Restores a little life.",

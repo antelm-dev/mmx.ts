@@ -3,12 +3,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { Tile, type LevelData } from "@mmx/engine";
-import { SCHEMA_VERSION, TerrainTile, type LevelDocument } from "@mmx/content-schema";
+import { GAME_DATA } from "@mmx/engine/data";
+import {
+  SCHEMA_VERSION,
+  TerrainTile,
+  definitionFor,
+  setCatalogGameData,
+  type LevelDocument,
+} from "@mmx/content-schema";
 import {
   documentToLevelData,
   instanceToEntity,
   levelDataToDocument,
 } from "../../src/editor-runtime/adapters/index.js";
+import { baseWithoutPack } from "../../src/renderer/src/core/baseWithoutPack.test-support.js";
 
 function readDemoDocument(name: string): LevelDocument {
   return JSON.parse(
@@ -144,4 +152,48 @@ test("falling platforms and every built-in enemy kind import as their own defini
     ["platform.falling", "enemy.pantheon"],
   );
   roundTrip(documentToLevelData(doc));
+});
+
+test("an entity imports as the catalog's definition for it, an unknown Kind as a missing object", () => {
+  const at = { x: 0, y: 0, w: 16, h: 16 };
+  const level = (entities: LevelData["entities"]): LevelData => ({
+    identifier: "kinds",
+    gridSize: 16,
+    cols: 2,
+    rows: 2,
+    tiles: [0, 0, 0, 0],
+    entities,
+  });
+  const ids = (data: LevelData) => levelDataToDocument(data).objects.map((o) => o.definitionId);
+  const entities: LevelData["entities"] = [
+    { id: "Spawn", iid: "s", ...at, fields: {} },
+    { id: "Hazard", iid: "h", ...at, fields: {} },
+    { id: "CameraZone", iid: "c", ...at, fields: { BindX: true, BindY: true } },
+    { id: "Enemy", iid: "e", ...at, fields: { Kind: "metool", FacesRight: false } },
+    { id: "LifeCapsule", iid: "l", ...at, fields: { Kind: "large" } },
+  ];
+  assert.deepEqual(ids(level(entities)), [
+    "spawn",
+    "hazard",
+    "camera-zone",
+    "enemy.metool",
+    "pickup.life.large",
+  ]);
+  assert.equal(
+    ids(level([{ id: "Enemy", iid: "x", ...at, fields: { Kind: "nobody" } }]))[0],
+    "Enemy.nobody",
+  );
+  setCatalogGameData(baseWithoutPack());
+  try {
+    assert.deepEqual(ids(level(entities)), [
+      "spawn",
+      "hazard",
+      "camera-zone",
+      "Enemy.metool",
+      "LifeCapsule.large",
+    ]);
+    assert.equal(definitionFor("Enemy.metool").category, "unknown");
+  } finally {
+    setCatalogGameData(GAME_DATA);
+  }
 });
