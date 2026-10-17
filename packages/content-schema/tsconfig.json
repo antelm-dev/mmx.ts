@@ -2,6 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
+    // ESNext for the import attributes on the MMX Starter pack's JSON (src/packs.ts), which Node needs.
+    "module": "ESNext",
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",

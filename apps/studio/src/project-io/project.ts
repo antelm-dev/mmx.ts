@@ -2,6 +2,7 @@ import {
   TerrainTile,
   createLevelDocument,
   migrateDocument,
+  withStarterPack,
   type LevelDocument,
 } from "@mmx/content-schema";
 import {
@@ -54,28 +55,35 @@ export async function createProject(
   const levelPath = levelManifestPath(levelId);
   const levelDocument = { ...level, id: levelId, name: level.name || input.name };
 
-  const manifest: ProjectDocument = {
-    schemaVersion: PROJECT_SCHEMA_VERSION,
-    id: input.id,
-    name: input.name,
-    gameVersion: input.gameVersion ?? "0.1.0",
-    compatibleRuntime: input.compatibleRuntime ?? { min: "1.0.0" },
-    entryLevelId: levelId,
-    levels: [{ id: levelId, path: levelPath }],
-    assets: [],
-  };
+  // A new project carries the MMX Starter pack, as one made from the starter template does.
+  const { manifest, overlay: gameData } = withStarterPack<ProjectDocument>(
+    {
+      schemaVersion: PROJECT_SCHEMA_VERSION,
+      id: input.id,
+      name: input.name,
+      gameVersion: input.gameVersion ?? "0.1.0",
+      compatibleRuntime: input.compatibleRuntime ?? { min: "1.0.0" },
+      entryLevelId: levelId,
+      levels: [{ id: levelId, path: levelPath }],
+      assets: [],
+    },
+    undefined,
+  );
 
   await fs.mkdir("levels");
   await fs.mkdir("assets/sprites");
   await fs.mkdir("assets/sounds");
   await fs.mkdir("assets/fonts");
   await fs.writeText(levelPath, `${JSON.stringify(levelDocument, null, 2)}\n`);
+  // Records before the manifest's `packs`, as in saveProject.
+  await fs.writeText(CANONICAL_GAME_DATA_FILE, `${JSON.stringify(gameData, null, 2)}\n`);
   await fs.writeText(PROJECT_MANIFEST, serializeProject(manifest));
 
   return succeed({
     root: ".",
     manifest,
     levels: [{ id: levelId, path: levelPath, document: levelDocument }],
+    gameData,
   });
 }
 
@@ -177,7 +185,18 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
     return fail(issues);
   }
 
-  return succeed({ root: ".", manifest, levels, ...(gameData ? { gameData } : {}) }, issues);
+  // Like migrateDocument for levels: a project from before packs gets the MMX Starter records it
+  // lacks in memory, not marked dirty; the next Save writes them and the `packs` marker.
+  const packed = withStarterPack(parsed.project, gameData);
+  return succeed(
+    {
+      root: ".",
+      manifest: packed.manifest,
+      levels,
+      ...(packed.overlay ? { gameData: packed.overlay } : {}),
+    },
+    issues,
+  );
 }
 
 export async function saveProject(
@@ -199,7 +218,8 @@ export async function saveProject(
   for (const level of project.levels) {
     await fs.writeText(level.path, `${JSON.stringify(level.document, null, 2)}\n`);
   }
-  await fs.writeText(PROJECT_MANIFEST, serializeProject(project.manifest));
+  // Records before the manifest: a save cut short then leaves no `packs` without its records,
+  // and the next load migrates again (withStarterPack only adds missing ids).
   if (project.gameData) {
     await fs.writeText(
       CANONICAL_GAME_DATA_FILE,
@@ -207,6 +227,7 @@ export async function saveProject(
 `,
     );
   }
+  await fs.writeText(PROJECT_MANIFEST, serializeProject(project.manifest));
   return succeed(project);
 }
 

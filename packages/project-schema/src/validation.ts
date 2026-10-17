@@ -653,6 +653,38 @@ function validateObjects(value: unknown, add: IssueCollector["add"]): void {
   });
 }
 
+function validatePacks(value: unknown, add: IssueCollector["add"]): void {
+  if (!Array.isArray(value)) {
+    add({ code: "packs.array", path: "/packs", message: "packs must be an array." });
+    return;
+  }
+  const ids = new Set<string>();
+  value.forEach((entry, index) => {
+    const path = `/packs/${index}`;
+    if (!isRecord(entry)) {
+      add({ code: "pack.shape", path, message: "Pack must be an object { id, version }." });
+      return;
+    }
+    if (validateLogicalId(entry.id, `${path}/id`, add)) {
+      if (ids.has(entry.id)) {
+        add({ code: "id.duplicate", path: `${path}/id`, message: `Duplicate pack '${entry.id}'.` });
+      }
+      ids.add(entry.id);
+    }
+    if (
+      typeof entry.version !== "number" ||
+      !Number.isInteger(entry.version) ||
+      entry.version < 1
+    ) {
+      add({
+        code: "pack.version",
+        path: `${path}/version`,
+        message: "Pack version must be a positive integer.",
+      });
+    }
+  });
+}
+
 export function validateProject(
   project: ProjectDocument,
   options: ValidateProjectOptions = {},
@@ -751,6 +783,7 @@ export function validateProject(
 
   if (project.player !== undefined) validatePlayer(project.player, add, options.loadoutIds);
   if (project.objects !== undefined) validateObjects(project.objects, add);
+  if (project.packs !== undefined) validatePacks(project.packs, add);
 
   return resultOf(issues);
 }

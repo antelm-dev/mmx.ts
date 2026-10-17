@@ -78,6 +78,12 @@ async function checkGenerated(t: TestContext, sources: ZeroSources) {
     [],
   );
   assert.equal(readFileSync(join(out, ".gitignore"), "utf8").split("\n")[1], "*");
+  // The project carries the MMX Starter pack (Pantheon, pantheon_shot) and its marker.
+  assert.deepEqual(manifest.packs, [{ id: "mmx-starter", version: 1 }]);
+  assert.deepEqual(
+    read("data/game.json"),
+    JSON.parse(readFileSync(resolve("../../packages/pack-mmx-starter/data/game.json"), "utf8")),
+  );
   return { summary, bindings, level };
 }
 

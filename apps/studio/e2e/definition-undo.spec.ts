@@ -118,6 +118,13 @@ test("Definition undo: rename, duplicate and delete an enemy, undo and redo them
     source: { ref: "crab" },
   });
   expect(gameData.prefabs["enemy.spiky-crab-copy"]).toMatchObject({ name: "Spiky Crab copy" });
-  expect(Object.keys(gameData.enemies).sort()).toEqual(["crab", "spiky-crab-copy"]);
+  // With the MMX Starter pack's enemies, which the fixture (no `packs`) got on open.
+  expect(Object.keys(gameData.enemies).sort()).toEqual([
+    "bat",
+    "crab",
+    "metool",
+    "pantheon",
+    "spiky-crab-copy",
+  ]);
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

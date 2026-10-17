@@ -157,6 +157,8 @@ const manifest = {
 };
 
 manifest.assets.sort((a, b) => a.id.localeCompare(b.id));
+// Contract C-MARK: the template ships the MMX Starter pack in data/game.json; last, as serializeProject writes it.
+manifest.packs = [{ id: "mmx-starter", version: 1 }];
 
 writeFileSync(join(templateRoot, "project.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`project.json: ${manifest.assets.length} assets`);

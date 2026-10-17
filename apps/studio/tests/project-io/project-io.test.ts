@@ -215,7 +215,7 @@ test("data/game.json round-trips through load and save, and export keeps its ene
   const created = await createProject(fs, { id: "crab.project", name: "Crab" });
   assert.equal(created.ok, true);
   if (!created.ok) return;
-  assert.equal(created.value.gameData, undefined);
+  assert.deepEqual(created.value.manifest.packs, [{ id: "mmx-starter", version: 1 }]);
   const sheet = {
     id: "anim.crab",
     kind: "animation" as const,

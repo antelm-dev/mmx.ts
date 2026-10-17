@@ -37,7 +37,12 @@ test("export copies portable game data files", async () => {
   assert.equal(exported.ok, true);
   if (!exported.ok) return;
 
-  assert.deepEqual(exported.value.exportedDataFiles.sort(), ["ATTRIBUTION.md", "game/data.json"]);
+  // data/game.json: the MMX Starter pack this project (no `packs`) got on load.
+  assert.deepEqual(exported.value.exportedDataFiles.sort(), [
+    "ATTRIBUTION.md",
+    "data/game.json",
+    "game/data.json",
+  ]);
   assert.equal(await destFs.exists("game/data.json"), true);
   assert.equal(await destFs.exists("ATTRIBUTION.md"), true);
 });
