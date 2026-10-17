@@ -137,34 +137,21 @@ export function AssetBrowserPanel() {
           </button>
         )}
       </SearchBox>
-      {/* The ways in for a project with no sprite or animation yet. */}
+      {/* The ways in for a project with no sprite or animation yet, or no project at all
+          (an untitled one is made first). */}
       <chakra.div display="flex" flexWrap="wrap" gap="1" px="3" pb="1">
-        <ToolbarButton
-          disabled={!project}
-          title={project ? undefined : "Open a project first"}
-          onClick={() => void importSpriteSheet()}
-        >
+        <ToolbarButton onClick={() => void editor.withProject(importSpriteSheet)}>
           <ImagePlus size={14} /> Import sprite sheet…
         </ToolbarButton>
-        <ToolbarButton
-          disabled={!project}
-          title={project ? undefined : "Open a project first"}
-          onClick={() => openClipsDocument()}
-        >
+        <ToolbarButton onClick={() => void editor.withProject(() => openClipsDocument())}>
           <Film size={14} /> New animation…
         </ToolbarButton>
         <ToolbarButton
           // Ctrl+Z right after creating one undoes it: focus comes back here.
           {...DEFINITIONS_SCOPE}
-          disabled={!project || broken}
-          title={
-            !project
-              ? "Open a project first"
-              : broken
-                ? "Fix the data/game.json errors in Problems first"
-                : undefined
-          }
-          onClick={() => openNewObject()}
+          disabled={broken}
+          title={broken ? "Fix the data/game.json errors in Problems first" : undefined}
+          onClick={() => void editor.withProject(() => openNewObject())}
         >
           <Plus size={14} /> New object…
         </ToolbarButton>

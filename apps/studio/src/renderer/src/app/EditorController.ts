@@ -501,6 +501,15 @@ export class EditorController {
     return this.ensuring;
   }
 
+  /**
+   * AC-NOPROJECT: run a creation that needs a project (New object…, Import sprite sheet…, New
+   * animation…), making the untitled work project first when none is open. Nothing runs when that
+   * fails: ensureProject has said why.
+   */
+  async withProject(create: () => unknown): Promise<void> {
+    if (await this.ensureProject()) await create();
+  }
+
   private async createWorkProject(): Promise<boolean> {
     if (this.store.get().mode === "play") this.togglePlay();
     const issues = await projectSession.createWorkProject(this.store.get().document);

@@ -68,14 +68,14 @@ test("from a project with no assets, Assets imports a sheet, slices it and creat
   const newAnimation = page.getByRole("button", { name: "New animation…" });
   const tab = (name: string) => page.getByRole("tab", { name, exact: true });
 
-  // Without a project both ways in are disabled, with a hint.
+  // Without a project both ways in are offered too: they make an untitled project first, so
+  // objects-without-project.spec clicks them, on its own profile.
   await page
     .getByRole("navigation", { name: "Activity bar" })
     .getByRole("button", { name: "Assets" })
     .click();
-  await expect(importSheet).toBeDisabled();
-  await expect(importSheet).toHaveAttribute("title", "Open a project first");
-  await expect(newAnimation).toBeDisabled();
+  await expect(importSheet).toBeEnabled();
+  await expect(newAnimation).toBeEnabled();
 
   await pick(projectRoot);
   await page.getByRole("button", { name: "File menu" }).click();

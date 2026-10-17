@@ -84,18 +84,17 @@ export function PalettePanel() {
         )}
       </SearchBox>
       <PaletteList query={query} snap={snap} />
-      {/* New objects are saved in the project: its manifest, or data/game.json for enemies. */}
-      {session.open && (
-        <PanelActions>
-          <ActionButton
-            disabled={broken}
-            title={broken ? "Fix the data/game.json errors in Problems first" : undefined}
-            onClick={() => openNewObject()}
-          >
-            New object…
-          </ActionButton>
-        </PanelActions>
-      )}
+      {/* New objects are saved in the project (its manifest, or data/game.json for enemies),
+          an untitled one made first when none is open. */}
+      <PanelActions>
+        <ActionButton
+          disabled={broken}
+          title={broken ? "Fix the data/game.json errors in Problems first" : undefined}
+          onClick={() => void editor.withProject(() => openNewObject())}
+        >
+          New object…
+        </ActionButton>
+      </PanelActions>
     </Panel>
   );
 }
