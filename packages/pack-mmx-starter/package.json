@@ -4,12 +4,17 @@
   "private": true,
   "files": [
     "pack.json",
-    "data"
+    "data",
+    "assets.json",
+    "assets",
+    "ATTRIBUTION.md"
   ],
   "type": "module",
   "exports": {
     "./pack.json": "./pack.json",
-    "./data/game.json": "./data/game.json"
+    "./data/game.json": "./data/game.json",
+    "./assets.json": "./assets.json",
+    "./assets/*": "./assets/*"
   },
   "scripts": {
     "test": "node --import tsx --test tests/*.test.ts"

@@ -10,14 +10,35 @@ the course primitives (`spawn`, `camera-zone`, `hazard`, slopes).
 
 A pack is a folder with:
 
-| File             | Content                                                             |
-| ---------------- | ------------------------------------------------------------------- |
-| `pack.json`      | `{ id, name, version }`                                             |
-| `data/game.json` | A `GameDataOverlay` (`@mmx/engine/data`) merged over the base by id |
+| File             | Content                                                                    |
+| ---------------- | -------------------------------------------------------------------------- |
+| `pack.json`      | `{ id, name, version }`                                                    |
+| `data/game.json` | A `GameDataOverlay` (`@mmx/engine/data`) merged over the base by id        |
+| `assets.json`    | `{ assets }`: the pack's 12 project manifest entries (sprites, animations) |
+| `assets/`        | The files those entries name, at the same project-relative paths           |
+| `ATTRIBUTION.md` | Where the art comes from                                                   |
 
 Each object ships its prefab and the enemy, actor, pickup, environment and
-projectile records it uses, with the built-in values and sheet names. Assets come
-in phase 2.
+projectile records it uses, with the built-in values and sheet names.
+
+## Assets
+
+The pack owns the Metool and Bat sheets and the four capsule sheets, with their
+`enemy_anims.json` / `pickup_anims.json`. Shared art (the player, shots and
+effects, HUD, sounds, font) stays in the Studio templates.
+
+The Studio templates `mmx-starter` and `mmx-demo` keep physical copies (Studio
+bundles the template and ships only `out/**`). Refresh them from the pack with:
+
+```bash
+cd apps/studio
+node scripts/starter-template/build-enemies.mjs [path-to-godot-project]  # optional, rebuilds assets/
+node scripts/starter-template/build-pickups.mjs [path-to-godot-project]  # optional, rebuilds assets/
+node scripts/starter-template/generate-manifest.mjs  # writes assets.json, both project.json, copies assets/
+```
+
+Studio's `tests/starter-template/pack-assets.test.ts` fails if a template's copy
+or manifest entry differs from the pack by a byte.
 
 ```ts
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };

@@ -3,10 +3,11 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const templateRoot = resolve(here, "../../templates/mmx-starter");
-const godot = resolve(templateRoot, process.argv[2] ?? "../../../Mega-Man-X8-16-bit");
+// The MMX Starter pack owns this art; generate-manifest.mjs copies it into the templates.
+const packRoot = resolve(here, "../../../../packages/pack-mmx-starter");
+const godot = resolve(packRoot, process.argv[2] ?? "../../../Mega-Man-X8-16-bit");
 const pickupsDir = join(godot, "src/Objects/Pickups");
-const assets = join(templateRoot, "assets/sprites/pickups");
+const assets = join(packRoot, "assets/sprites/pickups");
 
 const CAPSULES = {
   small: { png: "sheal.png", tres: "sheal.tres" },
@@ -66,4 +67,6 @@ for (const [name, actor] of Object.entries(out.actors)) {
     .join(" ");
   console.log(`${name}: ${clips}`);
 }
-console.log("pickup_anims.json + sheets written to templates/mmx-starter/assets/sprites/pickups");
+console.log(
+  "pickup_anims.json + sheets written to packages/pack-mmx-starter/assets/sprites/pickups; run generate-manifest.mjs next",
+);
