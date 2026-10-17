@@ -21,6 +21,9 @@ test.afterAll(async () => {
   if (projectRoot) rmSync(projectRoot, { recursive: true, force: true });
 });
 
+const pack = JSON.parse(
+  readFileSync(resolve(appRoot, "../../packages/pack-mmx-starter/data/game.json"), "utf8"),
+);
 const readGameData = () => JSON.parse(readFileSync(join(projectRoot, "data/game.json"), "utf8"));
 
 async function save(page: Page): Promise<void> {
@@ -28,7 +31,7 @@ async function save(page: Page): Promise<void> {
   await expect(page.getByText("Project saved.").last()).toBeVisible();
 }
 
-test("Enemy editor: compose a project enemy's abilities and tuning; built-ins are read-only and duplicable", async () => {
+test("Enemy editor: compose a project enemy's abilities and tuning; pack enemies are editable and duplicable", async () => {
   projectRoot = mkdtempSync(join(tmpdir(), "mmx-enemy-editor-"));
   cpSync(fixtureRoot, projectRoot, { recursive: true });
 
@@ -100,7 +103,8 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
   expect(crab.reactions).toEqual({ idle: ["Patrol"], guard_break: ["Stun"] });
   expect(crab.hurtbox.hw).toBe(9);
 
-  // A built-in enemy is read-only; Duplicate copies it into the project and edits the copy.
+  // The Metool came with the MMX Starter pack (the fixture has no `packs`): a project record, so
+  // editable; Duplicate copies it and edits the copy.
   // Each enemy is its own document tab: Crab's stays open beside Metool's.
   await page.getByRole("button", { name: "Edit Metool" }).click();
   await expect(page.getByRole("tab", { name: "Metool", exact: true })).toHaveAttribute(
@@ -108,10 +112,10 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
     "true",
   );
   await expect(page.getByRole("tab", { name: "Crab", exact: true })).toHaveCount(1);
-  await expect(page.getByText("Built-in enemy, read-only.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Built-in enemy, read-only.", { exact: false })).toHaveCount(0);
   await expect(
     page.getByRole("group", { name: "Patrol" }).getByLabel("Travel speed"),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   await expect(page.getByText("Enemy · metool-copy")).toBeVisible();
   await expect(
@@ -129,6 +133,7 @@ test("Enemy editor: compose a project enemy's abilities and tuning; built-ins ar
     kind: "enemy",
     ref: "metool-copy",
   });
-  expect(gameData.enemies.metool).toBeUndefined();
+  // Saved as the pack has it: viewing it changed nothing.
+  expect(gameData.enemies.metool).toEqual(pack.enemies.metool);
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

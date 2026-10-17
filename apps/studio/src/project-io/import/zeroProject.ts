@@ -5,7 +5,11 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { withStarterPack, type PackRef } from "@mmx/content-schema";
+import type { GameDataOverlay } from "@mmx/engine/data";
+
 import type { FileSystem } from "../fs.js";
+import { CANONICAL_GAME_DATA_FILE } from "../paths.js";
 import { msAdpcmToPcmWav } from "./adpcm.js";
 import { readArc } from "./arc.js";
 import {
@@ -257,6 +261,14 @@ export async function writeZeroProject(
   const json = (path: string, data: unknown) =>
     out.writeText(path, `${JSON.stringify(data, null, 2)}\n`);
 
+  // The MMX Starter pack (Pantheon, pantheon_shot…); a previous import's own records are kept.
+  const previous: GameDataOverlay | undefined = (await out.exists(CANONICAL_GAME_DATA_FILE))
+    ? JSON.parse(await out.readText(CANONICAL_GAME_DATA_FILE))
+    : undefined;
+  const { manifest: packed, overlay } = withStarterPack<{ packs?: PackRef[] }>({}, previous);
+  // Left unchanged, it is not an object of records: fail before writing rather than overwrite it.
+  if (!packed.packs) throw new Error(`${CANONICAL_GAME_DATA_FILE} is not an object of records.`);
+
   const { sheet, animations, cell, frames } = zeroSheet(src.zero);
   await out.writeBytes("assets/sprites/player/zero.png", encodePng(sheet));
   await json("assets/sprites/player/zero_anims.json", { animations });
@@ -337,6 +349,8 @@ export async function writeZeroProject(
   for (const path of [...borrowedAssets.map((a) => a.path), "ATTRIBUTION.md"])
     await out.writeBytes(path, await template.readBytes(path));
 
+  await json(CANONICAL_GAME_DATA_FILE, overlay);
+
   // No playerPointingSheet: Zero has no detached arm.
   await json("project.json", {
     schemaVersion: 1,
@@ -361,6 +375,7 @@ export async function writeZeroProject(
       ...soundAssets,
       ...borrowedAssets,
     ],
+    packs: packed.packs,
   });
   await json("game/data.json", {
     schemaVersion: 1,

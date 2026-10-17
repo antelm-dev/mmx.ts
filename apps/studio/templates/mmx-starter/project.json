@@ -4208,5 +4208,11 @@
       "kind": "sprite",
       "path": "assets/sprites/player/x_leftarm.png"
     }
+  ],
+  "packs": [
+    {
+      "id": "mmx-starter",
+      "version": 1
+    }
   ]
 }

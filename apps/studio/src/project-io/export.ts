@@ -3,7 +3,12 @@ import { serializeProject, validateProject, type ProjectDocument } from "@mmx/pr
 import type { FileSystem } from "./fs.js";
 import { PROJECT_VALIDATION } from "./project.js";
 import { fail, issue, succeed, type ProjectResult, type StudioProject } from "./model.js";
-import { GAME_DATA_FILE, PORTABLE_EXPORT_FILES, PROJECT_MANIFEST } from "./paths.js";
+import {
+  CANONICAL_GAME_DATA_FILE,
+  GAME_DATA_FILE,
+  PORTABLE_EXPORT_FILES,
+  PROJECT_MANIFEST,
+} from "./paths.js";
 import { collectGameBindingAssetIds, filterReferencedAssets } from "./references.js";
 
 export type ExportProjectInput = {
@@ -160,6 +165,16 @@ export async function exportProject(
   const manifestJson = serializeProject(exportedManifest);
   await destFs.writeText(PROJECT_MANIFEST, manifestJson);
   const exportedDataFiles = await copyPortableProjectFiles(sourceFs, destFs);
+  // As the manifest: a project migrated on load (withStarterPack) has its pack records only in memory.
+  if (project.gameData) {
+    await destFs.writeText(
+      CANONICAL_GAME_DATA_FILE,
+      `${JSON.stringify(project.gameData, null, 2)}\n`,
+    );
+    if (!exportedDataFiles.includes(CANONICAL_GAME_DATA_FILE)) {
+      exportedDataFiles.push(CANONICAL_GAME_DATA_FILE);
+    }
+  }
 
   return succeed({
     manifestPath: PROJECT_MANIFEST,

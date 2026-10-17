@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "prefabs": {
+    "enemy.metool": {
+      "id": "enemy.metool",
+      "runtime": "enemy",
+      "source": {
+        "kind": "enemy",
+        "ref": "metool"
+      },
+      "fields": [
+        {
+          "name": "FacesRight",
+          "type": "boolean",
+          "default": false
+        }
+      ]
+    },
+    "enemy.bat": {
+      "id": "enemy.bat",
+      "runtime": "enemy",
+      "source": {
+        "kind": "enemy",
+        "ref": "bat"
+      },
+      "fields": [
+        {
+          "name": "FacesRight",
+          "type": "boolean",
+          "default": false
+        }
+      ]
+    },
+    "enemy.pantheon": {
+      "id": "enemy.pantheon",
+      "runtime": "enemy",
+      "source": {
+        "kind": "enemy",
+        "ref": "pantheon"
+      },
+      "fields": [
+        {
+          "name": "FacesRight",
+          "type": "boolean",
+          "default": false
+        }
+      ]
+    },
+    "pickup.life.small": {
+      "id": "pickup.life.small",
+      "runtime": "pickup",
+      "source": {
+        "kind": "pickup",
+        "ref": "life.small"
+      },
+      "fields": []
+    },
+    "pickup.life.large": {
+      "id": "pickup.life.large",
+      "runtime": "pickup",
+      "source": {
+        "kind": "pickup",
+        "ref": "life.large"
+      },
+      "fields": []
+    },
+    "pickup.weapon.small": {
+      "id": "pickup.weapon.small",
+      "runtime": "pickup",
+      "source": {
+        "kind": "pickup",
+        "ref": "weapon.small"
+      },
+      "fields": []
+    },
+    "pickup.weapon.large": {
+      "id": "pickup.weapon.large",
+      "runtime": "pickup",
+      "source": {
+        "kind": "pickup",
+        "ref": "weapon.large"
+      },
+      "fields": []
+    },
+    "platform.moving": {
+      "id": "platform.moving",
+      "runtime": "environment",
+      "source": {
+        "kind": "environment",
+        "ref": "moving-platform"
+      },
+      "fields": [
+        {
+          "name": "Travel",
+          "type": "number",
+          "default": 96,
+          "min": 0
+        },
+        {
+          "name": "Speed",
+          "type": "number",
+          "default": 48,
+          "min": 0
+        },
+        {
+          "name": "Axis",
+          "type": "enum",
+          "default": "horizontal",
+          "enum": ["horizontal", "vertical"]
+        }
+      ]
+    },
+    "platform.falling": {
+      "id": "platform.falling",
+      "runtime": "environment",
+      "source": {
+        "kind": "environment",
+        "ref": "falling-platform"
+      },
+      "fields": [
+        {
+          "name": "Delay",
+          "type": "number",
+          "default": 0.5,
+          "min": 0
+        }
+      ]
+    },
+    "conveyor": {
+      "id": "conveyor",
+      "runtime": "environment",
+      "source": {
+        "kind": "environment",
+        "ref": "conveyor"
+      },
+      "fields": [
+        {
+          "name": "Speed",
+          "type": "number",
+          "default": 60
+        }
+      ]
+    }
+  },
+  "actors": {
+    "enemy.metool": {
+      "id": "enemy.metool",
+      "body": {
+        "hw": 12,
+        "hh": 10
+      },
+      "maxHealth": 2
+    },
+    "enemy.bat": {
+      "id": "enemy.bat",
+      "body": {
+        "hw": 13.5,
+        "hh": 15.5
+      },
+      "maxHealth": 1
+    },
+    "enemy.pantheon": {
+      "id": "enemy.pantheon",
+      "body": {
+        "hw": 8,
+        "hh": 15
+      },
+      "maxHealth": 4
+    }
+  },
+  "enemies": {
+    "metool": {
+      "id": "metool",
+      "sheet": "metool",
+      "actor": "enemy.metool",
+      "hurtbox": {
+        "hw": 9,
+        "hh": 10
+      },
+      "touchDamage": 3,
+      "movement": "ground",
+      "perception": {
+        "hw": 158,
+        "hh": 18,
+        "oy": -6
+      },
+      "shield": {
+        "breakable": true
+      },
+      "abilities": ["Patrol", "Hide", "Stun", "Death"],
+      "abilityConfig": {
+        "Patrol": {
+          "travelSpeed": 25,
+          "travelTime": 0.8,
+          "restMin": 0.8,
+          "randomTurn": false,
+          "conflicts": ["Hide", "Stun"]
+        },
+        "Hide": {
+          "openDelay": 3,
+          "advanceRangeX": 64,
+          "advanceRangeY": 16,
+          "giveUpRangeX": 80,
+          "reshieldDelay": 0.1,
+          "speed": 90
+        },
+        "Stun": {
+          "duration": 1.65,
+          "animation": "stun",
+          "recoverAnimation": "",
+          "reactivateShield": false,
+          "gravity": true,
+          "conflicts": []
+        },
+        "Death": {
+          "explosionDuration": 0
+        }
+      },
+      "reactions": {
+        "idle": ["Patrol"],
+        "see_player": ["Hide"],
+        "guard_break": ["Stun"]
+      },
+      "initialAnimation": "idle"
+    },
+    "bat": {
+      "id": "bat",
+      "sheet": "bat",
+      "actor": "enemy.bat",
+      "hurtbox": {
+        "hw": 10,
+        "hh": 10
+      },
+      "touchDamage": 1,
+      "movement": "flying",
+      "perception": {
+        "hw": 102,
+        "hh": 86.5,
+        "oy": 1.5
+      },
+      "abilities": ["Hover", "Pursuit", "Recoil", "Death"],
+      "abilityConfig": {
+        "Hover": {
+          "area": 16,
+          "travelTime": 0.5,
+          "restDuration": 0.5
+        },
+        "Pursuit": {
+          "speed": 80,
+          "giveUpDistance": 200,
+          "weaveRate": 4
+        },
+        "Recoil": {
+          "speed": 200,
+          "duration": 0.7
+        },
+        "Death": {
+          "explosionDuration": 0
+        }
+      },
+      "reactions": {
+        "idle": ["Hover"],
+        "see_player": ["Pursuit"],
+        "touch_player": ["Recoil"]
+      },
+      "hooks": [
+        {
+          "on": "ability_end",
+          "ability": "Recoil",
+          "effect": "enemy.reanchor-hover"
+        }
+      ],
+      "initialAnimation": "idle"
+    },
+    "pantheon": {
+      "id": "pantheon",
+      "sheet": "pantheon",
+      "actor": "enemy.pantheon",
+      "hurtbox": {
+        "hw": 8,
+        "hh": 15
+      },
+      "touchDamage": 2,
+      "movement": "ground",
+      "perception": {
+        "hw": 140,
+        "hh": 48,
+        "oy": 0
+      },
+      "abilities": ["Patrol", "Shoot", "Stun", "Death"],
+      "abilityConfig": {
+        "Patrol": {
+          "travelSpeed": 30,
+          "travelTime": 0.8,
+          "restMin": 0.8,
+          "randomTurn": false,
+          "conflicts": ["Shoot", "Stun"]
+        },
+        "Shoot": {
+          "projectile": "pantheon_shot",
+          "cooldown": 1.6666666666666667,
+          "recoverTime": 0.4
+        },
+        "Stun": {
+          "duration": 0.2,
+          "animation": "hit",
+          "recoverAnimation": "",
+          "reactivateShield": false,
+          "gravity": true,
+          "conflicts": []
+        },
+        "Death": {
+          "explosionDuration": 0
+        }
+      },
+      "reactions": {
+        "idle": ["Patrol"],
+        "see_player": ["Shoot"],
+        "get_hit": ["Stun"]
+      },
+      "initialAnimation": "idle"
+    }
+  },
+  "projectiles": {
+    "pantheon_shot": {
+      "id": "pantheon_shot",
+      "behavior": "projectile.straight",
+      "damage": 2,
+      "speed": 120,
+      "hitbox": {
+        "hw": 4,
+        "hh": 4
+      },
+      "spawnOffset": {
+        "x": 18,
+        "y": -4
+      },
+      "lifetime": 0.2,
+      "breaksGuard": false,
+      "hitFx": "lemon_hit",
+      "animation": {
+        "kind": "pantheon_shot",
+        "frameMs": 67,
+        "frameCount": 4,
+        "randomStartFrame": false
+      },
+      "verticalRange": 0
+    }
+  },
+  "pickups": {
+    "life.small": {
+      "id": "life.small",
+      "behavior": "pickup.life",
+      "sheet": "sheal",
+      "amount": 2
+    },
+    "life.large": {
+      "id": "life.large",
+      "behavior": "pickup.life",
+      "sheet": "heal",
+      "amount": 8
+    },
+    "weapon.small": {
+      "id": "weapon.small",
+      "behavior": "pickup.weapon-energy",
+      "sheet": "sammo",
+      "amount": 2
+    },
+    "weapon.large": {
+      "id": "weapon.large",
+      "behavior": "pickup.weapon-energy",
+      "sheet": "ammo",
+      "amount": 8
+    }
+  },
+  "environments": {
+    "moving-platform": {
+      "id": "moving-platform",
+      "behavior": "environment.moving-platform",
+      "defaults": {
+        "travel": 96,
+        "speed": 48
+      }
+    },
+    "falling-platform": {
+      "id": "falling-platform",
+      "behavior": "environment.falling-platform",
+      "defaults": {
+        "delay": 0.5
+      }
+    },
+    "conveyor": {
+      "id": "conveyor",
+      "behavior": "environment.conveyor",
+      "defaults": {
+        "speed": 60
+      }
+    }
+  }
+}
