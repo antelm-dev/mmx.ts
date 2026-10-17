@@ -1,10 +1,10 @@
 # @mmx/pack-mmx-starter
 
-The **MMX Starter** data pack: the Mega Man X objects the engine no longer owns —
-Metool, Bat and Pantheon Hunter (with `pantheon_shot`), the four Life / Weapon
-Energy capsules, the moving and falling platforms and the conveyor. The engine
-keeps only behaviours and the course primitives (`spawn`, `camera-zone`,
-`hazard`, slopes).
+The **MMX Starter** data pack: the Mega Man X objects the engine is moving out of
+its built-in data — Metool, Bat and Pantheon Hunter (with `pantheon_shot`), the
+four Life / Weapon Energy capsules, the moving and falling platforms and the
+conveyor. Once phase 2 removes them from the engine, it keeps only behaviours and
+the course primitives (`spawn`, `camera-zone`, `hazard`, slopes).
 
 ## Layout
 

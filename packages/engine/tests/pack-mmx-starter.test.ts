@@ -13,8 +13,9 @@ import {
   type GameData,
   type GameDataOverlay,
 } from "../src/data/index.js";
-import type { LevelData } from "../src/game/LevelData.js";
+import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
+import { Tile } from "../src/game/World.js";
 import { stage1, stage2 } from "./fixtures/levels.js";
 
 /**
@@ -51,6 +52,7 @@ function withPack(): GameData {
   return merged.value;
 }
 
+// core() drops the pack's own ids, so this exact key set is what catches a record missing from the pack.
 test("core keeps only the engine's primitives, the players and their shots", () => {
   const data = core();
   assert.deepEqual(Object.keys(data.prefabs).sort(), ["camera-zone", "hazard", "spawn"]);
@@ -90,20 +92,63 @@ const INPUTS = Array.from({ length: 1200 }, (_, i) => {
   return mask;
 });
 
-function digest(level: LevelData, gameData?: CompiledGameData): string {
+const GRID = 16;
+/** An entity at `col`, standing on the floor (top at row 11) unless `y` is given. */
+const at = (id: string, col: number, w: number, h: number, y = 11 * GRID - h): LevelEntity => ({
+  id,
+  iid: `${id}-${col}`,
+  x: col * GRID,
+  y,
+  w,
+  h,
+  fields: {},
+});
+
+/**
+ * The stages set every platform and conveyor field; here the conveyor and the
+ * moving platform fall back to their pack defaults, so those show in the digest
+ * too, and the run collects a Life capsule.
+ */
+const OBJECTS: LevelData = {
+  identifier: "pack-objects",
+  gridSize: GRID,
+  cols: 40,
+  rows: 12,
+  tiles: Array.from({ length: 40 * 12 }, (_, i) => (i >= 40 * 11 ? Tile.Solid : Tile.Empty)),
+  entities: [
+    at("Spawn", 2, 16, 16),
+    at("Conveyor", 6, 8 * GRID, 8),
+    at("MovingPlatform", 20, 48, 8, 7 * GRID),
+    { ...at("LifeCapsule", 18, 16, 16), fields: { Kind: "small" } },
+  ],
+};
+
+/** The run's digest every 60 frames: a final digest alone misses what the right wall evens out. */
+function run(level: LevelData, gameData?: CompiledGameData): { scene: Scene; trace: string[] } {
   const scene = Scene.create({ level, seed: 0x5eed, ...(gameData ? { gameData } : {}) });
-  assert.ok(scene.stage.enemies.length > 0, "the stage places pack enemies");
-  for (const mask of INPUTS) scene.step(mask);
-  return `${scene.gameDataHash}:${scene.digest()}`;
+  scene.step(0);
+  scene.player.current_health -= 12; // hurt (damage() is ignored in the intro), so a capsule heals
+  const trace: string[] = [];
+  INPUTS.forEach((mask, i) => {
+    scene.step(mask);
+    if (i % 60 === 59) trace.push(scene.digest());
+  });
+  return { scene, trace };
 }
 
-for (const [name, level] of [
-  ["stage1", stage1],
-  ["stage2", stage2],
+for (const [name, level, missing] of [
+  ["stage1", stage1, /Unsupported enemy kind/],
+  ["stage2", stage2, /Unsupported enemy kind/],
+  ["the pack-objects level", OBJECTS, /Unsupported life capsule kind/],
 ] as const) {
   test(`${name} plays the same with core + pack as with the built-ins`, () => {
-    const packData = compile(withPack());
-    assert.equal(digest(level, packData), digest(level));
-    assert.throws(() => Scene.create({ level, seed: 0x5eed, gameData: compile(core()) }));
+    assert.deepEqual(run(level, compile(withPack())).trace, run(level).trace);
+    assert.throws(() => Scene.create({ level, seed: 0x5eed, gameData: compile(core()) }), missing);
   });
 }
+
+test("the pack-objects run collects its capsule while hurt", () => {
+  const { scene } = run(OBJECTS);
+  assert.equal(scene.stage.pickups.length, 0, "the capsule was collected");
+  assert.equal(scene.player.current_health, scene.player.max_health - 12 + 2);
+});
