@@ -47,8 +47,9 @@ export function requiredPlayerClips(
 
 /**
  * Clip names each enemy ability plays: the `animation = "…"` and `play_animation*("…")`
- * literals of `packages/engine/src/game/enemy/` (clips.test.ts checks them). Death plays
- * none; Stun names its clips in its config (`animation`, `recoverAnimation`).
+ * literals of `packages/engine/src/game/enemy/` (clips.test.ts checks them). Stun names
+ * its clips in its config (`animation`, `recoverAnimation`), and Death its weak phase's
+ * (`weakAnimation`).
  */
 export const ENEMY_ABILITY_CLIPS: Readonly<Record<string, readonly string[]>> = {
   Patrol: ["walk", "idle"],
@@ -70,7 +71,7 @@ export function enemyClips(
   for (const ability of enemy.abilities) {
     for (const name of ENEMY_ABILITY_CLIPS[ability] ?? []) names.add(name);
     const config = enemy.abilityConfig?.[ability];
-    for (const value of [config?.animation, config?.recoverAnimation]) {
+    for (const value of [config?.animation, config?.recoverAnimation, config?.weakAnimation]) {
       if (typeof value === "string" && value !== "") names.add(value);
     }
   }

@@ -8,6 +8,7 @@ import {
   abilityFields,
   addBlankEnemy,
   BLANK_ENEMY,
+  defaultReactions,
   deleteEnemy,
   duplicateEnemy,
   enemyForPrefab,
@@ -20,6 +21,7 @@ import {
   MOVEMENTS,
   withMovement,
   withReaction,
+  withWeakPhase,
 } from "./enemyEditor.js";
 
 const crab = addEnemy(undefined, GAME_DATA, {
@@ -133,6 +135,60 @@ describe("enemy editor", () => {
       type: "enum",
       options: ["a", "b"],
     });
+    // A field with options picks one; Death's weak clip is one of the animation's.
+    expect(abilityFields("Roll", []).find((p) => p.key === "atWall")).toMatchObject({
+      type: "enum",
+      options: ["turn", "stop"],
+    });
+    const weakClip = (clips?: string[]) =>
+      abilityFields("Death", [], clips).find((p) => p.key === "weakAnimation");
+    expect(weakClip(["idle", "fall"])).toMatchObject({ type: "enum", options: ["idle", "fall"] });
+    expect(weakClip()).toMatchObject({ type: "string" });
+    expect(abilityFields("Death", []).map((p) => p.key)).toEqual([
+      "explosionDuration",
+      "weakHealth",
+      "weakAnimation",
+      "weakDuration",
+    ]);
+  });
+
+  it("gives Death's weak phase a duration, and takes it away whole", () => {
+    const death = (enemy: { abilityConfig?: Record<string, Record<string, unknown>> }) =>
+      enemy.abilityConfig?.Death;
+    const base = withAbilities(BLANK_ENEMY, ["Death"]);
+    // A weak phase without a duration would last one frame.
+    expect(death(withConfig(base, "Death", "weakHealth", 2))).toEqual({
+      explosionDuration: 0,
+      weakHealth: 2,
+      weakDuration: 1,
+    });
+    const slow = withConfig(base, "Death", "weakDuration", 3);
+    expect(death(withConfig(slow, "Death", "weakHealth", 2))?.weakDuration).toBe(3);
+    expect(death(withConfig(base, "Death", "weakHealth", 0))?.weakDuration).toBeUndefined();
+    const weak = withWeakPhase(base, "fall");
+    expect(death(weak)).toEqual({
+      explosionDuration: 0,
+      weakHealth: 1,
+      weakAnimation: "fall",
+      weakDuration: 1,
+    });
+    expect(withWeakPhase(weak, undefined)).toEqual(base);
+  });
+
+  it("re-applies a default conflict with an ability added later, not one the user dropped", () => {
+    const roller = withAbilities(BLANK_ENEMY, ["Roll", "Death"]);
+    expect(roller.abilityConfig?.Roll?.conflicts).toEqual([]);
+    // Stun added after Roll must still interrupt the roll.
+    const stunned = withAbilities(roller, ["Roll", "Death", "Stun"]);
+    expect(stunned.abilityConfig?.Roll?.conflicts).toEqual(["Stun"]);
+    // Dropped while owned, it stays dropped through other changes.
+    const free = withConfig(stunned, "Roll", "conflicts", []);
+    expect(withAbilities(free, ["Stun", "Roll", "Death"]).abilityConfig?.Roll?.conflicts).toEqual(
+      [],
+    );
+    expect(
+      withAbilities(free, ["Roll", "Death", "Stun", "Patrol"]).abilityConfig?.Roll?.conflicts,
+    ).toEqual([]);
   });
 
   it("duplicates an enemy into the overlay under a new id, named after the original", () => {
@@ -276,6 +332,12 @@ describe("enemy editor", () => {
       expect(blank(["Shoot", "Hide"]).overlay.enemies!.blob!.reactions).toEqual({
         see_player: ["Shoot"],
       });
+      // Roll starts on idle, ahead of Patrol when listed first; the order decides.
+      expect(blank(["Roll", "Death"]).overlay.enemies!.blob!.reactions).toEqual({
+        idle: ["Roll"],
+      });
+      expect(defaultReactions(["Roll", "Patrol"]).idle).toEqual(["Roll"]);
+      expect(defaultReactions(["Patrol", "Roll"]).idle).toEqual(["Patrol"]);
       // Death answers zero health by itself.
       expect(blank(["Death"]).overlay.enemies!.blob!.reactions).toEqual({});
       // Every ability a movement allows still compiles.
@@ -360,6 +422,23 @@ describe("enemy editor", () => {
         blank(abilities).overlay.enemies!.blob!.abilityConfig?.Roll?.conflicts;
       expect(roller(["Roll", "Stun"])).toEqual(["Stun"]);
       expect(roller(["Roll"])).toEqual([]);
+    });
+
+    it("compiles a Spiky: Roll, then Death with a weak phase", () => {
+      const spiky = withWeakPhase(withAbilities(BLANK_ENEMY, ["Roll", "Death", "Stun"]), "fall");
+      const { overlay } = blank(spiky.abilities, { abilityConfig: spiky.abilityConfig });
+      const enemy = overlay.enemies!.blob!;
+      expect(enemy.abilityConfig).toMatchObject({
+        Roll: { speed: 60, facePlayer: true, atWall: "turn", conflicts: ["Stun"] },
+        Death: { weakHealth: 1, weakAnimation: "fall", weakDuration: 1 },
+      });
+      expect(enemy.reactions.idle).toEqual(["Roll"]);
+      const result = projectGameData(overlay);
+      expect(result.issues).toEqual([]);
+      expect(result.compiled.enemies.get("blob")?.abilityConfig.Death).toMatchObject({
+        weakHealth: 1,
+        weakDuration: 1,
+      });
     });
 
     it("takes a free id", () => {

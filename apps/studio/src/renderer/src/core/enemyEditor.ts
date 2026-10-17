@@ -50,13 +50,22 @@ export function fieldLabel(key: string): string {
 
 /**
  * `ability`'s config fields as inspector properties. `projectile` picks one of
- * `projectiles`; `conflicts` (string[]) is edited apart, over the enemy's abilities.
+ * `projectiles`, Death's `weakAnimation` one of `clips` (when there are any), and a
+ * field with `options` one of those; `conflicts` (string[]) is edited apart, over
+ * the enemy's abilities.
  */
-export function abilityFields(ability: string, projectiles: readonly string[]): PropertyMeta[] {
+export function abilityFields(
+  ability: string,
+  projectiles: readonly string[],
+  clips: readonly string[] = [],
+): PropertyMeta[] {
   return Object.entries(SCHEMAS[ability] ?? {}).flatMap(([key, field]): PropertyMeta[] => {
-    const { type, min, max } = fieldSpec(field);
+    const { type, min, max, options } = fieldSpec(field);
     const label = fieldLabel(key);
     if (key === "projectile") return [{ key, label, type: "enum", options: projectiles }];
+    if (key === "weakAnimation" && clips.length > 0)
+      return [{ key, label, type: "enum", options: clips }];
+    if (options) return [{ key, label, type: "enum", options }];
     if (type === "number" || type === "boolean" || type === "string")
       return [{ key, label, type, min, max }];
     return [];
@@ -97,13 +106,16 @@ export function defaultAbilityConfig(ability: string, owned: readonly string[]):
 export function withAbilities(enemy: EnemyDefinition, abilities: string[]): EnemyDefinition {
   const keep = (names: readonly string[]): string[] =>
     names.filter((name) => abilities.includes(name));
+  const added = abilities.filter((name) => !enemy.abilities.includes(name));
   const abilityConfig = Object.fromEntries(
     abilities.map((ability) => {
       const config = enemy.abilityConfig?.[ability] ?? defaultAbilityConfig(ability, abilities);
-      return [
-        ability,
-        Array.isArray(config.conflicts) ? { ...config, conflicts: keep(config.conflicts) } : config,
-      ];
+      if (!Array.isArray(config.conflicts)) return [ability, config];
+      // An ability just added joins the conflicts the default config lists (a new Stun
+      // interrupts Roll); one the user dropped while it was owned stays dropped.
+      const fresh = defaultAbilityConfig(ability, added).conflicts;
+      const conflicts = [...new Set([...config.conflicts, ...(Array.isArray(fresh) ? fresh : [])])];
+      return [ability, { ...config, conflicts: keep(conflicts) }];
     }),
   );
   const reactions: EnemyDefinition["reactions"] = {};
@@ -143,7 +155,10 @@ export function withReaction(
   return { ...enemy, reactions };
 }
 
-/** `enemy` with one config field of `ability` set. */
+/** Seconds a weak phase lasts when nothing says otherwise. */
+export const WEAK_DURATION = 1;
+
+/** `enemy` with one config field of `ability` set; turning Death's weak phase on gives it a duration. */
 export function withConfig(
   enemy: EnemyDefinition,
   ability: string,
@@ -151,7 +166,26 @@ export function withConfig(
   value: ConfigValue,
 ): EnemyDefinition {
   const config = { ...enemy.abilityConfig?.[ability], [key]: value };
+  // Without a duration the weak phase lasts a single frame.
+  if (ability === "Death" && key === "weakHealth" && Number(value) > 0)
+    config.weakDuration ??= WEAK_DURATION;
   return { ...enemy, abilityConfig: { ...enemy.abilityConfig, [ability]: config } };
+}
+
+/**
+ * `enemy` whose Death falls over before exploding (at 1 health, playing `clip`, for
+ * {@link WEAK_DURATION}), or, with no `clip`, explodes at once.
+ */
+export function withWeakPhase(enemy: EnemyDefinition, clip: string | undefined): EnemyDefinition {
+  const {
+    weakHealth: _h,
+    weakAnimation: _a,
+    weakDuration: _d,
+    ...death
+  } = enemy.abilityConfig?.Death ?? {};
+  const off = { ...enemy, abilityConfig: { ...enemy.abilityConfig, Death: death } };
+  if (clip === undefined) return off;
+  return withConfig(withConfig(off, "Death", "weakAnimation", clip), "Death", "weakHealth", 1);
 }
 
 /** The overlay with `enemy` (and `actor`, when given) replaced. */
@@ -271,12 +305,18 @@ export const BLANK_ENEMY: EnemyDefinition = {
   initialAnimation: "idle",
 };
 
-/** The abilities the built-in enemies answer each AI event with (idle: Patrol or Hover, …). */
+/** Answers no built-in enemy gives yet: Roll starts on idle, as Patrol does (C-ROLL). */
+const NEW_REACTIONS: Partial<Record<AIEvent, readonly string[]>> = { idle: ["Roll"] };
+
+/** The abilities the built-in enemies answer each AI event with (idle: Patrol or Hover, …), and Roll. */
 const BUILT_IN_REACTIONS = AI_EVENTS.map(
   (event) =>
     [
       event,
-      new Set(Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions[event] ?? [])),
+      new Set([
+        ...(NEW_REACTIONS[event] ?? []),
+        ...Object.values(GAME_DATA.enemies).flatMap((enemy) => enemy.reactions[event] ?? []),
+      ]),
     ] as const,
 );
 
