@@ -59,6 +59,7 @@ export const ENEMY_ABILITY_CLIPS: Readonly<Record<string, readonly string[]>> = 
   Recoil: ["jump", "idle"],
   Shoot: ["aim", "shoot", "idle"],
   Death: [],
+  Roll: ["roll"],
 };
 
 /** The clips `enemy` plays: its first clip, its abilities', and those its configs name. */

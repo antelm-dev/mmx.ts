@@ -63,7 +63,7 @@ export function abilityFields(ability: string, projectiles: readonly string[]): 
   });
 }
 
-/** A complete config for `ability`: a built-in enemy's, else the schema's minimums; conflicts kept to `owned`. */
+/** A complete config for `ability`: a built-in enemy's, else the schema's defaults or minimums; conflicts kept to `owned`. */
 export function defaultAbilityConfig(ability: string, owned: readonly string[]): AbilityConfig {
   const builtIn = Object.values(GAME_DATA.enemies).find((enemy) => enemy.abilityConfig?.[ability])
     ?.abilityConfig?.[ability];
@@ -71,7 +71,8 @@ export function defaultAbilityConfig(ability: string, owned: readonly string[]):
     ? { ...builtIn }
     : Object.fromEntries(
         Object.entries(SCHEMAS[ability] ?? {}).map(([key, field]) => {
-          const { type, min } = fieldSpec(field);
+          const { type, min, default: preset } = fieldSpec(field);
+          if (preset !== undefined) return [key, typeof preset === "object" ? [...preset] : preset];
           const value: ConfigValue =
             type === "number"
               ? (min ?? 0)
@@ -290,7 +291,7 @@ export function defaultReactions(abilities: readonly string[]): EnemyDefinition[
 }
 
 /**
- * The movement an ability needs. Patrol, Hide and Shoot apply gravity, which drops a
+ * The movement an ability needs. Patrol, Hide, Shoot and Roll apply gravity, which drops a
  * flier through the floor (fliers skip terrain); Hover, Pursuit and Recoil steer in
  * the air with none. Stun's gravity is a setting, and Death is either.
  * shortcut: mirrors game/enemy's process_gravity calls; update it with those files.
@@ -299,6 +300,7 @@ const ABILITY_MOVEMENT: Readonly<Record<string, MovementModel>> = {
   Patrol: "ground",
   Hide: "ground",
   Shoot: "ground",
+  Roll: "ground",
   Hover: "flying",
   Pursuit: "flying",
   Recoil: "flying",

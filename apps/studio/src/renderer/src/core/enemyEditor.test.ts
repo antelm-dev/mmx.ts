@@ -286,7 +286,7 @@ describe("enemy editor", () => {
     });
 
     it("keeps to the abilities its movement allows", () => {
-      expect(abilitiesFor("ground")).toEqual(["Patrol", "Hide", "Stun", "Shoot", "Death"]);
+      expect(abilitiesFor("ground")).toEqual(["Patrol", "Hide", "Stun", "Shoot", "Death", "Roll"]);
       expect(abilitiesFor("flying")).toEqual(["Stun", "Hover", "Pursuit", "Recoil", "Death"]);
       // A flier never gets a gravity ability, and its stun does not fall.
       const flier = blank(["Patrol", "Stun", "Hover", "Death"], { movement: "flying" }).overlay
@@ -355,6 +355,11 @@ describe("enemy editor", () => {
       // The default config keeps a built-in's conflicts only when owned.
       const metoolLike = blank(["Patrol", "Hide", "Stun"]).overlay.enemies!.blob!;
       expect(metoolLike.abilityConfig?.Patrol?.conflicts).toEqual(["Hide", "Stun"]);
+      // Without a built-in, the schema default (Roll's ["Stun"]) is filtered the same way.
+      const roller = (abilities: string[]) =>
+        blank(abilities).overlay.enemies!.blob!.abilityConfig?.Roll?.conflicts;
+      expect(roller(["Roll", "Stun"])).toEqual(["Stun"]);
+      expect(roller(["Roll"])).toEqual([]);
     });
 
     it("takes a free id", () => {

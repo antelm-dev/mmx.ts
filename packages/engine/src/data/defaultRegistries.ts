@@ -33,7 +33,17 @@ export const DEFAULT_COMPILE_REGISTRIES: CompileRegistries = {
     "player.charge",
     "player.slash",
   ]),
-  enemyBehaviors: idSet(["Patrol", "Hide", "Stun", "Death", "Hover", "Pursuit", "Recoil", "Shoot"]),
+  enemyBehaviors: idSet([
+    "Patrol",
+    "Hide",
+    "Stun",
+    "Death",
+    "Hover",
+    "Pursuit",
+    "Recoil",
+    "Shoot",
+    "Roll",
+  ]),
   projectiles: idSet(["projectile.straight"]),
   pickups: idSet(["pickup.life", "pickup.weapon-energy"]),
   environments: idSet([

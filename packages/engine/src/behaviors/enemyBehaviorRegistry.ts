@@ -78,6 +78,13 @@ export const ENEMY_BEHAVIOR_SCHEMAS = {
     /** Seconds the weak phase lasts before the enemy self-destructs. */
     weakDuration: { type: "number", min: 0, optional: true },
   },
+  Roll: {
+    speed: { type: "number", min: 0, default: 60 },
+    facePlayer: { type: "boolean", default: true },
+    atWall: { type: "string", options: ["turn", "stop"], default: "turn" },
+    /** Stun must interrupt the roll, or the enemy rolls on through it. */
+    conflicts: { type: "string[]", default: ["Stun"] },
+  },
 } as const satisfies Readonly<Record<string, Schema>>;
 
 export type EnemyBehaviorId = keyof typeof ENEMY_BEHAVIOR_SCHEMAS;
