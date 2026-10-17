@@ -131,8 +131,16 @@ test("activity bar surfaces side views, marks the shown one and reopens a closed
   const top = async () => (await problemsTab.boundingBox())?.y;
   const before = await top();
   await page.getByRole("button", { name: "View menu" }).click();
-  await page.getByRole("menuitem", { name: "Panels", exact: true }).click();
-  await page.getByRole("menuitemcheckbox", { name: "Problems" }).click();
+  // The submenu can re-mount its items while it opens: wait for it, then click a fresh
+  // locator. Clicking Panels again while its submenu is open leaves it open.
+  const problemsItem = page.getByRole("menuitemcheckbox", { name: "Problems" });
+  await expect(async () => {
+    await page.getByRole("menuitem", { name: "Panels", exact: true }).click();
+    await expect(page.getByRole("menu").filter({ has: problemsItem })).toBeVisible({
+      timeout: 2_000,
+    });
+    await page.getByRole("menuitemcheckbox", { name: "Problems" }).click({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
   await expect(problemsTab).toHaveCount(0);

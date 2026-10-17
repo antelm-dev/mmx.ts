@@ -26,11 +26,11 @@ export const BEHAVIOUR_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "pickup.weapon.small": "Refills a little weapon energy.",
   "pickup.weapon.large": "Refills a lot of weapon energy.",
   "platform.moving": "One-way floor that travels between two points, carrying the player.",
-  "platform.falling": "One-way floor that drops a moment after the player lands on it.",
+  "platform.falling": "One-way floor that drops after a delay once the player lands on it.",
   conveyor: "Strip that pushes the player along while they stand on it.",
   hazard: "Lethal area: touching it kills the player at once.",
   slope: "Ramp baked into the terrain, walked up and down.",
-  "camera-zone": "Area that holds the camera view while the player is inside.",
+  "camera-zone": "Keeps the camera inside its area while the player is in it.",
 };
 
 /**
