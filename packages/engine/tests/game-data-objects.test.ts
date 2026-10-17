@@ -141,13 +141,19 @@ test("a level placing a pack object the game data lacks fails to compile, by ent
   );
 });
 
-test("a capsule Kind is any pickup of the matching behaviour", () => {
+test("a capsule Kind is any pickup of the matching behaviour, drawn from its own sheet", () => {
   const data: GameData = structuredClone(MMX_GAME_DATA);
-  data.pickups["life.huge"] = { ...data.pickups["life.large"]!, id: "life.huge", amount: 20 };
+  data.pickups["life.huge"] = {
+    ...data.pickups["life.large"]!,
+    id: "life.huge",
+    amount: 20,
+    sheet: "anim.pickup.huge",
+  };
   const gameData = compile(data);
   const huge = level([entity("LifeCapsule", 20, { Kind: "huge" })]);
   const scene = Scene.create({ level: huge, gameData });
   assert.equal(scene.stage.pickups[0]!.heal, 20);
+  assert.equal(scene.stage.pickups[0]!.sheet, "anim.pickup.huge");
   // `weapon.huge` does not exist, and `life.small` is not a weapon pickup.
   assert.equal(
     compileLevel(level([entity("WeaponCapsule", 20, { Kind: "huge" })]), gameData).ok,

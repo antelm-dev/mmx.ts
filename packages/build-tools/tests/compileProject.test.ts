@@ -270,6 +270,56 @@ test("a data/game.json overlay adds a project enemy to the bundle and auto-binds
   }
 });
 
+const huge = { id: "life.huge", behavior: "pickup.life", sheet: "anim.pickup.huge", amount: 16 };
+
+test("AC-SHEET: a data/game.json overlay's life.huge auto-binds its animation sheet and is placeable", async () => {
+  const fixture = await createOverlayFixture({
+    pickups: { "life.huge": huge },
+    prefabs: {
+      "pickup.life.huge": {
+        ...MMX_PACK.prefabs!["pickup.life.large"],
+        id: "pickup.life.huge",
+        source: { kind: "pickup", ref: "life.huge" },
+      },
+    },
+  });
+  try {
+    const manifestPath = path.join(fixture.root, "project.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    manifest.assets.push({
+      id: "anim.pickup.huge",
+      kind: "animation",
+      path: "assets/sprites/pickup.png",
+      sheetAssetId: "sprite.fixture.pickup",
+      animations: {
+        idle: { loop: true, speed: 1, frames: [{ region: [0, 0, 16, 16], duration: 0.1 }] },
+      },
+    });
+    await fs.writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+    const levelPath = path.join(fixture.root, "levels/level.fixture.json");
+    const level = JSON.parse(await fs.readFile(levelPath, "utf8"));
+    level.objects.push({ id: "huge.1", definitionId: "pickup.life.huge", x: 64, y: 32 });
+    await fs.writeFile(levelPath, JSON.stringify(level), "utf8");
+
+    const project = await requireProject(fixture.root);
+    const data = levelDocumentToLevelData(project.levels[0]!.document);
+    assert.deepEqual(data.entities.find((e) => e.id === "LifeCapsule")?.fields, { Kind: "huge" });
+    assert.equal(compileLevel(data, project.compiledGameData).ok, true);
+
+    const bundle = await compileBrowserProjectBundle(project, await planAssetEmission(project));
+    assert.equal(bundle.rendererBindings?.pickupActors["anim.pickup.huge"], "anim.pickup.huge");
+    // The fixture's older `small` key is still bound, as written.
+    assert.equal(bundle.rendererBindings?.pickupActors.small, "anim.fixture.pickup");
+    assert.equal(
+      bundle.rendererManifest?.pickupActors["anim.pickup.huge"]?.sheet,
+      "sprite.fixture.pickup",
+    );
+  } finally {
+    await fixture.dispose();
+    await requireProject(syntheticProject); // restore the default catalog
+  }
+});
+
 test("a level can place the enemy.crab prefab a data/game.json overlay adds", async () => {
   const fixture = await createOverlayFixture({
     enemies: { crab },

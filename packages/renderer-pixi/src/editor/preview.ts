@@ -54,12 +54,6 @@ function fromActor(
   return { imageUrl, region, sheet: actor.sheet };
 }
 
-function pickupActorKey(kind: string, size: string): string | null {
-  if (kind === "life") return size;
-  if (kind === "weapon") return size === "large" ? "ammo" : "sammo";
-  return null;
-}
-
 /**
  * Pure crop resolution for editor previews. Sheet keys stay internal to the
  * returned crop so callers can resolve a texture without learning spritesheet layout.
@@ -84,11 +78,14 @@ export function resolveSpriteCrop(
   }
 
   if (definition.category === "pickup") {
-    const pickup = definition.components.pickup as { kind?: string; size?: string } | undefined;
-    if (!pickup?.kind || !pickup.size) return null;
-    const key = pickupActorKey(pickup.kind, pickup.size);
-    if (!key) return null;
-    return fromActor(tables.pickupActors[key], ["idle", "falling"], tables.sheetUrls);
+    // Clips are keyed by the pickup's sheet; older bindings key life capsules by their size.
+    const pickup = definition.components.pickup as
+      | { kind?: string; size?: string; sheet?: string }
+      | undefined;
+    const actor =
+      (pickup?.sheet ? tables.pickupActors[pickup.sheet] : undefined) ??
+      (pickup?.kind === "life" && pickup.size ? tables.pickupActors[pickup.size] : undefined);
+    return fromActor(actor, ["idle", "falling"], tables.sheetUrls);
   }
 
   return null;
