@@ -15,7 +15,8 @@ vi.mock("../assets/studioAssets.js", () => {
     starterAssets: assets,
     starterGameData: { bindings: {} },
     buildStarterAssets: () => assets,
-    buildProjectAssets: () => assets,
+    buildStarterBasedAssets: () => assets,
+    buildStudioAssets: () => assets,
   };
 });
 vi.mock("../settings/studioClientSettings.js", () => ({

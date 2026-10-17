@@ -9,6 +9,7 @@ import {
   type Page,
 } from "@playwright/test";
 import electronPath from "electron";
+import { buildProjectToDisk, requireProject } from "@mmx/build-tools";
 import { encodePng } from "../src/project-io/import/png";
 
 const appRoot = resolve(__dirname, "..");
@@ -202,6 +203,8 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     expect(gameData.enemies.crab).toMatchObject({ actor: "enemy.crab", sheet: "anim.sheet" });
     const bindings = JSON.parse(readFileSync(join(destination, "game/data.json"), "utf8"));
     expect(bindings.bindings).toMatchObject({ playerAnimation: "anim.sheet" });
+    // The starter assets it binds came along: the saved project builds on its own.
+    await buildProjectToDisk(await requireProject(destination), join(scratch, "build"));
     await play(page);
     expect(pageErrors, pageErrors.join("\n")).toEqual([]);
     await app.evaluate(({ session }) => session.defaultSession.flushStorageData());

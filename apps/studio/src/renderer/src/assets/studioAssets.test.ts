@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import type { ProjectDocument } from "@mmx/project-schema";
 import { describe, expect, it } from "vitest";
 import {
-  buildProjectAssets,
+  buildStarterBasedAssets,
   buildStudioAssets,
   starterAssets,
   starterGameData,
@@ -59,10 +59,10 @@ describe("buildStudioAssets", () => {
   });
 });
 
-describe("buildProjectAssets", () => {
+describe("buildStarterBasedAssets", () => {
   it("draws a project with the starter's game data from the starter's assets and its own", () => {
     const enemies = { crab: { sheet: "anim.player.fixture" } };
-    const { manifest } = buildProjectAssets(project, starterGameData, resolveUrl, enemies);
+    const { manifest } = buildStarterBasedAssets(project, starterGameData, resolveUrl, enemies);
     expect(manifest.playerSheet).toBe(starterAssets.manifest.playerSheet);
     expect(manifest.enemyActorIds["anim.player.fixture"]).toBe("anim.player.fixture");
     expect(manifest.sheetUrls["sprite.player.fixture"]).toBe("fixture://assets/sprites/player.png");
@@ -74,13 +74,7 @@ describe("buildProjectAssets", () => {
       ...project,
       assets: [...project.assets, { ...fixtureSheet, id: "sprite.player.x" }],
     };
-    const { manifest } = buildProjectAssets(clash, starterGameData, resolveUrl);
+    const { manifest } = buildStarterBasedAssets(clash, starterGameData, resolveUrl);
     expect(manifest.sheetUrls["sprite.player.x"]).toBe("fixture://assets/sprites/player.png");
-  });
-
-  it("draws a project bound to its own assets from them alone", () => {
-    const { manifest } = buildProjectAssets(project, gameData, resolveUrl);
-    expect(manifest).toEqual(buildStudioAssets(project, gameData, resolveUrl).manifest);
-    expect(manifest.sheetUrls["sprite.player.x"]).toBeUndefined();
   });
 });

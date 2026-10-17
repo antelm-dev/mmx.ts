@@ -17,8 +17,9 @@ import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io"
 import { levelManifestPath, PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
-  buildProjectAssets,
   buildStarterAssets,
+  buildStarterBasedAssets,
+  buildStudioAssets,
   starterGameData,
   starterAssets,
   type StudioAssets,
@@ -249,7 +250,7 @@ export class ProjectSession {
     if (this.playData && project) {
       const { gameData, urls } = this.playData;
       try {
-        // No game/data.json yet (a new project) is no problem: the starter's, as its first Save writes.
+        // No game/data.json yet (a new project) is no problem: the starter's, with its assets.
         const base = gameData ?? starterGameData;
         const data = this.state.playerAnimation
           ? {
@@ -257,15 +258,14 @@ export class ProjectSession {
               bindings: { ...base.bindings, playerAnimation: this.state.playerAnimation },
             }
           : base;
-        // Read from disk: buildProjectAssets reports a missing `bindings`.
+        // Read from disk: buildStudioAssets reports a missing `bindings`.
         const playerAnimation = data.bindings?.playerAnimation;
         const { data: engineData, compiled } = projectGameData(project.gameData);
-        assets = buildProjectAssets(
-          project.manifest,
-          data,
-          (asset) => urls[asset.id] ?? "",
-          engineData.enemies,
-        );
+        const resolveUrl = (asset: { id: string }) => urls[asset.id] ?? "";
+        // Only then: a project of its own that lost a bound asset must say so, as its build would.
+        assets = gameData
+          ? buildStudioAssets(project.manifest, data, resolveUrl, engineData.enemies)
+          : buildStarterBasedAssets(project.manifest, data, resolveUrl, engineData.enemies);
         await assets.catalog.load();
         // Looked up in the assets Play uses: the player may still be the starter's.
         const player = assets.project.assets.find((asset) => asset.id === playerAnimation);
@@ -782,15 +782,18 @@ export class ProjectSession {
     }
     // After the manifest, so the bound animation asset is on disk first.
     const { playerAnimation } = this.state;
+    let seeded: StudioProject | null = null;
     if (playerAnimation) {
       const written = await bridge.writePlayerAnimation(rootPath, playerAnimation);
       if (!written.ok) {
         this.setState({ ...this.state, issues: written.issues });
         return written.issues;
       }
-      if (this.playData) {
-        // Without game/data.json, main wrote the starter's with this binding: so does Play.
-        const gameData = this.playData.gameData ?? starterGameData;
+      if (written.value) {
+        // Seeded from the starter: its bound assets were added to the project, so Play reads them.
+        seeded = written.value;
+      } else if (this.playData?.gameData) {
+        const { gameData } = this.playData;
         this.playData = {
           ...this.playData,
           gameData: { ...gameData, bindings: { ...gameData.bindings, playerAnimation } },
@@ -800,11 +803,16 @@ export class ProjectSession {
 
     this.setState({
       ...this.state,
-      project: result.value.project,
+      project: seeded ?? result.value.project,
       dirty: false,
       playerAnimation: undefined,
-      issues: [...result.issues, ...validateOpenProject(result.value.project)],
+      issues: [...result.issues, ...validateOpenProject(seeded ?? result.value.project)],
     });
+    if (seeded) {
+      // Awaited: the first Save of an untitled project moves the folder right after.
+      this.assets = this.assets.catch(() => null).then(() => this.loadAssets());
+      await this.assets;
+    }
     return this.state.issues;
   }
 

@@ -12,6 +12,7 @@ export {
   type StarterValidationCounts,
   type StarterValidationResult,
 } from "./validate.js";
+export { seedStarterGameData } from "./seed.js";
 export {
   copyStarterProjectToDirectory,
   exportFreshStarterCopy,

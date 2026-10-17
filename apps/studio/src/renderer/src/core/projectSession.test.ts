@@ -23,13 +23,21 @@ vi.mock("../assets/studioAssets.js", () => {
       calls.push("build:starter");
       return fakeAssets("starter");
     },
-    buildProjectAssets: (
+    buildStudioAssets: (
       _project: unknown,
       gameData: { bindings?: { playerAnimation?: string } },
     ) => {
       const player = gameData.bindings?.playerAnimation;
       calls.push(`build:project${player ? `:${player}` : ""}`);
       return fakeAssets("project", player);
+    },
+    buildStarterBasedAssets: (
+      _project: unknown,
+      gameData: { bindings: { playerAnimation: string } },
+    ) => {
+      const player = gameData.bindings.playerAnimation;
+      calls.push(`build:starter-based:${player}`);
+      return fakeAssets("starter-based", player);
     },
   };
 });
@@ -92,15 +100,22 @@ describe("ProjectSession asset switch", () => {
 });
 
 describe("ProjectSession without game/data.json", () => {
+  // Main seeds game/data.json (and the starter assets it binds) on the first player binding.
+  const seededProject = { ...project, manifest: { assets: [{ id: "sprite.hud.x-bar" }] } };
+  let onDisk: { bindings: { playerAnimation: string } } | null = null;
   const noData = {
     ...bridge,
     readPlayAssets: async () => {
       calls.push("read");
-      return { ok: true, issues: [], value: { gameData: null, urls: {} } };
+      return { ok: true, issues: [], value: { gameData: onDisk, urls: {} } };
     },
     save: async () => ({ ok: true, issues: [], value: { rootPath: "/projects/b", project } }),
-    writePlayerAnimation: async () => ({ ok: true, issues: [], value: null }),
+    writePlayerAnimation: async (_root: string, id: string) => {
+      onDisk = { bindings: { playerAnimation: id } };
+      return { ok: true, issues: [], value: seededProject };
+    },
   };
+  afterEach(() => (onDisk = null));
 
   it("plays with the starter's game data and reports no issue, as a new project has none yet", async () => {
     vi.stubGlobal("window", { studio: { project: noData } });
@@ -108,11 +123,16 @@ describe("ProjectSession without game/data.json", () => {
 
     await session.openProject();
     expect(await session.getAssets()).not.toBeNull();
-    expect(calls).toEqual(["reset", "read", "build:project:anim.starter", "load:project"]);
+    expect(calls).toEqual([
+      "reset",
+      "read",
+      "build:starter-based:anim.starter",
+      "load:starter-based",
+    ]);
     expect(session.getSnapshot().issues).toEqual([]);
   });
 
-  it("plays a bound player animation over the starter's game data, before and after Save", async () => {
+  it("plays a bound player animation, then adopts the project seeded on Save and reads it", async () => {
     vi.stubGlobal("window", { studio: { project: noData } });
     const session = new ProjectSession();
     await session.openProject();
@@ -121,15 +141,15 @@ describe("ProjectSession without game/data.json", () => {
 
     session.setPlayerAnimation("anim.mine");
     expect(await session.getAssets()).not.toBeNull();
-    expect(calls).toEqual(["build:project:anim.mine", "load:project"]);
+    expect(calls).toEqual(["build:starter-based:anim.mine", "load:starter-based"]);
     expect(session.getSnapshot().issues).toEqual([]);
+    calls.length = 0;
 
-    // Main seeded game/data.json from the starter's: Play keeps the binding without a disk read.
+    // Its own game/data.json now: read from disk, drawn from the project's assets alone.
     await session.saveProject();
+    expect(session.getSnapshot().project).toBe(seededProject);
+    expect(calls).toEqual(["reset", "read", "build:project:anim.mine", "load:project"]);
     expect(session.playerAnimation()).toBe("anim.mine");
-    session.setObjects([]);
-    expect(await session.getAssets()).not.toBeNull();
-    expect(calls.at(-2)).toBe("build:project:anim.mine");
     expect(session.getSnapshot().issues).toEqual([]);
   });
 });

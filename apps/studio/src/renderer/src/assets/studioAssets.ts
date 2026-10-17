@@ -1,5 +1,4 @@
 import { STAGE_MUSIC_ID } from "@mmx/browser-audio";
-import { collectGameBindingAssetIds } from "@mmx/project-io";
 import type { ProjectAsset, ProjectDocument } from "@mmx/project-schema";
 import {
   buildRendererAssetManifestFromProject,
@@ -154,15 +153,15 @@ export function buildStarterAssets(): StudioAssets {
   );
 }
 
-/** The starter's `game/data.json`: a new project's until its first Save writes it (seeded from this). */
+/** The starter's `game/data.json`: what a new project plays with until it has its own. */
 export const starterGameData = studioGameDataJson as StudioGameData;
 
 /**
- * {@link buildStudioAssets} for an open project. When its bindings name starter assets it does
- * not have (a new project, playing with {@link starterGameData} or a `game/data.json` seeded from
- * it), those come from the starter; the project's own assets win on an id clash.
+ * A project without `game/data.json` (a new one), played with `gameData` (the
+ * {@link starterGameData}, maybe with its own player animation): the starter's assets, plus the
+ * project's own, which win on an id clash and are resolved by `resolveUrl`.
  */
-export function buildProjectAssets(
+export function buildStarterBasedAssets(
   project: ProjectDocument,
   gameData: StudioGameData,
   resolveUrl: (asset: ProjectAsset) => string,
@@ -170,11 +169,6 @@ export function buildProjectAssets(
 ): StudioAssets {
   const own = new Set(project.assets.map((asset) => asset.id));
   const starter = (starterProjectJson as ProjectDocument).assets.filter((a) => !own.has(a.id));
-  const starterIds = new Set(starter.map((asset) => asset.id));
-  const bound = [...collectGameBindingAssetIds(gameData)];
-  if (!bound.some((id) => starterIds.has(id))) {
-    return buildStudioAssets(project, gameData, resolveUrl, enemies);
-  }
   return buildStudioAssets(
     { ...project, assets: [...starter, ...project.assets] },
     gameData,

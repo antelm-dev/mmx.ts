@@ -19,11 +19,7 @@ import {
   type StudioProject,
 } from "@mmx/project-io";
 import { createNodeFileSystem } from "@mmx/project-io/node";
-import {
-  copyStarterProjectToDirectory,
-  resolveStarterTemplateRoot,
-  STARTER_GAME_DATA,
-} from "@mmx/starter-template";
+import { copyStarterProjectToDirectory, seedStarterGameData } from "@mmx/starter-template";
 import {
   deleteWorkProject,
   destinationPick,
@@ -273,20 +269,29 @@ export function createProjectIpc() {
     ),
 
     /**
-     * Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key; a project
-     * without one gets the starter's.
+     * Sets `bindings.playerAnimation` in `game/data.json`, keeping every other key. A project
+     * without one gets the starter's, with the starter assets it binds: the project then comes
+     * back reloaded in `value` (null otherwise).
      */
     "write-player-animation": handle(
-      async (_event, rootPath: string, animationId: string): Promise<ProjectResult<null>> => {
+      async (
+        _event,
+        rootPath: string,
+        animationId: string,
+      ): Promise<ProjectResult<StudioProject | null>> => {
         const fs = createNodeFileSystem(rootPath);
         try {
-          // A new project has none yet: seeded from the starter's, which Play used until now.
-          const text = (await fs.exists(GAME_DATA_FILE))
-            ? await fs.readText(GAME_DATA_FILE)
-            : await readFile(join(resolveStarterTemplateRoot(), STARTER_GAME_DATA), "utf8");
-          const data = JSON.parse(text);
+          // A new project has none yet: Play used the starter's until now.
+          if (!(await fs.exists(GAME_DATA_FILE))) {
+            return await seedStarterGameData(rootPath, animationId);
+          }
+          const data = JSON.parse(await fs.readText(GAME_DATA_FILE));
           data.bindings = { ...data.bindings, playerAnimation: animationId };
-          await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);
+          await fs.writeText(
+            GAME_DATA_FILE,
+            `${JSON.stringify(data, null, 2)}
+`,
+          );
           return { ok: true, value: null, issues: [] };
         } catch (error) {
           return {

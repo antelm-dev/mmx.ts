@@ -438,6 +438,8 @@ export class EditorController {
       }
       this.dropRecovery();
       this.store.markSaved();
+      // A Save that seeded game/data.json reloaded the sprites (projectSession.saveProject).
+      void this.applyProjectAssets();
       this.toast("Project saved.");
       return;
     }
@@ -485,6 +487,7 @@ export class EditorController {
     this.recoveryOffered = this.draftDiffersFromDocument();
     this.store.markSaved();
     addRecentProject({ rootPath, name: project.manifest.name });
+    void this.applyProjectAssets();
     const warning = issues.find((issue) => issue.code === "work-project.cleanup");
     this.toast(warning ? `Project saved. ${warning.message}` : "Project saved.");
   }
