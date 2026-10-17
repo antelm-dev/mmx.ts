@@ -526,6 +526,23 @@ describe("enemy editor", () => {
       });
     });
 
+    it("adds Shoot with one of the project's projectiles when it lacks pantheon_shot", () => {
+      const base = baseWithoutPack();
+      const projectiles = Object.keys(base.projectiles);
+      expect(projectiles).not.toContain("pantheon_shot");
+      const shooter = withAbilities(BLANK_ENEMY, ["Shoot", "Death"], projectiles);
+      expect(shooter.abilityConfig?.Shoot?.projectile).toBe(projectiles[0]);
+      // A project with pantheon_shot keeps it; an owned Shoot config is never rewritten.
+      const own = Object.keys(GAME_DATA.projectiles);
+      expect(withAbilities(BLANK_ENEMY, ["Shoot"], own).abilityConfig?.Shoot?.projectile).toBe(
+        "pantheon_shot",
+      );
+      expect(
+        withAbilities(GAME_DATA.enemies.pantheon!, ["Shoot", "Death"], projectiles).abilityConfig
+          ?.Shoot?.projectile,
+      ).toBe(GAME_DATA.enemies.pantheon!.abilityConfig?.Shoot?.projectile);
+    });
+
     it("composes a blank enemy that compiles over a base with none of them", () => {
       const base = baseWithoutPack();
       expect(Object.keys(base.enemies)).toEqual([]);

@@ -292,7 +292,10 @@ export function BlankEnemyForm({
     validStats(stats) &&
     weakPhaseProblem(enemy.abilityConfig?.Death ?? {}, stats.health) === null;
   const owned = enemy.abilities;
-  const setAbilities = (abilities: string[]) => setEnemy(withAbilities(enemy, abilities));
+  const setAbilities = (abilities: string[]) =>
+    setEnemy(
+      withAbilities(enemy, abilities, Object.keys(projectSession.gameData().data.projectiles)),
+    );
   const move = (i: number, by: number) => {
     const next = [...owned];
     [next[i], next[i + by]] = [next[i + by]!, next[i]!];
