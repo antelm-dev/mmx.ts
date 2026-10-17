@@ -24,7 +24,7 @@ for (const name of ["mmx-starter", "mmx-demo"]) {
   });
 }
 
-test("before the flip, build-tools compiles the mmx-demo template to the built-in hash", async () => {
+test("build-tools compiles the mmx-demo template to the former built-in hash", async () => {
   const project = await requireProject(join(templates, "mmx-demo"));
   assert.deepEqual(project.manifest.packs, STARTER);
   assert.equal(project.compiledGameData.hash, "36e5bb6d8c3547a6");

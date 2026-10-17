@@ -4,7 +4,7 @@ import type { ProjectAsset } from "@mmx/project-schema";
 import { assetGroups } from "./assetBrowser.js";
 import { addEnemy, projectGameData } from "./gameData.js";
 import { addBlankEnemy, BLANK_ENEMY } from "./enemyEditor.js";
-import { baseWithoutPack } from "./baseWithoutPack.test-support.js";
+import { MMX_GAME_DATA, MMX_OVERLAY } from "./mmx.test-support.js";
 
 const assets: ProjectAsset[] = [
   { id: "sprite.b", kind: "sprite", path: "b.png" },
@@ -14,7 +14,8 @@ const assets: ProjectAsset[] = [
   { id: "sfx.jump", kind: "sound", path: "j.wav" },
 ];
 const objects = [{ id: "obj.lift", name: "Lift", base: "platform.moving" }];
-const crab = addEnemy(undefined, GAME_DATA, {
+// A project made from the template: it carries the MMX Starter pack.
+const crab = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
   name: "Crab",
   base: "metool",
   sheet: "anim.a",
@@ -42,11 +43,13 @@ describe("asset browser groups", () => {
     ]);
   });
 
-  it("flags built-in enemies, not the project's", () => {
+  it("flags built-in enemies, not the project's: the pack's, once copied, are the project's", () => {
     const enemies = assetGroups(undefined, data, "", crab.overlay).find(
       (g) => g.kind === "enemy",
     )!.entries;
-    expect(enemies.find((e) => e.id === "enemy.metool")).toMatchObject({ builtIn: true });
+    expect(enemies.find((e) => e.id === "enemy.metool")).toMatchObject({ builtIn: false });
+    const noOverlay = assetGroups(undefined, data, "").find((g) => g.kind === "enemy")!.entries;
+    expect(noOverlay.find((e) => e.id === "enemy.metool")).toMatchObject({ builtIn: true });
     expect(enemies.find((e) => e.id === crab.id)).toMatchObject({ label: "Crab", builtIn: false });
   });
 
@@ -59,11 +62,11 @@ describe("asset browser groups", () => {
       },
     ]);
     expect(assetGroups({ assets, objects }, data, "sprite.a")[0]!.entries).toHaveLength(1);
-    expect(assetGroups(undefined, GAME_DATA, "").map((g) => g.kind)).toEqual(["enemy"]);
+    expect(assetGroups(undefined, data, "").map((g) => g.kind)).toEqual(["enemy"]);
   });
 
   it("lists only the project's enemies over a base without the pack's", () => {
-    const base = baseWithoutPack();
+    const base = GAME_DATA;
     const blob = addBlankEnemy(undefined, base, {
       name: "Blob",
       health: 2,

@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { compileLevel } from "@mmx/engine";
-import { GAME_DATA, type GameDataOverlay } from "@mmx/engine/data";
+import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
 import {
   buildProjectToDisk,
@@ -49,7 +49,10 @@ test("compileBrowserProjectBundle injects engine data without absolute paths", a
   assert.equal(bundleContainsAbsolutePaths(source), false);
   assert.equal(bundle.meta.entryLevelId, "level.main");
   assert.equal(bundle.levels[0]?.data.identifier, "level.main");
-  assert.deepEqual(bundle.gameData, GAME_DATA);
+  // An old project (no packs): the MMX Starter is merged in memory.
+  const withPack = mergeGameData(GAME_DATA, pack as GameDataOverlay);
+  assert.ok(withPack.ok);
+  assert.deepEqual(bundle.gameData, withPack.value);
   assert.equal(bundle.assetUrls["sprite.bg"], emission.byId["sprite.bg"]?.publicUrl);
 });
 

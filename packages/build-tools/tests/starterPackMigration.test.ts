@@ -4,7 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { GAME_DATA } from "@mmx/engine/data";
+import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
+import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
 import { requireProject } from "../src/loadProject.js";
 
 const syntheticProject = path.join(
@@ -12,6 +13,7 @@ const syntheticProject = path.join(
   "fixtures",
   "synthetic-project",
 );
+/** The engine's hash while the MMX objects were built in: core + pack keeps it. */
 const BUILTIN_HASH = "36e5bb6d8c3547a6";
 const STARTER = [{ id: "mmx-starter", version: 1 }];
 
@@ -45,7 +47,9 @@ test("an old project gets the MMX Starter in memory, compiles to the built-in ha
     const project = await requireProject(dir);
     assert.deepEqual(project.manifest.packs, STARTER);
     assert.equal(project.compiledGameData.hash, BUILTIN_HASH);
-    assert.deepEqual(project.gameData, GAME_DATA);
+    const withPack = mergeGameData(GAME_DATA, pack as GameDataOverlay);
+    assert.ok(withPack.ok);
+    assert.deepEqual(project.gameData, withPack.value);
     assert.deepEqual(await snapshot(dir), before);
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
@@ -54,7 +58,7 @@ test("an old project gets the MMX Starter in memory, compiles to the built-in ha
 
 test("an old project's own records are kept over the pack's", async () => {
   const dir = await oldProject(async (root) => {
-    const metool = { ...GAME_DATA.enemies.metool, touchDamage: 7 };
+    const metool = { ...pack.enemies.metool, touchDamage: 7 };
     await fs.mkdir(path.join(root, "data"));
     await fs.writeFile(
       path.join(root, "data/game.json"),
@@ -65,22 +69,28 @@ test("an old project's own records are kept over the pack's", async () => {
     const project = await requireProject(dir);
     assert.deepEqual(project.manifest.packs, STARTER);
     assert.equal(project.gameData.enemies.metool?.touchDamage, 7);
-    assert.deepEqual(project.gameData.enemies.bat, GAME_DATA.enemies.bat);
+    assert.deepEqual(project.gameData.enemies.bat, pack.enemies.bat);
     assert.notEqual(project.compiledGameData.hash, BUILTIN_HASH);
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
 
-test("a project with packs: [] stays on the base data", async () => {
+test("a project with packs: [] stays on the base data: the primitives only", async () => {
   const dir = await oldProject(async (_root, manifest) => {
     manifest.packs = [];
   });
   try {
     const project = await requireProject(dir);
     assert.deepEqual(project.manifest.packs, []);
-    // Before the flip the base still holds the MMX objects; nothing was merged over it.
     assert.equal(project.gameData, GAME_DATA);
+    assert.deepEqual(Object.keys(project.gameData.prefabs).sort(), [
+      "camera-zone",
+      "hazard",
+      "spawn",
+    ]);
+    assert.deepEqual(project.gameData.enemies, {});
+    assert.deepEqual(project.gameData.pickups, {});
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

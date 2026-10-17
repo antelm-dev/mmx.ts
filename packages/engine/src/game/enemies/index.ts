@@ -24,7 +24,7 @@ import { Stun, type StunConfig } from "../enemy/Stun.js";
 /**
  * Enemy runtime wiring — the counterpart of loadout/PlayerLoadout for enemies.
  *
- * An enemy is composed from its compiled definition (data/enemies.ts): each
+ * An enemy is composed from its compiled definition (game data `enemies`): each
  * ability id is instantiated through {@link enemyBehaviorRegistry} with that
  * enemy's `abilityConfig` entry, the reaction table becomes the AI's event
  * lists, and each hook is wired to a registered effect. The registry entries

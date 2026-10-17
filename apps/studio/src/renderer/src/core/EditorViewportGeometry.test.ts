@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterAll, beforeAll, describe, it, expect } from "vitest";
 import {
   normalizeBox,
   boxesIntersect,
@@ -25,7 +25,7 @@ import {
   type LevelObjectInstance,
 } from "@mmx/content-schema";
 import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
-import { baseWithoutPack, compileIssues } from "./baseWithoutPack.test-support.js";
+import { MMX_GAME_DATA, compileIssues } from "./mmx.test-support.js";
 
 describe("normalizeBox", () => {
   it("returns same box when already normalized", () => {
@@ -295,6 +295,9 @@ describe("floodFill", () => {
 });
 
 describe("environment travel gizmo", () => {
+  // An MMX project's catalog: its moving platform travels.
+  beforeAll(() => setCatalogGameData(MMX_GAME_DATA));
+  afterAll(() => setCatalogGameData(GAME_DATA));
   const platform = (overrides?: Record<string, unknown>): LevelObjectInstance => ({
     id: "p",
     definitionId: "platform.moving",
@@ -367,7 +370,7 @@ describe("environment travel gizmo", () => {
   });
 
   it("draws an environment the project's data adds over a base without the pack's", () => {
-    const base = baseWithoutPack();
+    const base = GAME_DATA;
     const overlay: GameDataOverlay = {
       environments: {
         lift: {
@@ -378,16 +381,18 @@ describe("environment travel gizmo", () => {
       },
       prefabs: {
         "platform.lift": {
-          ...GAME_DATA.prefabs["platform.moving"]!,
+          ...MMX_GAME_DATA.prefabs["platform.moving"]!,
           id: "platform.lift",
           source: { kind: "environment", ref: "lift" },
         },
         // No Travel field: the gizmo falls back to the project's environment defaults.
         "platform.lift-fixed": {
-          ...GAME_DATA.prefabs["platform.moving"]!,
+          ...MMX_GAME_DATA.prefabs["platform.moving"]!,
           id: "platform.lift-fixed",
           source: { kind: "environment", ref: "lift" },
-          fields: GAME_DATA.prefabs["platform.moving"]!.fields.filter((f) => f.name !== "Travel"),
+          fields: MMX_GAME_DATA.prefabs["platform.moving"]!.fields.filter(
+            (f) => f.name !== "Travel",
+          ),
         },
       },
     };
@@ -406,7 +411,7 @@ describe("environment travel gizmo", () => {
         travelGrip(environmentGeometry({ ...lift, overrides: { Travel: 64 } })),
       );
     } finally {
-      setCatalogGameData(GAME_DATA);
+      setCatalogGameData(MMX_GAME_DATA);
     }
   });
 

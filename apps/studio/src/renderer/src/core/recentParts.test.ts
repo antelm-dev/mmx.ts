@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLevelDocument } from "@mmx/content-schema";
+import { createLevelDocument, setCatalogGameData } from "@mmx/content-schema";
 import { EditorStore } from "./EditorStore.js";
 import {
   MAX_RECENT_PARTS,
@@ -11,6 +11,10 @@ import {
   trackRecentParts,
   type RecentPart,
 } from "./recentParts.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
+
+// An MMX project's catalog: these tests place its objects.
+setCatalogGameData(MMX_GAME_DATA);
 
 const obj = (id: string) => ({ kind: "object" as const, id });
 const deco = (id: string) => ({ kind: "decoration" as const, id });

@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createLevelDocument, newId } from "@mmx/content-schema";
+import { createLevelDocument, newId, setCatalogGameData } from "@mmx/content-schema";
 import { createPlaytest, type PlaytestAudio } from "../../src/editor-runtime/index.js";
+import { projectGameData } from "../../src/renderer/src/core/gameData.js";
+import { MMX_OVERLAY } from "../../src/renderer/src/core/mmx.test-support.js";
 
 function trackingAudio() {
   const calls = { scenes: 0, enemies: 0, stops: 0 };
@@ -43,14 +45,18 @@ test("playtest audio re-attaches the scene after restartLevel", async () => {
   session.dispose();
 });
 
-test("playtest audio attaches each spawned enemy", async () => {
+test("playtest audio attaches each spawned enemy", async (t) => {
+  // The enemies come with the MMX Starter pack a project carries.
+  const mmx = projectGameData(MMX_OVERLAY);
+  setCatalogGameData(mmx.data);
+  t.after(() => setCatalogGameData(projectGameData(undefined).data));
   const { audio, calls } = trackingAudio();
   const doc = createLevelDocument();
   doc.objects.push(
     { id: newId(), definitionId: "enemy.metool", x: 64, y: 64 },
     { id: newId(), definitionId: "enemy.bat", x: 96, y: 64 },
   );
-  const session = createPlaytest(doc, { audio });
+  const session = createPlaytest(doc, { audio, gameData: mmx.compiled });
   await session.start();
   assert.equal(calls.enemies, 2);
   session.dispose();

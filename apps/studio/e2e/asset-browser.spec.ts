@@ -70,11 +70,10 @@ test("AC-BROWSER: Assets lists the project's assets and opens each in its own do
   const tab = (name: string) => page.getByRole("tab", { name, exact: true });
   const levelTab = tab("Level");
 
-  // Without a project only the built-in enemies are listed.
+  // Without a project nothing is listed: the engine has no enemy of its own, they come with a project.
   await showAssets();
   await expect(page.getByText("Open a project to see its assets.")).toBeVisible();
-  await expect(asset("enemy.metool")).toContainText("built-in");
-  await expect(browser.locator('[data-asset-kind]:not([data-asset-kind="enemy"])')).toHaveCount(0);
+  await expect(browser.locator("[data-asset-kind]")).toHaveCount(0);
 
   await openProject(projectRoot);
   // A project enemy (as in new-enemy.spec) and a project object (a palette duplicate).

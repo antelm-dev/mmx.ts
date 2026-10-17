@@ -230,8 +230,14 @@ describe("ProjectSession player animation binding", () => {
 describe("ProjectSession object definitions", () => {
   it("registers the project's definitions on open and on every edit, and clears them on close", async () => {
     const { getDefinition } = await import("@mmx/content-schema");
+    const { MMX_OVERLAY } = await import("./mmx.test-support.js");
     const fast = { id: "obj.fast", name: "Fast", base: "platform.moving", values: { Speed: 120 } };
-    const withObjects = { ...project, manifest: { ...project.manifest, objects: [fast] } };
+    // A project made from the template: its moving platform comes with the MMX Starter pack.
+    const withObjects = {
+      ...project,
+      manifest: { ...project.manifest, objects: [fast] },
+      gameData: MMX_OVERLAY,
+    };
     vi.stubGlobal("window", {
       studio: {
         project: {
@@ -265,9 +271,10 @@ describe("ProjectSession object definitions", () => {
 describe("ProjectSession game data", () => {
   it("compiles data/game.json, registers its enemies before the project's objects, and reports a bad overlay", async () => {
     const { getDefinition } = await import("@mmx/content-schema");
-    const { GAME_DATA } = await import("@mmx/engine/data");
+    const { MMX_GAME_DATA, MMX_OVERLAY } = await import("./mmx.test-support.js");
     const { addEnemy } = await import("./gameData.js");
-    const { overlay } = addEnemy(undefined, GAME_DATA, {
+    // The crab copies the Metool of the MMX Starter pack the project carries.
+    const { overlay } = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
       name: "Crab",
       base: "metool",
       sheet: "anim.crab",
@@ -327,9 +334,10 @@ describe("ProjectSession game data", () => {
   });
 
   it("warns about the clips a project enemy's animation lacks, once its data compiles", async () => {
-    const { GAME_DATA } = await import("@mmx/engine/data");
+    const { MMX_GAME_DATA, MMX_OVERLAY } = await import("./mmx.test-support.js");
     const { addEnemy } = await import("./gameData.js");
-    const { overlay } = addEnemy(undefined, GAME_DATA, {
+    // The crab copies the Metool of the MMX Starter pack the project carries.
+    const { overlay } = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
       name: "Crab",
       base: "metool",
       sheet: "anim.crab",
@@ -377,6 +385,7 @@ describe("ProjectSession definition history", () => {
   it("undoes and redoes object and game-data edits, re-registering the catalog, until the project changes", async () => {
     const { getDefinition } = await import("@mmx/content-schema");
     const { GAME_DATA } = await import("@mmx/engine/data");
+    const { MMX_GAME_DATA, MMX_OVERLAY } = await import("./mmx.test-support.js");
     const { addEnemy } = await import("./gameData.js");
     const { renameEnemy } = await import("./enemyEditor.js");
     vi.stubGlobal("window", { studio: { project: bridge } });
@@ -384,7 +393,7 @@ describe("ProjectSession definition history", () => {
     await session.openProject();
     expect(session.undoDefinitions()).toBe(false);
 
-    const { overlay } = addEnemy(undefined, GAME_DATA, {
+    const { overlay } = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
       name: "Crab",
       base: "metool",
       sheet: "anim.crab",

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  OBJECT_DEFINITIONS,
+  allDefinitions,
   createLevelDocument,
   setCatalogGameData,
   setProjectDefinitions,
@@ -14,8 +14,12 @@ import {
   engineDiagnostics,
   validateLevelDocument,
 } from "../../src/editor-runtime/adapters/index.js";
-import { GAME_DATA } from "@mmx/engine/data";
 import { addEnemy, projectGameData } from "../../src/renderer/src/core/gameData.js";
+import { MMX_OVERLAY } from "../../src/renderer/src/core/mmx.test-support.js";
+
+// A project carrying the MMX Starter pack: its catalog, and the compiled data Play uses.
+const MMX = projectGameData(MMX_OVERLAY);
+setCatalogGameData(MMX.data);
 
 function docWith(objects: LevelObjectInstance[]): LevelDocument {
   const doc = createLevelDocument();
@@ -33,7 +37,7 @@ const platform = (over: Partial<LevelObjectInstance> = {}): LevelObjectInstance 
 });
 
 test("engine diagnostics map entityId → objectId, field → field and keep the position", () => {
-  const issues = engineDiagnostics(docWith([platform({ overrides: { Speed: -5 } })]));
+  const issues = engineDiagnostics(docWith([platform({ overrides: { Speed: -5 } })]), MMX.compiled);
   const issue = issues.find((i) => i.code === "field.nonNegative");
   assert.ok(issue, "expected the negative-speed diagnostic");
   assert.equal(issue?.objectId, "plat-1");
@@ -50,7 +54,7 @@ test("an object wholly outside the level is an out-of-bounds error, reported onc
     x: doc.cols * doc.gridSize + 200,
     y: 32,
   };
-  const outside = validateLevelDocument(docWith([enemy]));
+  const outside = validateLevelDocument(docWith([enemy]), undefined, MMX.compiled);
   assert.equal(outside.ok, false);
   const forEnemy = outside.issues.filter((i) => i.objectId === "metool-1");
   assert.deepEqual(
@@ -58,12 +62,16 @@ test("an object wholly outside the level is an out-of-bounds error, reported onc
     [["error", "object.out-of-bounds"]],
   );
 
-  const inside = validateLevelDocument(docWith([{ ...enemy, x: 64 }]));
+  const inside = validateLevelDocument(docWith([{ ...enemy, x: 64 }]), undefined, MMX.compiled);
   assert.equal(inside.ok, true);
 });
 
 test("engine errors block Play", () => {
-  const bad = validateLevelDocument(docWith([platform({ overrides: { Speed: -5 } })]));
+  const bad = validateLevelDocument(
+    docWith([platform({ overrides: { Speed: -5 } })]),
+    undefined,
+    MMX.compiled,
+  );
   assert.equal(bad.ok, false);
   assert.ok(bad.errorCount >= 1);
 });
@@ -91,11 +99,11 @@ test("engineDiagnostics is empty when conversion itself fails (authoring reports
 });
 
 test("the engine accepts a default instance of every definition (schema and engine agree)", () => {
-  for (const def of OBJECT_DEFINITIONS) {
+  for (const def of allDefinitions()) {
     if (def.id === "spawn") continue;
     const doc = docWith([{ id: "o1", definitionId: def.id, x: 96, y: 96 }]);
     assert.deepEqual(
-      engineDiagnostics(doc).filter((d) => d.severity === "error"),
+      engineDiagnostics(doc, MMX.compiled).filter((d) => d.severity === "error"),
       [],
       def.id,
     );
@@ -120,7 +128,7 @@ test("instances of project object definitions compile to engine entities the eng
     assert.equal(entity?.id, "MovingPlatform");
     assert.deepEqual(entity?.fields, { Speed: 120, Travel: 96, Axis: "horizontal" });
     assert.deepEqual(
-      engineDiagnostics(doc).filter((d) => d.severity === "error"),
+      engineDiagnostics(doc, MMX.compiled).filter((d) => d.severity === "error"),
       [],
     );
   } finally {
@@ -129,7 +137,7 @@ test("instances of project object definitions compile to engine entities the eng
 });
 
 test("a project enemy is checked against the compiled game data Play uses", (t) => {
-  const { overlay } = addEnemy(undefined, GAME_DATA, {
+  const { overlay } = addEnemy(MMX_OVERLAY, MMX.data, {
     name: "Crab",
     base: "metool",
     sheet: "anim.crab",
@@ -138,7 +146,7 @@ test("a project enemy is checked against the compiled game data Play uses", (t) 
   });
   const { data, compiled } = projectGameData(overlay);
   setCatalogGameData(data);
-  t.after(() => setCatalogGameData(GAME_DATA));
+  t.after(() => setCatalogGameData(MMX.data));
 
   const doc = docWith([{ id: "crab-1", definitionId: "enemy.crab", x: 64, y: 32 }]);
   const result = validateLevelDocument(doc, undefined, compiled);
@@ -152,13 +160,13 @@ test("a project enemy is checked against the compiled game data Play uses", (t) 
 
 test("a placed enemy whose sheet Play has no animation for is an error, before Play", () => {
   const doc = docWith([{ id: "metool-1", definitionId: "enemy.metool", x: 64, y: 32 }]);
-  const unbound = validateLevelDocument(doc, undefined, undefined, new Set(["bat"]));
+  const unbound = validateLevelDocument(doc, undefined, MMX.compiled, new Set(["bat"]));
   assert.equal(unbound.ok, false);
   assert.deepEqual(
     unbound.issues.filter((i) => i.code === "enemy.animation").map((i) => [i.severity, i.objectId]),
     [["error", "metool-1"]],
   );
-  assert.equal(validateLevelDocument(doc, undefined, undefined, new Set(["metool"])).ok, true);
+  assert.equal(validateLevelDocument(doc, undefined, MMX.compiled, new Set(["metool"])).ok, true);
   // Unchecked without the sheet list (no assets loaded yet).
-  assert.equal(validateLevelDocument(doc).ok, true);
+  assert.equal(validateLevelDocument(doc, undefined, MMX.compiled).ok, true);
 });

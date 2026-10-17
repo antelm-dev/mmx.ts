@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 
 import { buildCompileRegistries } from "../src/behaviors/index.js";
 import {
-  COMPILED_GAME_DATA,
   GAME_DATA,
   compileGameData,
   mergeGameData,
@@ -14,16 +13,19 @@ import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
 import { stage1, stage2 } from "./fixtures/levels.js";
-import { MMX_PACK as PACK, coreGameData as core } from "./support/mmx.js";
+import { MMX_PACK as PACK } from "./support/mmx.js";
 
 /**
- * The MMX Starter pack is the built-in MMX objects as data: the base without
- * them, plus the pack, is today's game. The pack JSON is the source and the
- * engine's built-in records are checked against it, so this file fails the
- * moment either side changes without the other.
+ * The MMX Starter pack is the MMX objects that used to be built into the engine:
+ * the engine's core plus the pack is the game as it was before they left. The
+ * hash and the digests below were taken from the built-in data before the
+ * removal, so a change to either side shows here.
  */
 
+/** COMPILED_GAME_DATA.hash while the MMX objects were built in. */
 const BUILTIN_HASH = "36e5bb6d8c3547a6";
+
+const core = (): GameData => structuredClone(GAME_DATA);
 
 function compile(data: GameData): CompiledGameData {
   const result = compileGameData(data, buildCompileRegistries());
@@ -38,7 +40,6 @@ function withPack(): GameData {
   return merged.value;
 }
 
-// core() drops the pack's own ids, so this exact key set is what catches a record missing from the pack.
 test("core keeps only the engine's primitives, the players and their shots", () => {
   const data = core();
   assert.deepEqual(Object.keys(data.prefabs).sort(), ["camera-zone", "hazard", "spawn"]);
@@ -58,13 +59,8 @@ test("core alone compiles with no diagnostic", () => {
   compile(core());
 });
 
-test("core + MMX Starter pack is the built-in game data, same hash", () => {
-  const merged = withPack();
-  assert.deepStrictEqual(merged, GAME_DATA);
-  const compiled = compile(merged);
-  assert.deepStrictEqual(compiled, COMPILED_GAME_DATA);
-  assert.equal(compiled.hash, BUILTIN_HASH);
-  assert.equal(COMPILED_GAME_DATA.hash, BUILTIN_HASH);
+test("core + MMX Starter pack compiles to the former built-in hash", () => {
+  assert.equal(compile(withPack()).hash, BUILTIN_HASH);
 });
 
 const M = { right: 1 << 1, jump: 1 << 4, dash: 1 << 5, fire: 1 << 6 } as const;
@@ -110,8 +106,8 @@ const OBJECTS: LevelData = {
 };
 
 /** The run's digest every 60 frames: a final digest alone misses what the right wall evens out. */
-function run(level: LevelData, gameData?: CompiledGameData): { scene: Scene; trace: string[] } {
-  const scene = Scene.create({ level, seed: 0x5eed, ...(gameData ? { gameData } : {}) });
+function run(level: LevelData, gameData: CompiledGameData): { scene: Scene; trace: string[] } {
+  const scene = Scene.create({ level, seed: 0x5eed, gameData });
   scene.step(0);
   scene.player.current_health -= 12; // hurt (damage() is ignored in the intro), so a capsule heals
   const trace: string[] = [];
@@ -122,13 +118,21 @@ function run(level: LevelData, gameData?: CompiledGameData): { scene: Scene; tra
   return { scene, trace };
 }
 
-for (const [name, level, missing] of [
-  ["stage1", stage1, /Unsupported enemy kind/],
-  ["stage2", stage2, /Unsupported enemy kind/],
-  ["the pack-objects level", OBJECTS, /Unsupported life capsule kind/],
+/** Each level's trace on the built-in data, recorded before the MMX objects left the engine. */
+// prettier-ignore
+const BUILTIN_TRACES = {
+  stage1: ["812aa3d1","9e3d0c8b","9f95cd95","34a8842e","118992c8","fcd673b6","45e045e5","1dbc5df5","84d675c9","b53eebc5","5addf012","934c877e","0beecd20","79a31a29","2bd9f4d1","81f5dd20","7aaf4d13","4efc934e","26898d0b","c551fd60"],
+  stage2: ["f3ba0080","4e6f5fbd","72cf7530","bfce573f","89905825","11b5d3e5","05d308d2","d664d1bf","a2933516","e2c49055","22d3ee7e","9621b1cc","1a155265","4a659ce6","ce48d3c6","89ac6542","cc8a84bb","a3c782b2","6e0c5cc3","618498f9"],
+  objects: ["a4faaafb","6396abc0","edfb587c","f6430349","6eca88db","bd1da0c5","2c98e630","b42a993a","2c98fa20","f8c4006a","0e7d948a","6a96823b","9426c297","74c29e4f","1759ea9a","2062bdc8","3d94c2db","af3e8f26","a91d0ad0","09da4dc1"],
+};
+
+for (const [name, level, expected, missing] of [
+  ["stage1", stage1, BUILTIN_TRACES.stage1, /Unsupported enemy kind/],
+  ["stage2", stage2, BUILTIN_TRACES.stage2, /Unsupported enemy kind/],
+  ["the pack-objects level", OBJECTS, BUILTIN_TRACES.objects, /Unsupported life capsule kind/],
 ] as const) {
-  test(`${name} plays the same with core + pack as with the built-ins`, () => {
-    assert.deepEqual(run(level, compile(withPack())).trace, run(level).trace);
+  test(`${name} plays with core + pack as it did with the built-ins`, () => {
+    assert.deepEqual(run(level, compile(withPack())).trace, expected);
     assert.throws(() => Scene.create({ level, seed: 0x5eed, gameData: compile(core()) }), missing);
   });
 }

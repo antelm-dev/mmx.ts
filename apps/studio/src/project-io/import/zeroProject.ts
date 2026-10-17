@@ -146,7 +146,7 @@ export function zeroSheet({ atlas, json }: SpriteAtlas) {
 // The engine draws an enemy's frame centred on its body (renderer-pixi syncEnemies); enemy.pantheon's body
 // half-height is 15 (engine data/actors.ts), so the feet anchor sits 15 px under the cell centre.
 const PANTHEON_FEET_BELOW_CENTRE = 15;
-// The Stun flinch lasts 12 frames (engine data/enemies.ts): the two hit frames share it.
+// The Stun flinch lasts 12 frames (MMX Starter pack, enemies.pantheon): the two hit frames share it.
 const PANTHEON_HIT_DURATIONS = [6, 6];
 
 /**

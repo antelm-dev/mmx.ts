@@ -29,15 +29,17 @@ const DEFAULT_GAME_DATA: ProjectGameData = {
   diagnostics: [],
 };
 const compiledOverlays = new WeakMap<GameDataOverlay, ProjectGameData>();
+// The fallback is the engine's core: the project's objects (its pack's too) all go missing.
+const UNAVAILABLE = " — the objects of data/game.json are unavailable until it is fixed";
 
 function failed(all: GameDataDiagnostic[]): ProjectGameData {
   const diagnostics = all.filter((d) => d.severity === "error");
   const issues = diagnostics.map(
-    (d): ProjectIssue => ({
+    (d, i): ProjectIssue => ({
       severity: "error",
       code: `game-data.${d.code}`,
       path: GAME_DATA_PATH,
-      message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
+      message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}${i === 0 ? UNAVAILABLE : ""}`,
     }),
   );
   return { ...DEFAULT_GAME_DATA, issues, diagnostics };
@@ -60,7 +62,7 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
           severity: "error",
           code: "game-data.invalid",
           path: GAME_DATA_PATH,
-          message: `data/game.json is malformed: ${message}`,
+          message: `data/game.json is malformed: ${message}${UNAVAILABLE}`,
         },
       ],
     };
