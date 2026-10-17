@@ -223,6 +223,7 @@ test("compileGameData validates pickup sheets and each environment's defaults", 
   );
 });
 
-test("the built-in game data hash is unchanged", () => {
-  assert.equal(COMPILED_GAME_DATA.hash, "36e5bb6d8c3547a6");
+// The engine's core alone (no MMX object since the pack left the engine); core + pack is pinned in pack-mmx-starter.
+test("the engine's core game data hash is pinned", () => {
+  assert.equal(COMPILED_GAME_DATA.hash, "ad52563298993e03");
 });

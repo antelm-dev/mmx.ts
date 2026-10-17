@@ -2,19 +2,24 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  OBJECT_DEFINITIONS,
   SCHEMA_VERSION,
   TerrainTile,
   allDefinitions,
   definitionFor,
+  definitionsFromGameData,
   effectiveValue,
   entityFields,
   instanceSize,
   getDefinition,
+  setCatalogGameData,
   setProjectDefinitions,
   validateDocument,
   type ProjectDefinitionEntry,
 } from "../src/index.js";
+import { MMX_GAME_DATA } from "./support/mmx.js";
+
+// The project objects below derive from MMX Starter objects.
+setCatalogGameData(MMX_GAME_DATA);
 
 const fast: ProjectDefinitionEntry = {
   id: "obj.fast",
@@ -87,9 +92,9 @@ test("invalid entries are reported; only underivable ones are left out of the ca
   assert.equal(getDefinition("obj.badval")?.fields.Speed, -1);
   assert.equal(getDefinition("obj.none"), undefined);
   assert.equal(getDefinition("obj.spawn"), undefined);
-  assert.equal(
+  assert.deepEqual(
     getDefinition("enemy.bat"),
-    OBJECT_DEFINITIONS.find((d) => d.id === "enemy.bat"),
+    definitionsFromGameData(MMX_GAME_DATA).find((d) => d.id === "enemy.bat"),
   );
   assert.ok(getDefinition("obj.fast"));
 });

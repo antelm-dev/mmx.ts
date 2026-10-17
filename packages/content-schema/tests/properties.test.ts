@@ -3,16 +3,21 @@ import assert from "node:assert/strict";
 
 import type { LevelObjectInstance, PropertyMeta } from "../src/index.js";
 import {
-  OBJECT_DEFINITIONS,
   SCHEMA_VERSION,
   TerrainTile,
+  allDefinitions,
   entityFields,
   propertyIssue,
+  setCatalogGameData,
   validateDocument,
 } from "../src/index.js";
+import { MMX_GAME_DATA } from "./support/mmx.js";
+
+// The engine's primitives and the MMX Starter objects.
+setCatalogGameData(MMX_GAME_DATA);
 
 test("every editable property has exactly one default, outside the fixed fields", () => {
-  for (const def of OBJECT_DEFINITIONS) {
+  for (const def of allDefinitions()) {
     for (const prop of def.properties) {
       assert.ok(prop.default !== undefined, `${def.id}.${prop.key} has no default`);
       assert.ok(!(prop.key in def.fields), `${def.id}.${prop.key} is also a fixed field`);
@@ -21,7 +26,7 @@ test("every editable property has exactly one default, outside the fixed fields"
 });
 
 test("a default instance of every definition validates clean", () => {
-  for (const def of OBJECT_DEFINITIONS) {
+  for (const def of allDefinitions()) {
     const objects: LevelObjectInstance[] = [{ id: "s", definitionId: "spawn", x: 32, y: 32 }];
     if (def.id !== "spawn") objects.push({ id: "o", definitionId: def.id, x: 16, y: 16 });
     const result = validateDocument({

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { allDefinitions, setCatalogGameData, setProjectDefinitions } from "@mmx/content-schema";
 import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
 import { paletteRows } from "./paletteRows.js";
-import { baseWithoutPack } from "./baseWithoutPack.test-support.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
 
 /** "Header: id, id | Header: id" for comparing a whole palette at a glance. */
 const outline = (query = "") =>
@@ -17,7 +17,7 @@ const lift: GameDataOverlay = {
   },
   prefabs: {
     "platform.lift": {
-      ...GAME_DATA.prefabs["platform.moving"]!,
+      ...MMX_GAME_DATA.prefabs["platform.moving"]!,
       id: "platform.lift",
       source: { kind: "environment", ref: "lift" },
     },
@@ -31,7 +31,7 @@ describe("paletteRows", () => {
   });
 
   it("lists Base first, then the project's data and objects by category", () => {
-    const base = baseWithoutPack();
+    const base = GAME_DATA;
     const merged = mergeGameData(base, lift);
     if (!merged.ok) throw new Error(merged.diagnostics.map((d) => d.message).join("; "));
     setCatalogGameData(merged.value, lift);

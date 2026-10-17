@@ -1,8 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { addObjects, createLevelDocument, TerrainTile } from "@mmx/content-schema";
+import {
+  addObjects,
+  createLevelDocument,
+  TerrainTile,
+  setCatalogGameData,
+} from "@mmx/content-schema";
 import { EditorStore, selectedObjectIds, selectedTileIndices } from "./EditorStore.js";
 import { placeAt, placeDecorationAt } from "./actions.js";
 import { clearClipboard, copySelection, cutSelection, pasteClipboard } from "./clipboard.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
+
+// An MMX project's catalog: these tests place its objects.
+setCatalogGameData(MMX_GAME_DATA);
 
 function storeWithTwoMetools(): { store: EditorStore; ids: string[] } {
   const store = new EditorStore(createLevelDocument());

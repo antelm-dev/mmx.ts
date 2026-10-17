@@ -25,9 +25,10 @@ import {
   withReaction,
   withWeakPhase,
 } from "./enemyEditor.js";
-import { baseWithoutPack, compileIssues } from "./baseWithoutPack.test-support.js";
+import { MMX_GAME_DATA, MMX_OVERLAY, compileIssues } from "./mmx.test-support.js";
 
-const crab = addEnemy(undefined, GAME_DATA, {
+// A project made from the template: its data carries the MMX Starter pack.
+const crab = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
   name: "Crab",
   base: "metool",
   sheet: "anim.crab",
@@ -35,7 +36,7 @@ const crab = addEnemy(undefined, GAME_DATA, {
   touchDamage: 2,
 });
 const crabEnemy = crab.overlay.enemies!.crab!;
-const BLANK_PATROL = GAME_DATA.enemies.metool!.abilityConfig!.Patrol!;
+const BLANK_PATROL = MMX_GAME_DATA.enemies.metool!.abilityConfig!.Patrol!;
 const compiles = (enemy = crabEnemy) => projectGameData(putEnemy(crab.overlay, enemy)).issues;
 
 describe("enemy editor", () => {
@@ -44,10 +45,12 @@ describe("enemy editor", () => {
       enemy: { id: "crab" },
       editable: true,
     });
+    // The pack's enemies, once copied, are the project's; the engine has none of its own.
     expect(enemyForPrefab(crab.overlay, "enemy.metool")).toMatchObject({
       enemy: { id: "metool" },
-      editable: false,
+      editable: true,
     });
+    expect(enemyForPrefab(undefined, "enemy.metool")).toBeNull();
     expect(enemyForPrefab(crab.overlay, "spawn")).toBeNull();
   });
 
@@ -91,7 +94,7 @@ describe("enemy editor", () => {
     expect(noHide.reactions).toEqual({ idle: ["Patrol"], guard_break: ["Stun"] });
     expect(compiles(noHide)).toEqual([]);
 
-    const bat = GAME_DATA.enemies.bat!;
+    const bat = MMX_GAME_DATA.enemies.bat!;
     expect(withAbilities(bat, ["Pursuit", "Recoil", "Death"]).hooks).toEqual([]);
     expect(withAbilities(bat, ["Hover", "Pursuit", "Death"]).hooks).toEqual([]);
     expect(withAbilities(bat, ["Death", "Hover", "Pursuit", "Recoil"]).hooks).toEqual(bat.hooks);
@@ -232,7 +235,7 @@ describe("enemy editor", () => {
   });
 
   it("the catalog shows a project enemy under its name, not its id", () => {
-    const named = addEnemy(undefined, GAME_DATA, {
+    const named = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
       name: "Spiky Crab",
       base: "metool",
       sheet: "anim.crab",
@@ -255,31 +258,30 @@ describe("enemy editor", () => {
     expect(renamed.enemies).toBe(crab.overlay.enemies);
     expect(renamed.actors).toBe(crab.overlay.actors);
     expect(projectGameData(renamed).issues).toEqual([]);
-    expect(() => renameEnemy(crab.overlay, "enemy.metool", "Nope")).toThrow();
+    expect(() => renameEnemy(crab.overlay, "spawn", "Nope")).toThrow();
   });
 
   it("deletes a project enemy's prefab, enemy and actor together; never a built-in or an override", () => {
     expect(isProjectEnemy(crab.overlay, "enemy.crab")).toBe(true);
-    expect(isProjectEnemy(crab.overlay, "enemy.metool")).toBe(false);
+    expect(isProjectEnemy(crab.overlay, "enemy.metool")).toBe(true); // copied from the pack
     const both = duplicateEnemy(crab.overlay, projectGameData(crab.overlay).data, "crab", "Crab");
     const deleted = deleteEnemy(both.overlay, "enemy.crab");
     expect(deleted.prefabs?.["enemy.crab"]).toBeUndefined();
     expect(deleted.enemies?.crab).toBeUndefined();
     expect(deleted.actors?.["enemy.crab"]).toBeUndefined();
-    expect(Object.keys(deleted.enemies ?? {})).toEqual(["crab-copy"]);
+    expect(Object.keys(deleted.enemies ?? {})).toEqual(["metool", "bat", "pantheon", "crab-copy"]);
     expect(projectGameData(deleted).issues).toEqual([]);
 
-    const override = putEnemy(crab.overlay, { ...GAME_DATA.enemies.metool!, touchDamage: 9 });
-    expect(
-      isProjectEnemy(
-        {
-          ...override,
-          prefabs: { ...override.prefabs, "enemy.metool": GAME_DATA.prefabs["enemy.metool"]! },
-        },
-        "enemy.metool",
-      ),
-    ).toBe(false);
-    expect(() => deleteEnemy(override, "enemy.metool")).toThrow();
+    // An overlay record over one of the engine's prefabs is an override, never a project enemy.
+    const override: GameDataOverlay = {
+      ...crab.overlay,
+      prefabs: {
+        ...crab.overlay.prefabs,
+        hazard: { ...crab.overlay.prefabs!["enemy.crab"]!, id: "hazard" },
+      },
+    };
+    expect(isProjectEnemy(override, "hazard")).toBe(false);
+    expect(() => deleteEnemy(override, "hazard")).toThrow();
   });
 
   describe("blank enemy", () => {
@@ -463,7 +465,11 @@ describe("enemy editor", () => {
       const first = blank(["Patrol", "Death"]);
       expect(blank([], {}, first.overlay).id).toBe("enemy.blob-2");
       expect(
-        addBlankEnemy(undefined, GAME_DATA, { name: "Metool", health: 1, enemy: BLANK_ENEMY }).id,
+        addBlankEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
+          name: "Metool",
+          health: 1,
+          enemy: BLANK_ENEMY,
+        }).id,
       ).toBe("enemy.metool-2");
     });
   });
@@ -527,24 +533,24 @@ describe("enemy editor", () => {
     });
 
     it("adds Shoot with one of the project's projectiles when it lacks pantheon_shot", () => {
-      const base = baseWithoutPack();
+      const base = GAME_DATA;
       const projectiles = Object.keys(base.projectiles);
       expect(projectiles).not.toContain("pantheon_shot");
       const shooter = withAbilities(BLANK_ENEMY, ["Shoot", "Death"], projectiles);
       expect(shooter.abilityConfig?.Shoot?.projectile).toBe(projectiles[0]);
       // A project with pantheon_shot keeps it; an owned Shoot config is never rewritten.
-      const own = Object.keys(GAME_DATA.projectiles);
+      const own = Object.keys(MMX_GAME_DATA.projectiles);
       expect(withAbilities(BLANK_ENEMY, ["Shoot"], own).abilityConfig?.Shoot?.projectile).toBe(
         "pantheon_shot",
       );
       expect(
-        withAbilities(GAME_DATA.enemies.pantheon!, ["Shoot", "Death"], projectiles).abilityConfig
-          ?.Shoot?.projectile,
-      ).toBe(GAME_DATA.enemies.pantheon!.abilityConfig?.Shoot?.projectile);
+        withAbilities(MMX_GAME_DATA.enemies.pantheon!, ["Shoot", "Death"], projectiles)
+          .abilityConfig?.Shoot?.projectile,
+      ).toBe(MMX_GAME_DATA.enemies.pantheon!.abilityConfig?.Shoot?.projectile);
     });
 
     it("composes a blank enemy that compiles over a base with none of them", () => {
-      const base = baseWithoutPack();
+      const base = GAME_DATA;
       expect(Object.keys(base.enemies)).toEqual([]);
       for (const movement of MOVEMENTS) {
         const abilities = abilitiesFor(movement);

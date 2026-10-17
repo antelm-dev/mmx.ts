@@ -2,7 +2,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import type { LevelDocument, LevelObjectInstance } from "../src/index.js";
-import { SCHEMA_VERSION, TerrainTile, validateDocument } from "../src/index.js";
+import { SCHEMA_VERSION, TerrainTile, setCatalogGameData, validateDocument } from "../src/index.js";
+import { MMX_GAME_DATA } from "./support/mmx.js";
+
+// Some levels below place MMX Starter platforms.
+setCatalogGameData(MMX_GAME_DATA);
 
 function baseDoc(objects: LevelObjectInstance[]): LevelDocument {
   return {

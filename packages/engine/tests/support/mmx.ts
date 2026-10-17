@@ -21,17 +21,6 @@ import { spawnEnemy } from "../../src/game/enemies/index.js";
 
 export const MMX_PACK = pack as GameDataOverlay;
 
-/** GAME_DATA without any record the pack ships: the engine's own primitives. */
-export function coreGameData(): GameData {
-  const data: GameData = structuredClone(GAME_DATA);
-  for (const [category, records] of Object.entries(MMX_PACK)) {
-    if (category === "schemaVersion") continue;
-    const table = data[category as keyof GameData] as Record<string, unknown>;
-    for (const id of Object.keys(records as object)) delete table[id];
-  }
-  return data;
-}
-
 /** Compile `data` against the real registries, throwing on any diagnostic. */
 export function compileStrict(data: GameData): CompiledGameData {
   const result = compileGameData(data, buildCompileRegistries());
@@ -43,7 +32,7 @@ export function compileStrict(data: GameData): CompiledGameData {
 
 /** Core + the MMX Starter pack. */
 export const MMX_GAME_DATA: GameData = (() => {
-  const merged = mergeGameData(coreGameData(), MMX_PACK);
+  const merged = mergeGameData(GAME_DATA, MMX_PACK);
   if (!merged.ok)
     throw new Error(`MMX pack failed to merge: ${JSON.stringify(merged.diagnostics)}`);
   return merged.value;

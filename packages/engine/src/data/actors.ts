@@ -2,8 +2,8 @@ import type { ActorDefinition } from "./types.js";
 
 /**
  * Actor bodies — the terrain-collision box and starting health for each composed
- * character. Player half-extents approximate Player.tscn's collision shape; enemy
- * bodies are the CharacterBody2D collisionShape2D extents from each .tscn.
+ * character. Player half-extents approximate Player.tscn's collision shape. Enemy
+ * bodies come with their enemies, from a project's data (the MMX Starter pack).
  */
 export const actors = {
   "player.x": {
@@ -17,20 +17,5 @@ export const actors = {
     // physics.hitbox_w 14 / hitbox_h 30, halved; the sheet has no dash crouch.
     body: { hw: 7, hh: 15, dashCrouch: 0 },
     maxHealth: 16, // life.max
-  },
-  "enemy.metool": {
-    id: "enemy.metool",
-    body: { hw: 12, hh: 10 }, // Metool.tscn body extents
-    maxHealth: 2, // Metool.tscn max_health
-  },
-  "enemy.bat": {
-    id: "enemy.bat",
-    body: { hw: 13.5, hh: 15.5 }, // SmallBat.tscn body extents
-    maxHealth: 1, // SmallBat.tscn max_health
-  },
-  "enemy.pantheon": {
-    id: "enemy.pantheon",
-    body: { hw: 8, hh: 15 }, // enemies.json hurtbox [16, 30] doubles as the body
-    maxHealth: 4, // hp
   },
 } satisfies Record<string, ActorDefinition>;

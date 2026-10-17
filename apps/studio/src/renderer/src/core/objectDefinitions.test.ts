@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { OBJECT_DEFINITIONS, createLevelDocument, getDefinition } from "@mmx/content-schema";
+import {
+  allDefinitions,
+  createLevelDocument,
+  getDefinition,
+  setCatalogGameData,
+} from "@mmx/content-schema";
 import {
   BEHAVIOUR_DESCRIPTIONS,
   addObject,
@@ -8,6 +13,10 @@ import {
   duplicateObject,
   newObjectBases,
 } from "./objectDefinitions.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
+
+// An MMX project's catalog: the objects below derive from its platforms and pickups.
+setCatalogGameData(MMX_GAME_DATA);
 
 const fast = {
   id: "obj.platform.moving.1",
@@ -48,7 +57,7 @@ describe("project object definitions", () => {
       id: "obj.fast",
       baseId: "platform.moving",
     };
-    const offered = newObjectBases([...OBJECT_DEFINITIONS, project]);
+    const offered = newObjectBases([...allDefinitions(), project]);
     const categories = offered.map((c) => c.category);
     expect(categories).not.toContain("spawn");
     expect(categories).not.toContain("unknown");
@@ -69,7 +78,7 @@ describe("project object definitions", () => {
     expect(some.id).toBe("obj.platform.moving.3");
     expect(some.objects[2]!.exposed).toEqual(["Speed"]);
     // A base with no property gets no values.
-    const pickup = OBJECT_DEFINITIONS.find((d) => d.category === "pickup")!;
+    const pickup = allDefinitions().find((d) => d.category === "pickup")!;
     expect(addObject([], pickup, "Big", {}, []).objects[0]).toEqual({
       id: `obj.${pickup.id}.1`,
       name: "Big",
@@ -78,7 +87,7 @@ describe("project object definitions", () => {
   });
 
   it("skips the Behaviour step where a category offers a single base", () => {
-    const offered = newObjectBases(OBJECT_DEFINITIONS);
+    const offered = newObjectBases(allDefinitions());
     const bases = (category: string) => offered.find((c) => c.category === category)!.bases;
     for (const category of ["conveyor", "hazard", "slope", "camera"])
       expect(chosenBase(bases(category), undefined)).toBe(bases(category)[0]);

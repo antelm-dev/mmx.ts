@@ -15,23 +15,30 @@ import {
   setCatalogGameData,
   setProjectDefinitions,
 } from "../src/index.js";
+import { MMX_GAME_DATA as MMX } from "./support/mmx.js";
 
-/** The hand-written catalog as it was before it was generated from game data. */
-const LEGACY_CATALOG = JSON.parse(
-  readFileSync(new URL("./fixtures/builtin-definitions.json", import.meta.url), "utf8"),
-);
+/** The hand-written catalog as it was before it was generated from game data: the engine's part, then the MMX Starter's. */
+const fixture = (name: string) =>
+  JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
+const LEGACY_CATALOG = fixture("builtin-definitions.json");
+const LEGACY_MMX_CATALOG = fixture("mmx-starter-definitions.json");
 
 test("the catalog generated from the default game data equals the hand-written one", () => {
   assert.deepStrictEqual(definitionsFromGameData(GAME_DATA), LEGACY_CATALOG);
   assert.deepStrictEqual(OBJECT_DEFINITIONS, LEGACY_CATALOG);
+  const byId = (defs: { id: string }[]) => [...defs].sort((a, b) => a.id.localeCompare(b.id));
+  assert.deepStrictEqual(
+    byId(definitionsFromGameData(MMX)),
+    byId([...LEGACY_CATALOG, ...LEGACY_MMX_CATALOG]),
+  );
 });
 
 function withCrab(): GameData {
-  const merged = mergeGameData(GAME_DATA, {
-    actors: { crab: { ...GAME_DATA.actors[GAME_DATA.enemies.metool!.actor]!, id: "crab" } },
+  const merged = mergeGameData(MMX, {
+    actors: { crab: { ...MMX.actors[MMX.enemies.metool!.actor]!, id: "crab" } },
     enemies: {
       crab: {
-        ...GAME_DATA.enemies.metool!,
+        ...MMX.enemies.metool!,
         id: "crab",
         actor: "crab",
         sheet: "anim.enemy.crab",
@@ -40,7 +47,7 @@ function withCrab(): GameData {
     },
     prefabs: {
       "enemy.crab": {
-        ...GAME_DATA.prefabs["enemy.metool"]!,
+        ...MMX.prefabs["enemy.metool"]!,
         id: "enemy.crab",
         source: { kind: "enemy", ref: "crab" },
       },
@@ -113,24 +120,9 @@ test("setCatalogGameData makes a project enemy placeable and derivable", (t) => 
   assert.equal(getDefinition("obj.crab.right"), undefined);
 });
 
-/** The default data with only spawn, hazard and camera zone placeable: none of the pack's objects (C-INDEP). */
-function baseWithoutPack(): GameData {
-  const keep = (id: string) => id === "hazard" || id === "camera-zone";
-  const environments = Object.fromEntries(
-    Object.entries(GAME_DATA.environments).filter(([id]) => keep(id)),
-  );
-  const prefabs = Object.fromEntries(
-    Object.entries(GAME_DATA.prefabs).filter(
-      ([, { source }]) =>
-        source.kind === "loadout" || (source.kind === "environment" && keep(source.ref)),
-    ),
-  );
-  return { ...GAME_DATA, enemies: {}, pickups: {}, environments, prefabs };
-}
-
-test("a base without the pack's objects gives the primitives' catalog, and new prefabs fall back", (t) => {
+test("the engine's data, without the pack, gives the primitives' catalog, and new prefabs fall back", (t) => {
   t.after(() => setCatalogGameData(GAME_DATA));
-  const base = baseWithoutPack();
+  const base = GAME_DATA;
   assert.deepEqual(
     definitionsFromGameData(base).map((d) => d.id),
     ["spawn", "hazard", "slope", "camera-zone"],

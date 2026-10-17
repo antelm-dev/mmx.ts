@@ -77,8 +77,8 @@ test("an overlay that is not an object of records is left unmigrated for the mer
   }
 });
 
-test("before the flip, a migrated project compiles to the built-in hash", () => {
-  assert.equal(COMPILED_GAME_DATA.hash, "36e5bb6d8c3547a6");
+test("a migrated project compiles to the former built-in hash, which the core alone no longer has", () => {
+  assert.notEqual(COMPILED_GAME_DATA.hash, "36e5bb6d8c3547a6");
   assert.equal(hashOf(withStarterPack({}, undefined).overlay), "36e5bb6d8c3547a6");
   assert.equal(hashOf(withStarterPack({}, { schemaVersion: 1 }).overlay), "36e5bb6d8c3547a6");
 });

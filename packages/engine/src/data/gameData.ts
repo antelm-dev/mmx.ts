@@ -3,10 +3,8 @@ import { physics } from "./physics.js";
 import { actors } from "./actors.js";
 import { abilities } from "./abilities.js";
 import { loadouts } from "./loadouts.js";
-import { enemies } from "./enemies.js";
 import { weapons } from "./weapons.js";
 import { projectiles } from "./projectiles.js";
-import { pickups } from "./pickups.js";
 import { environments } from "./environments.js";
 import { prefabs } from "./prefabs.js";
 
@@ -22,10 +20,10 @@ export function defineGameData(data: GameData): GameData {
 }
 
 /**
- * The default MMX game data — the single source the compat constants and the
- * runtime both read from. Assembled from the per-category modules under this
- * directory rather than written inline, so a category can be authored in
- * isolation.
+ * The engine's core game data: the players, their weapons and shots, the behaviour
+ * catalogue and the level primitives (spawn, hazard, camera zone). Enemies, pickups,
+ * platforms and conveyors are project data, merged over this as an overlay; the
+ * MMX Starter pack (`@mmx/pack-mmx-starter`) is the MMX set.
  */
 export const GAME_DATA: GameData = defineGameData({
   schemaVersion: GAME_SCHEMA_VERSION,
@@ -34,10 +32,10 @@ export const GAME_DATA: GameData = defineGameData({
   actors,
   abilities,
   loadouts,
-  enemies,
+  enemies: {},
   weapons,
   projectiles,
-  pickups,
+  pickups: {},
   environments,
   prefabs,
 });

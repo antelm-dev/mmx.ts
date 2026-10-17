@@ -1,0 +1,308 @@
+[
+  {
+    "id": "enemy.metool",
+    "name": "Metool",
+    "category": "enemy",
+    "icon": "▲",
+    "engineId": "Enemy",
+    "components": {
+      "enemy": {
+        "kind": "metool",
+        "sheet": "metool"
+      }
+    },
+    "fields": {
+      "Kind": "metool"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#f97316"
+    },
+    "properties": [
+      {
+        "key": "FacesRight",
+        "label": "Faces Right",
+        "type": "boolean",
+        "default": false,
+        "help": "Initial spawn facing (unchecked faces left)."
+      }
+    ]
+  },
+  {
+    "id": "enemy.bat",
+    "name": "Bat",
+    "category": "enemy",
+    "icon": "ᗢ",
+    "engineId": "Enemy",
+    "components": {
+      "enemy": {
+        "kind": "bat",
+        "sheet": "bat"
+      }
+    },
+    "fields": {
+      "Kind": "bat"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#f97316"
+    },
+    "properties": [
+      {
+        "key": "FacesRight",
+        "label": "Faces Right",
+        "type": "boolean",
+        "default": false
+      }
+    ]
+  },
+  {
+    "id": "enemy.pantheon",
+    "name": "Pantheon Hunter",
+    "category": "enemy",
+    "icon": "◆",
+    "engineId": "Enemy",
+    "components": {
+      "enemy": {
+        "kind": "pantheon",
+        "sheet": "pantheon"
+      }
+    },
+    "fields": {
+      "Kind": "pantheon"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 32
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#f97316"
+    },
+    "properties": [
+      {
+        "key": "FacesRight",
+        "label": "Faces Right",
+        "type": "boolean",
+        "default": false
+      }
+    ]
+  },
+  {
+    "id": "pickup.life.small",
+    "name": "Life Capsule (Small)",
+    "category": "pickup",
+    "icon": "＋",
+    "engineId": "LifeCapsule",
+    "components": {
+      "pickup": {
+        "kind": "life",
+        "size": "small"
+      }
+    },
+    "fields": {
+      "Kind": "small"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "pickup.life.large",
+    "name": "Life Capsule (Large)",
+    "category": "pickup",
+    "icon": "✚",
+    "engineId": "LifeCapsule",
+    "components": {
+      "pickup": {
+        "kind": "life",
+        "size": "large"
+      }
+    },
+    "fields": {
+      "Kind": "large"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "pickup.weapon.small",
+    "name": "Weapon Capsule (Small)",
+    "category": "pickup",
+    "icon": "◇",
+    "engineId": "WeaponCapsule",
+    "components": {
+      "pickup": {
+        "kind": "weapon",
+        "size": "small"
+      }
+    },
+    "fields": {
+      "Kind": "small"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "pickup.weapon.large",
+    "name": "Weapon Capsule (Large)",
+    "category": "pickup",
+    "icon": "◆",
+    "engineId": "WeaponCapsule",
+    "components": {
+      "pickup": {
+        "kind": "weapon",
+        "size": "large"
+      }
+    },
+    "fields": {
+      "Kind": "large"
+    },
+    "defaultSize": {
+      "width": 16,
+      "height": 16
+    },
+    "editor": {
+      "placement": "point",
+      "color": "#22c55e"
+    },
+    "properties": []
+  },
+  {
+    "id": "platform.moving",
+    "name": "Moving Platform",
+    "category": "platform",
+    "icon": "▭",
+    "engineId": "MovingPlatform",
+    "components": {
+      "platform": {
+        "moving": true
+      }
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 48,
+      "height": 8
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#eab308"
+    },
+    "properties": [
+      {
+        "key": "Travel",
+        "label": "Travel",
+        "type": "number",
+        "default": 96,
+        "nonNegative": true,
+        "help": "Travel distance in pixels along Axis."
+      },
+      {
+        "key": "Speed",
+        "label": "Speed",
+        "type": "number",
+        "default": 48,
+        "nonNegative": true,
+        "help": "Travel speed in pixels/second."
+      },
+      {
+        "key": "Axis",
+        "label": "Axis",
+        "type": "enum",
+        "default": "horizontal",
+        "options": ["horizontal", "vertical"],
+        "help": "Horizontal travels right from the placed position; vertical travels down."
+      }
+    ]
+  },
+  {
+    "id": "platform.falling",
+    "name": "Falling Platform",
+    "category": "platform",
+    "icon": "▭",
+    "engineId": "FallingPlatform",
+    "components": {
+      "platform": {
+        "falling": true
+      }
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 48,
+      "height": 8
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#eab308"
+    },
+    "properties": [
+      {
+        "key": "Delay",
+        "label": "Delay",
+        "type": "number",
+        "default": 0.5,
+        "nonNegative": true,
+        "help": "Seconds after the player first lands on it before it falls."
+      }
+    ]
+  },
+  {
+    "id": "conveyor",
+    "name": "Conveyor",
+    "category": "conveyor",
+    "icon": "⇥",
+    "engineId": "Conveyor",
+    "components": {
+      "conveyor": {}
+    },
+    "fields": {},
+    "defaultSize": {
+      "width": 64,
+      "height": 8
+    },
+    "editor": {
+      "placement": "rectangle",
+      "resizable": true,
+      "color": "#14b8a6"
+    },
+    "properties": [
+      {
+        "key": "Speed",
+        "label": "Speed",
+        "type": "number",
+        "default": 60,
+        "help": "Belt speed in pixels/second; negative pushes left."
+      }
+    ]
+  }
+]

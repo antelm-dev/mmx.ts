@@ -18,7 +18,7 @@ type Rect = { left: number; right: number; top: number; bottom: number };
  * Those are separate Nodes in Godot because a scene tree is how that engine
  * composes behaviour; here they are fields and methods, because the only thing
  * the composition bought was editor-time configuration and that has moved into
- * its compiled definition (data/enemies.ts). What is preserved is the *signal
+ * its compiled definition (game data `enemies`). What is preserved is the *signal
  * flow*, since the AI is wired to it: taking a hit, breaking a guard and reaching
  * zero health each notify the AI, which is what turns a broken guard into a stun
  * instead of the ability polling for it.

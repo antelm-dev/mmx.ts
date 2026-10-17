@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createLevelDocument, type LevelDocument } from "@mmx/content-schema";
+import { createLevelDocument, type LevelDocument, setCatalogGameData } from "@mmx/content-schema";
 import { validateLevelDocument } from "@mmx/editor-runtime/adapters";
 import { decorationBounds } from "@mmx/renderer-pixi";
 import { problemAnchors, problemTarget } from "./problemAnchors.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
+
+// An MMX project's catalog: these tests place its objects.
+setCatalogGameData(MMX_GAME_DATA);
 
 function level(): LevelDocument {
   const doc = createLevelDocument();

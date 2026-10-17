@@ -7,7 +7,7 @@ import { validateConfig, type Schema } from "./configValidation.js";
  * by the AI event table rather than the player's priority race.
  *
  * Each entry validates the exact tuning its ability class consumes, authored
- * per enemy in data/enemies.ts `abilityConfig`. The `create` bodies are attached
+ * per enemy in its definition's `abilityConfig`. The `create` bodies are attached
  * by game/enemies, where the ability classes live.
  */
 export type EnemyBehaviorConfig = Record<string, unknown>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
+import { createLevelDocument, TerrainTile, setCatalogGameData } from "@mmx/content-schema";
 import type { AnimationAsset, ProjectAsset, TilesetAsset } from "@mmx/project-schema";
 import {
   EditorStore,
@@ -32,6 +32,10 @@ import {
   updateImageLayer,
   updateTileLayer,
 } from "./actions.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
+
+// An MMX project's catalog: these tests place its objects.
+setCatalogGameData(MMX_GAME_DATA);
 
 function freshStore(): EditorStore {
   return new EditorStore(createLevelDocument());

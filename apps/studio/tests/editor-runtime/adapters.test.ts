@@ -16,7 +16,10 @@ import {
   instanceToEntity,
   levelDataToDocument,
 } from "../../src/editor-runtime/adapters/index.js";
-import { baseWithoutPack } from "../../src/renderer/src/core/baseWithoutPack.test-support.js";
+import { MMX_GAME_DATA } from "../../src/renderer/src/core/mmx.test-support.js";
+
+// The demo levels place MMX Starter objects: the catalog of a project carrying the pack.
+setCatalogGameData(MMX_GAME_DATA);
 
 function readDemoDocument(name: string): LevelDocument {
   return JSON.parse(
@@ -183,7 +186,7 @@ test("an entity imports as the catalog's definition for it, an unknown Kind as a
     ids(level([{ id: "Enemy", iid: "x", ...at, fields: { Kind: "nobody" } }]))[0],
     "Enemy.nobody",
   );
-  setCatalogGameData(baseWithoutPack());
+  setCatalogGameData(GAME_DATA);
   try {
     assert.deepEqual(ids(level(entities)), [
       "spawn",
@@ -194,6 +197,6 @@ test("an entity imports as the catalog's definition for it, an unknown Kind as a
     ]);
     assert.equal(definitionFor("Enemy.metool").category, "unknown");
   } finally {
-    setCatalogGameData(GAME_DATA);
+    setCatalogGameData(MMX_GAME_DATA);
   }
 });

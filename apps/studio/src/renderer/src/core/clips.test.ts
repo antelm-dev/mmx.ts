@@ -4,6 +4,7 @@ import { ENEMY_BEHAVIOR_SCHEMAS } from "@mmx/engine/behaviors";
 import { GAME_DATA } from "@mmx/engine/data";
 import type { AnimationAsset, AnimationFrame } from "@mmx/project-schema";
 import { addBlankEnemy, BLANK_ENEMY } from "./enemyEditor.js";
+import { MMX_GAME_DATA } from "./mmx.test-support.js";
 import {
   boxFromPoints,
   canDeleteClip,
@@ -171,7 +172,7 @@ describe("enemy clips", () => {
         abilityConfig: { Death: { explosionDuration: 0, weakHealth: 1, weakAnimation: "fall" } },
       }),
     ).toEqual(["idle", "roll", "fall"]);
-    expect(enemyClips(GAME_DATA.enemies.metool!)).toEqual([
+    expect(enemyClips(MMX_GAME_DATA.enemies.metool!)).toEqual([
       "idle",
       "walk",
       "defense",
