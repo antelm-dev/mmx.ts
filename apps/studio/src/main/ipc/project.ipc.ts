@@ -287,11 +287,7 @@ export function createProjectIpc() {
           }
           const data = JSON.parse(await fs.readText(GAME_DATA_FILE));
           data.bindings = { ...data.bindings, playerAnimation: animationId };
-          await fs.writeText(
-            GAME_DATA_FILE,
-            `${JSON.stringify(data, null, 2)}
-`,
-          );
+          await fs.writeText(GAME_DATA_FILE, `${JSON.stringify(data, null, 2)}\n`);
           return { ok: true, value: null, issues: [] };
         } catch (error) {
           return {
