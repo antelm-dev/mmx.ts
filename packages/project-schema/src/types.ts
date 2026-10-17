@@ -33,12 +33,22 @@ export type AnimationFrame = {
   hitboxes?: FrameBox[];
 };
 
+/** Named frames of a clip, bounds inclusive; a `loop` segment wraps, a one-shot chains on. */
+export type AnimationSegment = {
+  name: string;
+  start: number;
+  end: number;
+  loop: boolean;
+};
+
 export type AnimationClip = {
   loop: boolean;
   /** Frame a looping clip wraps back to (default 0); ignored when not looping. */
   loopStart?: number;
   speed: number;
   frames: AnimationFrame[];
+  /** Partition of `frames` in order; when present it replaces `loop`/`loopStart`. */
+  segments?: AnimationSegment[];
 };
 
 type AssetFields = {

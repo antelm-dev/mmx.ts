@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   assertAnimData,
   assertRegion,
+  segmentsError,
   type AnimData,
   type Region,
 } from "../src/animation/index.js";
@@ -105,4 +106,14 @@ test("assertAnimData validates per-frame hurtbox and hitboxes", () => {
     assert.throws(() => assertAnimData(data({ hitboxes: [bad] })), /hitboxes/);
   }
   assert.throws(() => assertAnimData(data({ hitboxes: { x: 0, y: 0, w: 4, h: 4 } })), /hitboxes/);
+});
+
+test("segmentsError accepts an in-order partition and names what is wrong otherwise", () => {
+  const seg = (name: string, start: number, end: number) => ({ name, start, end, loop: false });
+  assert.equal(segmentsError([seg("intro", 0, 1), seg("loop", 2, 2), seg("end", 3, 3)], 4), null);
+  assert.match(segmentsError([seg("a", 0, 1), seg("b", 3, 3)], 4)!, /start at frame 2/);
+  assert.match(segmentsError([seg("a", 0, 2)], 4)!, /last frame/);
+  assert.match(segmentsError([seg("a", 0, 1), seg("a", 2, 3)], 4)!, /twice/);
+  assert.match(segmentsError([seg("a#b", 0, 3)], 4)!, /'#'/);
+  assert.match(segmentsError([], 4)!, /non-empty/);
 });

@@ -1,3 +1,5 @@
+import { segmentsError, type ClipSegment } from "@mmx/contracts/animation";
+
 /** A frame whose duration is expressed as a multiplier of the clip rate. */
 export interface TimedFrame {
   duration: number;
@@ -10,6 +12,8 @@ export interface TimedClip<TFrame extends TimedFrame = TimedFrame> {
   loopStart?: number;
   speed: number;
   frames: readonly TFrame[];
+  /** Named frame ranges that drive "clip" playback instead of `loop`/`loopStart`. */
+  segments?: readonly ClipSegment[];
 }
 
 export type PlaybackMode = "clip" | "loop" | "once";
@@ -30,6 +34,8 @@ export class AnimationCursor<TFrame extends TimedFrame = TimedFrame> {
   private frameIndex = 0;
   private complete = false;
 
+  // Segments: `frame` (play/seek) is a clip frame and activates the segment holding it;
+  // an explicit "loop"/"once" mode ignores segments and plays the whole frame list.
   play(clip: TimedClip<TFrame> | null, frame = 0, mode: PlaybackMode = "clip"): void {
     this.clip = clip;
     this.mode = mode;
@@ -69,9 +75,13 @@ export class AnimationCursor<TFrame extends TimedFrame = TimedFrame> {
     let frameSeconds = this.currentFrame!.duration / this.clip.speed;
     while (this.elapsed + TIME_EPSILON >= frameSeconds) {
       this.elapsed = Math.max(0, this.elapsed - frameSeconds);
-      if (this.frameIndex < this.clip.frames.length - 1) {
+      // Segments partition the frames, so a one-shot segment chains by stepping on.
+      const segment = this.segmentAt(this.frameIndex);
+      if (segment?.loop && this.frameIndex === segment.end) {
+        this.frameIndex = segment.start;
+      } else if (this.frameIndex < this.clip.frames.length - 1) {
         this.frameIndex++;
-      } else if (this.shouldLoop()) {
+      } else if (!segment && this.shouldLoop()) {
         this.frameIndex = this.clip.loopStart ?? 0;
       } else {
         this.elapsed = 0;
@@ -81,6 +91,12 @@ export class AnimationCursor<TFrame extends TimedFrame = TimedFrame> {
       frameSeconds = this.currentFrame!.duration / this.clip.speed;
     }
     return false;
+  }
+
+  /** The segment holding `frame`, or undefined when segments do not drive playback. */
+  private segmentAt(frame: number): ClipSegment | undefined {
+    if (this.mode !== "clip") return undefined;
+    return this.clip?.segments?.find((segment) => frame <= segment.end);
   }
 
   private shouldLoop(): boolean {
@@ -118,6 +134,9 @@ export function assertTimedClip(clip: TimedClip, label = "animation clip"): void
   ) {
     throw new Error(`${label}: loopStart must be an integer frame index`);
   }
+  const segments =
+    clip.segments === undefined ? null : segmentsError(clip.segments, clip.frames.length);
+  if (segments) throw new Error(`${label}: ${segments}`);
   clip.frames.forEach((frame, index) => {
     if (!Number.isFinite(frame.duration) || frame.duration <= 0) {
       throw new Error(`${label}: frame ${index} duration must be greater than zero`);

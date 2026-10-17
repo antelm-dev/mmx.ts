@@ -10,6 +10,7 @@ import {
   parseProject,
   serializeProject,
   validateProject,
+  type AnimationClip,
   type ProjectDocument,
 } from "../src/index.js";
 
@@ -458,6 +459,58 @@ test("animation loopStart is validated and survives serialization", () => {
   const anim = reparsed.assets.find((asset) => asset.id === "anim.hero");
   assert.ok(anim && anim.kind === "animation");
   assert.equal(anim.animations.run?.loopStart, 2);
+});
+
+test("animation segments are validated and survive serialization", () => {
+  const withSegments = (segments: unknown, extra: Record<string, unknown> = {}): ProjectDocument =>
+    validProject({
+      assets: [
+        {
+          id: "anim.door",
+          kind: "animation",
+          path: "assets/anims/door.json",
+          animations: {
+            door: {
+              loop: false,
+              speed: 1,
+              frames: [0, 8, 16, 24].map((x) => ({
+                region: [x, 0, 8, 8] as const,
+                duration: 0.1,
+              })),
+              segments,
+              ...extra,
+            } as AnimationClip,
+          },
+        },
+      ],
+    });
+  const segment = (name: string, start: number, end: number, loop = false) => ({
+    name,
+    start,
+    end,
+    loop,
+  });
+  const has = (project: ProjectDocument) =>
+    validateProject(project).issues.some((issue) => issue.code === "animation.segments");
+
+  const bad: [string, unknown][] = [
+    ["empty", []],
+    ["gap", [segment("a", 0, 0), segment("b", 2, 3)]],
+    ["short", [segment("a", 0, 2)]],
+    ["duplicate", [segment("a", 0, 1), segment("a", 2, 3)]],
+    ["hash", [segment("a#b", 0, 3)]],
+    ["blank", [segment("", 0, 3)]],
+  ];
+  for (const [why, segments] of bad) assert.ok(has(withSegments(segments)), why);
+  const segments = [segment("intro", 0, 0), segment("loop", 1, 2, true), segment("end", 3, 3)];
+  assert.ok(has(withSegments(segments, { loopStart: 1 })), "segments replace loopStart");
+
+  const good = withSegments(segments);
+  assert.ok(!has(good));
+  const reparsed = JSON.parse(serializeProject(good)) as ProjectDocument;
+  const anim = reparsed.assets.find((asset) => asset.id === "anim.door");
+  assert.ok(anim && anim.kind === "animation");
+  assert.deepEqual(anim.animations.door?.segments, segments);
 });
 
 test("frame anchor is validated inside its region and survives serialization", () => {

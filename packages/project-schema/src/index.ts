@@ -4,6 +4,7 @@ export {
   type AnimationAsset,
   type AnimationClip,
   type AnimationFrame,
+  type AnimationSegment,
   type AssetKind,
   type CompatibleRuntimeRange,
   type FontAsset,

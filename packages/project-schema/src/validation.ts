@@ -361,7 +361,44 @@ function validateAnimationClip(
     });
     ok = false;
   }
+  if (value.segments !== undefined) {
+    const problem =
+      value.loopStart !== undefined
+        ? "Animation clip segments replace loopStart; remove loopStart."
+        : segmentsProblem(value.segments, value.frames.length);
+    if (problem) {
+      add({ code: "animation.segments", path: `${path}/segments`, message: problem });
+      ok = false;
+    }
+  }
   return ok;
+}
+
+/** Same rule as `segmentsError` in @mmx/contracts/animation, which this package does not import. */
+function segmentsProblem(segments: unknown, frameCount: number): string | null {
+  if (!Array.isArray(segments) || segments.length === 0) {
+    return "Animation clip segments must be a non-empty array.";
+  }
+  const names = new Set<string>();
+  let next = 0;
+  for (const segment of segments) {
+    if (
+      !isRecord(segment) ||
+      typeof segment.name !== "string" ||
+      segment.name === "" ||
+      segment.name.includes("#") ||
+      names.has(segment.name) ||
+      typeof segment.loop !== "boolean"
+    ) {
+      return "Animation clip segments need unique, non-empty names without '#' and a boolean loop.";
+    }
+    names.add(segment.name);
+    if (segment.start !== next || !Number.isInteger(segment.end) || Number(segment.end) < next) {
+      return `Animation clip segment '${segment.name}' must start at frame ${next} and end at or after it.`;
+    }
+    next = Number(segment.end) + 1;
+  }
+  return next === frameCount ? null : "Animation clip segments must end on the last frame.";
 }
 
 const TILE_INDEX_PATTERN = /^(0|[1-9][0-9]*)$/;
