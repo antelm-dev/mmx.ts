@@ -2,13 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import {
-  DT,
-  ENEMY_STATS,
-  HIDE_OPEN_DELAY,
-  PLAYER_HIT_INVULNERABILITY,
-  STUN_DURATION,
-} from "../src/core/constants.js";
+import { DT, ENEMY_STATS, PLAYER_HIT_INVULNERABILITY } from "../src/core/constants.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
@@ -24,6 +18,10 @@ import { buildCompileRegistries } from "../src/behaviors/index.js";
  * making clip data optional — they simply pass through the animation-gated beats
  * (Hide's "open", Stun's recovery) in one frame instead of several.
  */
+
+// The Metool's Hide and Stun beats, from its built-in definition.
+const HIDE_OPEN_DELAY = GAME_DATA.enemies.metool.abilityConfig!.Hide.openDelay as number;
+const STUN_DURATION = GAME_DATA.enemies.metool.abilityConfig!.Stun.duration as number;
 
 const GROUND_ROW = 10;
 const FLOOR_Y = GROUND_ROW * 16;

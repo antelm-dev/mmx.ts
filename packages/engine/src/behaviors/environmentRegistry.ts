@@ -1,4 +1,5 @@
 import { Registry, notWired, type BehaviorFactory } from "./types.js";
+import { validateConfig, type Schema } from "./configValidation.js";
 import type { DebugPrimitive, EntityTransform } from "./geometryTypes.js";
 import type { EnvironmentDefinition } from "../data/types.js";
 import { environments } from "../data/environments.js";
@@ -9,29 +10,32 @@ export type EnvironmentFields = Readonly<Record<string, unknown>>;
 /**
  * Environment behaviour registry — moving and falling platforms, conveyors,
  * hazards, and camera zones. The movement/constraint algorithms stay in code
- * (Environment.ts, Camera.ts); an entry names which one runs. Part 8 wires
- * `create`.
+ * (Environment.ts, Camera.ts); an entry names which one runs and validates a
+ * definition's `defaults`, the values the level compiler falls back to for an
+ * omitted field. Part 8 wires `create`.
  *
  * `debugGeometry` describes one placed instance for the editor: `fields` are
  * its resolved prefab field values (prefab defaults merged with the instance's
  * overrides) and the transform is its rectangle, `x`/`y` its top-left corner.
  */
 export interface EnvironmentBehaviorFactory extends Omit<
-  BehaviorFactory<unknown, EnvironmentDefinition, unknown>,
+  BehaviorFactory<unknown, EnvironmentDefinition["defaults"], unknown>,
   "debugGeometry"
 > {
   debugGeometry?(fields: EnvironmentFields, transform: EntityTransform): readonly DebugPrimitive[];
 }
 
-const ENVIRONMENT_BEHAVIOR_IDS = [
-  "environment.moving-platform",
-  "environment.falling-platform",
-  "environment.conveyor",
-  "environment.hazard",
-  "environment.camera-zone",
-] as const;
-
-const MOVING_DEFAULTS = environments["moving-platform"].defaults;
+/** Each behaviour's `defaults` schema. */
+const DEFAULTS_SCHEMAS = {
+  "environment.moving-platform": {
+    travel: { type: "number", min: 0 },
+    speed: { type: "number", min: 0 },
+  },
+  "environment.falling-platform": { delay: { type: "number", min: 0 } },
+  "environment.conveyor": { speed: "number" },
+  "environment.hazard": { lethal: "boolean" },
+  "environment.camera-zone": { bindX: "boolean", bindY: "boolean" },
+} as const satisfies Readonly<Record<string, Schema>>;
 
 /**
  * A moving platform's travel: a path from its rectangle's centre at the origin
@@ -42,8 +46,12 @@ function movingPlatformGeometry(
   fields: EnvironmentFields,
   transform: EntityTransform,
 ): DebugPrimitive[] {
+  // shortcut: an unset Travel falls back to the built-in definition, not the project's;
+  // pass the resolved definition here once the editor reads environments from project data.
   const travel =
-    typeof fields.Travel === "number" ? Math.max(0, fields.Travel) : MOVING_DEFAULTS.travel;
+    typeof fields.Travel === "number"
+      ? Math.max(0, fields.Travel)
+      : environments["moving-platform"].defaults.travel;
   if (!(travel > 0)) return [];
   const vertical = fields.Axis === "vertical";
   const width = transform.width ?? 0;
@@ -63,13 +71,10 @@ function movingPlatformGeometry(
 
 export const environmentBehaviorRegistry = new Registry<EnvironmentBehaviorFactory>();
 
-for (const id of ENVIRONMENT_BEHAVIOR_IDS) {
+for (const [id, schema] of Object.entries(DEFAULTS_SCHEMAS)) {
   environmentBehaviorRegistry.register({
     id,
-    validate: (input) =>
-      typeof input === "object" && input !== null
-        ? { ok: true, value: input as EnvironmentDefinition }
-        : { ok: false, issues: [{ message: "environment config must be an object." }] },
+    validate: (input) => validateConfig<EnvironmentDefinition["defaults"]>(schema, input),
     create: () => notWired(id, "Part 8 (Pickups & environment)"),
     ...(id === "environment.moving-platform" ? { debugGeometry: movingPlatformGeometry } : {}),
   });
