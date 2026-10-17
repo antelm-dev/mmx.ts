@@ -5,7 +5,13 @@ import { CATEGORY_LABELS, allDefinitions, type GameObjectDefinition } from "@mmx
 import { editor, projectSession, useProjectSession } from "../app/useEditor.js";
 import { focusPanel } from "../app/dock.js";
 import { DEFINITIONS_SCOPE } from "../app/editorKeyboard.js";
-import { addObject, freeObjectId, newObjectBases } from "../core/objectDefinitions.js";
+import {
+  BEHAVIOUR_DESCRIPTIONS,
+  addObject,
+  chosenBase,
+  freeObjectId,
+  newObjectBases,
+} from "../core/objectDefinitions.js";
 import { useUiStore } from "../store/uiStore.js";
 import { ActionButton } from "../ui/editor/action-button.js";
 import { Checkbox } from "../ui/editor/checkbox.js";
@@ -18,9 +24,10 @@ import { SpritePreview } from "./SpritePreview.js";
 const Note = chakra("div", { base: { color: "studio.fgTertiary", fontSize: "11px" } });
 
 /**
- * New object… (C-NEWOBJ): pick a category, then the built-in object it is based
- * on, then its name and values. An enemy goes on to the enemy form (data/game.json);
- * anything else becomes a project object. Either is picked for placing.
+ * New object… (C-NEWOBJ): pick a category, then its behaviour (the built-in object
+ * it is based on, skipped when there is only one), then its name and values. An
+ * enemy goes on to the enemy form (data/game.json); anything else becomes a project
+ * object. Either is picked for placing.
  */
 export function NewObjectDialog() {
   const request = useUiStore((s) => s.newObject);
@@ -75,7 +82,9 @@ function NewObjectSteps({
   );
   const [baseId, setBaseId] = useState<string>();
   const bases = offered.find((c) => c.category === category)?.bases ?? [];
-  const base = bases.find((d) => d.id === baseId);
+  const base = chosenBase(bases, baseId);
+  // With a single behaviour, Back from the values goes straight to the categories.
+  const back = () => (bases.length === 1 ? setCategory(undefined) : setBaseId(undefined));
   const categoryLabel = category && (CATEGORY_LABELS[category] ?? category);
 
   return (
@@ -86,8 +95,10 @@ function NewObjectSteps({
           {!category
             ? "Choose a category."
             : !base
-              ? `${categoryLabel}: choose the built-in object it is based on.`
-              : `${categoryLabel} · based on ${base.name}`}
+              ? `${categoryLabel} · Behaviour`
+              : base.category === "enemy"
+                ? `${categoryLabel} · based on ${base.name}`
+                : `${categoryLabel} · ${base.name}`}
         </Dialog.Description>
       </Dialog.Header>
       {!category ? (
@@ -106,11 +117,17 @@ function NewObjectSteps({
         </>
       ) : !base ? (
         <>
-          <Dialog.Body px="2" role="group" aria-label="Based on">
+          <Dialog.Body px="2" role="group" aria-label="Behaviour">
             {bases.map((d, i) => (
               <ListRow key={d.id} autoFocus={i === 0} onClick={() => setBaseId(d.id)}>
                 <SpritePreview definitionId={d.id} size={28} fallbackColor={d.editor.color} />
-                <chakra.span flex="1">{d.name}</chakra.span>
+                <chakra.span flex="1" display="flex" flexDirection="column">
+                  {d.name}
+                  {/* A span: a button holds phrasing content only. */}
+                  <chakra.span color="studio.fgTertiary" fontSize="11px">
+                    {BEHAVIOUR_DESCRIPTIONS[d.id]}
+                  </chakra.span>
+                </chakra.span>
                 <ChevronRight size={14} />
               </ListRow>
             ))}
@@ -122,13 +139,9 @@ function NewObjectSteps({
         </>
       ) : base.category === "enemy" ? (
         // A built-in enemy definition's Kind is its enemy id.
-        <NewEnemyForm
-          base={String(base.fields.Kind)}
-          onBack={() => setBaseId(undefined)}
-          onClose={onClose}
-        />
+        <NewEnemyForm base={String(base.fields.Kind)} onBack={back} onClose={onClose} />
       ) : (
-        <NewProjectObjectForm base={base} onBack={() => setBaseId(undefined)} onClose={onClose} />
+        <NewProjectObjectForm base={base} onBack={back} onClose={onClose} />
       )}
     </>
   );

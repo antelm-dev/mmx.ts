@@ -44,7 +44,7 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
   const newObject = page.getByRole("button", { name: "New object…" });
   const dialog = page.getByRole("dialog", { name: "New object" });
   const categories = dialog.getByRole("group", { name: "Categories" }).getByRole("button");
-  const bases = dialog.getByRole("group", { name: "Based on" }).getByRole("button");
+  const bases = dialog.getByRole("group", { name: "Behaviour" }).getByRole("button");
   const row = (name: string) => page.getByTitle(`Place ${name}`, { exact: true });
   const box = (await canvas.boundingBox())!;
   let placed = 0;
@@ -75,11 +75,13 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
   await expect(categories.first()).toBeFocused();
   await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
+  // The Behaviour step: each choice with what it does.
+  await expect(dialog.getByText("Pickups · Behaviour")).toBeVisible();
   await expect(bases).toHaveText([
-    "Life Capsule (Small)",
-    "Life Capsule (Large)",
-    "Weapon Capsule (Small)",
-    "Weapon Capsule (Large)",
+    /^Life Capsule \(Small\)Restores a little life/,
+    /^Life Capsule \(Large\)/,
+    /^Weapon Capsule \(Small\)/,
+    /^Weapon Capsule \(Large\)/,
   ]);
   await expect(bases.first()).toBeFocused();
   await page.keyboard.press("Enter");
@@ -104,12 +106,25 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
   await dialog.getByText("Editable per instance").first().click();
   await createAndPlace("Fast Platform");
 
-  // Back returns to the previous step.
+  // With several behaviours, Back returns to the previous step.
   await newObject.click();
-  await categories.filter({ hasText: "Conveyors" }).click();
+  await categories.filter({ hasText: "Platforms" }).click();
+  await bases.filter({ hasText: "Falling Platform" }).click();
   await dialog.getByRole("button", { name: "Back" }).click();
+  await expect(bases).toHaveCount(2);
+  await expect(bases.first()).toBeFocused();
+  await dialog.getByRole("button", { name: "Back" }).click();
+  await expect(categories.first()).toBeFocused();
+
+  // A category with a single behaviour skips that step, and Back from its values
+  // returns to the categories.
   await categories.filter({ hasText: "Conveyors" }).click();
-  await bases.filter({ hasText: "Conveyor" }).click();
+  await expect(bases).toHaveCount(0);
+  await expect(dialog.getByText("Conveyors · Conveyor")).toBeVisible();
+  await expect(dialog.getByLabel("Name")).toBeFocused();
+  await dialog.getByRole("button", { name: "Back" }).click();
+  await expect(categories.first()).toBeFocused();
+  await categories.filter({ hasText: "Conveyors" }).click();
   await dialog.getByLabel("Name").fill("Slow Belt");
   await dialog.getByLabel("Speed", { exact: true }).fill("20");
   await dialog.getByLabel("Speed", { exact: true }).press("Enter");
@@ -117,19 +132,17 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
 
   await newObject.click();
   await categories.filter({ hasText: "Hazards" }).click();
-  await bases.filter({ hasText: "Hazard" }).click();
+  await expect(dialog.getByText("Hazards · Hazard")).toBeVisible();
   await dialog.getByLabel("Name").fill("Spikes");
   await createAndPlace("Spikes");
 
   await newObject.click();
   await categories.filter({ hasText: "Slopes" }).click();
-  await bases.filter({ hasText: "Slope" }).click();
   await dialog.getByLabel("Name").fill("Ramp");
   await createAndPlace("Ramp");
 
   await newObject.click();
   await categories.filter({ hasText: "Camera Zones" }).click();
-  await bases.filter({ hasText: "Camera Zone" }).click();
   await dialog.getByLabel("Name").fill("Lock Y");
   await dialog.getByText("Bind X", { exact: true }).click();
   await createAndPlace("Lock Y");
@@ -137,7 +150,6 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
   // Ctrl+Z right after creating one removes it from the palette.
   await newObject.click();
   await categories.filter({ hasText: "Hazards" }).click();
-  await bases.filter({ hasText: "Hazard" }).click();
   await dialog.getByLabel("Name").fill("Doomed");
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);

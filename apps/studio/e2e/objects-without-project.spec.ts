@@ -87,7 +87,7 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     const newObject = page.getByRole("button", { name: "New object…" });
     const dialog = page.getByRole("dialog", { name: "New object" });
     const categories = dialog.getByRole("group", { name: "Categories" }).getByRole("button");
-    const bases = dialog.getByRole("group", { name: "Based on" }).getByRole("button");
+    const bases = dialog.getByRole("group", { name: "Behaviour" }).getByRole("button");
     const canvas = page.locator("#viewport-canvas");
     const levelTab = page.getByRole("tab", { name: "Level", exact: true });
     const place = async (name: string, dx: number) => {
