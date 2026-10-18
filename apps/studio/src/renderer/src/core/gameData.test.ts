@@ -97,7 +97,13 @@ describe("project game data", () => {
     expect(projectGameData(MMX_OVERLAY).warnings).toEqual([]);
     // Without data/game.json (a `packs: []` project) the core has no player: Problems says so.
     expect(projectGameData(undefined).warnings).toEqual([
-      expect.objectContaining({ code: "game-data.player.missing", severity: "warning" }),
+      {
+        severity: "warning",
+        code: "game-data.player.missing",
+        path: "/project.json",
+        message:
+          "no pack provides loadout 'player.x' (install the MMX packs or add data/game.json)",
+      },
     ]);
     // With no project open, Play still has X and Zero: the core with their packs.
     expect([...noProjectGameData().compiled.loadouts.keys()]).toEqual(["player.x", "player.zero"]);

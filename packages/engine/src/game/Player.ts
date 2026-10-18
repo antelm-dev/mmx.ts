@@ -68,8 +68,9 @@ export class Player extends Character {
   /**
    * Start the beam-down entrance. Called once, by {@link Scene}'s constructor,
    * after the camera has already snapped to the spawn point — Intro is event-
-   * started (see Intro.ts) rather than polled, so a bare `new Player()` (every
-   * engine test, the headless sim) never runs it unless this is called.
+   * started (see Intro.ts) rather than polled, so a player built directly with
+   * `new Player(...)` from a pack's loadout (most engine tests, the headless sim)
+   * never runs it unless this is called.
    */
   beginIntro(): void {
     const intro = this.get_ability("Intro");

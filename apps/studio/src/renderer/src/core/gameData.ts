@@ -46,10 +46,26 @@ function warningsOf(diagnostics: readonly GameDataDiagnostic[]): ProjectIssue[] 
   );
 }
 
-/** A project without data/game.json (`packs: []`): the core, whose warnings say it has no player. */
+/**
+ * A project without data/game.json (`packs: []`): the core, whose only warning is that no
+ * pack provides the spawn's loadout. Reported at project.json, since data/game.json is absent.
+ */
 const CORE_GAME_DATA: ProjectGameData = {
   ...DEFAULT_GAME_DATA,
-  warnings: warningsOf(compileGameData(GAME_DATA, buildCompileRegistries()).diagnostics),
+  warnings: compileGameData(GAME_DATA, buildCompileRegistries()).diagnostics.map(
+    (d): ProjectIssue => {
+      const source = d.definitionId ? GAME_DATA.prefabs[d.definitionId]?.source : undefined;
+      return {
+        severity: "warning",
+        code: `game-data.${d.code}`,
+        path: "/project.json",
+        message:
+          d.code === "player.missing" && source?.kind === "loadout"
+            ? `no pack provides loadout '${source.ref}' (install the MMX packs or add data/game.json)`
+            : d.message,
+      };
+    },
+  ),
 };
 // The fallback is the engine's core: the project's objects (its pack's too) all go missing.
 const UNAVAILABLE = " — the objects of data/game.json are unavailable until it is fixed";
