@@ -14,7 +14,7 @@ export const environments = {
   hazard: {
     id: "hazard",
     behavior: "environment.hazard",
-    defaults: { lethal: true },
+    defaults: { lethal: true, damage: 4 },
   },
   "camera-zone": {
     id: "camera-zone",

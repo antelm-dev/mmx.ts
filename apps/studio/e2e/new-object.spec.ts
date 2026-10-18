@@ -192,7 +192,12 @@ test("AC-NEWOBJ: New object… makes an object of every category, picked for pla
       values: { BindX: false, BindY: true },
     },
     { id: "obj.conveyor.1", name: "Slow Belt", base: "conveyor", values: { Speed: 20 } },
-    { id: "obj.hazard.1", name: "Spikes", base: "hazard" },
+    {
+      id: "obj.hazard.1",
+      name: "Spikes",
+      base: "hazard",
+      values: { Lethal: true, Damage: 4 },
+    },
     { id: "obj.pickup.life.small.1", name: "Big Life", base: "pickup.life.small" },
     {
       id: "obj.platform.moving.1",

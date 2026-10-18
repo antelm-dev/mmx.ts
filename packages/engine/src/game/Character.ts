@@ -350,6 +350,7 @@ export class Character extends AbilityUser {
   // ---------------------------------------------------------------------------
   tick(dt: number): void {
     if (this.invulnerability > 0) this.invulnerability -= dt;
+    this.tickRegen();
     this.clockMs += dt * 1000;
 
     // Character.check_for_dash — publish a dash press for DashJump timing.

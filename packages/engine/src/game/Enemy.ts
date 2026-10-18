@@ -68,6 +68,8 @@ export class Enemy extends AbilityUser {
    * only feedback that a hit registered on an enemy that survives it.
    */
   flash = 0;
+  /** Ticks left during which the enemy cannot be hurt (its definition's invulnerabilityFrames). */
+  iframes = 0;
 
   /** Shots this enemy fired (see Shoot); the stage tests them against the player. */
   projectiles: Projectile[] = [];
@@ -90,6 +92,8 @@ export class Enemy extends AbilityUser {
     this.hh = this.stats.hh;
     this.max_health = this.stats.max_health;
     this.current_health = this.stats.max_health;
+    this.armor = def.actor.armor ?? 0;
+    this.regen_every_frames = def.actor.regenEveryFrames ?? 0;
 
     // Enemy.gd:set_direction_on_ready — spawn facing the scene's spawn_direction.
     this.set_direction(facing);
@@ -199,7 +203,7 @@ export class Enemy extends AbilityUser {
    * guard with a charged shot.
    */
   can_be_damaged(): boolean {
-    if (!this.has_health() || this.is_invulnerable()) return false;
+    if (!this.has_health() || this.is_invulnerable() || this.iframes > 0) return false;
     return !this.has_shield();
   }
 
@@ -211,6 +215,7 @@ export class Enemy extends AbilityUser {
   override damage(value: number): void {
     if (!this.can_be_damaged()) return;
     this.current_health -= value;
+    this.iframes = this.def.invulnerabilityFrames ?? 0;
     this.flash = ENEMY_FLASH_TIME;
     this.events.emit("damage", value);
     if (this.current_health <= 0) {
@@ -269,6 +274,8 @@ export class Enemy extends AbilityUser {
   tick(dt: number): void {
     if (this.invulnerability > 0) this.invulnerability -= dt;
     if (this.flash > 0) this.flash -= dt;
+    if (this.iframes > 0) this.iframes--;
+    this.tickRegen();
     this.clockMs += dt * 1000;
 
     this.ai.step(dt);

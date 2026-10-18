@@ -40,7 +40,21 @@
       "resizable": true,
       "color": "#ef4444"
     },
-    "properties": []
+    "properties": [
+      {
+        "key": "Lethal",
+        "label": "Lethal",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "Damage",
+        "label": "Damage",
+        "type": "number",
+        "default": 4,
+        "min": 1
+      }
+    ]
   },
   {
     "id": "slope",

@@ -16,7 +16,7 @@
  */
 
 import { COMPILED_GAME_DATA } from "../data/index.js";
-import type { CompiledEnemy, ProjectileDefinition } from "../data/types.js";
+import type { CompiledEnemy, Knockback, ProjectileDefinition } from "../data/types.js";
 
 // Fixed physics tick — Godot _physics_process default is 60 Hz. A true invariant:
 // changing it redefines what one recorded tick means. Stays in core.
@@ -62,6 +62,8 @@ export const SHOT_POSITION_ADJUST: Readonly<Record<string, { x: number; y: numbe
  * A weapon's shots are indexed by charge level (a pack's `weapons`, e.g. the X pack's buster).
  */
 export interface ShotStats {
+  /** Projectile definition id — the attack id its hits are logged under. */
+  id: string;
   /** Clip name in shot_anims.json. */
   kind: string;
   damage: number;
@@ -85,6 +87,9 @@ export interface ShotStats {
   /** Frames in the clip loop. Defaults to {@link SHOT_FRAME_COUNT} (the buster's
    *  8-frame spin) when unset — Dark Arrow overrides this to 1, a static sprite. */
   frameCount?: number;
+  /** The definition's element tag and knockback, when it has them. */
+  element?: string;
+  knockback?: Knockback;
 }
 
 /** Every buster projectile sheet is an 8-frame loop. */
@@ -137,6 +142,7 @@ export const enum ChargeTier {
 /** The {@link ShotStats} a projectile definition fires with. */
 export function shotStats(p: ProjectileDefinition): ShotStats {
   const stats: ShotStats = {
+    id: p.id,
     kind: p.animation.kind,
     damage: p.damage,
     speed: p.speed,
@@ -152,6 +158,8 @@ export function shotStats(p: ProjectileDefinition): ShotStats {
     frameMs: p.animation.frameMs,
   };
   if (p.animation.frameCount !== undefined) stats.frameCount = p.animation.frameCount;
+  if (p.element !== undefined) stats.element = p.element;
+  if (p.knockback !== undefined) stats.knockback = p.knockback;
   return stats;
 }
 

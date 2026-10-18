@@ -6,9 +6,11 @@ import { Input } from "../src/core/Input.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import { MovingPlatform } from "../src/game/Environment.js";
-import { loadLevel } from "../src/game/level.js";
+import { compileLevel, loadLevel } from "../src/game/level.js";
+import { compileGameData } from "../src/data/index.js";
+import { buildCompileRegistries } from "../src/behaviors/index.js";
 import { stage2 } from "./fixtures/levels.js";
-import { MMX_COMPILED, createPlayer } from "./support/mmx.js";
+import { MMX_COMPILED, MMX_GAME_DATA, createPlayer } from "./support/mmx.js";
 
 test("the mechanics demo is larger than the original and authors every environment type", () => {
   const level = loadLevel(stage2, MMX_COMPILED);
@@ -20,18 +22,129 @@ test("the mechanics demo is larger than the original and authors every environme
   assert.ok(level.platforms.length >= 3);
 });
 
-test("hazards bypass damage protection and start death immediately", () => {
+// Spikes respect i-frames on purpose (they used to kill through them).
+test("a lethal hazard bypasses death protection and starts death at once, logged as killed", () => {
   const world = World.fromRows(["....", "...."]);
   const player = createPlayer(world, 16, 16, new Input());
   const stage = new Stage(world, player, {
     hazards: [{ id: "spikes", x: 8, y: 8, w: 16, h: 16 }],
   });
+  const health = player.current_health;
 
   stage.tick(DT);
 
   assert.equal(player.current_health, 0);
   assert.equal(player.is_executing("Death"), true);
   assert.equal(player.sprite_visible, false);
+  assert.deepEqual(
+    stage.damageEvents.map(({ attack, source, dealt, result }) => ({
+      attack,
+      source,
+      dealt,
+      result,
+    })),
+    [
+      {
+        attack: "hazard",
+        source: { kind: "hazard", runtimeId: "spikes" },
+        dealt: health,
+        result: "killed",
+      },
+    ],
+  );
+});
+
+test("a lethal hazard does nothing during invulnerability, then kills once it ends", () => {
+  const world = World.fromRows(["....", "...."]);
+  const player = createPlayer(world, 16, 16, new Input());
+  const stage = new Stage(world, player, {
+    hazards: [{ id: "spikes", x: 8, y: 8, w: 16, h: 16 }],
+  });
+  player.invulnerability = 3.5 * DT; // three more ticks
+
+  for (let i = 0; i < 3; i++) {
+    stage.tick(DT);
+    player.pos.x = player.pos.y = 16;
+    assert.ok(player.has_health(), `alive on tick ${i}`);
+    assert.equal(stage.damageEvents.length, 0);
+  }
+  stage.tick(DT);
+  assert.equal(player.current_health, 0);
+  assert.equal(player.is_executing("Death"), true);
+});
+
+test("a non-lethal hazard deals its damage through the chain and knocks back away from it", () => {
+  const world = World.fromRows(["........", "........", "........", "########"]);
+  const player = createPlayer(world, 40, 34, new Input());
+  for (let i = 0; i < 5; i++) player.tick(DT); // settle on the floor
+  const stage = new Stage(world, player, {
+    hazards: [{ id: "spikes", x: 30, y: 32, w: 8, h: 16, lethal: false, damage: 4 }],
+  });
+  const full = player.current_health;
+
+  stage.tick(DT);
+
+  assert.equal(player.current_health, full - 4);
+  assert.ok(player.is_executing("Damage"));
+  assert.equal(stage.damageEvents[0]?.result, "hit");
+  assert.equal(stage.damageEvents[0]?.dealt, 4);
+  stage.tick(DT);
+  assert.ok(player.get_horizontal_speed() > 0, "pushed right, away from a hazard on its left");
+});
+
+test("level hazards read Lethal and Damage, falling back to the hazard environment", () => {
+  const hazards = (fields: Record<string, unknown>) => {
+    const data = structuredClone(stage2);
+    const index = data.entities.findIndex((e) => e.id === "Hazard");
+    data.entities[index] = { ...data.entities[index]!, fields };
+    const hazard = data.entities[index]!;
+    return loadLevel(data, MMX_COMPILED).hazards.find((h) => h.id === hazard.iid);
+  };
+  assert.deepEqual(
+    [hazards({}), hazards({ Lethal: false, Damage: 7 })].map((h) => [h?.lethal, h?.damage]),
+    [
+      [true, 4],
+      [false, 7],
+    ],
+  );
+});
+
+test("a lethal hazard wins over a damaging one it overlaps, whatever their order", () => {
+  const world = World.fromRows(["....", "...."]);
+  const player = createPlayer(world, 16, 16, new Input());
+  const stage = new Stage(world, player, {
+    hazards: [
+      { id: "soft", x: 8, y: 8, w: 16, h: 16, lethal: false, damage: 4 },
+      { id: "spikes", x: 8, y: 8, w: 16, h: 16 },
+    ],
+  });
+
+  stage.tick(DT);
+
+  assert.equal(player.current_health, 0);
+  assert.equal(stage.damageEvents[0]?.source.runtimeId, "spikes");
+  assert.equal(stage.damageEvents[0]?.result, "killed");
+});
+
+test("a hazard's Damage must be at least 1, in a level and in its environment default", () => {
+  const data = structuredClone(stage2);
+  const index = data.entities.findIndex((e) => e.id === "Hazard");
+  data.entities[index] = { ...data.entities[index]!, fields: { Lethal: false, Damage: 0 } };
+  const level = compileLevel(data, MMX_COMPILED);
+  assert.equal(level.ok, false);
+  assert.deepEqual(
+    level.diagnostics.map((d) => [d.code, d.field]),
+    [["field.range", "Damage"]],
+  );
+
+  const game = structuredClone(MMX_GAME_DATA);
+  game.environments.hazard!.defaults.damage = 0;
+  const compiled = compileGameData(game, buildCompileRegistries());
+  assert.equal(compiled.ok, false);
+  assert.deepEqual(
+    compiled.diagnostics.map((d) => [d.code, d.fieldPath]),
+    [["config.invalid", "environments.hazard.defaults.damage"]],
+  );
 });
 
 test("a grounded conveyor adds its signed speed and stops outside the strip", () => {

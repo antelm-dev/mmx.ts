@@ -35,7 +35,7 @@ for (const name of ["mmx-starter", "mmx-demo"]) {
     const project = await requireProject(join(templates, name));
     assert.deepEqual(project.manifest.packs, PACKS);
     assert.ok(project.compiledGameData.loadouts.has("player.x"));
-    assert.equal(project.compiledGameData.hash, "36e5bb6d8c3547a6");
+    assert.equal(project.compiledGameData.hash, "9d8a9efb04583a0e");
   });
 }
 

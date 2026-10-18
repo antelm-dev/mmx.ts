@@ -232,5 +232,5 @@ test("compileGameData validates pickup sheets and each environment's defaults", 
 // The engine's core alone (no MMX object or player since the packs left the engine);
 // core + packs is pinned in pack-mmx-starter and pack-mmx-players.
 test("the engine's core game data hash is pinned", () => {
-  assert.equal(COMPILED_GAME_DATA.hash, "a188bb2adc199c77");
+  assert.equal(COMPILED_GAME_DATA.hash, "a6585ecdf7af3d2b");
 });

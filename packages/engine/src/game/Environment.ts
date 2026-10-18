@@ -9,8 +9,17 @@ export interface EnvironmentRect {
   h: number;
 }
 
-/** A lethal volume. Touching one starts the player's death sequence immediately. */
-export interface Hazard extends EnvironmentRect {}
+/**
+ * A spike volume. Lethal (the default) kills the player outright on touch; with
+ * `lethal: false` it deals `damage` through the damage chain instead. Either
+ * way it does nothing while the player is invulnerable.
+ */
+export interface Hazard extends EnvironmentRect {
+  /** Default true. */
+  lethal?: boolean;
+  /** Damage of a non-lethal hazard. Default 4. */
+  damage?: number;
+}
 
 /** A non-solid strip that adds horizontal speed while the player stands on it. */
 export interface Conveyor extends EnvironmentRect {
