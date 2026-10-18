@@ -1,4 +1,6 @@
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
+import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
+import zeroPack from "@mmx/pack-mmx-player-zero/data/game.json" with { type: "json" };
 import { Tile, type LevelData } from "@mmx/engine";
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
 import {
@@ -9,11 +11,16 @@ import {
   type GameDataOverlay,
 } from "@mmx/engine/data";
 
-/** The engine's data with the MMX Starter pack over it: what testLevel's Metool needs. */
+/** The engine's data with the MMX Starter, X and Zero packs over it: testLevel's Metool and player. */
 export const MMX_COMPILED: CompiledGameData = (() => {
-  const merged = mergeGameData(GAME_DATA, pack as GameDataOverlay);
-  const compiled = merged.ok && compileGameData(merged.value, buildCompileRegistries());
-  if (!compiled || !compiled.ok) throw new Error("the MMX Starter pack failed to compile");
+  let data = GAME_DATA;
+  for (const overlay of [pack, xPack, zeroPack]) {
+    const merged = mergeGameData(data, overlay as GameDataOverlay);
+    if (!merged.ok) throw new Error("an MMX pack failed to merge");
+    data = merged.value;
+  }
+  const compiled = compileGameData(data, buildCompileRegistries());
+  if (!compiled.ok) throw new Error("the MMX packs failed to compile");
   return compiled.value;
 })();
 

@@ -11,10 +11,10 @@ import {
 } from "./support/player.js";
 import { Actor } from "../src/game/Actor.js";
 import type { AnimData } from "@mmx/contracts/animation";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { makeMetool } from "./support/mmx.js";
+import { makeMetool, createPlayer } from "./support/mmx.js";
 
 const animData = JSON.parse(
   readFileSync(new URL("./fixtures/x_anims.json", import.meta.url), "utf8"),
@@ -29,7 +29,7 @@ function room(): World {
 function makePlayer() {
   const world = room();
   const input = new Input();
-  const player = new Player(world, 10 * 16, 10 * 16, input);
+  const player = createPlayer(world, 10 * 16, 10 * 16, input);
   player.loadAnimations(animData);
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { world, input, player };
@@ -102,7 +102,7 @@ test("Death ends after the restart delay and hands off with a death event", () =
 test("a dead player cannot be hurt further by contact", () => {
   const world = room();
   const input = new Input();
-  const player = new Player(world, 20 * 16, 10 * 16 - 14, input);
+  const player = createPlayer(world, 20 * 16, 10 * 16 - 14, input);
   player.loadAnimations(animData);
   const stage = new Stage(world, player);
   const enemy = new Actor(world, player.pos.x - 5, player.pos.y);

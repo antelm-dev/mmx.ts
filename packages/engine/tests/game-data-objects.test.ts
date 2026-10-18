@@ -14,7 +14,7 @@ import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { compileLevel } from "../src/game/level.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
-import { MMX_COMPILED, MMX_GAME_DATA } from "./support/mmx.js";
+import { MMX_COMPILED, MMX_GAME_DATA, X_PACK, ZERO_PACK, withPacks } from "./support/mmx.js";
 
 /**
  * The runtime reads every game object from the scene's game data: the engine
@@ -36,9 +36,9 @@ function compile(data: GameData): CompiledGameData {
   return result.value;
 }
 
-/** The built-in data without the pack objects, nor the prefabs that place them. */
+/** Core + the player packs, without the pack objects nor the prefabs that place them. */
 function withoutPackObjects(): CompiledGameData {
-  const data: GameData = structuredClone(GAME_DATA);
+  const data: GameData = withPacks(structuredClone(GAME_DATA), X_PACK, ZERO_PACK);
   const removed = new Set<string>();
   for (const [category, ids] of Object.entries(PACK_OBJECTS)) {
     for (const id of ids) {

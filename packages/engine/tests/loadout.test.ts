@@ -4,12 +4,12 @@ import assert from "node:assert/strict";
 import { Input } from "../src/core/Input.js";
 import { DASH_SPEED } from "./support/player.js";
 import { World } from "../src/game/World.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Dash } from "../src/game/abilities/Dash.js";
 import { Jump } from "../src/game/abilities/Jump.js";
 import { Charge } from "../src/game/abilities/Charge.js";
-import { COMPILED_GAME_DATA } from "../src/data/index.js";
 import { abilityRegistry, type RuntimeContext } from "../src/behaviors/index.js";
+import { MMX_COMPILED, createPlayer } from "./support/mmx.js";
 
 function room(): World {
   const rows: string[] = [];
@@ -19,14 +19,14 @@ function room(): World {
 }
 
 function makePlayer(): Player {
-  return new Player(room(), 200, 100, new Input());
+  return createPlayer(room(), 200, 100, new Input());
 }
 
 // --- composition comes from the compiled loadout ----------------------------
 
 test("the player's moveset is composed from the compiled loadout", () => {
   const player = makePlayer();
-  const loadout = COMPILED_GAME_DATA.loadouts.get("player.x");
+  const loadout = MMX_COMPILED.loadouts.get("player.x");
   assert.ok(loadout);
   assert.equal(player.moveset.length, loadout.abilities.length);
   loadout.abilities.forEach((compiled, i) => {
@@ -66,7 +66,7 @@ test("the compiled X loadout still produces the exact Player.tscn ability order"
 
 test("the initial weapon matches the loadout", () => {
   const player = makePlayer();
-  const loadout = COMPILED_GAME_DATA.loadouts.get("player.x");
+  const loadout = MMX_COMPILED.loadouts.get("player.x");
   assert.equal(player.activeWeapon, loadout?.initialWeapon);
 });
 
@@ -105,7 +105,7 @@ test("Charge honours configured thresholds", () => {
 
 test("the ability registry resolves player behaviours to real instances", () => {
   const player = makePlayer();
-  const ctx: RuntimeContext = { gameData: COMPILED_GAME_DATA };
+  const ctx: RuntimeContext = { gameData: MMX_COMPILED };
   const dash = abilityRegistry
     .get("player.dash")
     .create(player, { speed: 200, duration: 0.55, leeway: 0.1 }, ctx);

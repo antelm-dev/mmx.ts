@@ -61,6 +61,8 @@ export const MMX_PLAYER_ZERO: PackContent = {
   bindings: {},
 };
 
+const PLAYER_PACKS = [MMX_PLAYER_X, MMX_PLAYER_ZERO];
+
 type Json = Record<string, unknown>;
 
 const isRecord = (value: unknown): value is Json =>
@@ -77,6 +79,13 @@ function same(a: unknown, b: unknown): boolean {
     keys.every((key) => key in b && same((a as Json)[key], (b as Json)[key]))
   );
 }
+
+/** Whether `own` is an object whose `categories`, when present, are objects of records. */
+const hasRecords = (own: unknown, categories: readonly string[]): own is Json =>
+  isRecord(own) && categories.every((key) => own[key] === undefined || isRecord(own[key]));
+
+const categoriesOf = (pack: PackContent): string[] =>
+  Object.keys(pack.data).filter((key) => key !== "schemaVersion");
 
 export type MergePackInput<M> = {
   manifest: M;
@@ -119,8 +128,8 @@ export function mergePack<M extends { packs?: readonly PackRef[]; assets?: reado
   const added: string[] = [];
   const skipped: string[] = [];
   const own = (overlay ?? {}) as Json;
-  const categories = Object.keys(pack.data).filter((key) => key !== "schemaVersion");
-  if (!isRecord(own) || categories.some((key) => own[key] !== undefined && !isRecord(own[key]))) {
+  const categories = categoriesOf(pack);
+  if (!hasRecords(own, categories)) {
     skipped.push("data/game.json: not an object of records, left for the merge to report");
     return { manifest, overlay, bindingsFile, added, skipped };
   }
@@ -279,24 +288,44 @@ export type WithStarterPack<M> = {
 };
 
 /**
- * Contract C-MIGRATE: a project whose manifest has no `packs` predates packs, so it gets the MMX
- * Starter's data ({@link mergePack}: the records its `data/game.json` lacks, never keys inside a
- * record it has, so a field removed on purpose stays removed) and
- * `packs: [MMX Starter]`. Art and bindings come with the template or File → Install / update MMX
- * Starter pack…. A manifest with `packs` (even `[]`) is returned as is, and so is an overlay that
- * is not an object of records, left for the merge to report so a fixed file still migrates.
+ * Contracts C-MIGRATE and C-MULTI: the packs a project lacks are added as data only
+ * ({@link mergePack}: the records its `data/game.json` lacks, never keys inside a record it has, so
+ * a field removed on purpose stays removed; a record it has always wins), with their `packs`
+ * markers. A manifest without `packs` predates packs and gets the MMX Starter, X and Zero; one
+ * with packs gets each player pack whose marker it lacks (none: X and Zero together). `packs: []`
+ * (base only), a project with both player packs, and a malformed `packs` are returned as is. So
+ * is an overlay that is not an object of records, left for the merge to report so a fixed file
+ * still migrates. Art and bindings come with the template or File → Install / update MMX Starter
+ * pack….
  */
 export function withStarterPack<M extends { packs?: readonly PackRef[] }>(
   manifest: M,
   overlay: GameDataOverlay | undefined,
 ): WithStarterPack<M> {
   const unchanged = { manifest, overlay, changed: false };
-  if (manifest.packs !== undefined) return unchanged;
-  const merged = mergePack(
+  const { packs } = manifest;
+  const missing =
+    packs === undefined
+      ? [MMX_STARTER, ...PLAYER_PACKS]
+      : Array.isArray(packs) && packs.length > 0 && packs.every(isRecord)
+        ? PLAYER_PACKS.filter((pack) => !packs.some((entry) => entry.id === pack.ref.id))
+        : [];
+  if (missing.length === 0 || !hasRecords(overlay ?? {}, missing.flatMap(categoriesOf))) {
+    return unchanged;
+  }
+  let next = { manifest, overlay };
+  for (const pack of missing) {
     // No assets are added, so whatever the manifest's are is never read.
-    { manifest: manifest as M & { assets?: readonly PackAsset[] }, overlay, fillKeys: false },
-    { ...MMX_STARTER, assets: [], bindings: {} },
-  );
-  if (merged.added.length === 0) return unchanged;
-  return { manifest: merged.manifest, overlay: merged.overlay, changed: true };
+    const merged = mergePack(
+      {
+        manifest: next.manifest as M & { assets?: readonly PackAsset[] },
+        overlay: next.overlay,
+        fillKeys: false,
+      },
+      { ...pack, assets: [], bindings: {} },
+    );
+    next = { manifest: merged.manifest, overlay: merged.overlay };
+  }
+  // Each pack's marker is new, so something always changed.
+  return { ...next, changed: true };
 }

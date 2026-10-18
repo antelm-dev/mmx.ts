@@ -38,6 +38,8 @@
     "@mmx/renderer-pixi": "workspace:*"
   },
   "devDependencies": {
+    "@mmx/pack-mmx-player-x": "workspace:*",
+    "@mmx/pack-mmx-player-zero": "workspace:*",
     "@mmx/pack-mmx-starter": "workspace:*",
     "@types/node": "^24.0.0",
     "tsx": "^4.7.0",

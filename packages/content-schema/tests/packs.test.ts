@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
+import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
+import zeroPack from "@mmx/pack-mmx-player-zero/data/game.json" with { type: "json" };
 import assetsJson from "@mmx/pack-mmx-starter/assets.json" with { type: "json" };
 import bindingsJson from "@mmx/pack-mmx-starter/bindings.json" with { type: "json" };
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
@@ -22,6 +24,24 @@ import {
 } from "../src/index.js";
 
 const STARTER = [{ id: "mmx-starter", version: 1 }];
+const X = { id: "mmx-player-x", version: 1 };
+const ZERO = { id: "mmx-player-zero", version: 1 };
+const PLAYERS = [X, ZERO];
+
+type Records = Record<string, Record<string, unknown>>;
+
+/** Asserts `overlay` holds every record of each of `packs`, value for value. */
+function assertHasRecords(overlay: GameDataOverlay | undefined, ...packs: object[]): void {
+  const own = overlay as unknown as Records;
+  for (const data of packs) {
+    for (const [category, records] of Object.entries(data)) {
+      if (category === "schemaVersion") continue;
+      for (const [id, record] of Object.entries(records as Records)) {
+        assert.deepEqual(own[category]?.[id], record, `${category}.${id}`);
+      }
+    }
+  }
+}
 
 function hashOf(overlay: GameDataOverlay | undefined): string {
   const merged = mergeGameData(GAME_DATA, overlay ?? {});
@@ -31,14 +51,23 @@ function hashOf(overlay: GameDataOverlay | undefined): string {
   return compiled.value.hash;
 }
 
-test("an old project (no packs, no data/game.json) gets the whole pack and the marker", () => {
+test("an old project (no packs, no data/game.json) gets Starter, X and Zero and their markers", () => {
   const manifest = { id: "old" };
   const result = withStarterPack(manifest, undefined);
   assert.equal(result.changed, true);
-  assert.deepEqual(result.manifest, { id: "old", packs: STARTER });
-  assert.deepEqual(result.overlay, pack);
+  assert.deepEqual(result.manifest, { id: "old", packs: [...STARTER, ...PLAYERS] });
+  assertHasRecords(result.overlay, pack, xPack, zeroPack);
+  // Starter's records first, then X's and Zero's, as the packs are listed.
+  assert.deepEqual(Object.keys(result.overlay?.actors ?? {}), [
+    ...Object.keys(pack.actors),
+    "player.x",
+    "player.zero",
+  ]);
   assert.deepEqual(manifest, { id: "old" }, "the input is not mutated");
   assert.deepEqual(MMX_STARTER_PACK, STARTER[0]);
+  assert.deepEqual([MMX_PLAYER_X.ref, MMX_PLAYER_ZERO.ref], PLAYERS);
+  assert.equal(MMX_PLAYER_X.data, xPack);
+  assert.equal(MMX_PLAYER_ZERO.data, zeroPack);
 });
 
 test("an old project keeps its records, overrides included, and gets only the missing ids", () => {
@@ -77,9 +106,30 @@ test("migration adds whole records only: a key removed from a record stays remov
   assert.deepEqual(overlay?.enemies?.bat, pack.enemies.bat, "missing records are still added");
 });
 
-test("a manifest with packs is never touched: [] stays base only, a migrated project stays as is", () => {
+test("each missing player pack is added, its marker after the project's", () => {
+  const own = structuredClone(pack) as GameDataOverlay;
+  for (const [packs, added] of [
+    [[...STARTER, X], [ZERO]],
+    [[ZERO], [X]],
+    [[{ ...X, version: 9 }, ...STARTER], [ZERO]],
+  ] as const) {
+    const manifest = { packs };
+    const result = withStarterPack(manifest, own);
+    assert.equal(result.changed, true);
+    assert.deepEqual(result.manifest.packs, [...packs, ...added]);
+    assert.equal(manifest.packs, packs, "the input is not mutated");
+    const data = added[0] === X ? xPack : zeroPack;
+    assertHasRecords(result.overlay, data);
+    const other = (added[0] === X ? zeroPack : xPack) as { loadouts: object };
+    for (const id of Object.keys(other.loadouts)) {
+      assert.equal(result.overlay?.loadouts?.[id], undefined, `${id}: its marker is there`);
+    }
+  }
+});
+
+test("packs: [] stays base only, and a project with both player packs gets nothing", () => {
   const own = { schemaVersion: 1, enemies: {} } as GameDataOverlay;
-  for (const packs of [[], STARTER]) {
+  for (const packs of [[], [...STARTER, X, ZERO], [ZERO, { ...X, version: 9 }]]) {
     const manifest = { packs };
     for (const overlay of [undefined, own]) {
       const result = withStarterPack(manifest, overlay);
@@ -90,12 +140,78 @@ test("a manifest with packs is never touched: [] stays base only, a migrated pro
   }
 });
 
+test("a project with packs but no player pack gets X and Zero, records and markers", () => {
+  const own = structuredClone(pack) as GameDataOverlay;
+  for (const packs of [STARTER, [{ id: "my-pack", version: 3 }]]) {
+    const manifest = { id: "p", packs };
+    const result = withStarterPack(manifest, own);
+    assert.equal(result.changed, true);
+    assert.deepEqual(result.manifest, { id: "p", packs: [...packs, ...PLAYERS] });
+    assert.equal(manifest.packs, packs, "the input is not mutated");
+    assertHasRecords(result.overlay, pack, xPack, zeroPack);
+  }
+  // Only the players: an empty Starter project stays without the Starter's records.
+  const empty = withStarterPack({ packs: STARTER }, undefined);
+  assert.deepEqual(empty.manifest.packs, [...STARTER, ...PLAYERS]);
+  assertHasRecords(empty.overlay, xPack, zeroPack);
+  assert.equal(empty.overlay?.enemies, undefined);
+});
+
+test("player records the project has win, keep their order, and get no missing key", () => {
+  const loadout = { ...xPack.loadouts["player.x"], weapons: ["buster"] };
+  const walk = { ...xPack.abilities["player.walk"] } as Record<string, unknown>;
+  delete walk.config;
+  const own = {
+    ...structuredClone(pack),
+    abilities: {
+      "my.dash": { ...xPack.abilities["player.dash"], id: "my.dash" },
+      "player.walk": walk,
+    },
+    loadouts: { "player.x": loadout },
+  } as unknown as GameDataOverlay;
+  const before = structuredClone(own);
+  const { overlay } = withStarterPack({ packs: STARTER }, own);
+  assert.deepEqual(own, before, "the input is not mutated");
+  assert.equal(overlay?.loadouts?.["player.x"], loadout, "the project's loadout, same object");
+  assert.equal(overlay?.abilities?.["player.walk"], walk, "no key filled");
+  assert.deepEqual(Object.keys(overlay?.abilities ?? {}).slice(0, 3), [
+    "my.dash",
+    "player.walk",
+    "player.idle",
+  ]);
+  assert.deepEqual(Object.keys(overlay?.loadouts ?? {}), ["player.x", "player.zero"]);
+  assert.equal(overlay?.enemies, own.enemies, "categories no player pack has: same object");
+});
+
+test("the migration is idempotent: a second run changes nothing", () => {
+  for (const manifest of [{}, { packs: STARTER }]) {
+    const first = withStarterPack(manifest, undefined);
+    const second = withStarterPack(first.manifest, first.overlay);
+    assert.equal(second.changed, false);
+    assert.equal(second.manifest, first.manifest);
+    assert.equal(second.overlay, first.overlay);
+  }
+});
+
 test("an overlay that is not an object of records is left unmigrated for the merge to report", () => {
-  for (const bad of [[], "x", { enemies: [] }, { prefabs: 3 }]) {
+  for (const bad of [[], "x", { enemies: [] }, { prefabs: 3 }, { loadouts: [] }]) {
     const result = withStarterPack({}, bad as unknown as GameDataOverlay);
     assert.equal(result.changed, false);
     assert.equal(result.overlay, bad);
     assert.equal(result.manifest.packs, undefined);
+  }
+  const players = { schemaVersion: 1, abilities: 3 } as unknown as GameDataOverlay;
+  const result = withStarterPack({ packs: STARTER }, players);
+  assert.equal(result.changed, false);
+  assert.equal(result.manifest.packs, STARTER);
+});
+
+test("a malformed packs is left for the parse to report", () => {
+  for (const packs of ["x", { id: "mmx-starter" }, null, [null], [...STARTER, "x"]]) {
+    const manifest = { packs } as unknown as { packs?: { id: string; version: number }[] };
+    const result = withStarterPack(manifest, undefined);
+    assert.equal(result.changed, false);
+    assert.equal(result.manifest, manifest);
   }
 });
 
@@ -103,15 +219,20 @@ test("a migrated project compiles to the former built-in hash, which the core al
   assert.notEqual(COMPILED_GAME_DATA.hash, "36e5bb6d8c3547a6");
   assert.equal(hashOf(withStarterPack({}, undefined).overlay), "36e5bb6d8c3547a6");
   assert.equal(hashOf(withStarterPack({}, { schemaVersion: 1 }).overlay), "36e5bb6d8c3547a6");
+  // A project made since packs: the Starter's records, then X and Zero added.
+  const starter = withStarterPack({ packs: STARTER }, structuredClone(pack) as GameDataOverlay);
+  assert.deepEqual(starter.manifest.packs, [...STARTER, ...PLAYERS]);
+  assert.equal(hashOf(starter.overlay), "36e5bb6d8c3547a6");
 });
 
 test("records added from the pack are copies: mutating a result leaves the next migration intact", () => {
-  const expected = structuredClone(pack);
+  const expected = structuredClone(withStarterPack({}, undefined).overlay);
   const first = withStarterPack({}, undefined).overlay as Record<
     string,
     Record<string, { id: string }>
   >;
   first.enemies!.metool!.id = "changed";
+  first.loadouts!["player.x"]!.id = "changed";
   delete first.pickups!["life.small"];
   assert.deepEqual(withStarterPack({}, undefined).overlay, expected);
 });

@@ -4,6 +4,7 @@ import {
   migrateDocument,
   withStarterPack,
   type LevelDocument,
+  type PackRef,
 } from "@mmx/content-schema";
 import {
   PROJECT_SCHEMA_VERSION,
@@ -62,7 +63,7 @@ export async function createProject(
   const levelPath = levelManifestPath(levelId);
   const levelDocument = { ...level, id: levelId, name: level.name || input.name };
 
-  // A new project carries the MMX Starter pack, as one made from the starter template does.
+  // A new project carries the MMX Starter, X and Zero packs (the template's art aside).
   const { manifest, overlay: gameData } = withStarterPack<ProjectDocument>(
     {
       schemaVersion: PROJECT_SCHEMA_VERSION,
@@ -136,6 +137,15 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
     }
   }
 
+  // Like migrateDocument for levels: the packs a project lacks (withStarterPack) are added in
+  // memory, not marked dirty; the next Save writes their records, then the `packs` markers. Before
+  // the parse, so `player.loadout` may name a loadout they add; never over a broken data/game.json.
+  if (issues.length === 0 && typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    const packed = withStarterPack(raw as { packs?: PackRef[] }, gameData);
+    raw = packed.manifest;
+    gameData = packed.overlay;
+  }
+
   const parsed = parseProject(raw, projectValidation(gameData));
   if (!parsed.ok || !parsed.project) {
     // A broken data/game.json may be why an overlay loadout reads as unknown: report both.
@@ -195,18 +205,7 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
     return fail(issues);
   }
 
-  // Like migrateDocument for levels: a project from before packs gets the MMX Starter records it
-  // lacks in memory, not marked dirty; the next Save writes them and the `packs` marker.
-  const packed = withStarterPack(parsed.project, gameData);
-  return succeed(
-    {
-      root: ".",
-      manifest: packed.manifest,
-      levels,
-      ...(packed.overlay ? { gameData: packed.overlay } : {}),
-    },
-    issues,
-  );
+  return succeed({ root: ".", manifest, levels, ...(gameData ? { gameData } : {}) }, issues);
 }
 
 export async function saveProject(

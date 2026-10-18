@@ -4,10 +4,10 @@ import assert from "node:assert/strict";
 import { DT, PICKUP_TICK_INTERVAL } from "../src/core/constants.js";
 import { SUB_WEAPON_MAX_AMMO } from "./support/player.js";
 import { Input } from "../src/core/Input.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { MMX_COMPILED, WEAPON_CAPSULE_STATS } from "./support/mmx.js";
+import { MMX_COMPILED, WEAPON_CAPSULE_STATS, createPlayer } from "./support/mmx.js";
 
 function room(): World {
   return World.fromRows(["....", "....", "...."]);
@@ -23,7 +23,7 @@ function room(): World {
  * reset back to the spawn point afterwards for exactly that reason.
  */
 function darkArrowPlayer(startingAmmo: number): Player {
-  const player = new Player(room(), 16, 16, new Input());
+  const player = createPlayer(room(), 16, 16, new Input());
   player.input.setDown("weapon_right", true);
   player.tick(DT);
   player.input.setDown("weapon_right", false);
@@ -133,7 +133,7 @@ test("the stage freezes while a Weapon Energy capsule refills ammo, then resumes
 
 test("collecting a Weapon Energy capsule with the buster equipped wastes it", () => {
   const world = room();
-  const player = new Player(world, 16, 16, new Input());
+  const player = createPlayer(world, 16, 16, new Input());
   assert.equal(player.activeWeapon, "buster");
   const stage = new Stage(
     world,
@@ -178,7 +178,7 @@ test("a Weapon Energy capsule falls under gravity and settles on the floor", () 
     "....................",
     "####################",
   ]);
-  const player = new Player(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
+  const player = createPlayer(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
   const stage = new Stage(
     world,
     player,

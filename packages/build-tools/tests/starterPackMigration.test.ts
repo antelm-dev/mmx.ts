@@ -16,6 +16,10 @@ const syntheticProject = path.join(
 /** The engine's hash while the MMX objects were built in: core + pack keeps it. */
 const BUILTIN_HASH = "36e5bb6d8c3547a6";
 const STARTER = [{ id: "mmx-starter", version: 1 }];
+const PLAYERS = [
+  { id: "mmx-player-x", version: 1 },
+  { id: "mmx-player-zero", version: 1 },
+];
 
 /** A copy of the synthetic fixture (no `packs`, no data/game.json), with `edit` applied. */
 async function oldProject(
@@ -40,12 +44,12 @@ async function snapshot(dir: string): Promise<Record<string, string>> {
   return files;
 }
 
-test("an old project gets the MMX Starter in memory, compiles to the built-in hash, and nothing is written", async () => {
+test("an old project gets the MMX Starter, X and Zero in memory, compiles to the built-in hash, and nothing is written", async () => {
   const dir = await oldProject();
   try {
     const before = await snapshot(dir);
     const project = await requireProject(dir);
-    assert.deepEqual(project.manifest.packs, STARTER);
+    assert.deepEqual(project.manifest.packs, [...STARTER, ...PLAYERS]);
     assert.equal(project.compiledGameData.hash, BUILTIN_HASH);
     const withPack = mergeGameData(GAME_DATA, pack as GameDataOverlay);
     assert.ok(withPack.ok);
@@ -67,7 +71,7 @@ test("an old project's own records are kept over the pack's", async () => {
   });
   try {
     const project = await requireProject(dir);
-    assert.deepEqual(project.manifest.packs, STARTER);
+    assert.deepEqual(project.manifest.packs, [...STARTER, ...PLAYERS]);
     assert.equal(project.gameData.enemies.metool?.touchDamage, 7);
     assert.deepEqual(project.gameData.enemies.bat, pack.enemies.bat);
     assert.notEqual(project.compiledGameData.hash, BUILTIN_HASH);
@@ -91,6 +95,26 @@ test("a project with packs: [] stays on the base data: the primitives only", asy
     ]);
     assert.deepEqual(project.gameData.enemies, {});
     assert.deepEqual(project.gameData.pickups, {});
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("a project with packs: [mmx-starter] gets X and Zero in memory, keeps the hash, and nothing is written", async () => {
+  const dir = await oldProject(async (root, manifest) => {
+    manifest.packs = STARTER;
+    manifest.player = { loadout: "player.zero" };
+    await fs.mkdir(path.join(root, "data"));
+    await fs.writeFile(path.join(root, "data/game.json"), JSON.stringify(pack));
+  });
+  try {
+    const before = await snapshot(dir);
+    const project = await requireProject(dir);
+    assert.deepEqual(project.manifest.packs, [...STARTER, ...PLAYERS]);
+    assert.equal(project.compiledGameData.hash, BUILTIN_HASH);
+    assert.ok(project.compiledGameData.loadouts.has("player.x"));
+    assert.ok(project.compiledGameData.loadouts.has("player.zero"));
+    assert.deepEqual(await snapshot(dir), before);
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

@@ -34,7 +34,7 @@ test.afterAll(async () => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a starter project carries the MMX packs and X's art; an old project gets the Starter pack on open and Save writes it", async () => {
+test("a starter project carries the MMX packs and X's art; an old project gets Starter, X and Zero on open and Save writes them", async () => {
   // The minimal fixture predates packs: no `packs`, no data/game.json.
   cpSync(fixtureRoot, oldRoot, { recursive: true });
   expect(readJson(oldRoot, "project.json").packs).toBeUndefined();
@@ -103,7 +103,9 @@ test("a starter project carries the MMX packs and X's art; an old project gets t
 
   await page.keyboard.press("Control+s");
   await expect(page.getByText("Project saved.").last()).toBeVisible();
-  expect(readJson(oldRoot, "project.json").packs).toEqual(STARTER);
-  expect(readJson(oldRoot, "data/game.json")).toEqual(pack);
+  expect(readJson(oldRoot, "project.json").packs).toEqual(PACKS);
+  const saved = readJson(oldRoot, "data/game.json");
+  expect(saved).toMatchObject(pack);
+  expect(Object.keys(saved.loadouts)).toEqual(["player.x", "player.zero"]);
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });

@@ -13,7 +13,7 @@ import {
 import type { LevelData } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { stage1, stage2 } from "./fixtures/levels.js";
-import { MMX_GAME_DATA, MMX_PACK as STARTER, compileStrict } from "./support/mmx.js";
+import { MMX_PACK as STARTER, compileStrict } from "./support/mmx.js";
 
 /**
  * The X and Zero packs are the player records still built into the engine: core
@@ -50,6 +50,9 @@ function withPacks(base: GameData, ...packs: Pack[]): GameData {
   }, base);
 }
 
+/** Core + Starter with the players still built in: what the packs must reproduce. */
+const BUILTINS = withPacks(structuredClone(GAME_DATA), STARTER as Pack);
+
 const assembled = (x: Pack = X): GameData =>
   withPacks(coreWithoutPlayers(), STARTER as Pack, x, ZERO);
 
@@ -74,7 +77,7 @@ test("the X and Zero packs share no id", () => {
 });
 
 test("core without the players + Starter + X + Zero is core + Starter", () => {
-  assert.deepStrictEqual(assembled(), MMX_GAME_DATA);
+  assert.deepStrictEqual(assembled(), BUILTINS);
 });
 
 test("core without the players + Starter + X + Zero compiles to the built-in hash", () => {
@@ -109,7 +112,7 @@ for (const [name, level] of [
   ["stage2", stage2],
 ] as const) {
   test(`X plays ${name} the same with the player packs as with the built-ins`, () => {
-    assert.deepEqual(trace(level, assembled()), trace(level, MMX_GAME_DATA));
+    assert.deepEqual(trace(level, assembled()), trace(level, BUILTINS));
   });
 }
 
@@ -127,14 +130,15 @@ const BAT_AHEAD: LevelData = (() => {
 test("the equivalence reads the X pack's shots: a harmless lemon changes X's digests", () => {
   const x = structuredClone(X);
   x.projectiles!.lemon!.damage = 0;
-  assert.deepEqual(trace(BAT_AHEAD, assembled()), trace(BAT_AHEAD, MMX_GAME_DATA));
-  assert.notDeepEqual(trace(BAT_AHEAD, assembled(x)), trace(BAT_AHEAD, MMX_GAME_DATA));
+  assert.deepEqual(trace(BAT_AHEAD, assembled()), trace(BAT_AHEAD, BUILTINS));
+  assert.notDeepEqual(trace(BAT_AHEAD, assembled(x)), trace(BAT_AHEAD, BUILTINS));
 });
 
 test("a project overlay that changes a weapon changes the game", () => {
-  const merged = mergeGameData(MMX_GAME_DATA, {
-    weapons: { buster: { ...MMX_GAME_DATA.weapons.buster!, maxLiveShots: 1 } },
+  const base = assembled();
+  const merged = mergeGameData(base, {
+    weapons: { buster: { ...base.weapons.buster!, maxLiveShots: 1 } },
   });
   assert.ok(merged.ok);
-  assert.notDeepEqual(trace(stage1, merged.value), trace(stage1, MMX_GAME_DATA));
+  assert.notDeepEqual(trace(stage1, merged.value), trace(stage1, base));
 });
