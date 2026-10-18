@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "actors": {
+    "player.zero": {
+      "id": "player.zero",
+      "body": {
+        "hw": 7,
+        "hh": 15,
+        "dashCrouch": 0
+      },
+      "maxHealth": 16
+    }
+  },
+  "abilities": {
+    "zero.idle": {
+      "id": "zero.idle",
+      "behavior": "player.idle",
+      "layer": "locomotion",
+      "priority": 0
+    },
+    "zero.walk": {
+      "id": "zero.walk",
+      "behavior": "player.walk",
+      "layer": "locomotion",
+      "priority": 1,
+      "config": {
+        "speed": 90
+      }
+    },
+    "zero.fall": {
+      "id": "zero.fall",
+      "behavior": "player.fall",
+      "layer": "locomotion",
+      "priority": 1,
+      "config": {
+        "dashFallSpeed": 210
+      }
+    },
+    "zero.wall-slide": {
+      "id": "zero.wall-slide",
+      "behavior": "player.wall-slide",
+      "layer": "locomotion",
+      "priority": 3,
+      "config": {
+        "speed": 90,
+        "startDelay": 0
+      }
+    },
+    "zero.dash": {
+      "id": "zero.dash",
+      "behavior": "player.dash",
+      "layer": "locomotion",
+      "priority": 4,
+      "config": {
+        "speed": 210,
+        "duration": 0.5,
+        "leeway": 0.1
+      }
+    },
+    "zero.jump": {
+      "id": "zero.jump",
+      "behavior": "player.jump",
+      "layer": "locomotion",
+      "priority": 5,
+      "config": {
+        "velocity": 300,
+        "maxTime": 0.016,
+        "leeway": 0.1,
+        "fullspeedProportion": 1
+      }
+    },
+    "zero.dash-jump": {
+      "id": "zero.dash-jump",
+      "behavior": "player.dash-jump",
+      "layer": "locomotion",
+      "priority": 6,
+      "config": {
+        "speed": 210,
+        "dashDuration": 0.5
+      }
+    },
+    "zero.wall-jump": {
+      "id": "zero.wall-jump",
+      "behavior": "player.wall-jump",
+      "layer": "locomotion",
+      "priority": 7,
+      "config": {
+        "startDelay": 0,
+        "moveawayDuration": 0.13333333333333333,
+        "moveawaySpeed": 90
+      }
+    },
+    "zero.dash-wall-jump": {
+      "id": "zero.dash-wall-jump",
+      "behavior": "player.dash-wall-jump",
+      "layer": "locomotion",
+      "priority": 7,
+      "config": {
+        "speed": 210
+      }
+    },
+    "zero.damage": {
+      "id": "zero.damage",
+      "behavior": "player.damage",
+      "layer": "reaction",
+      "priority": 100,
+      "config": {
+        "duration": 0.4,
+        "invulnerability": 1,
+        "knockbackSpeed": 60,
+        "knockbackJumpVelocity": 0
+      }
+    },
+    "zero.death": {
+      "id": "zero.death",
+      "behavior": "player.death",
+      "layer": "reaction",
+      "priority": 200,
+      "config": {
+        "restartDelay": 3.8
+      }
+    },
+    "zero.slash": {
+      "id": "zero.slash",
+      "behavior": "player.slash",
+      "layer": "action",
+      "config": {
+        "slash1": {
+          "animation": "slash_1",
+          "duration": 18,
+          "activeFrom": 1,
+          "activeTo": 2,
+          "hitbox": {
+            "x": 0,
+            "y": -36,
+            "w": 24,
+            "h": 34
+          },
+          "damage": 2,
+          "chainWindow": 18
+        },
+        "slash2": {
+          "animation": "slash_2",
+          "duration": 34,
+          "activeFrom": 7,
+          "activeTo": 10,
+          "hitbox": {
+            "x": 0,
+            "y": -40,
+            "w": 30,
+            "h": 38
+          },
+          "damage": 2,
+          "chainWindow": 34
+        },
+        "slash3": {
+          "animation": "slash_3",
+          "duration": 26,
+          "activeFrom": 5,
+          "activeTo": 10,
+          "hitbox": {
+            "x": 0,
+            "y": -44,
+            "w": 30,
+            "h": 44
+          },
+          "damage": 4,
+          "chainWindow": 0
+        },
+        "dashSlash": {
+          "animation": "dash_slash",
+          "duration": 20,
+          "activeFrom": 1,
+          "activeTo": 2,
+          "hitbox": {
+            "x": 0,
+            "y": -30,
+            "w": 27,
+            "h": 28
+          },
+          "damage": 3,
+          "chainWindow": 0
+        },
+        "jumpSlash": {
+          "animation": "jump_slash",
+          "duration": 28,
+          "activeFrom": 1,
+          "activeTo": 4,
+          "hitbox": {
+            "x": -8,
+            "y": -44,
+            "w": 33,
+            "h": 48
+          },
+          "damage": 2,
+          "chainWindow": 0
+        },
+        "wallSlash": {
+          "animation": "wall_slash",
+          "duration": 24,
+          "activeFrom": 1,
+          "activeTo": 8,
+          "hitbox": {
+            "x": -31,
+            "y": -38,
+            "w": 30,
+            "h": 36
+          },
+          "damage": 2,
+          "chainWindow": 0
+        },
+        "hitFx": "lemon_hit"
+      }
+    }
+  },
+  "loadouts": {
+    "player.zero": {
+      "id": "player.zero",
+      "actor": "player.zero",
+      "slots": [
+        {
+          "ability": "zero.idle"
+        },
+        {
+          "ability": "zero.walk"
+        },
+        {
+          "ability": "zero.fall"
+        },
+        {
+          "ability": "zero.wall-slide"
+        },
+        {
+          "ability": "zero.dash"
+        },
+        {
+          "ability": "zero.jump"
+        },
+        {
+          "ability": "zero.dash-jump"
+        },
+        {
+          "ability": "zero.wall-jump"
+        },
+        {
+          "ability": "zero.dash-wall-jump"
+        },
+        {
+          "ability": "zero.damage"
+        },
+        {
+          "ability": "zero.death"
+        },
+        {
+          "ability": "zero.slash"
+        }
+      ],
+      "weapons": []
+    }
+  }
+}
