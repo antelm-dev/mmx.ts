@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import { DT, PLAYER_HIT_INVULNERABILITY } from "../src/core/constants.js";
+import { DT } from "../src/core/constants.js";
+import { PLAYER_HIT_INVULNERABILITY } from "./support/player.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
@@ -251,7 +252,7 @@ test("a real charged shot breaks the guard through the stage", () => {
   run(stage, 0.2);
   assert.equal(metool.has_shield(), true, "precondition: hidden");
 
-  player.spawnBuster(2); // Charge.gd's charged-buster level
+  player.fireActiveWeapon(2); // Charge.gd's charged-buster level
   run(stage, 0.5);
 
   assert.equal(metool.has_shield(), false, "the charged shot broke the guard");
@@ -268,7 +269,7 @@ test("a raised shield consumes a lemon without taking damage", () => {
   assert.equal(metool.has_shield(), true, "precondition: hidden behind the helmet");
 
   const health = metool.current_health;
-  player.spawnBuster(0);
+  player.fireActiveWeapon(0);
   run(stage, 0.5);
 
   assert.equal(metool.current_health, health, "the helmet took it");

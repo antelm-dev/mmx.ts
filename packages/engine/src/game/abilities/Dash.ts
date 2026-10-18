@@ -1,12 +1,11 @@
 import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
-import { DASH_DURATION, DASH_LEEWAY, DASH_SPEED } from "../../core/constants.js";
 
 /** Typed tuning for {@link Dash}, supplied by the loadout (Part 5). */
 export interface DashConfig {
-  speed?: number;
-  duration?: number;
-  leeway?: number;
+  speed: number;
+  duration: number;
+  leeway: number;
 }
 
 /**
@@ -31,12 +30,12 @@ export class Dash extends Movement {
   protected smoke_fx: string | null = "dash";
   private emitted_smoke = false;
 
-  constructor(character: Character, config: DashConfig = {}) {
+  constructor(character: Character, config: DashConfig) {
     super(character);
     this.actions = ["dash"];
-    this.horizontal_velocity = config.speed ?? DASH_SPEED;
-    this.dash_duration = config.duration ?? DASH_DURATION;
-    this.leeway = config.leeway ?? DASH_LEEWAY;
+    this.horizontal_velocity = config.speed;
+    this.dash_duration = config.duration;
+    this.leeway = config.leeway;
   }
 
   override get_activation_leeway_time(): number {

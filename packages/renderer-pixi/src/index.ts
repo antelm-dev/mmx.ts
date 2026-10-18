@@ -3,6 +3,12 @@ export * from "./EnemyDebris.js";
 export * from "./EnemyExplosion.js";
 export * from "./Trail.js";
 export { Renderer, type RendererCreateOptions } from "./render/Renderer.js";
+export {
+  BASE_PALETTE,
+  WEAPON_PALETTE,
+  weaponPalette,
+  type Palette6,
+} from "./render/weaponPalette.js";
 export { DecorationView } from "./render/DecorationView.js";
 export {
   DECORATION_ASSETS,

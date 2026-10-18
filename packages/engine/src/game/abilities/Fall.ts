@@ -1,10 +1,11 @@
 import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
-import { DASHFALL_SPEED } from "../../core/constants.js";
 
 /** Typed tuning for {@link Fall}, supplied by the loadout. */
 export interface FallConfig {
-  dashFallSpeed?: number;
+  dashFallSpeed: number;
+  /** Air control: the loadout's walk speed, merged in by buildPlayerLoadout. */
+  airSpeed: number;
 }
 
 /** Port of Fall.gd — airborne, gravity + air control. */
@@ -14,9 +15,10 @@ export class Fall extends Movement {
   override animation = "fall"; // Fall.tscn
   dashfall_speed: number;
 
-  constructor(character: Character, config: FallConfig = {}) {
+  constructor(character: Character, config: FallConfig) {
     super(character);
-    this.dashfall_speed = config.dashFallSpeed ?? DASHFALL_SPEED;
+    this.horizontal_velocity = config.airSpeed;
+    this.dashfall_speed = config.dashFallSpeed;
   }
 
   override _StartCondition(): boolean {

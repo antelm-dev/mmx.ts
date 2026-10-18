@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { Input } from "../src/core/Input.js";
+import { DT } from "../src/core/constants.js";
 import {
-  DT,
   PLAYER_DAMAGE_DURATION,
   PLAYER_DAMAGE_INVULNERABILITY,
   PLAYER_KNOCKBACK_JUMP_VELOCITY,
   PLAYER_KNOCKBACK_SPEED,
-} from "../src/core/constants.js";
+} from "./support/player.js";
 import { Actor } from "../src/game/Actor.js";
 import type { AnimData } from "@mmx/contracts/animation";
 import { Player } from "../src/game/Player.js";

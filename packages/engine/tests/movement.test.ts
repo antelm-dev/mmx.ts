@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input, Action } from "../src/core/Input.js";
-import { DT, WALK_SPEED, JUMP_VELOCITY } from "../src/core/constants.js";
+import { DT } from "../src/core/constants.js";
+import { WALK_SPEED, JUMP_VELOCITY } from "./support/player.js";
 import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
 

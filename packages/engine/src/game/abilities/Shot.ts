@@ -1,10 +1,9 @@
 import { Ability } from "../ability/Ability.js";
 import type { Character } from "../Character.js";
-import { SHOT_ARM_POINT_DURATION } from "../../core/constants.js";
 
 /** Typed tuning for {@link Shot}, supplied by the loadout (Part 5). */
 export interface ShotConfig {
-  armPointDuration?: number;
+  armPointDuration: number;
 }
 
 /**
@@ -29,10 +28,10 @@ export class Shot extends Ability {
   /** Set by arm_point() so the run it starts poses without firing a lemon too. */
   private pose_only = false;
 
-  constructor(character: Character, config: ShotConfig = {}) {
+  constructor(character: Character, config: ShotConfig) {
     super(character);
     this.actions = ["fire"];
-    this.arm_point_duration = config.armPointDuration ?? SHOT_ARM_POINT_DURATION;
+    this.arm_point_duration = config.armPointDuration;
   }
 
   /** Weapon.gd:can_shoot, dispatched onto whichever weapon is active — infinite

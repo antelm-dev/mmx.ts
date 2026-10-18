@@ -4,7 +4,7 @@ import { AnimationPlayer } from "./Animation.js";
 import type { AnimData, Region } from "@mmx/contracts/animation";
 import type { EnvironmentRect } from "./Environment.js";
 import type { World } from "./World.js";
-import { PICKUP_GRAVITY, PICKUP_TICK_INTERVAL, SUB_WEAPON_MAX_AMMO } from "../core/constants.js";
+import { PICKUP_GRAVITY, PICKUP_TICK_INTERVAL } from "../core/constants.js";
 import { COMPILED_GAME_DATA } from "../data/index.js";
 import type { CompiledGameData, PickupDefinition } from "../data/types.js";
 
@@ -165,9 +165,10 @@ export interface WeaponCapsuleSpawn extends EnvironmentRect {
  * equipped when it is touched (AmmoPickup.gd:
  * `player.get_node("Shot").current_weapon`), via {@link Character.refillWeaponAmmo}.
  *
- * Topping up the buster is a no-op there (Weapon.gd's own ammo counter is
- * untracked and unused — see can_shoot), so a capsule collected with the
- * buster equipped is simply spent for nothing, the same as the original.
+ * Topping up an infinite weapon like the buster is a no-op there (Weapon.gd's
+ * own ammo counter is untracked and unused — see Character.canFireWeapon), so a
+ * capsule collected with one equipped, or with no weapon at all, is simply
+ * spent for nothing, the same as the original.
  */
 export class WeaponCapsule implements EnvironmentRect {
   readonly id: string;
@@ -231,7 +232,8 @@ export class WeaponCapsule implements EnvironmentRect {
 
     this.timer += dt;
     while (this.remaining > 0 && this.timer >= PICKUP_TICK_INTERVAL) {
-      if (player.getWeaponAmmo(player.activeWeapon) >= SUB_WEAPON_MAX_AMMO) {
+      const weapon = player.activeWeapon;
+      if (player.getWeaponAmmo(weapon) >= player.getWeaponMaxAmmo(weapon)) {
         this.remaining = 0; // nothing left to redirect without an ammo reserve
         break;
       }

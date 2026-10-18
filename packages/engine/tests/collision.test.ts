@@ -5,6 +5,7 @@ import { Actor } from "../src/game/Actor.js";
 import { Projectile } from "../src/game/Projectile.js";
 import { World } from "../src/game/World.js";
 import { BODY_HALF_H, BODY_HALF_W, DT, TILE_SIZE } from "../src/core/constants.js";
+import { BUSTER_SHOTS } from "./support/player.js";
 
 /** A room with solid borders and whatever interior rows are given. */
 function room(interior: string[]): World {
@@ -137,7 +138,7 @@ test("floor snap bridges a dip shallower than FLOOR_SNAP_LENGTH", () => {
 test("a shot stops at the wall face rather than inside it", () => {
   const world = openRoom();
   const wallFace = 11 * TILE_SIZE;
-  const p = new Projectile(wallFace, 3 * TILE_SIZE, 1, 3); // fast charged shot
+  const p = new Projectile(wallFace, 3 * TILE_SIZE, 1, 3, BUSTER_SHOTS); // fast charged shot
   // Place it explicitly: the constructor applies the charged shot's muzzle pullback,
   // which is spawn-positioning noise for a test that is only about the sweep.
   p.x = wallFace - 4;

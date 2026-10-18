@@ -1,13 +1,14 @@
 import { Ability } from "./Ability.js";
-import { GRAVITY, JUMP_VELOCITY, WALK_SPEED } from "../../core/constants.js";
+import { GRAVITY } from "../../core/constants.js";
 
 /**
  * Physics/movement helpers — port of Movement.gd.
  * All locomotion states extend this.
  */
 export abstract class Movement extends Ability {
-  horizontal_velocity = WALK_SPEED;
-  jump_velocity = JUMP_VELOCITY;
+  /** Set by each subclass from its config (Fall's air control is the loadout's walk speed). */
+  horizontal_velocity = 0;
+  jump_velocity = 0;
   changed_animation = false;
 
   get_horizontal_velocity(): number {

@@ -1,9 +1,10 @@
 import { Container, NineSliceSprite, Sprite, type Texture } from "pixi.js";
 import type { Region } from "@mmx/contracts/animation";
-import { DT, SUB_WEAPON_MAX_AMMO, WEAPON_PALETTE, type WeaponId } from "@mmx/engine";
+import { DT } from "@mmx/engine";
 import type { Camera } from "@mmx/engine";
 import type { Player } from "@mmx/engine";
 import { regionTexture } from "./textures.js";
+import { weaponPalette } from "./weaponPalette.js";
 
 function requireHudTexture(sheet: string, region: Region): Texture {
   const texture = regionTexture(sheet, region);
@@ -170,7 +171,8 @@ export type HudSheetKeys = {
   xBar: string;
   hpFill: string;
   weaponBar: string;
-  weaponIcons?: Readonly<Partial<Record<WeaponId, string>>>;
+  /** Icon sheet per weapon id. */
+  weaponIcons?: Readonly<Partial<Record<string, string>>>;
 };
 
 export class Hud {
@@ -178,7 +180,7 @@ export class Hud {
   private readonly xBar: EnergyBar;
   private readonly weaponBar: EnergyBar;
   private readonly weaponIcon = new Sprite();
-  private readonly weaponIcons: Readonly<Partial<Record<WeaponId, string>>>;
+  private readonly weaponIcons: Readonly<Partial<Record<string, string>>>;
 
   constructor(sheets: HudSheetKeys) {
     this.weaponIcons = sheets.weaponIcons ?? {};
@@ -206,26 +208,27 @@ export class Hud {
   }
 
   /**
-   * WeaponBar.gd:is_exception — hidden outright for the buster, which has no
-   * ammo to show. Tinted from the weapon's own palette (MainColor2, the same
-   * "charge color" Weapon.gd:get_charge_color reports) rather than through a
+   * WeaponBar.gd:is_exception — hidden outright for an infinite weapon like the
+   * buster, which has no ammo to show, and when the player is unarmed. Tinted
+   * from the weapon's own palette (MainColor2, the same "charge color"
+   * Weapon.gd:get_charge_color reports) rather than through a
    * full palette-swap shader on the bar itself. The icon hides the same way
    * (WeaponBar.gd's hide()/show() toggle both), and also whenever the active
    * weapon has no icon sheet ported yet.
    */
   private syncWeaponBar(player: Player): void {
-    const weapon = player.activeWeapon;
-    const visible = weapon !== "buster";
+    const weapon = player.getWeapon(player.activeWeapon);
+    const visible = weapon !== undefined && Number.isFinite(weapon.maxAmmo);
     this.weaponBar.view.visible = visible;
     if (!visible) {
       this.weaponIcon.visible = false;
       return;
     }
 
-    const tint = WEAPON_PALETTE[weapon][1];
-    this.weaponBar.sync(player.getWeaponAmmo(weapon), SUB_WEAPON_MAX_AMMO, tint);
+    const tint = weaponPalette(weapon.id)[1];
+    this.weaponBar.sync(player.getWeaponAmmo(weapon.id), weapon.maxAmmo, tint);
 
-    const iconSheet = this.weaponIcons[weapon];
+    const iconSheet = this.weaponIcons[weapon.id];
     const texture = iconSheet && regionTexture(iconSheet, ICON_CROP);
     this.weaponIcon.visible = !!texture;
     if (texture) this.weaponIcon.texture = texture;

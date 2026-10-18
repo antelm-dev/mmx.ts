@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { DT, PICKUP_TICK_INTERVAL, SUB_WEAPON_MAX_AMMO } from "../src/core/constants.js";
+import { DT, PICKUP_TICK_INTERVAL } from "../src/core/constants.js";
+import { SUB_WEAPON_MAX_AMMO } from "./support/player.js";
 import { Input } from "../src/core/Input.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";

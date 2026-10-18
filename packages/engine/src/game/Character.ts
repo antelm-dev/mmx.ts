@@ -4,16 +4,35 @@ import { Projectile } from "./Projectile.js";
 import { Input, Action } from "../core/Input.js";
 import { Rng } from "../core/Rng.js";
 import {
-  MAX_CHARGED_SHOTS_ALIVE,
-  MAX_SHOTS_ALIVE,
   SHOT_POSITION,
   SHOT_POSITION_ADJUST,
-  SUB_WEAPON_CONFIG,
-  SUB_WEAPON_MAX_AMMO,
-  WEAPON_ORDER,
-  type WeaponId,
+  shotStats,
+  type ShotStats,
 } from "../core/constants.js";
-import type { Hitbox } from "../data/types.js";
+import type { CompiledWeapon, Hitbox } from "../data/types.js";
+
+/** A weapon as the player carries it, read off its compiled definition. */
+export interface PlayerWeapon {
+  readonly id: string;
+  /** Tank size; Infinity for an infinite-ammo weapon (Weapon.gd:has_ammo). */
+  readonly maxAmmo: number;
+  readonly ammoCost: number;
+  /** Shots of this weapon in flight at once, per charge sign (Weapon.gd max_shots_alive). */
+  readonly maxLiveShots: number;
+  /** Shots indexed by charge level; a level past the end clamps onto the last. */
+  readonly shots: readonly ShotStats[];
+}
+
+/** The {@link PlayerWeapon} a compiled weapon definition describes. */
+export function playerWeapon(weapon: CompiledWeapon): PlayerWeapon {
+  return {
+    id: weapon.id,
+    maxAmmo: weapon.maxAmmo === "infinite" ? Infinity : weapon.maxAmmo,
+    ammoCost: weapon.ammoCost,
+    maxLiveShots: weapon.maxLiveShots,
+    shots: weapon.resolvedProjectiles.map(shotStats),
+  };
+}
 
 /** A strike volume to start with {@link Character.startMelee}. */
 export interface MeleeSpec {
@@ -60,15 +79,15 @@ export class Character extends AbilityUser {
    */
   private projectileSeq = 0;
 
-  /** WeaponChanger.gd's selection — the buster (slot 0) until the player cycles. */
-  activeWeapon: WeaponId = WEAPON_ORDER[0];
+  /** The loadout's weapons, in cycle order; empty for an unarmed loadout. */
+  weapons: readonly PlayerWeapon[] = [];
+  /** WeaponChanger.gd's selection — the loadout's initial weapon; null when unarmed. */
+  activeWeapon: string | null = null;
   /**
-   * BossWeapon.gd's `current_ammo` per sub-weapon slot. The buster has no entry:
-   * Weapon.gd:has_ammo() is unconditionally true, i.e. infinite.
+   * BossWeapon.gd's `current_ammo` per finite-ammo weapon. An infinite weapon
+   * has no entry: Weapon.gd:has_ammo() is unconditionally true.
    */
-  private readonly subWeaponAmmo = new Map<WeaponId, number>(
-    Object.keys(SUB_WEAPON_CONFIG).map((id) => [id as WeaponId, SUB_WEAPON_MAX_AMMO]),
-  );
+  private readonly weaponAmmo = new Map<string, number>();
 
   /** Death hides the sprite once the sequence starts (mirrors Enemy.sprite_visible). */
   sprite_visible = true;
@@ -124,19 +143,39 @@ export class Character extends AbilityUser {
   }
 
   /**
-   * Weapon.gd:can_shoot — the buster refuses to fire while its shots are already
-   * on screen. That cap is the whole reason buster fire has a rhythm instead of
-   * being a hose: three lemons out means you wait for one to land or fly off.
-   * Spent shots (still playing their hit particle) do not count against it.
+   * Arm the player with a loadout's weapons (in cycle order), each finite tank
+   * full, and select `initial` — the first weapon when it is not set.
    */
-  can_shoot(charge: number): boolean {
-    const cap = charge > 0 ? MAX_CHARGED_SHOTS_ALIVE : MAX_SHOTS_ALIVE;
-    // Filtered by weapon as well as charge sign: a Dark Arrow shot still in
-    // flight after switching back to the buster must not eat into its cap.
+  equipWeapons(weapons: readonly PlayerWeapon[], initial?: string): void {
+    this.weapons = weapons;
+    this.weaponAmmo.clear();
+    for (const w of weapons) if (Number.isFinite(w.maxAmmo)) this.weaponAmmo.set(w.id, w.maxAmmo);
+    this.activeWeapon = initial ?? weapons[0]?.id ?? null;
+  }
+
+  /** The carried weapon with this id, if any. */
+  getWeapon(id: string | null): PlayerWeapon | undefined {
+    return this.weapons.find((w) => w.id === id);
+  }
+
+  /**
+   * Weapon.gd:can_shoot / BossWeapon.gd:has_ammo — a weapon refuses to fire
+   * without the ammo for a shot, or while its shots are already on screen. That
+   * cap is the whole reason buster fire has a rhythm instead of being a hose:
+   * three lemons out means you wait for one to land or fly off. Spent shots
+   * (still playing their hit particle) do not count against it.
+   */
+  canFireWeapon(weapon: PlayerWeapon | undefined, charge: number): boolean {
+    if (!weapon) return false;
+    if ((this.weaponAmmo.get(weapon.id) ?? Infinity) < weapon.ammoCost) return false;
+    // Capped per weapon and per charge sign of the shot it would fire (a level
+    // past its shots clamps onto the last): a Dark Arrow shot still in flight
+    // after switching back to the buster must not eat into the buster's cap.
+    const charged = Math.min(charge, weapon.shots.length - 1) > 0;
     const live = this.projectiles.filter(
-      (p) => p.isLive && p.weapon === "buster" && p.charge > 0 === charge > 0,
+      (p) => p.isLive && p.weapon === weapon.id && p.charge > 0 === charged,
     ).length;
-    return live < cap;
+    return live < weapon.maxLiveShots;
   }
 
   /**
@@ -149,12 +188,16 @@ export class Character extends AbilityUser {
     this.projectiles.push(shot);
   }
 
-  /** Spawn a buster shot from the cannon (Shot/Charge -> Weapon.fire). */
-  spawnBuster(charge: number): void {
-    if (!this.can_shoot(charge)) return;
+  /** Fire `weapon`'s shot for `charge` from the cannon (Shot/Charge -> Weapon.fire). */
+  fireWeapon(weapon: PlayerWeapon | undefined, charge: number): void {
+    if (!weapon || !this.canFireWeapon(weapon, charge)) return;
     const muzzle = this.get_shot_position();
     const dir = this.get_facing_direction();
-    this.trackProjectile(new Projectile(muzzle.x, muzzle.y, dir, charge, this.rng));
+    this.trackProjectile(
+      new Projectile(muzzle.x, muzzle.y, dir, charge, weapon.shots, this.rng, weapon.id),
+    );
+    const ammo = this.weaponAmmo.get(weapon.id);
+    if (ammo !== undefined) this.weaponAmmo.set(weapon.id, Math.max(0, ammo - weapon.ammoCost));
     this.events.emit("shot_fired", charge);
   }
 
@@ -172,76 +215,57 @@ export class Character extends AbilityUser {
     return { left: cx - hw, right: cx + hw, top: cy - hh, bottom: cy + hh };
   }
 
-  /**
-   * BossWeapon.gd:can_shoot / has_ammo, dispatched onto whichever weapon is
-   * active — what {@link Shot}'s `_StartCondition` actually gates fire on. The
-   * buster keeps its own unlimited-ammo/shots-alive check via {@link can_shoot};
-   * every other slot is gated on its {@link SUB_WEAPON_CONFIG} entry instead.
-   */
+  /** {@link canFireWeapon} for the active weapon — what {@link Shot} gates fire on. */
   canFireActiveWeapon(charge: number): boolean {
-    if (this.activeWeapon === "buster") return this.can_shoot(charge);
-    const config = SUB_WEAPON_CONFIG[this.activeWeapon];
-    if (!config) return false;
-    const ammo = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
-    if (ammo < config.ammoCost) return false;
-    const live = this.projectiles.filter((p) => p.isLive && p.weapon === this.activeWeapon).length;
-    return live < config.maxShotsAlive;
+    return this.canFireWeapon(this.getWeapon(this.activeWeapon), charge);
   }
 
-  /**
-   * BossWeapon.fire, dispatched the same way as {@link canFireActiveWeapon}.
-   * `charge` is only meaningful for the buster — every ported sub-weapon slot
-   * fires its single regular shot regardless (see {@link WEAPON_SHOTS}), since
-   * no sub-weapon's charged tier is ported yet.
-   */
+  /** {@link fireWeapon} with the active weapon; nothing when unarmed. */
   fireActiveWeapon(charge: number): void {
-    if (this.activeWeapon === "buster") {
-      this.spawnBuster(charge);
-      return;
-    }
-    if (!this.canFireActiveWeapon(charge)) return;
-    const config = SUB_WEAPON_CONFIG[this.activeWeapon];
-    if (!config) return;
-    const muzzle = this.get_shot_position();
-    const dir = this.get_facing_direction();
-    this.trackProjectile(new Projectile(muzzle.x, muzzle.y, dir, 0, this.rng, this.activeWeapon));
-    const ammo = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
-    this.subWeaponAmmo.set(this.activeWeapon, Math.max(0, ammo - config.ammoCost));
-    this.events.emit("shot_fired", 0);
+    this.fireWeapon(this.getWeapon(this.activeWeapon), charge);
   }
 
   /**
-   * Current ammo in a weapon's tank — Infinity for the buster, which tracks
-   * none (see {@link canFireActiveWeapon}). Read by {@link WeaponCapsule} to
-   * know when a tank is already full, and by the HUD's weapon bar.
+   * Current ammo in a weapon's tank — Infinity for an infinite weapon, 0 for
+   * one the player does not carry. Read by {@link WeaponCapsule} to know when
+   * a tank is already full, and by the HUD's weapon bar.
    */
-  getWeaponAmmo(weapon: WeaponId): number {
-    if (weapon === "buster") return Infinity;
-    return this.subWeaponAmmo.get(weapon) ?? 0;
+  getWeaponAmmo(weapon: string | null): number {
+    const w = this.getWeapon(weapon);
+    if (!w) return 0;
+    return this.weaponAmmo.get(w.id) ?? Infinity;
+  }
+
+  /** A weapon's tank size — Infinity for an infinite weapon, 0 for one not carried. */
+  getWeaponMaxAmmo(weapon: string | null): number {
+    return this.getWeapon(weapon)?.maxAmmo ?? 0;
   }
 
   /**
-   * AmmoPickup.gd:do_ammo — raise the *active* weapon's ammo, clamped to
-   * {@link SUB_WEAPON_MAX_AMMO}, mirroring Actor.heal's clamp-and-report shape.
-   * A no-op on the buster, which has nothing to refill.
+   * AmmoPickup.gd:do_ammo — raise the *active* weapon's ammo, clamped to its
+   * tank, mirroring Actor.heal's clamp-and-report shape. A no-op on an infinite
+   * weapon, which has nothing to refill, and when unarmed.
    */
   refillWeaponAmmo(value: number): void {
-    if (this.activeWeapon === "buster") return;
-    const before = this.subWeaponAmmo.get(this.activeWeapon) ?? 0;
-    const after = Math.min(SUB_WEAPON_MAX_AMMO, before + value);
+    const weapon = this.getWeapon(this.activeWeapon);
+    const before = weapon && this.weaponAmmo.get(weapon.id);
+    if (!weapon || before === undefined) return;
+    const after = Math.min(weapon.maxAmmo, before + value);
     if (after > before) {
-      this.subWeaponAmmo.set(this.activeWeapon, after);
+      this.weaponAmmo.set(weapon.id, after);
       this.events.emit("weapon_ammo_refilled", after - before);
     }
   }
 
   /**
-   * WeaponChanger.gd — cycle the active weapon on weapon_left/weapon_right, or
-   * jump straight back to the buster (slot 0) when the player taps one
-   * direction while still holding the other, a panic button rather than one
-   * more step around the list.
+   * WeaponChanger.gd — cycle the active weapon through the loadout's order on
+   * weapon_left/weapon_right, or jump straight back to slot 0 when the player
+   * taps one direction while still holding the other, a panic button rather
+   * than one more step around the list. Unarmed, there is nothing to cycle.
    */
   private updateWeaponSwitch(): void {
+    const order = this.weapons;
+    if (order.length === 0) return;
     const leftPressed = this.get_action_just_pressed("weapon_left");
     const rightPressed = this.get_action_just_pressed("weapon_right");
     if (!leftPressed && !rightPressed) return;
@@ -249,17 +273,15 @@ export class Character extends AbilityUser {
     const leftHeld = this.get_action_pressed("weapon_left");
     const rightHeld = this.get_action_pressed("weapon_right");
     if ((leftHeld && rightPressed) || (rightHeld && leftPressed)) {
-      this.setActiveWeapon(WEAPON_ORDER[0]);
+      this.setActiveWeapon(order[0]!.id);
       return;
     }
-    const current = WEAPON_ORDER.indexOf(this.activeWeapon);
+    const current = order.findIndex((w) => w.id === this.activeWeapon);
     const delta = rightPressed ? 1 : -1;
-    this.setActiveWeapon(
-      WEAPON_ORDER[(current + delta + WEAPON_ORDER.length) % WEAPON_ORDER.length],
-    );
+    this.setActiveWeapon(order[(current + delta + order.length) % order.length]!.id);
   }
 
-  private setActiveWeapon(weapon: WeaponId): void {
+  private setActiveWeapon(weapon: string): void {
     if (weapon === this.activeWeapon) return;
     this.activeWeapon = weapon;
     this.events.emit("weapon_changed", weapon);

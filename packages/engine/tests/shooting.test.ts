@@ -2,17 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input, Action } from "../src/core/Input.js";
+import { DT, CHARGE_FX_FRAME_COUNT, ChargeTier, SHOT_POSITION } from "../src/core/constants.js";
 import {
-  DT,
   BUSTER_SHOTS,
-  CHARGE_FX_FRAME_COUNT,
   CHARGE_LEVEL_3,
   CHARGE_LEVEL_4,
   CHARGE_MIN_TIME,
-  ChargeTier,
   MAX_SHOTS_ALIVE,
-  SHOT_POSITION,
-} from "../src/core/constants.js";
+} from "./support/player.js";
 import type { Charge } from "../src/game/abilities/Charge.js";
 import { Player } from "../src/game/Player.js";
 import { Projectile } from "../src/game/Projectile.js";
@@ -118,14 +115,14 @@ test("charge level picks the heavier projectile, and never overruns the shot tab
 });
 
 test("an overcharged level clamps onto the last shot in the table", () => {
-  const wild = new Projectile(0, 0, 1, 99);
+  const wild = new Projectile(0, 0, 1, 99, BUSTER_SHOTS);
   assert.equal(wild.kind, "charged");
   assert.equal(wild.charge, BUSTER_SHOTS.length - 1);
 });
 
 test("a charged shot outruns a lemon and hits harder", () => {
-  const lemon = new Projectile(0, 0, 1, 0);
-  const charged = new Projectile(0, 0, 1, 2);
+  const lemon = new Projectile(0, 0, 1, 0, BUSTER_SHOTS);
+  const charged = new Projectile(0, 0, 1, 2, BUSTER_SHOTS);
   assert.ok(Math.abs(charged.vx) > Math.abs(lemon.vx), "charged shots fly faster");
   assert.ok(charged.damage > lemon.damage, "and hit harder");
   assert.ok(charged.bounds.right - charged.bounds.left > 0, "has a damage box");
@@ -133,7 +130,7 @@ test("a charged shot outruns a lemon and hits harder", () => {
 
 test("a spent shot stops colliding but still reports where it landed", () => {
   const world = openRoom();
-  const p = new Projectile(100, 50, 1, 0);
+  const p = new Projectile(100, 50, 1, 0, BUSTER_SHOTS);
   p.update(DT, world);
   const travelled = p.x;
 
@@ -151,7 +148,7 @@ test("the impact effect plays once and then stops drawing", () => {
   const world = openRoom();
   // The charged shot is the worst case: it lingers 0.4s but its burst is only
   // 0.125s, so a clamped frame index would freeze it on screen for 0.275s.
-  const p = new Projectile(100, 50, 1, 2);
+  const p = new Projectile(100, 50, 1, 2, BUSTER_SHOTS);
   assert.equal(p.hitParticleFrame, -1, "nothing to draw while still in flight");
 
   p.hit(100, 50);
@@ -241,7 +238,7 @@ test("the same seed replays identically", () => {
   const volley = (seed: number) => {
     const rng = new Rng(seed);
     return Array.from({ length: 8 }, () => {
-      const p = new Projectile(100, 50, 1, 0, rng);
+      const p = new Projectile(100, 50, 1, 0, BUSTER_SHOTS, rng);
       return [p.y, p.frame, p.hitFlipV] as const;
     });
   };
@@ -255,7 +252,10 @@ test("lemons fired back to back are drawn out of sync with each other", () => {
   const rng = new Rng(1);
   // Lemon.references_setup randomises the start frame. Without it a stream of
   // shots spins in lockstep and reads as one rigid object rather than several.
-  const frames = Array.from({ length: 12 }, () => new Projectile(0, 0, 1, 0, rng).frame);
+  const frames = Array.from(
+    { length: 12 },
+    () => new Projectile(0, 0, 1, 0, BUSTER_SHOTS, rng).frame,
+  );
   assert.ok(new Set(frames).size > 1, "start frames vary");
   assert.ok(
     frames.every((f) => f >= 0 && f < 8),
@@ -263,14 +263,14 @@ test("lemons fired back to back are drawn out of sync with each other", () => {
   );
 
   // The charged shot is the exception: one big shot, no need to desync it.
-  assert.equal(new Projectile(0, 0, 1, 2, new Rng(1)).frame, 0);
+  assert.equal(new Projectile(0, 0, 1, 2, BUSTER_SHOTS, new Rng(1)).frame, 0);
 });
 
 test("spawn height is not scattered at the buster's range", () => {
   // Documents a quirk rather than a feature: WeaponShot truncates its jitter to
   // an int, so range 1 always yields 0. Kept faithful — see Projectile.ts.
   const rng = new Rng(3);
-  const ys = Array.from({ length: 10 }, () => new Projectile(0, 50, 1, 0, rng).y);
+  const ys = Array.from({ length: 10 }, () => new Projectile(0, 50, 1, 0, BUSTER_SHOTS, rng).y);
   assert.ok(
     ys.every((y) => y === 50),
     "lemons leave the cannon perfectly level",

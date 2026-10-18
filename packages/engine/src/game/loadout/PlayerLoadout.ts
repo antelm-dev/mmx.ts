@@ -1,4 +1,4 @@
-import type { Character } from "../Character.js";
+import { playerWeapon, type Character } from "../Character.js";
 import type { BaseAbility } from "../ability/BaseAbility.js";
 import type { CompiledGameData, CompiledLoadout } from "../../data/types.js";
 import { abilityRegistry, type AbilityConfig, type RuntimeContext } from "../../behaviors/index.js";
@@ -13,7 +13,7 @@ import { Jump, type JumpConfig } from "../abilities/Jump.js";
 import { DashJump, type DashJumpConfig } from "../abilities/DashJump.js";
 import { WallJump, type WallJumpConfig } from "../abilities/WallJump.js";
 import { DashWallJump, type DashWallJumpConfig } from "../abilities/DashWallJump.js";
-import { Intro } from "../abilities/Intro.js";
+import { Intro, type IntroConfig } from "../abilities/Intro.js";
 import { Damage, type DamageConfig } from "../abilities/Damage.js";
 import { Death, type DeathConfig } from "../abilities/Death.js";
 import { Shot, type ShotConfig } from "../abilities/Shot.js";
@@ -30,13 +30,25 @@ import { Slash, type SlashConfig } from "../abilities/Slash.js";
  * that would create), while still resolving a `behavior` id to executable code
  * through the one registry.
  *
- * Every configurable ability consumes its typed config from the loadout; only
- * Idle and Intro still read the compat constants. X's configs hold the same
- * values as those constants, so the default X moveset is unchanged.
+ * Every configurable ability consumes its typed config from the loadout, and
+ * the player's weapons come from the loadout too: nothing reads a constant.
  */
 
-/** Jump subclasses that inherit the loadout's `player.jump` config under their own. */
-const INHERITS_JUMP: ReadonlySet<string> = new Set([
+/**
+ * Subclasses that inherit their parent slots' configs under their own (an
+ * AirDash is a Dash, a DashWallJump a WallJump, and so on).
+ */
+const INHERITS: Readonly<Record<string, readonly string[]>> = {
+  "player.air-dash": ["player.dash"],
+  "player.dash-jump": ["player.jump"],
+  "player.wall-jump": ["player.jump"],
+  "player.dash-wall-jump": ["player.jump", "player.wall-jump"],
+};
+
+/** Fall and its Jump subclasses, which share the loadout's air control and dash fall. */
+const FALLS: ReadonlySet<string> = new Set([
+  "player.fall",
+  "player.jump",
   "player.dash-jump",
   "player.wall-jump",
   "player.dash-wall-jump",
@@ -55,7 +67,7 @@ const FACTORIES: Readonly<Record<string, Ctor>> = {
   "player.dash-jump": (o, c) => new DashJump(o, c as unknown as DashJumpConfig),
   "player.wall-jump": (o, c) => new WallJump(o, c as unknown as WallJumpConfig),
   "player.dash-wall-jump": (o, c) => new DashWallJump(o, c as unknown as DashWallJumpConfig),
-  "player.intro": (o) => new Intro(o),
+  "player.intro": (o, c) => new Intro(o, c as unknown as IntroConfig),
   "player.damage": (o, c) => new Damage(o, c as unknown as DamageConfig),
   "player.death": (o, c) => new Death(o, c as unknown as DeathConfig),
   "player.shot": (o, c) => new Shot(o, c as unknown as ShotConfig),
@@ -73,10 +85,10 @@ for (const [id, make] of Object.entries(FACTORIES)) {
 }
 
 /**
- * Compose a player's moveset from a compiled loadout: instantiate each ability
- * slot in order through the registry, then stamp the loadout's arbitration
- * metadata (priority + independent/action layer) so composition — not the class
- * defaults — is authoritative.
+ * Compose a player from a compiled loadout: instantiate each ability slot in
+ * order through the registry, then stamp the loadout's arbitration metadata
+ * (priority + independent/action layer) so composition — not the class
+ * defaults — is authoritative; then equip the loadout's weapons.
  */
 export function buildPlayerLoadout(
   player: Character,
@@ -85,11 +97,21 @@ export function buildPlayerLoadout(
 ): void {
   const ctx: RuntimeContext = { gameData };
   // Merged after validation, so each schema keeps its exact keys.
-  const jump = loadout.abilities.find((a) => a.behavior === "player.jump")?.config;
+  const configOf = (behavior: string) =>
+    loadout.abilities.find((a) => a.behavior === behavior)?.config;
+  // Fall.gd's air control is the walk speed (Movement.gd's horizontal_velocity);
+  // a loadout without the walk or fall slot has none.
+  const air = {
+    airSpeed: configOf("player.walk")?.speed ?? 0,
+    dashFallSpeed: configOf("player.fall")?.dashFallSpeed ?? 0,
+  };
   for (const ability of loadout.abilities) {
-    const config = INHERITS_JUMP.has(ability.behavior)
-      ? { ...jump, ...ability.config }
-      : ability.config;
+    const config = Object.assign(
+      {},
+      FALLS.has(ability.behavior) ? air : {},
+      ...(INHERITS[ability.behavior] ?? []).map(configOf),
+      ability.config,
+    );
     const instance = abilityRegistry
       .get(ability.behavior)
       .create(player, config, ctx) as BaseAbility;
@@ -97,4 +119,12 @@ export function buildPlayerLoadout(
     instance.independent = ability.layer === "action";
     player.add(instance);
   }
+  player.equipWeapons(
+    loadout.weapons.map((id) => {
+      const weapon = gameData.weapons.get(id);
+      if (!weapon) throw new Error(`loadout '${loadout.id}': unknown weapon '${id}'`);
+      return playerWeapon(weapon);
+    }),
+    loadout.initialWeapon,
+  );
 }

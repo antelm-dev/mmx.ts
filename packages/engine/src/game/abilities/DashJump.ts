@@ -1,11 +1,10 @@
 import { Jump, type JumpConfig } from "./Jump.js";
 import type { Character } from "../Character.js";
-import { DASH_DURATION, DASHJUMP_SPEED } from "../../core/constants.js";
 
 /** Typed tuning for {@link DashJump}; the Jump keys come from the loadout's jump slot. */
 export interface DashJumpConfig extends JumpConfig {
-  speed?: number;
-  dashDuration?: number;
+  speed: number;
+  dashDuration: number;
 }
 
 /**
@@ -20,10 +19,10 @@ export class DashJump extends Jump {
 
   private dash_leeway_time: number;
 
-  constructor(character: Character, config: DashJumpConfig = {}) {
+  constructor(character: Character, config: DashJumpConfig) {
     super(character, config);
-    this.horizontal_velocity = config.speed ?? DASHJUMP_SPEED;
-    this.dash_leeway_time = config.dashDuration ?? DASH_DURATION;
+    this.horizontal_velocity = config.speed;
+    this.dash_leeway_time = config.dashDuration;
     character.events.on("input_dash", () => this.on_dash_press());
   }
 

@@ -63,9 +63,8 @@ export class Shoot extends EnemyAbility {
           enemy.pos.y,
           enemy.get_facing_direction(),
           0,
+          [this.shot],
           enemy.rng,
-          undefined,
-          this.shot,
         ),
       );
       this.ready_at = enemy.clockMs + this.cooldown * 1000;

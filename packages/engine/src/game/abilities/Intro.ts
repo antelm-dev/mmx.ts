@@ -1,10 +1,16 @@
 import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
-import {
-  PLAYER_INTRO_BEAM_SPEED,
-  PLAYER_INTRO_DROP_HEIGHT,
-  PLAYER_INTRO_THUNDER_WINDOW,
-} from "../../core/constants.js";
+
+/** Typed tuning for {@link Intro}, supplied by the loadout. */
+export interface IntroConfig {
+  /** Intro.gd:6 — how far above the spawn point the descent starts. */
+  dropHeight: number;
+  /** Intro.gd:5 beam_speed — descent rate, in pixels/second. */
+  beamSpeed: number;
+  /** Intro.gd:41 — the window within `beam_equip` (seconds since it started) that
+   *  fires the equip clang and the `x_appear` cue. */
+  thunderWindow: readonly [number, number];
+}
 
 /**
  * X's level-start entrance — port of Intro.gd (Player.tscn's Intro node).
@@ -18,7 +24,7 @@ import {
  * original:
  *
  *  1. `visual` — a static held frame (the `beam` clip) drops straight down from
- *     {@link PLAYER_INTRO_DROP_HEIGHT} px above the spawn point to the spawn's
+ *     {@link IntroConfig.dropHeight} px above the spawn point to the spawn's
  *     own y, ignoring collision. This is the decorative beam-of-light column;
  *     Intro.gd does the equivalent by moving a sibling sprite node instead of
  *     the physics body, which this port has no equivalent of (Actor is the only
@@ -32,7 +38,7 @@ import {
  *     Intro.gd's `get_ground_height` does.
  *  3. `beam_in` plays once, then hands off to `beam_equip`.
  *  4. `beam_equip` plays once and ends the ability; the window between
- *     {@link PLAYER_INTRO_THUNDER_WINDOW} fires `x_appear` once, for the
+ *     {@link IntroConfig.thunderWindow} fires `x_appear` once, for the
  *     renderer's equip-clang sound cue.
  */
 export class Intro extends Movement {
@@ -46,8 +52,11 @@ export class Intro extends Movement {
   private equipTimer = 0;
   private thunderPlayed = false;
 
-  constructor(character: Character) {
+  private readonly config: IntroConfig;
+
+  constructor(character: Character, config: IntroConfig) {
     super(character);
+    this.config = config;
     character.events.on("animation_finished", (anim: string) => this.onAnimationFinished(anim));
   }
 
@@ -62,7 +71,7 @@ export class Intro extends Movement {
     this.character.listening_to_inputs = false;
     this.character.collisions_enabled = false;
     this.spawnY = this.character.pos.y;
-    this.character.pos.y = this.spawnY - PLAYER_INTRO_DROP_HEIGHT;
+    this.character.pos.y = this.spawnY - this.config.dropHeight;
     this.phase = "visual";
   }
 
@@ -81,14 +90,11 @@ export class Intro extends Movement {
   }
 
   private updateVisualDescent(dt: number): void {
-    this.character.pos.y = Math.min(
-      this.character.pos.y + PLAYER_INTRO_BEAM_SPEED * dt,
-      this.spawnY,
-    );
+    this.character.pos.y = Math.min(this.character.pos.y + this.config.beamSpeed * dt, this.spawnY);
     if (this.character.pos.y >= this.spawnY) {
       this.phase = "settle";
       this.character.collisions_enabled = true;
-      this.character.set_vertical_speed(PLAYER_INTRO_BEAM_SPEED);
+      this.character.set_vertical_speed(this.config.beamSpeed);
     }
   }
 
@@ -98,7 +104,7 @@ export class Intro extends Movement {
       this.phase = "landed";
       this.play_animation_once("beam_in");
     } else {
-      this.character.set_vertical_speed(PLAYER_INTRO_BEAM_SPEED);
+      this.character.set_vertical_speed(this.config.beamSpeed);
     }
   }
 
@@ -106,7 +112,7 @@ export class Intro extends Movement {
     if (this.character.get_animation() !== "beam_equip") return;
     this.process_gravity(dt);
     this.equipTimer += dt;
-    const [from, to] = PLAYER_INTRO_THUNDER_WINDOW;
+    const [from, to] = this.config.thunderWindow;
     if (!this.thunderPlayed && this.equipTimer >= from && this.equipTimer <= to) {
       this.thunderPlayed = true;
       this.character.events.emit("x_appear");

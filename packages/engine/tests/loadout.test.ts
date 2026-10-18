@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
-import { DASH_SPEED } from "../src/core/constants.js";
+import { DASH_SPEED } from "./support/player.js";
 import { World } from "../src/game/World.js";
 import { Player } from "../src/game/Player.js";
 import { Dash } from "../src/game/abilities/Dash.js";
@@ -72,20 +72,22 @@ test("the initial weapon matches the loadout", () => {
 
 // --- abilities accept typed config ------------------------------------------
 
-test("Dash honours typed config, and falls back to constants without it", () => {
+test("Dash honours typed config", () => {
   const player = makePlayer();
   const tuned = new Dash(player, { speed: 999, duration: 1.5, leeway: 0.25 });
   assert.equal(tuned.horizontal_velocity, 999);
   assert.equal(tuned.dash_duration, 1.5);
   assert.equal(tuned.leeway, 0.25);
 
-  const bare = new Dash(player);
-  assert.equal(bare.horizontal_velocity, DASH_SPEED);
+  // The loadout's own dash, with no constant behind it.
+  assert.equal((player.get_ability("Dash") as Dash).horizontal_velocity, DASH_SPEED);
 });
 
 test("Jump honours a configured velocity", () => {
   const player = makePlayer();
-  assert.equal(new Jump(player, { velocity: 500 }).jump_velocity, 500);
+  const config = { velocity: 500, maxTime: 0.625, leeway: 0.1, fullspeedProportion: 0.19 };
+  const jump = new Jump(player, { ...config, airSpeed: 90, dashFallSpeed: 210 });
+  assert.equal(jump.jump_velocity, 500);
 });
 
 test("Charge honours configured thresholds", () => {
@@ -94,9 +96,9 @@ test("Charge honours configured thresholds", () => {
   tuned.charged_time = 1.5;
   assert.equal(tuned.get_charge_level(), 2, "1.5s clears the lowered level-3 threshold");
 
-  const bare = new Charge(player);
-  bare.charged_time = 1.5;
-  assert.equal(bare.get_charge_level(), 1, "1.5s is below the default 1.75s level-3 threshold");
+  const loadout = player.get_ability("Charge") as Charge;
+  loadout.charged_time = 1.5;
+  assert.equal(loadout.get_charge_level(), 1, "1.5s is below X's 1.75s level-3 threshold");
 });
 
 // --- registry resolution ----------------------------------------------------

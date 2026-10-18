@@ -3,7 +3,7 @@ import type { Character } from "../Character.js";
 
 /** Typed tuning for {@link Walk}, supplied by the loadout. */
 export interface WalkConfig {
-  speed?: number;
+  speed: number;
 }
 
 /**
@@ -20,9 +20,9 @@ export class Walk extends Movement {
   private minimum_time = 0.02;
   private starting_from_stop = false;
 
-  constructor(character: Character, config: WalkConfig = {}) {
+  constructor(character: Character, config: WalkConfig) {
     super(character);
-    if (config.speed !== undefined) this.horizontal_velocity = config.speed;
+    this.horizontal_velocity = config.speed;
     character.events.on("animation_finished", () => this.onAnimationFinished());
   }
 

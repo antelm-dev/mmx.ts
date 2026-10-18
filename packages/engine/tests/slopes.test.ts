@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import { Actor } from "../src/game/Actor.js";
 import { World } from "../src/game/World.js";
-import { DT, TILE_SIZE, WALK_SPEED } from "../src/core/constants.js";
+import { DT, TILE_SIZE } from "../src/core/constants.js";
+import { WALK_SPEED } from "./support/player.js";
 
 /**
  * Flat floor (row 5) with a ramp rising to the right at column 6 onto a plateau
