@@ -19,6 +19,8 @@ const ALLOWED_REL_PREFIXES = [
   // The MMX Starter pack owns its art and the manifest fragment naming it.
   "packages/pack-mmx-starter/assets.json",
   "packages/pack-mmx-starter/README.md",
+  // The MMX — X pack owns X's sheets and the manifest fragment naming them.
+  "packages/pack-mmx-player-x/assets.json",
 ];
 
 const FORBIDDEN_PATTERNS = [

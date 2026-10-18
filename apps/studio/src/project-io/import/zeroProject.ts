@@ -5,7 +5,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { withStarterPack, type PackRef } from "@mmx/content-schema";
+import { MMX_PLAYER_ZERO, mergePack, withStarterPack, type PackRef } from "@mmx/content-schema";
 import type { GameDataOverlay } from "@mmx/engine/data";
 
 import type { FileSystem } from "../fs.js";
@@ -265,9 +265,16 @@ export async function writeZeroProject(
   const previous: GameDataOverlay | undefined = (await out.exists(CANONICAL_GAME_DATA_FILE))
     ? JSON.parse(await out.readText(CANONICAL_GAME_DATA_FILE))
     : undefined;
-  const { manifest: packed, overlay } = withStarterPack<{ packs?: PackRef[] }>({}, previous);
+  const starter = withStarterPack<{ packs?: PackRef[] }>({}, previous);
   // Left unchanged, it is not an object of records: fail before writing rather than overwrite it.
-  if (!packed.packs) throw new Error(`${CANONICAL_GAME_DATA_FILE} is not an object of records.`);
+  if (!starter.manifest.packs)
+    throw new Error(`${CANONICAL_GAME_DATA_FILE} is not an object of records.`);
+  // The MMX — Zero pack (the player.zero loadout this project plays) and its marker; its art is
+  // the import's own, below.
+  const { manifest: packed, overlay } = mergePack(
+    { manifest: starter.manifest, overlay: starter.overlay, fillKeys: false },
+    MMX_PLAYER_ZERO,
+  );
 
   const { sheet, animations, cell, frames } = zeroSheet(src.zero);
   await out.writeBytes("assets/sprites/player/zero.png", encodePng(sheet));

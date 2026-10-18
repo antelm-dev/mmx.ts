@@ -188,7 +188,7 @@ function FileMenu() {
           title={project.open && snap.dirty ? "Save the project first" : undefined}
           onSelect={() => void editor.installStarterPack()}
         >
-          <PackagePlus size={13} /> Install / update MMX Starter pack…
+          <PackagePlus size={13} /> Install / update MMX packs…
         </MenuItem>
       </MenuGroup>
       <MenuSeparator />

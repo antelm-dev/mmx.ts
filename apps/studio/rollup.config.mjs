@@ -41,19 +41,21 @@ const internalAliases = alias({
 });
 
 /**
- * The MMX Starter pack's art, emitted to `out/main/packs/mmx-starter/` for the `install-pack`
- * IPC: the packaged app ships only `out/**`, and dev runs the same bundle. Only the files its
- * `assets.json` entries name; the JSON parts are bundled through `@mmx/content-schema`.
+ * The MMX Starter and MMX — X packs' art, emitted to `out/main/packs/<pack id>/` for the
+ * `install-pack` IPC: the packaged app ships only `out/**`, and dev runs the same bundle. Only the
+ * files their `assets.json` entries name; the JSON parts are bundled through `@mmx/content-schema`.
  */
 function packFiles() {
-  const root = new URL("../../packages/pack-mmx-starter/", import.meta.url);
   return {
     name: "mmx-pack-files",
     generateBundle() {
-      const { assets } = JSON.parse(readFileSync(new URL("assets.json", root), "utf8"));
-      for (const path of new Set(assets.map((asset) => asset.path))) {
-        const source = readFileSync(new URL(path, root));
-        this.emitFile({ type: "asset", fileName: `packs/mmx-starter/${path}`, source });
+      for (const id of ["mmx-starter", "mmx-player-x"]) {
+        const root = new URL(`../../packages/pack-${id}/`, import.meta.url);
+        const { assets } = JSON.parse(readFileSync(new URL("assets.json", root), "utf8"));
+        for (const path of new Set(assets.map((asset) => asset.path))) {
+          const source = readFileSync(new URL(path, root));
+          this.emitFile({ type: "asset", fileName: `packs/${id}/${path}`, source });
+        }
       }
     },
   };

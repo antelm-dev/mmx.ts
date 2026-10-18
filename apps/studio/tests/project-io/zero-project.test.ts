@@ -6,7 +6,12 @@ import { join, resolve } from "node:path";
 import { test, type TestContext } from "node:test";
 
 import { GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
-import { validateImageLayers } from "@mmx/content-schema";
+import {
+  MMX_PLAYER_ZERO,
+  MMX_STARTER,
+  validateImageLayers,
+  type PackRef,
+} from "@mmx/content-schema";
 
 import { loadProject } from "../../src/project-io/index.js";
 import {
@@ -78,12 +83,20 @@ async function checkGenerated(t: TestContext, sources: ZeroSources) {
     [],
   );
   assert.equal(readFileSync(join(out, ".gitignore"), "utf8").split("\n")[1], "*");
-  // The project carries the MMX Starter pack (Pantheon, pantheon_shot) and its marker.
-  assert.deepEqual(manifest.packs, [{ id: "mmx-starter", version: 1 }]);
-  assert.deepEqual(
-    read("data/game.json"),
-    JSON.parse(readFileSync(resolve("../../packages/pack-mmx-starter/data/game.json"), "utf8")),
-  );
+  // The project carries the MMX Starter pack (Pantheon, pantheon_shot), the MMX — Zero pack (the
+  // player.zero loadout it plays) and their markers.
+  const data = read("data/game.json");
+  for (const pack of [MMX_STARTER, MMX_PLAYER_ZERO]) {
+    assert.ok(
+      manifest.packs.some((ref: PackRef) => ref.id === pack.ref.id && ref.version === 1),
+      pack.ref.id,
+    );
+    for (const [category, records] of Object.entries(pack.data)) {
+      if (category !== "schemaVersion")
+        assert.deepEqual(data[category], { ...data[category], ...records }, category);
+    }
+  }
+  assert.equal(manifest.player.loadout, "player.zero");
   return { summary, bindings, level };
 }
 

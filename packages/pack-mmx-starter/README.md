@@ -25,8 +25,9 @@ projectile records it uses, with the built-in values and sheet names.
 ## Assets
 
 The pack owns the Metool and Bat sheets and the four capsule sheets, with their
-`enemy_anims.json` / `pickup_anims.json`. Shared art (the player, shots and
-effects, HUD, sounds, font) stays in the Studio templates.
+`enemy_anims.json` / `pickup_anims.json`. X's sprites belong to the MMX — X pack
+(`packages/pack-mmx-player-x`); shared art (shots and effects, HUD, sounds, font)
+stays in the Studio templates.
 
 The Studio templates `mmx-starter` and `mmx-demo` keep physical copies (Studio
 bundles the template and ships only `out/**`). Refresh them from the pack with:
@@ -53,8 +54,8 @@ const merged = mergeGameData(base, pack);
 `mergePack` (`@mmx/content-schema`) adds what this pack has and a project lacks:
 records, keys missing from a record, manifest entries and binding keys. It never
 replaces a value and returns `{ added, skipped }`. Studio's File → Install /
-update MMX Starter pack… runs it and copies the missing `assets/` files, keeping
-any file of the project's own.
+update MMX packs… runs it for this pack and the X and Zero packs and copies the
+missing `assets/` files, keeping any file of the project's own.
 
 ## Status
 

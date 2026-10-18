@@ -3,6 +3,12 @@ import starterManifest from "@mmx/pack-mmx-starter/pack.json" with { type: "json
 import starterData from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
 import starterAssets from "@mmx/pack-mmx-starter/assets.json" with { type: "json" };
 import starterBindings from "@mmx/pack-mmx-starter/bindings.json" with { type: "json" };
+import xManifest from "@mmx/pack-mmx-player-x/pack.json" with { type: "json" };
+import xData from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
+import xAssets from "@mmx/pack-mmx-player-x/assets.json" with { type: "json" };
+import xBindings from "@mmx/pack-mmx-player-x/bindings.json" with { type: "json" };
+import zeroManifest from "@mmx/pack-mmx-player-zero/pack.json" with { type: "json" };
+import zeroData from "@mmx/pack-mmx-player-zero/data/game.json" with { type: "json" };
 
 /** A pack copied into a project, as the manifest's `packs` records it (`ProjectPack`). */
 export type PackRef = { id: string; version: number };
@@ -23,8 +29,11 @@ export type PackContent = {
   data: GameDataOverlay;
   /** Manifest entries (`assets.json`), their files at the same project-relative paths. */
   assets: readonly PackAsset[];
-  /** Binding groups for `game/data.json`'s `bindings` (`bindings.json`). */
-  bindings: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  /**
+   * `game/data.json`'s `bindings` (`bindings.json`): groups of keys (`enemyAnimations`) or single
+   * asset ids (`playerAnimation`).
+   */
+  bindings: Readonly<Record<string, string | Readonly<Record<string, string>>>>;
 };
 
 export const MMX_STARTER: PackContent = {
@@ -32,6 +41,24 @@ export const MMX_STARTER: PackContent = {
   data: starterData as GameDataOverlay,
   assets: starterAssets.assets,
   bindings: starterBindings,
+};
+
+const ref = ({ id, version }: PackRef): PackRef => ({ id, version });
+
+/** The MMX — X pack: X's records, his sheets and his `playerAnimation` binding. */
+export const MMX_PLAYER_X: PackContent = {
+  ref: ref(xManifest),
+  data: xData as GameDataOverlay,
+  assets: xAssets.assets,
+  bindings: xBindings,
+};
+
+/** The MMX — Zero pack: Zero's records only (his art comes from the Zero import). */
+export const MMX_PLAYER_ZERO: PackContent = {
+  ref: ref(zeroManifest),
+  data: zeroData as GameDataOverlay,
+  assets: [],
+  bindings: {},
 };
 
 type Json = Record<string, unknown>;
@@ -154,7 +181,32 @@ export function mergePack<M extends { packs?: readonly PackRef[]; assets?: reado
       const bindings: Json = { ...(file.bindings as Json | undefined) };
       const ids = new Set([...assets, ...newAssets].map((asset) => asset.id));
       const before = added.length;
+      // A pack's single bindings are one player's (playerAnimation, playerPointingSheet): added
+      // together or not at all, as X's sheet cannot draw without his arm sheet, nor his arm over
+      // another player's.
+      const singles = Object.entries(pack.bindings).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      );
+      const todo = singles.filter(([key, value]) => bindings[key] !== value);
+      const blocker = todo
+        .map(([key, value]) =>
+          key in bindings
+            ? `the project's ${key} is kept`
+            : ids.has(value)
+              ? undefined
+              : `${value} is not in the project`,
+        )
+        .find((reason) => reason !== undefined);
+      for (const [key, value] of todo) {
+        if (blocker) {
+          skipped.push(`binding ${key}: ${blocker}`);
+        } else {
+          bindings[key] = value;
+          added.push(`binding ${key}`);
+        }
+      }
       for (const [group, entries] of Object.entries(pack.bindings)) {
+        if (typeof entries === "string") continue;
         const mine = bindings[group] ?? {};
         if (!isRecord(mine)) {
           skipped.push(`binding ${group}: not an object`);

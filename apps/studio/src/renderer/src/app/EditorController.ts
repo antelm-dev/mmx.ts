@@ -679,10 +679,11 @@ export class EditorController {
   }
 
   /**
-   * File → Install / update MMX Starter pack… (contract C-INSTALL), for a saved project only (the
-   * menu item is disabled with unsaved changes, which the reopen would drop). Shows what would be
-   * added and kept and changes nothing until confirmed; then writes into the project folder,
-   * reopens the project (the undo history restarts) and shows what was added and kept.
+   * File → Install / update MMX packs… (contract C-INSTALL: the MMX Starter, X and Zero packs),
+   * for a saved project only (the menu item is disabled with unsaved changes, which the reopen
+   * would drop). Shows what would be added and kept and changes nothing until confirmed; then
+   * writes into the project folder, reopens the project (the undo history restarts) and shows
+   * what was added and kept.
    */
   async installStarterPack(): Promise<void> {
     const { rootPath, project } = projectSession.getSnapshot();
@@ -693,12 +694,13 @@ export class EditorController {
       return;
     }
     if (preview.value.added.length === 0) {
-      window.alert(
-        packSummary("The MMX Starter pack is up to date: nothing to add.", preview.value),
-      );
+      window.alert(packSummary("The MMX packs are up to date: nothing to add.", preview.value));
       return;
     }
-    const question = packSummary("Install / update the MMX Starter pack?", preview.value);
+    const question = packSummary(
+      "Install / update the MMX packs (Starter, X, Zero)?",
+      preview.value,
+    );
     const undo =
       "The project folder is changed now, and Undo cannot revert it. Nothing is replaced: " +
       "to go back, remove what is added (or restore the folder from a backup).";
@@ -713,10 +715,10 @@ export class EditorController {
     void this.applyProjectAssets();
     const reopened = this.enterProject(project, issues, {
       failed: "Reopen failed",
-      opened: () => "MMX Starter pack installed.",
-      noEntry: "MMX Starter pack installed but no entry level was found.",
+      opened: () => "MMX packs installed.",
+      noEntry: "MMX packs installed but no entry level was found.",
     });
-    if (reopened.opened) window.alert(packSummary("MMX Starter pack installed.", installed.value));
+    if (reopened.opened) window.alert(packSummary("MMX packs installed.", installed.value));
   }
 
   /** Open a level JSON file; with a project open, it is imported as a new level of the project. */

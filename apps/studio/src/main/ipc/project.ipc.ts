@@ -303,8 +303,8 @@ export function createProjectIpc() {
     ),
 
     /**
-     * File → Install / update MMX Starter pack…: add what the pack has and the project at
-     * `rootPath` lacks, never replacing anything. With `dryRun`, nothing is written.
+     * File → Install / update MMX packs…: add what the MMX Starter, X and Zero packs have and
+     * the project at `rootPath` lacks, never replacing anything. With `dryRun`, nothing is written.
      */
     "install-pack": handle(
       async (
@@ -314,7 +314,7 @@ export function createProjectIpc() {
       ): Promise<ProjectResult<{ added: string[]; skipped: string[] }>> => {
         try {
           // Emitted next to this bundle by rollup.config.mjs: the packaged app ships only out/**.
-          return await installPack(rootPath, join(__dirname, "packs/mmx-starter"), dryRun);
+          return await installPack(rootPath, (id) => join(__dirname, "packs", id), dryRun);
         } catch (error) {
           return { ok: false, issues: [issue("pack.install", errorMessage(error), "/")] };
         }

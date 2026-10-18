@@ -13,7 +13,13 @@ import {
   type GameDataOverlay,
 } from "@mmx/engine/data";
 
-import { MMX_STARTER_PACK, mergePack, withStarterPack } from "../src/index.js";
+import {
+  MMX_PLAYER_X,
+  MMX_PLAYER_ZERO,
+  MMX_STARTER_PACK,
+  mergePack,
+  withStarterPack,
+} from "../src/index.js";
 
 const STARTER = [{ id: "mmx-starter", version: 1 }];
 
@@ -264,4 +270,59 @@ test("mergePack: an older pack version is bumped, a newer one is kept", () => {
   const newer = mergePack({ manifest: { packs: [{ id: "mmx-starter", version: 2 }] }, overlay });
   assert.deepEqual(newer.manifest.packs, [{ id: "mmx-starter", version: 2 }]);
   assert.ok(newer.skipped.includes("pack mmx-starter: the project has v2, newer than v1"));
+});
+
+// Contract C-PART: Install adds the player packs; X brings his sheets and binds them together.
+test("mergePack: the X and Zero packs add their records, X's art and both player bindings", () => {
+  const manifest = blankManifest();
+  const starter = mergePack({ manifest, overlay: undefined, bindingsFile: { bindings: {} } });
+  const x = mergePack({ ...starter, manifest: starter.manifest }, MMX_PLAYER_X);
+  const zero = mergePack({ ...x, manifest: x.manifest }, MMX_PLAYER_ZERO);
+  assert.deepEqual(
+    zero.manifest.packs?.map((p) => p.id),
+    ["mmx-starter", "mmx-player-x", "mmx-player-zero"],
+  );
+  assert.deepEqual(
+    x.manifest.assets.slice(ASSETS.length).map((a) => a.id),
+    ["anim.player.x", "sprite.player.x", "sprite.player.x-leftarm"],
+  );
+  assert.ok(x.added.includes("binding playerAnimation"));
+  assert.ok(x.added.includes("binding playerPointingSheet"));
+  assert.ok(zero.added.includes("record loadouts.player.zero"));
+  assert.deepEqual((zero.bindingsFile as { bindings: Record<string, unknown> }).bindings, {
+    playerAnimation: "anim.player.x",
+    playerPointingSheet: "sprite.player.x-leftarm",
+    ...BINDINGS,
+  });
+  assert.deepEqual([...x.skipped, ...zero.skipped], []);
+  assert.equal(hashOf(zero.overlay), "36e5bb6d8c3547a6");
+});
+
+test("mergePack: X's player bindings are added together or not at all", () => {
+  const manifest = { ...blankManifest(), assets: [...MMX_PLAYER_X.assets] };
+  // Another player is bound: X's arm sheet would draw over it.
+  const zero = { bindings: { playerAnimation: "anim.player.zero" } };
+  const other = mergePack({ manifest, overlay: undefined, bindingsFile: zero }, MMX_PLAYER_X);
+  assert.equal(other.bindingsFile, zero);
+  assert.deepEqual(other.skipped, [
+    "binding playerAnimation: the project's playerAnimation is kept",
+    "binding playerPointingSheet: the project's playerAnimation is kept",
+  ]);
+  // X's sheet is in the project but not his arm's: his sheet alone cannot draw.
+  const noArm = {
+    ...manifest,
+    assets: MMX_PLAYER_X.assets.filter((a) => a.id !== "sprite.player.x-leftarm"),
+  };
+  const occupied = new Set(["assets/sprites/player/x_leftarm.png"]);
+  const file = { bindings: {} };
+  const result = mergePack(
+    { manifest: noArm, overlay: undefined, bindingsFile: file, occupiedPaths: occupied },
+    MMX_PLAYER_X,
+  );
+  assert.equal(result.bindingsFile, file);
+  assert.ok(
+    result.skipped.includes(
+      "binding playerAnimation: sprite.player.x-leftarm is not in the project",
+    ),
+  );
 });
