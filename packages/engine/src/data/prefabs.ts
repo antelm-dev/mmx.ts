@@ -19,7 +19,7 @@ export const prefabs = {
     id: "hazard",
     name: "Hazard",
     description:
-      "Spikes: touching them kills the player unless he is invulnerable; with Lethal off they deal Damage instead.",
+      "Spikes: touching them kills the player unless the player is invulnerable; with Lethal off they deal Damage instead.",
     runtime: "environment",
     source: { kind: "environment", ref: "hazard" },
     fields: [

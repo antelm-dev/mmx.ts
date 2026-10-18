@@ -30,7 +30,7 @@ export const BEHAVIOUR_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "platform.falling": "One-way floor that drops after a delay once the player lands on it.",
   conveyor: "Strip that pushes the player along while they stand on it.",
   hazard:
-    "Spikes: touching them kills the player unless he is invulnerable; with Lethal off they deal Damage instead.",
+    "Spikes: touching them kills the player unless the player is invulnerable; with Lethal off they deal Damage instead.",
   "camera-zone": "Keeps the camera inside its area while the player is in it.",
 };
 
