@@ -162,8 +162,6 @@ export async function exportProject(
     exportedAssets.push(asset.path);
   }
 
-  const manifestJson = serializeProject(exportedManifest);
-  await destFs.writeText(PROJECT_MANIFEST, manifestJson);
   const exportedDataFiles = await copyPortableProjectFiles(sourceFs, destFs);
   // As the manifest: a project migrated on load (withStarterPack) has its pack records only in memory.
   if (project.gameData) {
@@ -175,6 +173,8 @@ export async function exportProject(
       exportedDataFiles.push(CANONICAL_GAME_DATA_FILE);
     }
   }
+  // Records before the manifest, as in saveProject: an export cut short leaves no `packs` without them.
+  await destFs.writeText(PROJECT_MANIFEST, serializeProject(exportedManifest));
 
   return succeed({
     manifestPath: PROJECT_MANIFEST,

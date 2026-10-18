@@ -106,9 +106,30 @@ test("migration adds whole records only: a key removed from a record stays remov
   assert.deepEqual(overlay?.enemies?.bat, pack.enemies.bat, "missing records are still added");
 });
 
-test("packs: [] stays base only, and a project with a player pack gets no player", () => {
+test("each missing player pack is added, its marker after the project's", () => {
+  const own = structuredClone(pack) as GameDataOverlay;
+  for (const [packs, added] of [
+    [[...STARTER, X], [ZERO]],
+    [[ZERO], [X]],
+    [[{ ...X, version: 9 }, ...STARTER], [ZERO]],
+  ] as const) {
+    const manifest = { packs };
+    const result = withStarterPack(manifest, own);
+    assert.equal(result.changed, true);
+    assert.deepEqual(result.manifest.packs, [...packs, ...added]);
+    assert.equal(manifest.packs, packs, "the input is not mutated");
+    const data = added[0] === X ? xPack : zeroPack;
+    assertHasRecords(result.overlay, data);
+    const other = (added[0] === X ? zeroPack : xPack) as { loadouts: object };
+    for (const id of Object.keys(other.loadouts)) {
+      assert.equal(result.overlay?.loadouts?.[id], undefined, `${id}: its marker is there`);
+    }
+  }
+});
+
+test("packs: [] stays base only, and a project with both player packs gets nothing", () => {
   const own = { schemaVersion: 1, enemies: {} } as GameDataOverlay;
-  for (const packs of [[], [...STARTER, X], [ZERO], [X, ...STARTER], [{ ...X, version: 9 }]]) {
+  for (const packs of [[], [...STARTER, X, ZERO], [ZERO, { ...X, version: 9 }]]) {
     const manifest = { packs };
     for (const overlay of [undefined, own]) {
       const result = withStarterPack(manifest, overlay);

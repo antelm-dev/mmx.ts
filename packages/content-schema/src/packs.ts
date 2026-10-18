@@ -260,10 +260,11 @@ export type WithStarterPack<M> = {
  * ({@link mergePack}: the records its `data/game.json` lacks, never keys inside a record it has, so
  * a field removed on purpose stays removed; a record it has always wins), with their `packs`
  * markers. A manifest without `packs` predates packs and gets the MMX Starter, X and Zero; one
- * with packs but no player pack gets X and Zero together. `packs: []` (base only), a project with
- * a player pack already, and a malformed `packs` are returned as is. So is an overlay that is not
- * an object of records, left for the merge to report so a fixed file still migrates. Art and
- * bindings come with the template or File → Install / update MMX Starter pack….
+ * with packs gets each player pack whose marker it lacks (none: X and Zero together). `packs: []`
+ * (base only), a project with both player packs, and a malformed `packs` are returned as is. So
+ * is an overlay that is not an object of records, left for the merge to report so a fixed file
+ * still migrates. Art and bindings come with the template or File → Install / update MMX Starter
+ * pack….
  */
 export function withStarterPack<M extends { packs?: readonly PackRef[] }>(
   manifest: M,
@@ -271,12 +272,11 @@ export function withStarterPack<M extends { packs?: readonly PackRef[] }>(
 ): WithStarterPack<M> {
   const unchanged = { manifest, overlay, changed: false };
   const { packs } = manifest;
-  const isPlayer = (entry: Json) => PLAYER_PACKS.some((pack) => pack.ref.id === entry.id);
   const missing =
     packs === undefined
       ? [MMX_STARTER, ...PLAYER_PACKS]
-      : Array.isArray(packs) && packs.length > 0 && packs.every(isRecord) && !packs.some(isPlayer)
-        ? PLAYER_PACKS
+      : Array.isArray(packs) && packs.length > 0 && packs.every(isRecord)
+        ? PLAYER_PACKS.filter((pack) => !packs.some((entry) => entry.id === pack.ref.id))
         : [];
   if (missing.length === 0 || !hasRecords(overlay ?? {}, missing.flatMap(categoriesOf))) {
     return unchanged;

@@ -126,8 +126,17 @@ test("a new project carries the pack, and an export of a migrated, unsaved proje
     const loaded = await loadProject(source);
     assert.ok(loaded.ok);
     const dest = createMemoryFileSystem();
-    const exported = await exportProject(source, dest, loaded.value);
+    const writes: string[] = [];
+    const recording: FileSystem = {
+      ...dest,
+      async writeText(path, content) {
+        writes.push(path);
+        return dest.writeText(path, content);
+      },
+    };
+    const exported = await exportProject(source, recording, loaded.value);
     assert.equal(exported.ok, true, JSON.stringify(exported.issues));
+    assert.ok(writes.indexOf("data/game.json") < writes.indexOf("project.json"), writes.join());
     assert.deepEqual(JSON.parse(await dest.readText("project.json")).packs, PACKS);
     assert.deepEqual(JSON.parse(await dest.readText("data/game.json")), PACK);
   });
