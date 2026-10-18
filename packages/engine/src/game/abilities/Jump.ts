@@ -1,13 +1,12 @@
-import { Fall } from "./Fall.js";
+import { Fall, type FallConfig } from "./Fall.js";
 import type { Character } from "../Character.js";
-import { JUMP_FULLSPEED_PROPORTION, JUMP_LEEWAY, JUMP_MAX_TIME } from "../../core/constants.js";
 
 /** Typed tuning for {@link Jump}, supplied by the loadout (Part 5). */
-export interface JumpConfig {
-  velocity?: number;
-  maxTime?: number;
-  leeway?: number;
-  fullspeedProportion?: number;
+export interface JumpConfig extends FallConfig {
+  velocity: number;
+  maxTime: number;
+  leeway: number;
+  fullspeedProportion: number;
 }
 
 /**
@@ -35,13 +34,13 @@ export class Jump extends Fall {
   protected slowdown_time = 0;
   protected stopped_input = false;
 
-  constructor(character: Character, config: JumpConfig = {}) {
-    super(character);
+  constructor(character: Character, config: JumpConfig) {
+    super(character, config);
     this.actions = ["jump"];
-    if (config.velocity !== undefined) this.jump_velocity = config.velocity;
-    this.max_jump_time = config.maxTime ?? JUMP_MAX_TIME;
-    this.leeway_time = config.leeway ?? JUMP_LEEWAY;
-    this.fullspeed_proportion = config.fullspeedProportion ?? JUMP_FULLSPEED_PROPORTION;
+    this.jump_velocity = config.velocity;
+    this.max_jump_time = config.maxTime;
+    this.leeway_time = config.leeway;
+    this.fullspeed_proportion = config.fullspeedProportion;
     character.events.on("headbump", () => this.on_headbump());
   }
 

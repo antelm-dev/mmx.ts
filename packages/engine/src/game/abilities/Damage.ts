@@ -1,19 +1,13 @@
 import { Movement } from "../ability/Movement.js";
 import type { Actor } from "../Actor.js";
 import type { Character } from "../Character.js";
-import {
-  PLAYER_DAMAGE_DURATION,
-  PLAYER_DAMAGE_INVULNERABILITY,
-  PLAYER_KNOCKBACK_JUMP_VELOCITY,
-  PLAYER_KNOCKBACK_SPEED,
-} from "../../core/constants.js";
 
 /** Typed tuning for {@link Damage}, supplied by the loadout. */
 export interface DamageConfig {
-  duration?: number;
-  invulnerability?: number;
-  knockbackSpeed?: number;
-  knockbackJumpVelocity?: number;
+  duration: number;
+  invulnerability: number;
+  knockbackSpeed: number;
+  knockbackJumpVelocity: number;
 }
 
 /**
@@ -36,12 +30,12 @@ export class Damage extends Movement {
   damage_taken = 0;
   damage_direction = -1;
 
-  constructor(character: Character, config: DamageConfig = {}) {
+  constructor(character: Character, config: DamageConfig) {
     super(character);
-    this.duration_time = config.duration ?? PLAYER_DAMAGE_DURATION;
-    this.invulnerability_time = config.invulnerability ?? PLAYER_DAMAGE_INVULNERABILITY;
-    this.horizontal_velocity = config.knockbackSpeed ?? PLAYER_KNOCKBACK_SPEED;
-    this.jump_velocity = config.knockbackJumpVelocity ?? PLAYER_KNOCKBACK_JUMP_VELOCITY;
+    this.duration_time = config.duration;
+    this.invulnerability_time = config.invulnerability;
+    this.horizontal_velocity = config.knockbackSpeed;
+    this.jump_velocity = config.knockbackJumpVelocity;
   }
 
   /** Damage is event-driven; the regular per-frame ability poll must never start it. */

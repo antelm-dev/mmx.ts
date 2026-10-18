@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { REPLAY_ACTIONS } from "../src/core/Replay.js";
-import { PLAYER_INTRO_DROP_HEIGHT } from "../src/core/constants.js";
+import { PLAYER_INTRO_DROP_HEIGHT } from "./support/player.js";
 import type { LevelData } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";

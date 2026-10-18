@@ -1,10 +1,9 @@
 import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
-import { PLAYER_DEATH_RESTART_DELAY } from "../../core/constants.js";
 
 /** Typed tuning for {@link Death}, supplied by the loadout. */
 export interface DeathConfig {
-  restartDelay?: number;
+  restartDelay: number;
 }
 
 /**
@@ -27,9 +26,9 @@ export class Death extends Movement {
 
   restart_delay: number;
 
-  constructor(character: Character, config: DeathConfig = {}) {
+  constructor(character: Character, config: DeathConfig) {
     super(character);
-    this.restart_delay = config.restartDelay ?? PLAYER_DEATH_RESTART_DELAY;
+    this.restart_delay = config.restartDelay;
     character.events.on("zero_health", () => {
       if (!this.executing) this.startDeath();
     });

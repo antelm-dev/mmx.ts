@@ -148,11 +148,11 @@ test("projectiles get deterministic, counter-derived runtime ids", () => {
     return new Player(world, 48, 48, new Input());
   };
   const a = build();
-  a.spawnBuster(0);
+  a.fireActiveWeapon(0);
   assert.equal(a.projectiles[0].runtimeId, "projectile:0");
 
   // A second player fed the same call produces the same id — no randomness.
   const b = build();
-  b.spawnBuster(0);
+  b.fireActiveWeapon(0);
   assert.equal(b.projectiles[0].runtimeId, "projectile:0");
 });

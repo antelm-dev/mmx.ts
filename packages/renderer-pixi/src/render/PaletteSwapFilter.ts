@@ -1,5 +1,5 @@
 import { defaultFilterVert, Filter, GlProgram, UniformGroup } from "pixi.js";
-import { WEAPON_PALETTE, type Palette6, type WeaponId } from "@mmx/engine";
+import { BASE_PALETTE, weaponPalette, type Palette6 } from "./weaponPalette.js";
 
 /**
  * Recolors X's body sprite per equipped weapon — port of Player.gd's
@@ -9,7 +9,7 @@ import { WEAPON_PALETTE, type Palette6, type WeaponId } from "@mmx/engine";
  *
  * The source colors those 6 slots replace *from* are fixed — Player_Material_
  * Shader.tres bakes in the same blue as the buster's own palette (equipping
- * the buster is an identity recolor; see WEAPON_PALETTE.buster) — so they are
+ * the buster is an identity recolor; see BASE_PALETTE) — so they are
  * compiled into the shader as constants rather than passed as uniforms; only
  * the 6 target colors change, on `sync()`, which the renderer calls whenever
  * the active weapon changes.
@@ -29,14 +29,10 @@ export class PaletteSwapFilter extends Filter {
     uTarget6: { value: [number, number, number]; type: "vec3<f32>" };
   }>;
 
-  private lastWeapon: WeaponId | null = null;
+  private lastWeapon: string | null = null;
 
   constructor() {
-    const [t1, t2, t3, t4, t5, t6] = WEAPON_PALETTE.buster.map(hexToVec3) as [
-      number,
-      number,
-      number,
-    ][];
+    const [t1, t2, t3, t4, t5, t6] = BASE_PALETTE.map(hexToVec3) as [number, number, number][];
     const targetUniforms = new UniformGroup({
       uTarget1: { value: t1, type: "vec3<f32>" },
       uTarget2: { value: t2, type: "vec3<f32>" },
@@ -49,7 +45,7 @@ export class PaletteSwapFilter extends Filter {
     super({
       glProgram: GlProgram.from({
         vertex: defaultFilterVert,
-        fragment: buildFragmentSource(WEAPON_PALETTE.buster),
+        fragment: buildFragmentSource(BASE_PALETTE),
         name: "palette-swap-filter",
       }),
       resources: { targetUniforms },
@@ -58,12 +54,15 @@ export class PaletteSwapFilter extends Filter {
     this.targetUniforms = targetUniforms;
   }
 
-  /** Re-target the 6 replacement colors; a no-op once already showing `weapon`. */
-  sync(weapon: WeaponId): void {
+  /**
+   * Re-target the 6 replacement colors to the player's active weapon (null when
+   * unarmed); a no-op once already showing it.
+   */
+  sync(weapon: string | null): void {
     if (weapon === this.lastWeapon) return;
     this.lastWeapon = weapon;
 
-    const palette = WEAPON_PALETTE[weapon];
+    const palette = weaponPalette(weapon);
     const uniforms = this.targetUniforms.uniforms;
     uniforms.uTarget1 = hexToVec3(palette[0]);
     uniforms.uTarget2 = hexToVec3(palette[1]);

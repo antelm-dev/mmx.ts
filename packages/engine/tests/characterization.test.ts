@@ -6,14 +6,8 @@ import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { levelCatalog } from "./fixtures/levels.js";
 import { World } from "../src/game/World.js";
-import {
-  BUSTER_SHOTS,
-  DARK_ARROW_SHOT,
-  DT,
-  MAX_HEALTH,
-  SUB_WEAPON_CONFIG,
-  WEAPON_ORDER,
-} from "../src/core/constants.js";
+import { DT, MAX_HEALTH } from "../src/core/constants.js";
+import { BUSTER_SHOTS, DARK_ARROW, DARK_ARROW_SHOT } from "./support/player.js";
 import {
   ENEMY_STATS,
   LIFE_CAPSULE_STATS,
@@ -77,8 +71,8 @@ const M = {
 
 const repeat = (mask: number, n: number): number[] => new Array(n).fill(mask);
 
-function digestOf(frames: number[]): string {
-  const scene = Scene.create({ level: flatLevel() });
+function digestOf(frames: number[], loadoutId?: string): string {
+  const scene = Scene.create({ level: flatLevel(), loadoutId });
   for (const m of frames) scene.step(m);
   return scene.digest();
 }
@@ -148,7 +142,11 @@ test("player starts on the buster with full health", () => {
 });
 
 test("weapon order is buster then dark_arrow", () => {
-  assert.deepEqual([...WEAPON_ORDER], ["buster", "dark_arrow"]);
+  const scene = Scene.create({ level: flatLevel() });
+  assert.deepEqual(
+    scene.player.weapons.map((w) => w.id),
+    ["buster", "dark_arrow"],
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -259,7 +257,10 @@ test("Dark Arrow statistics and ammo config", () => {
   assert.equal(DARK_ARROW_SHOT.damage, 3);
   assert.equal(DARK_ARROW_SHOT.speed, 420);
   assert.equal(DARK_ARROW_SHOT.frameCount, 1);
-  assert.deepEqual(SUB_WEAPON_CONFIG.dark_arrow, { ammoCost: 1, maxShotsAlive: 3 });
+  assert.deepEqual(
+    { ammoCost: DARK_ARROW.ammoCost, maxShotsAlive: DARK_ARROW.maxLiveShots },
+    { ammoCost: 1, maxShotsAlive: 3 },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -329,6 +330,27 @@ test("every catalog level loads into a scene", () => {
 for (const [name, { frames, digest }] of Object.entries(DIGEST_SEQUENCES)) {
   test(`digest is stable: ${name}`, () => {
     assert.equal(digestOf(frames), digest);
+  });
+}
+
+// Zero's runs over the same inputs. Frozen when the runtime started reading the
+// player's weapons from the loadout (user decision 2026-10-18, #145): Zero's
+// loadout carries no weapon, so he no longer spawns on X's buster with Dark
+// Arrow's 28 shots, and the digest drops both; these flat-room runs move him
+// exactly as before. Before: 6ca6c021, 40b22576, f43feb61, dc5685da, 14002704,
+// 74e567ee.
+const ZERO_DIGESTS: Record<string, string> = {
+  idle: "f4160c10",
+  walkRight: "3ac74821",
+  jumpInPlace: "c8ebb350",
+  dashLeft: "3e4802f5",
+  fireTaps: "47afe42b",
+  weaponSwitch: "866ee9e9",
+};
+
+for (const [name, digest] of Object.entries(ZERO_DIGESTS)) {
+  test(`Zero digest is stable: ${name}`, () => {
+    assert.equal(digestOf(DIGEST_SEQUENCES[name]!.frames, "player.zero"), digest);
   });
 }
 

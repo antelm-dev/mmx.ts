@@ -1,16 +1,8 @@
 import { Ability } from "../ability/Ability.js";
 import { Shot } from "./Shot.js";
-import type { Character } from "../Character.js";
+import type { Character, PlayerWeapon } from "../Character.js";
 import { AnimationCursor, uniformClip } from "../../core/AnimationCursor.js";
-import {
-  CHARGE_FX_FRAME_COUNT,
-  CHARGE_FX_LIFETIME,
-  CHARGE_LEVEL_3,
-  CHARGE_LEVEL_4,
-  CHARGE_MAX_TIME,
-  CHARGE_MIN_TIME,
-  ChargeTier,
-} from "../../core/constants.js";
+import { CHARGE_FX_FRAME_COUNT, CHARGE_FX_LIFETIME, ChargeTier } from "../../core/constants.js";
 
 const CHARGE_ANIMATION = uniformClip(
   CHARGE_FX_FRAME_COUNT,
@@ -20,10 +12,10 @@ const CHARGE_ANIMATION = uniformClip(
 
 /** Typed charge thresholds for {@link Charge}, supplied by the loadout (Part 5). */
 export interface ChargeConfig {
-  minTime?: number;
-  level3?: number;
-  level4?: number;
-  maxTime?: number;
+  minTime: number;
+  level3: number;
+  level4: number;
+  maxTime: number;
 }
 
 /**
@@ -42,6 +34,9 @@ export class Charge extends Ability {
   private readonly level_4: number;
   private readonly max_time: number;
 
+  /** The weapon being charged, latched at the start so a mid-hold switch fires it still. */
+  private weapon: PlayerWeapon | undefined;
+
   /** VFX latches — Charge.gd's `charging` / `mid_charge` / `max_charge`. */
   charging = false;
   mid_charge = false;
@@ -49,13 +44,13 @@ export class Charge extends Ability {
 
   private readonly vfxAnimation = new AnimationCursor();
 
-  constructor(character: Character, config: ChargeConfig = {}) {
+  constructor(character: Character, config: ChargeConfig) {
     super(character);
     this.actions = ["fire"];
-    this.min_time = config.minTime ?? CHARGE_MIN_TIME;
-    this.level_3 = config.level3 ?? CHARGE_LEVEL_3;
-    this.level_4 = config.level4 ?? CHARGE_LEVEL_4;
-    this.max_time = config.maxTime ?? CHARGE_MAX_TIME;
+    this.min_time = config.minTime;
+    this.level_3 = config.level3;
+    this.level_4 = config.level4;
+    this.max_time = config.maxTime;
     this.vfxAnimation.play(CHARGE_ANIMATION);
   }
 
@@ -63,17 +58,20 @@ export class Charge extends Ability {
     return true;
   }
 
-  /** Buster-only: no ported sub-weapon has a charged tier (see WEAPON_SHOTS). */
+  /** Only a weapon with a charged tier charges (no ported sub-weapon has one). */
   override _StartCondition(): boolean {
+    const weapon = this.character.getWeapon(this.character.activeWeapon);
     return (
       !this.character.is_executing_either(["Damage", "Slash"]) &&
       this.character.get_action_pressed("fire") &&
       !this.character.block_charging &&
-      this.character.activeWeapon === "buster"
+      weapon !== undefined &&
+      weapon.shots.length > 1
     );
   }
 
   override _Setup(): void {
+    this.weapon = this.character.getWeapon(this.character.activeWeapon);
     this.charged_time = 0;
     this.charging = false;
     this.mid_charge = false;
@@ -84,7 +82,7 @@ export class Charge extends Ability {
       this.charge(dt);
     } else {
       if (this.charged_time > this.min_time) {
-        this.character.spawnBuster(this.get_charge_level());
+        this.character.fireWeapon(this.weapon, this.get_charge_level());
         // Charge owns the projectile but not the pose — Shot does. Without this
         // the charged shot leaves the cannon while X is still standing neutral,
         // since the initial tap's arm-point window expired during the hold.

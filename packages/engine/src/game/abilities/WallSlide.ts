@@ -1,11 +1,10 @@
 import { Movement } from "../ability/Movement.js";
 import type { Character } from "../Character.js";
-import { WALLSLIDE_SPEED, WALLSLIDE_START_DELAY } from "../../core/constants.js";
 
 /** Typed tuning for {@link WallSlide}, supplied by the loadout (Part 5). */
 export interface WallSlideConfig {
-  speed?: number;
-  startDelay?: number;
+  speed: number;
+  startDelay: number;
 }
 
 /**
@@ -22,10 +21,10 @@ export class WallSlide extends Movement {
   private readonly slide_speed: number;
   private wallgrab_direction = 0;
 
-  constructor(character: Character, config: WallSlideConfig = {}) {
+  constructor(character: Character, config: WallSlideConfig) {
     super(character);
-    this.slide_speed = config.speed ?? WALLSLIDE_SPEED;
-    this.start_delay = config.startDelay ?? WALLSLIDE_START_DELAY;
+    this.slide_speed = config.speed;
+    this.start_delay = config.startDelay;
   }
 
   override should_execute_on_hold(): boolean {

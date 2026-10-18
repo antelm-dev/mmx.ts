@@ -1,12 +1,9 @@
-import { Dash } from "./Dash.js";
+import { Dash, type DashConfig } from "./Dash.js";
 import type { Character } from "../Character.js";
-import { AIRDASH_DURATION, AIRDASH_MAX, AIRDASH_SPEED } from "../../core/constants.js";
 
-/** Typed tuning for {@link AirDash}, supplied by the loadout (Part 5). */
-export interface AirDashConfig {
-  speed?: number;
-  duration?: number;
-  maxAirdashes?: number;
+/** Typed tuning for {@link AirDash}; the other Dash keys come from the loadout's dash slot. */
+export interface AirDashConfig extends DashConfig {
+  maxAirdashes: number;
 }
 
 /**
@@ -25,11 +22,11 @@ export class AirDash extends Dash {
   protected override smoke_fx: string | null = null;
   private initial_direction = 1;
 
-  constructor(character: Character, config: AirDashConfig = {}) {
-    super(character);
-    this.horizontal_velocity = config.speed ?? AIRDASH_SPEED;
-    this.dash_duration = config.duration ?? AIRDASH_DURATION;
-    this.max_airdashes = config.maxAirdashes ?? AIRDASH_MAX;
+  constructor(character: Character, config: AirDashConfig) {
+    super(character, config);
+    this.horizontal_velocity = config.speed;
+    this.dash_duration = config.duration;
+    this.max_airdashes = config.maxAirdashes;
     this.airdash_count = this.max_airdashes;
     character.events.on("land", () => this.resetCount());
     character.events.on("wallslide", () => this.resetCount());

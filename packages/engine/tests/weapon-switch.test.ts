@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { Input, Action } from "../src/core/Input.js";
-import { DT, SUB_WEAPON_CONFIG, SUB_WEAPON_MAX_AMMO } from "../src/core/constants.js";
+import { DT } from "../src/core/constants.js";
+import { DARK_ARROW, SUB_WEAPON_MAX_AMMO } from "./support/player.js";
 import type { Charge } from "../src/game/abilities/Charge.js";
 import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
@@ -133,8 +134,7 @@ test("Dark Arrow depletes its ammo tank and stops firing once empty", () => {
   let shotsFired = 0;
   player.events.on("shot_fired", () => shotsFired++);
 
-  const config = SUB_WEAPON_CONFIG.dark_arrow!;
-  const maxShots = Math.floor(SUB_WEAPON_MAX_AMMO / config.ammoCost);
+  const maxShots = Math.floor(SUB_WEAPON_MAX_AMMO / DARK_ARROW.ammoCost);
 
   for (let i = 0; i < maxShots; i++) fire(input, player, 4);
   assert.equal(shotsFired, maxShots, "fired exactly the ammo the tank holds");

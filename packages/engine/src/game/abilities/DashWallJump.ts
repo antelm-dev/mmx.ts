@@ -1,11 +1,9 @@
-import { WallJump } from "./WallJump.js";
-import type { JumpConfig } from "./Jump.js";
+import { WallJump, type WallJumpConfig } from "./WallJump.js";
 import type { Character } from "../Character.js";
-import { DASHJUMP_SPEED } from "../../core/constants.js";
 
-/** Typed tuning for {@link DashWallJump}; the Jump keys come from the loadout's jump slot. */
-export interface DashWallJumpConfig extends JumpConfig {
-  speed?: number;
+/** Typed tuning for {@link DashWallJump}; the Jump and WallJump keys come from those slots. */
+export interface DashWallJumpConfig extends WallJumpConfig {
+  speed: number;
 }
 
 /**
@@ -18,9 +16,9 @@ export class DashWallJump extends WallJump {
   readonly name: string = "DashWallJump";
   override_timer = 0;
 
-  constructor(character: Character, config: DashWallJumpConfig = {}) {
+  constructor(character: Character, config: DashWallJumpConfig) {
     super(character, config);
-    this.horizontal_velocity = config.speed ?? DASHJUMP_SPEED; // dash-speed air control + kick-off
+    this.horizontal_velocity = config.speed; // dash-speed air control + kick-off
     character.events.on("input_dash", () => this.on_dash_press());
   }
 

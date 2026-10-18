@@ -1,5 +1,5 @@
 import { Input } from "../core/Input.js";
-import { DT, WEAPON_ORDER } from "../core/constants.js";
+import { DT } from "../core/constants.js";
 import { applyInput } from "../core/Replay.js";
 import type { AnimData } from "@mmx/contracts/animation";
 import { COMPILED_GAME_DATA, hashCanonical } from "../data/index.js";
@@ -241,11 +241,11 @@ export class Scene {
       this.player.current_health,
       this.player.stateString(),
       this.player.projectiles.length,
-      this.player.activeWeapon,
+      this.player.activeWeapon ?? "",
     ];
-    for (const weapon of WEAPON_ORDER) {
-      const ammo = this.player.getWeaponAmmo(weapon);
-      if (Number.isFinite(ammo)) parts.push("ammo", weapon, ammo);
+    for (const { id } of this.player.weapons) {
+      const ammo = this.player.getWeaponAmmo(id);
+      if (Number.isFinite(ammo)) parts.push("ammo", id, ammo);
     }
     for (const enemy of this.stage.enemies) {
       parts.push(enemy.kind, q(enemy.pos.x), q(enemy.pos.y), enemy.current_health);
