@@ -7,7 +7,7 @@ import type { CompiledGameData, GameData } from "../src/data/index.js";
 import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { MMX_GAME_DATA, compileStrict } from "./support/mmx.js";
+import { MMX_COMPILED, MMX_GAME_DATA, compileStrict } from "./support/mmx.js";
 
 /**
  * The player is built and played from its compiled loadout and the scene's
@@ -23,7 +23,7 @@ function room(): World {
   return World.fromRows(rows);
 }
 
-/** Copy the built-in data and the MMX Starter pack with `edit` applied, then compile it. */
+/** Copy the MMX game data with `edit` applied, then compile it. */
 function compiled(edit: (data: GameData) => void): CompiledGameData {
   const data = structuredClone(MMX_GAME_DATA) as GameData;
   edit(data);
@@ -42,7 +42,7 @@ function shoot(player: Player, taps: number): Player {
   return player;
 }
 
-const x = (gameData?: CompiledGameData, loadoutId?: string): Player =>
+const x = (gameData = MMX_COMPILED, loadoutId = "player.x"): Player =>
   new Player(room(), 80, 160, new Input(), 1, loadoutId, gameData);
 
 test("the player carries its loadout's weapons, in the loadout's order", () => {

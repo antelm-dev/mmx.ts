@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { Camera } from "../src/game/Camera.js";
 import { Input } from "../src/core/Input.js";
 import { DT, TILE_SIZE } from "../src/core/constants.js";
-import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
 import { stage1 as STAGE1 } from "./fixtures/levels.js";
+import { createPlayer } from "./support/mmx.js";
 
 const stage1Entities = (id: string) => STAGE1.entities.filter((entity) => entity.id === id);
 const stage1World = () => new World(STAGE1.tiles.slice(), STAGE1.cols, STAGE1.rows, STAGE1.slopes);
@@ -72,7 +72,7 @@ test("level camera holds each vertical tier in a stable frame", () => {
 function climbOutFrom(startX: number, wallX: number): number {
   const input = new Input();
   const world = stage1World();
-  const player = new Player(world, startX, 25 * TILE_SIZE, input);
+  const player = createPlayer(world, startX, 25 * TILE_SIZE, input);
 
   for (let i = 0; i < 60; i++) player.tick(DT); // drop to the cavern floor
 

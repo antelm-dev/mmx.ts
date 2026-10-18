@@ -5,8 +5,9 @@ import { Input, Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { DARK_ARROW, SUB_WEAPON_MAX_AMMO } from "./support/player.js";
 import type { Charge } from "../src/game/abilities/Charge.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
+import { createPlayer } from "./support/mmx.js";
 
 /** A long open room, so shots have somewhere to fly without meeting a wall. */
 function openRoom(): World {
@@ -19,7 +20,7 @@ function openRoom(): World {
 function makePlayer() {
   const input = new Input();
   const world = openRoom();
-  const player = new Player(world, 5 * 16, 10 * 16, input);
+  const player = createPlayer(world, 5 * 16, 10 * 16, input);
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { input, player };
 }
@@ -124,7 +125,7 @@ test("Dark Arrow depletes its ammo tank and stops firing once empty", () => {
   // not live) within a tick or two — otherwise the in-flight cap (3) would gate
   // firing long before the ammo tank (28) ever ran dry, and this would end up
   // re-testing the cap instead of the ammo.
-  const player = new Player(world, 77 * 16, 10 * 16, input);
+  const player = createPlayer(world, 77 * 16, 10 * 16, input);
   for (let i = 0; i < 5; i++) player.tick(DT);
   tap(input, player, "weapon_right");
 

@@ -6,12 +6,11 @@ import type { AnimData, Box, FrameData } from "@mmx/contracts/animation";
 import { Input } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
-import { Player } from "../src/game/Player.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Scene, type SceneClips } from "../src/game/Scene.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
-import { ENEMY_STATS, MMX_COMPILED, makeBat, makeMetool } from "./support/mmx.js";
+import { ENEMY_STATS, MMX_COMPILED, makeBat, makeMetool, createPlayer } from "./support/mmx.js";
 
 /**
  * Per-frame hurtboxes/hitboxes and engine-owned clip data (SceneOptions.clips).
@@ -43,7 +42,7 @@ function makeStage(playerX = 70 * 16) {
   rows.push("#".repeat(80));
   const world = World.fromRows(rows);
   const input = new Input();
-  const player = new Player(world, playerX, FLOOR_Y - 14, input);
+  const player = createPlayer(world, playerX, FLOOR_Y - 14, input);
   return { world, input, player, stage: new Stage(world, player) };
 }
 

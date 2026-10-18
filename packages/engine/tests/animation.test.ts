@@ -4,9 +4,10 @@ import { readFileSync } from "node:fs";
 
 import { Input, Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
 import type { AnimData } from "@mmx/contracts/animation";
+import { createPlayer } from "./support/mmx.js";
 
 /**
  * The animation state the abilities drive (AbilityUser's animatedSprite): clip
@@ -29,7 +30,7 @@ function flatRoom(): World {
 
 function makePlayer() {
   const input = new Input();
-  const player = new Player(flatRoom(), 5 * 16, 10 * 16, input);
+  const player = createPlayer(flatRoom(), 5 * 16, 10 * 16, input);
   player.loadAnimations(animData);
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { input, player };
@@ -130,7 +131,7 @@ test("wall-sliding plays the slide clip", () => {
   for (let y = 0; y < 14; y++) rows.push("#" + ".".repeat(28) + "#");
   rows.push("#".repeat(30));
   const input = new Input();
-  const player = new Player(World.fromRows(rows), 28 * 16, 3 * 16, input); // airborne by the wall
+  const player = createPlayer(World.fromRows(rows), 28 * 16, 3 * 16, input); // airborne by the wall
   player.loadAnimations(animData);
 
   hold(input, "move_right", true); // press into the wall while falling
@@ -173,7 +174,7 @@ test("without armRegion frames the shot layer keeps drawing the normal frame", (
     ),
   };
   const input = new Input();
-  const player = new Player(flatRoom(), 5 * 16, 10 * 16, input);
+  const player = createPlayer(flatRoom(), 5 * 16, 10 * 16, input);
   player.loadAnimations(noArm);
   run(player, 5);
 

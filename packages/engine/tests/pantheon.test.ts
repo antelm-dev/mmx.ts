@@ -4,12 +4,11 @@ import assert from "node:assert/strict";
 import { Input } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
-import { Player } from "../src/game/Player.js";
 import { Scene } from "../src/game/Scene.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
 import type { MeleeSpec } from "../src/game/Character.js";
-import { ENEMY_STATS, MMX_COMPILED, makePantheon } from "./support/mmx.js";
+import { ENEMY_STATS, MMX_COMPILED, makePantheon, createPlayer } from "./support/mmx.js";
 
 // Headless: no clip data, so "aim" finishes on the next tick (see enemy.test.ts).
 
@@ -20,7 +19,7 @@ function makeStage(playerX: number) {
   rows.push("#".repeat(80));
   const world = World.fromRows(rows);
   const input = new Input();
-  const player = new Player(world, playerX, FLOOR_Y - 14, input);
+  const player = createPlayer(world, playerX, FLOOR_Y - 14, input);
   const stage = new Stage(world, player);
   const pantheon = stage.add(
     makePantheon(world, 30 * 16, FLOOR_Y - ENEMY_STATS.pantheon.hh, -1, 1234),

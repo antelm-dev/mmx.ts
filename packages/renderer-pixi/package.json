@@ -37,6 +37,8 @@
     "@mmx/project-schema": "workspace:*"
   },
   "devDependencies": {
+    "@mmx/pack-mmx-player-x": "workspace:*",
+    "@mmx/pack-mmx-player-zero": "workspace:*",
     "@mmx/pack-mmx-starter": "workspace:*",
     "@types/node": "^24.0.0",
     "pixi.js": "^8.19.0",

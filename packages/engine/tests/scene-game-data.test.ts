@@ -115,11 +115,14 @@ test("a recorded replay carries the game data hash through encode/decode", () =>
 });
 
 test("a replay recorded against other game data is refused", () => {
-  const recorder = new Recorder({ level: level([]), seed: 1 });
+  const recorder = new Recorder({ level: level([]), seed: 1, gameData: MMX_COMPILED });
   recorder.step(0);
   const replay = { ...recorder.toReplay(), gameDataHash: "deadbeef" };
 
-  assert.throws(() => Recorder.replay(replay, { level: level([]) }), /recorded with game data/);
+  assert.throws(
+    () => Recorder.replay(replay, { level: level([]), gameData: MMX_COMPILED }),
+    /recorded with game data/,
+  );
   assert.throws(() => recorder.load(replay), /recorded with game data/);
   assert.throws(
     () => recorder.load(decodeReplay(encodeReplay(replay))),
@@ -129,13 +132,16 @@ test("a replay recorded against other game data is refused", () => {
 });
 
 test("a legacy replay without a game data hash still loads", () => {
-  const recorder = new Recorder({ level: level([]), seed: 1 });
+  const recorder = new Recorder({ level: level([]), seed: 1, gameData: MMX_COMPILED });
   for (let i = 0; i < 10; i++) recorder.step(2);
   const digest = recorder.scene.digest();
   const { gameDataHash: _, ...legacy } = recorder.toReplay();
   const decoded = decodeReplay(encodeReplay(legacy));
 
   assert.equal("gameDataHash" in decoded, false);
-  assert.equal(Recorder.replay(decoded, { level: level([]) }).digest(), digest);
+  assert.equal(
+    Recorder.replay(decoded, { level: level([]), gameData: MMX_COMPILED }).digest(),
+    digest,
+  );
   assert.equal(recorder.load(decoded).digest(), digest);
 });

@@ -4,15 +4,20 @@ import assert from "node:assert/strict";
 import { Input, type Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { Actor } from "../src/game/Actor.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import { stage2 } from "./fixtures/levels.js";
-import { GAME_DATA } from "../src/data/gameData.js";
 import { compileGameData } from "../src/data/compileGameData.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
-import { ENEMY_STATS, MMX_COMPILED, makeMetool } from "./support/mmx.js";
+import {
+  ENEMY_STATS,
+  MMX_COMPILED,
+  MMX_GAME_DATA,
+  makeMetool,
+  createPlayer,
+} from "./support/mmx.js";
 
 const FLOOR_Y = 11 * 16;
 
@@ -26,7 +31,7 @@ function room(): World {
 
 function zero(x = 120) {
   const input = new Input();
-  const player = new Player(room(), x, FLOOR_Y - 15, input, 1, "player.zero");
+  const player = createPlayer(room(), x, FLOOR_Y - 15, input, 1, "player.zero");
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { input, player };
 }
@@ -180,7 +185,7 @@ test("a swing does not survive a restart, rewind or level load", () => {
 /** Combo, run, jump slash and dash slash, one line per tick. */
 function replay(): string {
   const input = new Input();
-  const player = new Player(room(), 80, FLOOR_Y - 15, input, 7, "player.zero");
+  const player = createPlayer(room(), 80, FLOOR_Y - 15, input, 7, "player.zero");
   const lines: string[] = [];
   for (let f = 0; f < 200; f++) {
     input.setDown("fire", [10, 16, 30, 90, 150].includes(f));
@@ -205,10 +210,13 @@ test("a scripted slash replay is deterministic", () => {
 });
 
 test("a slash step whose blade outlasts the swing fails compilation", () => {
-  const slash = GAME_DATA.abilities["zero.slash"];
+  const slash = MMX_GAME_DATA.abilities["zero.slash"];
   const config = { ...slash.config, slash1: { ...(slash.config!.slash1 as object), activeTo: 18 } };
   const result = compileGameData(
-    { ...GAME_DATA, abilities: { ...GAME_DATA.abilities, "zero.slash": { ...slash, config } } },
+    {
+      ...MMX_GAME_DATA,
+      abilities: { ...MMX_GAME_DATA.abilities, "zero.slash": { ...slash, config } },
+    },
     buildCompileRegistries(),
   );
   assert.ok(

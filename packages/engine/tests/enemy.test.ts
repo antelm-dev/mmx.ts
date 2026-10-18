@@ -4,14 +4,13 @@ import assert from "node:assert/strict";
 import { Input } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { PLAYER_HIT_INVULNERABILITY } from "./support/player.js";
-import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import { spawnEnemy } from "../src/game/enemies/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
 import { compileGameData, type GameData } from "../src/data/index.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
-import { ENEMY_STATS, MMX_GAME_DATA, makeBat, makeMetool } from "./support/mmx.js";
+import { ENEMY_STATS, MMX_GAME_DATA, makeBat, makeMetool, createPlayer } from "./support/mmx.js";
 
 /**
  * These run without any clip data loaded, which is the same deal the movement
@@ -40,7 +39,7 @@ function room(): World {
 function makeStage(playerX = 70 * 16) {
   const world = room();
   const input = new Input();
-  const player = new Player(world, playerX, FLOOR_Y - 14, input);
+  const player = createPlayer(world, playerX, FLOOR_Y - 14, input);
   const stage = new Stage(world, player);
   return { world, input, player, stage };
 }

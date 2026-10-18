@@ -11,10 +11,11 @@ import {
   MAX_SHOTS_ALIVE,
 } from "./support/player.js";
 import type { Charge } from "../src/game/abilities/Charge.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Projectile } from "../src/game/Projectile.js";
 import { World } from "../src/game/World.js";
 import { Rng } from "../src/core/Rng.js";
+import { createPlayer } from "./support/mmx.js";
 
 /** A long open room, so shots have somewhere to fly without meeting a wall. */
 function openRoom(): World {
@@ -27,7 +28,7 @@ function openRoom(): World {
 function makePlayer() {
   const input = new Input();
   const world = openRoom();
-  const player = new Player(world, 5 * 16, 10 * 16, input);
+  const player = createPlayer(world, 5 * 16, 10 * 16, input);
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { input, world, player };
 }

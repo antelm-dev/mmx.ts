@@ -11,18 +11,10 @@ import {
   notWired,
   type RegistryEntry,
 } from "../src/behaviors/index.js";
-import {
-  GAME_DATA,
-  compileGameData,
-  type GameData,
-  type GameDataDiagnostic,
-} from "../src/data/index.js";
+import { compileGameData, type GameData, type GameDataDiagnostic } from "../src/data/index.js";
 import { MMX_GAME_DATA } from "./support/mmx.js";
 
-function clone(): GameData {
-  return structuredClone(GAME_DATA);
-}
-/** For the cases that edit an MMX enemy: core + the MMX Starter pack. */
+/** Core + the MMX Starter, X and Zero packs. */
 function cloneMmx(): GameData {
   return structuredClone(MMX_GAME_DATA);
 }
@@ -90,8 +82,8 @@ test("validateConfig rejects a wrong-typed value", () => {
 
 // --- Registries back compilation --------------------------------------------
 
-test("buildCompileRegistries covers every behaviour the default data references", () => {
-  const result = compile(clone());
+test("buildCompileRegistries covers every behaviour the MMX data references", () => {
+  const result = compile(cloneMmx());
   assert.equal(result.ok, true);
   if (result.ok) {
     assert.equal(result.diagnostics.filter((d) => d.severity === "error").length, 0);
@@ -99,7 +91,7 @@ test("buildCompileRegistries covers every behaviour the default data references"
 });
 
 test("the ability registry knows every player ability's behaviour", () => {
-  for (const { id, behavior } of Object.values(GAME_DATA.abilities)) {
+  for (const { id, behavior } of Object.values(MMX_GAME_DATA.abilities)) {
     assert.equal(abilityRegistry.has(behavior), true, `missing ${behavior} (${id})`);
   }
 });
@@ -113,7 +105,7 @@ test("the enemy-behaviour registry knows every enemy ability id", () => {
 });
 
 test("an unknown ability behaviour fails compilation against the real registries", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.abilities["player.dash"].behavior = "player.teleport";
   assert.ok(errorCodes(compile(data).diagnostics).includes("behavior.unknown"));
 });
@@ -126,13 +118,13 @@ test("an unknown enemy behaviour fails compilation", () => {
 });
 
 test("an ability config with an unknown key fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.abilities["player.dash"].config = { speed: 200, duration: 0.55, leeway: 0.1, bogus: 1 };
   assert.ok(errorCodes(compile(data).diagnostics).includes("config.invalid"));
 });
 
 test("an ability config missing a required key fails compilation", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.abilities["player.dash"].config = { speed: 200, duration: 0.55 };
   assert.ok(errorCodes(compile(data).diagnostics).includes("config.invalid"));
 });
