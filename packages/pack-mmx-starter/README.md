@@ -10,13 +10,14 @@ the course primitives (`spawn`, `camera-zone`, `hazard`, slopes).
 
 A pack is a folder with:
 
-| File             | Content                                                                    |
-| ---------------- | -------------------------------------------------------------------------- |
-| `pack.json`      | `{ id, name, version }`                                                    |
-| `data/game.json` | A `GameDataOverlay` (`@mmx/engine/data`) merged over the base by id        |
-| `assets.json`    | `{ assets }`: the pack's 12 project manifest entries (sprites, animations) |
-| `assets/`        | The files those entries name, at the same project-relative paths           |
-| `ATTRIBUTION.md` | Where the art comes from                                                   |
+| File             | Content                                                                      |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `pack.json`      | `{ id, name, version }`                                                      |
+| `data/game.json` | A `GameDataOverlay` (`@mmx/engine/data`) merged over the base by id          |
+| `assets.json`    | `{ assets }`: the pack's 12 project manifest entries (sprites, animations)   |
+| `assets/`        | The files those entries name, at the same project-relative paths             |
+| `bindings.json`  | `enemyAnimations` / `pickupAnimations` keys for a project's `game/data.json` |
+| `ATTRIBUTION.md` | Where the art comes from                                                     |
 
 Each object ships its prefab and the enemy, actor, pickup, environment and
 projectile records it uses, with the built-in values and sheet names.
@@ -46,6 +47,14 @@ import { mergeGameData } from "@mmx/engine/data";
 
 const merged = mergeGameData(base, pack);
 ```
+
+## Installing into a project
+
+`mergePack` (`@mmx/content-schema`) adds what this pack has and a project lacks:
+records, keys missing from a record, manifest entries and binding keys. It never
+replaces a value and returns `{ added, skipped }`. Studio's File → Install /
+update MMX Starter pack… runs it and copies the missing `assets/` files, keeping
+any file of the project's own.
 
 ## Status
 
