@@ -94,9 +94,11 @@ test("a lemon logs one hit event, and the hit that empties health logs killed", 
   );
   player.fireActiveWeapon(0);
   const events = run(stage, 30);
+  // The lemon spawns 60px right of the bat's centre and flies left at 6px/frame,
+  // the bat drifting toward it: the boxes meet on the third tick (frame 2).
   assert.deepEqual(events, [
     {
-      frame: events[0]?.frame,
+      frame: 2,
       attack: "lemon",
       weapon: "buster",
       charge: 0,
@@ -109,7 +111,6 @@ test("a lemon logs one hit event, and the hit that empties health logs killed", 
       result: "hit",
     },
   ]);
-  assert.ok(events[0]!.frame > 0);
   assert.equal(bat.current_health, 1);
 
   player.fireActiveWeapon(0);

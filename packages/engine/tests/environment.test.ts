@@ -6,9 +6,11 @@ import { Input } from "../src/core/Input.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import { MovingPlatform } from "../src/game/Environment.js";
-import { loadLevel } from "../src/game/level.js";
+import { compileLevel, loadLevel } from "../src/game/level.js";
+import { compileGameData } from "../src/data/index.js";
+import { buildCompileRegistries } from "../src/behaviors/index.js";
 import { stage2 } from "./fixtures/levels.js";
-import { MMX_COMPILED, createPlayer } from "./support/mmx.js";
+import { MMX_COMPILED, MMX_GAME_DATA, createPlayer } from "./support/mmx.js";
 
 test("the mechanics demo is larger than the original and authors every environment type", () => {
   const level = loadLevel(stage2, MMX_COMPILED);
@@ -104,6 +106,44 @@ test("level hazards read Lethal and Damage, falling back to the hazard environme
       [true, 4],
       [false, 7],
     ],
+  );
+});
+
+test("a lethal hazard wins over a damaging one it overlaps, whatever their order", () => {
+  const world = World.fromRows(["....", "...."]);
+  const player = createPlayer(world, 16, 16, new Input());
+  const stage = new Stage(world, player, {
+    hazards: [
+      { id: "soft", x: 8, y: 8, w: 16, h: 16, lethal: false, damage: 4 },
+      { id: "spikes", x: 8, y: 8, w: 16, h: 16 },
+    ],
+  });
+
+  stage.tick(DT);
+
+  assert.equal(player.current_health, 0);
+  assert.equal(stage.damageEvents[0]?.source.runtimeId, "spikes");
+  assert.equal(stage.damageEvents[0]?.result, "killed");
+});
+
+test("a hazard's Damage must be at least 1, in a level and in its environment default", () => {
+  const data = structuredClone(stage2);
+  const index = data.entities.findIndex((e) => e.id === "Hazard");
+  data.entities[index] = { ...data.entities[index]!, fields: { Lethal: false, Damage: 0 } };
+  const level = compileLevel(data, MMX_COMPILED);
+  assert.equal(level.ok, false);
+  assert.deepEqual(
+    level.diagnostics.map((d) => [d.code, d.field]),
+    [["field.range", "Damage"]],
+  );
+
+  const game = structuredClone(MMX_GAME_DATA);
+  game.environments.hazard!.defaults.damage = 0;
+  const compiled = compileGameData(game, buildCompileRegistries());
+  assert.equal(compiled.ok, false);
+  assert.deepEqual(
+    compiled.diagnostics.map((d) => [d.code, d.fieldPath]),
+    [["config.invalid", "environments.hazard.defaults.damage"]],
   );
 });
 

@@ -38,7 +38,7 @@ const DEFAULTS_SCHEMAS = {
   },
   "environment.falling-platform": { delay: { type: "number", min: 0 } },
   "environment.conveyor": { speed: "number" },
-  "environment.hazard": { lethal: "boolean", damage: { type: "number", min: 0, optional: true } },
+  "environment.hazard": { lethal: "boolean", damage: { type: "number", min: 1, optional: true } },
   "environment.camera-zone": { bindX: "boolean", bindY: "boolean" },
 } as const satisfies Readonly<Record<string, Schema>>;
 

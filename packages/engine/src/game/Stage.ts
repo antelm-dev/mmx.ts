@@ -68,7 +68,12 @@ export class Stage {
   readonly sparks: HitSpark[] = [];
   /** The hits resolved on the current tick; cleared at the start of every tick. */
   readonly damageEvents: DamageEvent[] = [];
-  /** Index of the current tick (ticks run before it), stamped on its damage events. */
+  /**
+   * Index of the current tick (ticks run before it), stamped on its damage events:
+   * -1 before the first tick, incremented at the top of each. A scene's first step
+   * logs frame 0 while Scene.frame reads 1 after that step, so an event's frame is
+   * Scene.frame - 1 once the step returns.
+   */
   frame = -1;
 
   constructor(
@@ -256,7 +261,9 @@ export class Stage {
   private resolveHazards(): void {
     const p = this.player;
     if (!p.collisions_enabled || !p.has_health() || p.is_invulnerable()) return;
-    const hazard = this.hazards.find((h) => bodyOverlapsRect(p, h));
+    const touched = this.hazards.filter((h) => bodyOverlapsRect(p, h));
+    // A lethal hazard among the overlaps wins over a damaging one.
+    const hazard = touched.find((h) => h.lethal !== false) ?? touched[0];
     if (!hazard) return;
     const source = { kind: "hazard", runtimeId: hazard.id };
     if (hazard.lethal !== false) {

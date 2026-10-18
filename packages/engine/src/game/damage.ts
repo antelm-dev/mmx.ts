@@ -8,6 +8,10 @@ export type DamageResult = "hit" | "killed" | "immune" | "shielded" | "guard_bre
  * by invulnerability are not recorded: they repeat every frame boxes overlap.
  */
 export interface DamageEvent {
+  /**
+   * The Stage tick that resolved it, from 0 ({@link Stage.frame}): the value
+   * Scene.frame had before that step, i.e. Scene.frame - 1 once the step returns.
+   */
   frame: number;
   /** Projectile id, or "melee", "touch", "hazard". */
   attack: string;

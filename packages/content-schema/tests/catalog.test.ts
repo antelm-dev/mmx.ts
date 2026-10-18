@@ -37,7 +37,8 @@ const LEGACY_DESCRIPTIONS: Record<string, string> = {
   "platform.moving": "One-way floor that travels between two points, carrying the player.",
   "platform.falling": "One-way floor that drops after a delay once the player lands on it.",
   conveyor: "Strip that pushes the player along while they stand on it.",
-  hazard: "Lethal area: touching it kills the player at once.",
+  hazard:
+    "Spikes: touching them kills the player unless he is invulnerable; with Lethal off they deal Damage instead.",
   slope: "Ramp baked into the terrain, walked up and down.",
   "camera-zone": "Keeps the camera inside its area while the player is in it.",
 };

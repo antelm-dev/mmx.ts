@@ -66,7 +66,10 @@ export class Player extends Character {
     return landed;
   }
 
-  /** Lethal terrain bypasses ordinary damage protection and invulnerability. */
+  /**
+   * Instant death past death protection and invulnerability: a pit. A lethal
+   * hazard calls it too, but only once the player is not invulnerable (Stage).
+   */
   kill(): void {
     if (!this.has_health()) return;
     this.emit_zero_health();
