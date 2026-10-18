@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
 import electronRun from "vite-plugin-electron-run/rollup-plugin";
@@ -39,6 +40,25 @@ const internalAliases = alias({
   ],
 });
 
+/**
+ * The MMX Starter pack's art, emitted to `out/main/packs/mmx-starter/` for the `install-pack`
+ * IPC: the packaged app ships only `out/**`, and dev runs the same bundle. Only the files its
+ * `assets.json` entries name; the JSON parts are bundled through `@mmx/content-schema`.
+ */
+function packFiles() {
+  const root = new URL("../../packages/pack-mmx-starter/", import.meta.url);
+  return {
+    name: "mmx-pack-files",
+    generateBundle() {
+      const { assets } = JSON.parse(readFileSync(new URL("assets.json", root), "utf8"));
+      for (const path of new Set(assets.map((asset) => asset.path))) {
+        const source = readFileSync(new URL(path, root));
+        this.emitFile({ type: "asset", fileName: `packs/mmx-starter/${path}`, source });
+      }
+    },
+  };
+}
+
 export default defineConfig([
   {
     input: "src/preload/index.ts",
@@ -77,6 +97,7 @@ export default defineConfig([
         compilerOptions: { sourceMap: !production },
       }),
       replace({ preventAssignment: true, __ELECTRON_DEV__: JSON.stringify(!production) }),
+      packFiles(),
       production && terser(),
       // Inert outside `rollup --watch`, so production builds never spawn Electron.
       electronRun({ entry: "index.js", additionalArgs: ["--inspect"], stdinControls: false }),

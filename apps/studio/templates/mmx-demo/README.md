@@ -26,14 +26,15 @@ ATTRIBUTION.md        Third-party and fan-work attribution
 
 ## Maintaining assets
 
-The assets are copied from `templates/mmx-starter`; its animation metadata
-generators live in `scripts/starter-template/`. Refresh the starter assets first,
-then copy the resulting files into this project.
+The shared assets come from `templates/mmx-starter` and the Metool, Bat and
+capsule art from the MMX Starter pack (`packages/pack-mmx-starter`).
+`generate-manifest.mjs` writes this project's `project.json` and copies the
+pack's files here, as for the starter. From `apps/studio`:
 
 ```powershell
-cd apps/studio
 node scripts/starter-template/build-anims.mjs [path-to-godot-project]
 node scripts/starter-template/build-enemies.mjs [path-to-godot-project]
 node scripts/starter-template/build-pickups.mjs [path-to-godot-project]
 node scripts/starter-template/build-shots.mjs [path-to-godot-project]
+node scripts/starter-template/generate-manifest.mjs
 ```

@@ -20,6 +20,7 @@ import {
   Minus,
   Monitor,
   Moon,
+  PackagePlus,
   PanelsTopLeft,
   RotateCcw,
   Save,
@@ -179,6 +180,15 @@ function FileMenu() {
           onSelect={() => void editor.exportProject()}
         >
           <Share2 size={13} /> Export Project…
+        </MenuItem>
+        <MenuItem
+          value="install-pack"
+          // The project is reopened afterwards: unsaved changes would be lost.
+          disabled={!project.open || snap.dirty}
+          title={project.open && snap.dirty ? "Save the project first" : undefined}
+          onSelect={() => void editor.installStarterPack()}
+        >
+          <PackagePlus size={13} /> Install / update MMX Starter pack…
         </MenuItem>
       </MenuGroup>
       <MenuSeparator />

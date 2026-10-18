@@ -678,6 +678,47 @@ export class EditorController {
     this.toast("Project exported.");
   }
 
+  /**
+   * File → Install / update MMX Starter pack… (contract C-INSTALL), for a saved project only (the
+   * menu item is disabled with unsaved changes, which the reopen would drop). Shows what would be
+   * added and kept and changes nothing until confirmed; then writes into the project folder,
+   * reopens the project (the undo history restarts) and shows what was added and kept.
+   */
+  async installStarterPack(): Promise<void> {
+    const { rootPath, project } = projectSession.getSnapshot();
+    if (!rootPath || !project || this.isDirty) return;
+    const preview = await projectSession.installPack(true);
+    if (!preview.ok) {
+      this.toast(`Install failed: ${preview.issues[0]?.message ?? "unknown error"}`);
+      return;
+    }
+    if (preview.value.added.length === 0) {
+      window.alert(
+        packSummary("The MMX Starter pack is up to date: nothing to add.", preview.value),
+      );
+      return;
+    }
+    const question = packSummary("Install / update the MMX Starter pack?", preview.value);
+    const undo =
+      "The project folder is changed now, and Undo cannot revert it. Nothing is replaced: " +
+      "to go back, remove what is added (or restore the folder from a backup).";
+    if (!window.confirm(`${question}\n\n${undo}`)) return;
+    if (this.store.get().mode === "play") this.togglePlay();
+    const installed = await projectSession.installPack(false);
+    if (!installed.ok) {
+      this.toast(`Install failed: ${installed.issues[0]?.message ?? "unknown error"}`);
+      return;
+    }
+    const issues = await projectSession.openProject(rootPath);
+    void this.applyProjectAssets();
+    const reopened = this.enterProject(project, issues, {
+      failed: "Reopen failed",
+      opened: () => "MMX Starter pack installed.",
+      noEntry: "MMX Starter pack installed but no entry level was found.",
+    });
+    if (reopened.opened) window.alert(packSummary("MMX Starter pack installed.", installed.value));
+  }
+
   /** Open a level JSON file; with a project open, it is imported as a new level of the project. */
   async openLevel(): Promise<void> {
     const inProject = projectSession.getSnapshot().open;
@@ -1274,6 +1315,30 @@ function hasPageTextSelection(): boolean {
   const node = sel?.isCollapsed === false ? sel.anchorNode : null;
   const el = node instanceof Element ? node : node?.parentElement;
   return !!el && getComputedStyle(el).userSelect !== "none";
+}
+
+/**
+ * A pack install's summary for a dialog: what is added, counted by kind ("26 records, 12 assets"),
+ * then what is left as the project has it, listed (the first 12).
+ */
+export function packSummary(
+  title: string,
+  { added, skipped }: { added: string[]; skipped: string[] },
+): string {
+  const counts = new Map<string, number>();
+  for (const entry of added) {
+    const kind = entry.slice(0, entry.indexOf(" "));
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  const lines = [title, ""];
+  const kinds = [...counts].map(([kind, n]) => `${n} ${kind}${n > 1 ? "s" : ""}`);
+  lines.push(`Added: ${kinds.join(", ") || "nothing"}.`);
+  if (skipped.length > 0) {
+    lines.push(`Not changed (${skipped.length}):`);
+    lines.push(...skipped.slice(0, 12).map((entry) => `• ${entry}`));
+    if (skipped.length > 12) lines.push(`• …and ${skipped.length - 12} more`);
+  }
+  return lines.join("\n");
 }
 
 /** The one editor instance the whole renderer shares. */
