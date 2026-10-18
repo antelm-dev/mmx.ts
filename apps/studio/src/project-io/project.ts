@@ -138,14 +138,16 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
 
   const parsed = parseProject(raw, projectValidation(gameData));
   if (!parsed.ok || !parsed.project) {
-    return fail(
-      parsed.issues.map((entry) => ({
+    // A broken data/game.json may be why an overlay loadout reads as unknown: report both.
+    return fail([
+      ...issues,
+      ...parsed.issues.map((entry) => ({
         severity: entry.severity,
         code: entry.code,
         message: entry.message,
         path: entry.path,
       })),
-    );
+    ]);
   }
 
   const manifest = parsed.project;

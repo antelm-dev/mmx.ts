@@ -96,6 +96,17 @@ export function compileGameData(
       });
     }
   };
+  /** `v` when it is an array; otherwise a `value.array` error and an empty list. */
+  const arr = <T>(v: readonly T[], path: string, id: string): readonly T[] => {
+    if (Array.isArray(v)) return v;
+    error({
+      code: "value.array",
+      definitionId: id,
+      fieldPath: path,
+      message: `${path} must be an array.`,
+    });
+    return [];
+  };
   const hitbox = (box: Hitbox, path: string, id: string): void => {
     num(box.hw, `${path}.hw`, id, { gt: 0 });
     num(box.hh, `${path}.hh`, id, { gt: 0 });
@@ -149,7 +160,9 @@ export function compileGameData(
         message: `Loadout references unknown actor '${l.actor}'.`,
       });
     }
-    for (const [i, slot] of l.slots.entries()) {
+    const slots = arr(l.slots, `loadouts.${l.id}.slots`, l.id);
+    const weapons = arr(l.weapons, `loadouts.${l.id}.weapons`, l.id);
+    for (const [i, slot] of slots.entries()) {
       if (!data.abilities[slot.ability]) {
         error({
           code: "reference.missing",
@@ -161,7 +174,7 @@ export function compileGameData(
       if (slot.priority !== undefined)
         num(slot.priority, `loadouts.${l.id}.slots[${i}].priority`, l.id, {});
     }
-    for (const [i, w] of l.weapons.entries()) {
+    for (const [i, w] of weapons.entries()) {
       if (!data.weapons[w]) {
         error({
           code: "reference.missing",
@@ -173,8 +186,8 @@ export function compileGameData(
     }
     // An unarmed loadout (no weapons) omits initialWeapon; otherwise it must be listed.
     if (
-      (l.weapons.length > 0 || l.initialWeapon !== undefined) &&
-      !l.weapons.includes(l.initialWeapon ?? "")
+      (weapons.length > 0 || l.initialWeapon !== undefined) &&
+      !weapons.includes(l.initialWeapon ?? "")
     ) {
       error({
         code: "reference.invalid",
@@ -184,7 +197,7 @@ export function compileGameData(
       });
     }
     // Jumps take their air control from the walk slot and their dash fall from the fall slot.
-    const behaviors = new Set(l.slots.map((s) => data.abilities[s.ability]?.behavior));
+    const behaviors = new Set(slots.map((s) => data.abilities[s.ability]?.behavior));
     const jumps = ["player.jump", "player.dash-jump", "player.wall-jump", "player.dash-wall-jump"];
     const missing = ["player.walk", "player.fall"].filter((b) => !behaviors.has(b));
     if (missing.length > 0 && jumps.some((b) => behaviors.has(b))) {
@@ -223,7 +236,11 @@ export function compileGameData(
     num(w.ammoCost, `weapons.${w.id}.ammoCost`, w.id, { min: 0 });
     // Charge thresholds must be finite, non-negative and strictly ascending.
     let prev = -Infinity;
-    for (const [i, t] of w.chargeThresholds.entries()) {
+    for (const [i, t] of arr(
+      w.chargeThresholds,
+      `weapons.${w.id}.chargeThresholds`,
+      w.id,
+    ).entries()) {
       num(t, `weapons.${w.id}.chargeThresholds[${i}]`, w.id, { min: 0 });
       if (Number.isFinite(t) && !(t > prev)) {
         error({
@@ -235,7 +252,8 @@ export function compileGameData(
       }
       prev = t;
     }
-    if (w.projectiles.length === 0) {
+    const projectiles = arr(w.projectiles, `weapons.${w.id}.projectiles`, w.id);
+    if (Array.isArray(w.projectiles) && projectiles.length === 0) {
       error({
         code: "projectile.missing",
         definitionId: w.id,
@@ -243,7 +261,7 @@ export function compileGameData(
         message: `Weapon '${w.id}' has no projectiles.`,
       });
     }
-    for (const [i, ref] of w.projectiles.entries()) {
+    for (const [i, ref] of projectiles.entries()) {
       if (!data.projectiles[ref]) {
         error({
           code: "projectile.missing",
