@@ -13,7 +13,7 @@ import {
   type ProjectObjectDefinition,
   type ValidationIssue,
 } from "@mmx/project-schema";
-import type { StudioProject, ProjectIssue, SpriteRegion } from "@mmx/project-io";
+import type { StudioProject, ProjectIssue, ProjectResult, SpriteRegion } from "@mmx/project-io";
 import { levelManifestPath, PROJECT_VALIDATION, updateLevelDocument } from "@mmx/project-io";
 import { resetSheetCache } from "@mmx/renderer-pixi";
 import {
@@ -940,6 +940,19 @@ export class ProjectSession {
     }
 
     return result.issues;
+  }
+
+  /**
+   * File → Install / update MMX Starter pack… (contract C-INSTALL) into the open project's folder;
+   * with `dryRun`, what it would add and keep, nothing written. The caller reopens the project.
+   */
+  async installPack(
+    dryRun: boolean,
+  ): Promise<ProjectResult<{ added: string[]; skipped: string[] }>> {
+    const bridge = window.studio?.project;
+    const { rootPath } = this.state;
+    if (!bridge || !rootPath) return { ok: false, issues: unavailable() };
+    return bridge.installPack(rootPath, dryRun);
   }
 
   close(): void {

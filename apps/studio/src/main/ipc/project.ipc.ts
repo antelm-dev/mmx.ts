@@ -19,7 +19,11 @@ import {
   type StudioProject,
 } from "@mmx/project-io";
 import { createNodeFileSystem } from "@mmx/project-io/node";
-import { copyStarterProjectToDirectory, seedStarterGameData } from "@mmx/starter-template";
+import {
+  copyStarterProjectToDirectory,
+  installPack,
+  seedStarterGameData,
+} from "@mmx/starter-template";
 import {
   deleteWorkProject,
   destinationPick,
@@ -294,6 +298,25 @@ export function createProjectIpc() {
             ok: false,
             issues: [issue("game-data.write", errorMessage(error), `/${GAME_DATA_FILE}`)],
           };
+        }
+      },
+    ),
+
+    /**
+     * File → Install / update MMX Starter pack…: add what the pack has and the project at
+     * `rootPath` lacks, never replacing anything. With `dryRun`, nothing is written.
+     */
+    "install-pack": handle(
+      async (
+        _event,
+        rootPath: string,
+        dryRun: boolean,
+      ): Promise<ProjectResult<{ added: string[]; skipped: string[] }>> => {
+        try {
+          // Emitted next to this bundle by rollup.config.mjs: the packaged app ships only out/**.
+          return await installPack(rootPath, join(__dirname, "packs/mmx-starter"), dryRun);
+        } catch (error) {
+          return { ok: false, issues: [issue("pack.install", errorMessage(error), "/")] };
         }
       },
     ),

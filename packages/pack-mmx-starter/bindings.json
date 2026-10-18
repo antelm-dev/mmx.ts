@@ -1,0 +1,12 @@
+{
+  "enemyAnimations": {
+    "metool": "anim.enemy.metool",
+    "bat": "anim.enemy.bat"
+  },
+  "pickupAnimations": {
+    "heal": "anim.pickup.large",
+    "sheal": "anim.pickup.small",
+    "ammo": "anim.pickup.ammo",
+    "sammo": "anim.pickup.sammo"
+  }
+}

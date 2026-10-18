@@ -13,6 +13,7 @@ export {
   type StarterValidationResult,
 } from "./validate.js";
 export { seedStarterGameData } from "./seed.js";
+export { installPack, type PackInstall } from "./install.js";
 export {
   copyStarterProjectToDirectory,
   exportFreshStarterCopy,

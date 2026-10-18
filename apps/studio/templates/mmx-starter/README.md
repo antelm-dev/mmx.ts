@@ -21,21 +21,19 @@ ATTRIBUTION.md        Third-party and fan-work attribution
 
 ## Maintaining assets
 
-Animation metadata generators live in `scripts/starter-template/`.
-After refreshing animation JSON from a Godot export:
+This template lives in the MMX Studio repository (`apps/studio/templates/`). The
+Metool, Bat and capsule art belongs to the MMX Starter pack
+(`packages/pack-mmx-starter`); this tree keeps a copy. After refreshing animation
+JSON from a Godot export, from `apps/studio`:
 
 ```powershell
-cd apps/studio
-node scripts/build-anims.mjs [path-to-godot-project]
-node scripts/build-enemies.mjs [path-to-godot-project]
-node scripts/build-pickups.mjs [path-to-godot-project]
-node scripts/build-shots.mjs [path-to-godot-project]
-node scripts/generate-manifest.mjs
+node scripts/starter-template/build-anims.mjs [path-to-godot-project]
+node scripts/starter-template/build-enemies.mjs [path-to-godot-project]  # writes into the pack
+node scripts/starter-template/build-pickups.mjs [path-to-godot-project]  # writes into the pack
+node scripts/starter-template/build-shots.mjs [path-to-godot-project]
+node scripts/starter-template/generate-manifest.mjs  # both templates' project.json, copies the pack's files
 ```
 
-To re-copy binary assets from the core resource tree during migration work:
-
-```powershell
-node scripts/sync-resources.mjs
-node scripts/generate-manifest.mjs
-```
+A project that lacks the pack's art or bindings gets them from Studio's
+File → Install / update MMX Starter pack…, which adds what is missing and never
+replaces a file or value.
