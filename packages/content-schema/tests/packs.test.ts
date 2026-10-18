@@ -216,13 +216,13 @@ test("a malformed packs is left for the parse to report", () => {
 });
 
 test("a migrated project compiles to the former built-in hash, which the core alone no longer has", () => {
-  assert.notEqual(COMPILED_GAME_DATA.hash, "36e5bb6d8c3547a6");
-  assert.equal(hashOf(withStarterPack({}, undefined).overlay), "36e5bb6d8c3547a6");
-  assert.equal(hashOf(withStarterPack({}, { schemaVersion: 1 }).overlay), "36e5bb6d8c3547a6");
+  assert.notEqual(COMPILED_GAME_DATA.hash, "9d8a9efb04583a0e");
+  assert.equal(hashOf(withStarterPack({}, undefined).overlay), "9d8a9efb04583a0e");
+  assert.equal(hashOf(withStarterPack({}, { schemaVersion: 1 }).overlay), "9d8a9efb04583a0e");
   // A project made since packs: the Starter's records, then X and Zero added.
   const starter = withStarterPack({ packs: STARTER }, structuredClone(pack) as GameDataOverlay);
   assert.deepEqual(starter.manifest.packs, [...STARTER, ...PLAYERS]);
-  assert.equal(hashOf(starter.overlay), "36e5bb6d8c3547a6");
+  assert.equal(hashOf(starter.overlay), "9d8a9efb04583a0e");
 });
 
 test("records added from the pack are copies: mutating a result leaves the next migration intact", () => {
@@ -265,7 +265,7 @@ test("mergePack: a blank project gets the pack's records, asset entries and bind
   // The Starter alone has no player: on load the migration adds X and Zero, which keeps the hash.
   assert.equal(
     hashOf(withStarterPack(result.manifest, result.overlay).overlay),
-    "36e5bb6d8c3547a6",
+    "9d8a9efb04583a0e",
   );
 
   // Without game/data.json Play uses the starter's bindings: none is written.
@@ -420,7 +420,7 @@ test("mergePack: the X and Zero packs add their records, X's art and both player
     ...BINDINGS,
   });
   assert.deepEqual([...x.skipped, ...zero.skipped], []);
-  assert.equal(hashOf(zero.overlay), "36e5bb6d8c3547a6");
+  assert.equal(hashOf(zero.overlay), "9d8a9efb04583a0e");
 });
 
 test("mergePack: X's player bindings are added together or not at all", () => {

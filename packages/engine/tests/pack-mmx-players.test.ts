@@ -22,8 +22,8 @@ import { MMX_PACK as STARTER, compileStrict } from "./support/mmx.js";
  * built-in data before the removal, so a change to either side shows here.
  */
 
-/** COMPILED_GAME_DATA.hash of core + MMX Starter, before the players left the engine. */
-const BUILTIN_HASH = "36e5bb6d8c3547a6";
+/** COMPILED_GAME_DATA.hash of core + MMX Starter, before the players left the engine. Re-frozen when the core hazard prefab gained its Lethal and Damage fields. */
+const BUILTIN_HASH = "9d8a9efb04583a0e";
 
 const PLAYER_CATEGORIES = ["actors", "abilities", "loadouts", "weapons", "projectiles"] as const;
 

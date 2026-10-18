@@ -21,7 +21,10 @@ export const prefabs = {
     description: "Lethal area: touching it kills the player at once.",
     runtime: "environment",
     source: { kind: "environment", ref: "hazard" },
-    fields: [],
+    fields: [
+      { name: "Lethal", type: "boolean", default: true },
+      { name: "Damage", type: "number", default: 4, min: 1 },
+    ],
   },
   "camera-zone": {
     id: "camera-zone",

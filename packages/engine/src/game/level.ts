@@ -279,6 +279,8 @@ export function compileLevel(
       }
     } else if (e.id === "FallingPlatform") {
       checkNumberField(e, "Delay", true);
+    } else if (e.id === "Hazard") {
+      checkNumberField(e, "Damage", true);
     }
 
     // Advisory: an entity that falls entirely outside the level never participates.
@@ -307,12 +309,22 @@ function buildRuntime(data: LevelData, gameData: CompiledGameData): LevelRuntime
   // An omitted field falls back to its environment definition's default.
   const fallback = (id: string, key: string): number =>
     gameData.environments.get(ENVIRONMENT_DEFINITIONS.get(id)!)!.defaults[key] as number;
+  // A project without the engine's hazard definition keeps the engine defaults.
+  const hazard = gameData.environments.get("hazard")?.defaults ?? {};
   const spawn = matching("Spawn")[0];
   return {
     data,
     world: new World(data.tiles.slice(), data.cols, data.rows, data.slopes),
     spawn: { x: spawn.x, y: spawn.y },
-    hazards: matching("Hazard").map((e) => ({ id: e.iid, x: e.x, y: e.y, w: e.w, h: e.h })),
+    hazards: matching("Hazard").map((e) => ({
+      id: e.iid,
+      x: e.x,
+      y: e.y,
+      w: e.w,
+      h: e.h,
+      lethal: boolField(e, "Lethal", hazard.lethal !== false),
+      damage: numberField(e, "Damage", typeof hazard.damage === "number" ? hazard.damage : 4),
+    })),
     conveyors: matching("Conveyor").map((e) => ({
       id: e.iid,
       x: e.x,

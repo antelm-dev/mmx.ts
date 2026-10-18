@@ -128,12 +128,7 @@ export class Stage {
     this.player.conveyor_belt_speed = this.conveyorSpeedUnderPlayer();
     this.player.tick(dt);
 
-    if (
-      this.player.collisions_enabled &&
-      this.hazards.some((hazard) => bodyOverlapsRect(this.player, hazard))
-    ) {
-      this.player.kill();
-    }
+    this.resolveHazards();
 
     this.resolvePickups(dt);
     this.resolveWeaponCapsules(dt);
@@ -251,6 +246,27 @@ export class Stage {
         feet <= conveyor.y + conveyor.h,
     );
     return belt?.speed ?? 0;
+  }
+
+  /**
+   * Spikes. Invulnerability protects; otherwise a lethal hazard kills outright
+   * (past death protection) and a non-lethal one is an ordinary hit pushing away
+   * from its centre.
+   */
+  private resolveHazards(): void {
+    const p = this.player;
+    if (!p.collisions_enabled || !p.has_health() || p.is_invulnerable()) return;
+    const hazard = this.hazards.find((h) => bodyOverlapsRect(p, h));
+    if (!hazard) return;
+    const source = { kind: "hazard", runtimeId: hazard.id };
+    if (hazard.lethal !== false) {
+      const health = p.current_health;
+      p.kill();
+      this.log("hazard", source, PLAYER, health, { armor: p.armor, dealt: health }, "killed");
+      return;
+    }
+    const centre = { pos: { x: hazard.x + hazard.w / 2, y: hazard.y + hazard.h / 2 } };
+    this.hitPlayer("hazard", hazard.damage ?? 4, source, centre);
   }
 
   /**

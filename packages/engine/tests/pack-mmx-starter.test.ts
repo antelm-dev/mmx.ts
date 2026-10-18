@@ -22,8 +22,8 @@ import { MMX_PACK as PACK, X_PACK, ZERO_PACK, withPacks } from "./support/mmx.js
  * removal, so a change to either side shows here.
  */
 
-/** COMPILED_GAME_DATA.hash while the MMX objects were built in. */
-const BUILTIN_HASH = "36e5bb6d8c3547a6";
+/** COMPILED_GAME_DATA.hash while the MMX objects were built in. Re-frozen when the core hazard prefab gained its Lethal and Damage fields. */
+const BUILTIN_HASH = "9d8a9efb04583a0e";
 
 const core = (): GameData => structuredClone(GAME_DATA);
 /** Core + the X and Zero packs: a project without the MMX Starter pack. */

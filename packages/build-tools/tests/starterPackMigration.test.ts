@@ -15,8 +15,8 @@ const syntheticProject = path.join(
   "fixtures",
   "synthetic-project",
 );
-/** The engine's hash while the MMX objects and players were built in: core + packs keeps it. */
-const BUILTIN_HASH = "36e5bb6d8c3547a6";
+/** The engine's hash while the MMX objects and players were built in: core + packs keeps it. Re-frozen when the core hazard prefab gained its Lethal and Damage fields. */
+const BUILTIN_HASH = "9d8a9efb04583a0e";
 const STARTER = [{ id: "mmx-starter", version: 1 }];
 const PLAYERS = [
   { id: "mmx-player-x", version: 1 },

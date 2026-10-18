@@ -290,9 +290,10 @@ test("scene clips must cover every spawned enemy's sheet", () => {
 });
 
 test("clips without segments keep their hash; segments enter it and replay", () => {
-  // Frozen on the base before segments existed (4f94232).
+  // Frozen on the base before segments existed (4f94232); re-frozen when the core
+  // hazard prefab gained its Lethal and Damage fields (the game-data hash moved).
   const plain = Scene.create({ level: level(), gameData: MMX_COMPILED, clips: CLIPS }).gameDataHash;
-  assert.equal(plain, "62ad888e1f5e9332");
+  assert.equal(plain, "c3248746ca567d8a");
 
   const segmented = structuredClone(METOOL_CLIPS);
   for (const clip of Object.values(segmented.animations)) {
