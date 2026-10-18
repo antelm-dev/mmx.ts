@@ -11,8 +11,17 @@ actor, its 15 `player.*` abilities, the `player.x` loadout, the `buster` and
 | ---------------- | ------------------------------------------------------------------------------ |
 | `pack.json`      | `{ id, name, version }`                                                        |
 | `data/game.json` | Records by category (actors, abilities, loadouts, weapons, projectiles), by id |
+| `assets.json`    | `{ assets }`: X's 3 project manifest entries (his sheet, arm sheet, animation) |
+| `assets/`        | `x.png`, `x_leftarm.png` and their `x_anims.json`, at project-relative paths   |
+| `bindings.json`  | `playerAnimation` and `playerPointingSheet` for a project's `game/data.json`   |
+| `ATTRIBUTION.md` | Where the art comes from                                                       |
 
-Data only: X's sprites and sounds stay in the Studio templates for now.
+The Studio templates keep physical copies of the art, written by
+`apps/studio/scripts/starter-template/generate-manifest.mjs` (Studio's
+`tests/starter-template/pack-assets.test.ts` fails if they differ by a byte).
+Studio's File → Install / update MMX packs… adds what a project lacks; it binds
+X's two sheets together, and not over a project whose `playerAnimation` is
+another player's.
 
 ## Status
 

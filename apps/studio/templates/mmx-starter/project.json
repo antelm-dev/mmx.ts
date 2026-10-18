@@ -4213,6 +4213,14 @@
     {
       "id": "mmx-starter",
       "version": 1
+    },
+    {
+      "id": "mmx-player-x",
+      "version": 1
+    },
+    {
+      "id": "mmx-player-zero",
+      "version": 1
     }
   ]
 }

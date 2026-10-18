@@ -10,11 +10,17 @@ const pack = JSON.parse(
   readFileSync(resolve(appRoot, "../../packages/pack-mmx-starter/data/game.json"), "utf8"),
 );
 const STARTER = [{ id: "mmx-starter", version: 1 }];
+// A starter project carries the Starter, X and Zero packs (the template's data/game.json is
+// pack-assets/pack.test's business) and X's art from his pack.
 const PACKS = [
   ...STARTER,
   { id: "mmx-player-x", version: 1 },
   { id: "mmx-player-zero", version: 1 },
 ];
+const xPackRoot = resolve(appRoot, "../../packages/pack-mmx-player-x");
+const xAssets: { id: string; path: string }[] = JSON.parse(
+  readFileSync(join(xPackRoot, "assets.json"), "utf8"),
+).assets;
 // A fresh profile: never the developer's recent projects or work projects.
 const scratch = mkdtempSync(join(tmpdir(), "mmx-starter-pack-"));
 const starterRoot = join(scratch, "starter");
@@ -28,7 +34,7 @@ test.afterAll(async () => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a starter project carries the MMX Starter pack; an old project gets it, X and Zero on open and Save writes them", async () => {
+test("a starter project carries the MMX packs and X's art; an old project gets Starter, X and Zero on open and Save writes them", async () => {
   // The minimal fixture predates packs: no `packs`, no data/game.json.
   cpSync(fixtureRoot, oldRoot, { recursive: true });
   expect(readJson(oldRoot, "project.json").packs).toBeUndefined();
@@ -62,8 +68,18 @@ test("a starter project carries the MMX Starter pack; an old project gets it, X 
   });
   await page.getByRole("button", { name: /New from MMX starter/ }).click();
   await expect(page.getByText(/Pack Test/).first()).toBeVisible();
-  expect(readJson(starterRoot, "project.json").packs).toEqual(STARTER);
-  expect(readJson(starterRoot, "data/game.json")).toEqual(pack);
+  expect(readJson(starterRoot, "project.json").packs).toEqual(PACKS);
+  const starterData = readJson(starterRoot, "data/game.json");
+  expect(starterData.enemies).toEqual(pack.enemies);
+  expect(Object.keys(starterData.loadouts)).toEqual(["player.x", "player.zero"]);
+  const starterAssets = readJson(starterRoot, "project.json").assets;
+  for (const entry of xAssets) {
+    expect(starterAssets).toContainEqual(entry);
+    expect(
+      readFileSync(join(starterRoot, entry.path)).equals(readFileSync(join(xPackRoot, entry.path))),
+    ).toBe(true);
+  }
+  expect(readJson(starterRoot, "game/data.json").bindings.playerAnimation).toBe("anim.player.x");
   // The pack's enemies show their sprite in the palette (enemyAnimations → enemyActors): the
   // template binds their sheets, which the engine no longer knows of itself.
   await page.getByRole("tab", { name: "Object Palette" }).click();

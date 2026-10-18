@@ -3,15 +3,19 @@ import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The MMX Starter pack owns the enemy and pickup art (packages/pack-mmx-starter/assets + assets.json).
-// This script rebuilds the pack's manifest fragment, then writes both templates: the shared
-// assets (player, effects, HUD, sounds, font) read from mmx-starter, plus the pack's entries
-// and a physical copy of its files, since Studio bundles the template and ships only out/**.
+// The MMX Starter pack owns the enemy and pickup art, the MMX — X pack X's sprites
+// (packages/pack-*/assets + assets.json). This script rebuilds both packs' manifest fragments,
+// then writes both templates: the shared assets (effects, HUD, sounds, font) read from
+// mmx-starter, plus the packs' entries and a physical copy of their files, since Studio bundles
+// the template and ships only out/**. Each template's data/game.json is the merge of the
+// Starter, X and Zero packs' records, and its `packs` lists their three markers.
 const here = dirname(fileURLToPath(import.meta.url));
 const templatesRoot = join(here, "../../templates");
 const starterRoot = join(templatesRoot, "mmx-starter");
 const repoRoot = join(here, "../../../..");
 const packRoot = join(repoRoot, "packages/pack-mmx-starter");
+const xPackRoot = join(repoRoot, "packages/pack-mmx-player-x");
+const zeroPackRoot = join(repoRoot, "packages/pack-mmx-player-zero");
 const TEMPLATES = ["mmx-starter", "mmx-demo"];
 
 const readJson = (root, relativePath) => JSON.parse(readFileSync(join(root, relativePath), "utf8"));
@@ -24,8 +28,6 @@ const format = (paths) =>
   });
 
 const spriteSheets = [
-  ["sprite.player.x", "assets/sprites/player/x.png"],
-  ["sprite.player.x-leftarm", "assets/sprites/player/x_leftarm.png"],
   ["sprite.effects.charge-1", "assets/sprites/effects/charge_1.png"],
   ["sprite.effects.charge-2", "assets/sprites/effects/charge_2.png"],
   ["sprite.effects.charge-hit", "assets/sprites/effects/charge_hit.png"],
@@ -96,21 +98,28 @@ function animationAsset(id, sheetAssetId, sheetPath, animations) {
   return { id, kind: "animation", path: sheetPath, sheetAssetId, animations };
 }
 
-const playerAnims = readJson(starterRoot, "assets/sprites/player/x_anims.json");
+const playerAnims = readJson(xPackRoot, "assets/sprites/player/x_anims.json");
 const enemyAnims = readJson(packRoot, "assets/sprites/enemies/enemy_anims.json");
 const pickupAnims = readJson(packRoot, "assets/sprites/pickups/pickup_anims.json");
 const shotAnims = readJson(starterRoot, "assets/sprites/effects/shot_anims.json");
 
-const animationAssets = [
+const animationAssets = [];
+
+const byId = (a, b) => a.id.localeCompare(b.id);
+
+const xPackAssets = [
+  spriteAsset("sprite.player.x", "assets/sprites/player/x.png"),
+  spriteAsset("sprite.player.x-leftarm", "assets/sprites/player/x_leftarm.png"),
   animationAsset(
     "anim.player.x",
     "sprite.player.x",
     "assets/sprites/player/x.png",
     playerAnims.animations,
   ),
-];
-
-const byId = (a, b) => a.id.localeCompare(b.id);
+].sort(byId);
+writeJson(join(xPackRoot, "assets.json"), { assets: xPackAssets });
+format([join(xPackRoot, "assets.json"), join(xPackRoot, "assets")]);
+console.log(`X pack assets.json: ${xPackAssets.length} assets`);
 
 const packAssets = [
   ...packSpriteSheets.map(([id, path]) => spriteAsset(id, path)),
@@ -174,16 +183,39 @@ const assets = [
   ...sounds.map(([id, path]) => soundAsset(id, path)),
   ...fonts.map(([id, path]) => fontAsset(id, path)),
   ...packAssets,
+  ...xPackAssets,
 ].sort(byId);
+
+// Records in pack order, each category's ids after the previous pack's (as mergePack adds them).
+const PLAYER_PACKS = [packRoot, xPackRoot, zeroPackRoot];
+const gameData = {};
+for (const root of PLAYER_PACKS) {
+  for (const [category, records] of Object.entries(readJson(root, "data/game.json"))) {
+    gameData[category] =
+      category === "schemaVersion" ? records : { ...gameData[category], ...records };
+  }
+}
+const packs = PLAYER_PACKS.map((root) => {
+  const { id, version } = readJson(root, "pack.json");
+  return { id, version };
+});
 
 for (const name of TEMPLATES) {
   const root = join(templatesRoot, name);
-  // Each template keeps its own identity, levels and pack marker; only the asset list is generated.
+  // Each template keeps its own identity and levels; the asset list, packs and records are generated.
   // Both templates get the same asset list: an asset only mmx-demo carries must be added above.
-  const manifest = { ...readJson(root, "project.json"), assets };
+  const manifest = { ...readJson(root, "project.json"), assets, packs };
   writeJson(join(root, "project.json"), manifest);
-  cpSync(join(packRoot, "assets"), join(root, "assets"), { recursive: true });
-  console.log(`${name}/project.json: ${assets.length} assets`);
+  writeJson(join(root, "data/game.json"), gameData);
+  for (const pack of [packRoot, xPackRoot]) {
+    cpSync(join(pack, "assets"), join(root, "assets"), { recursive: true });
+  }
+  console.log(`${name}/project.json: ${assets.length} assets, ${packs.length} packs`);
 }
 
-format(TEMPLATES.map((name) => join(templatesRoot, name, "project.json")));
+format(
+  TEMPLATES.flatMap((name) => [
+    join(templatesRoot, name, "project.json"),
+    join(templatesRoot, name, "data/game.json"),
+  ]),
+);

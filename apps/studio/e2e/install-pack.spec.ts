@@ -11,10 +11,12 @@ import {
 import electronPath from "electron";
 
 const appRoot = resolve(__dirname, "..");
-const packRoot = resolve(appRoot, "../../packages/pack-mmx-starter");
-const packAssets: { id: string; path: string }[] = JSON.parse(
-  readFileSync(join(packRoot, "assets.json"), "utf8"),
-).assets;
+// The art-carrying packs Install copies from: MMX Starter and MMX — X (Zero's pack is data only).
+const packAssets = ["pack-mmx-starter", "pack-mmx-player-x"].flatMap((dir) => {
+  const root = resolve(appRoot, "../../packages", dir);
+  const { assets } = JSON.parse(readFileSync(join(root, "assets.json"), "utf8"));
+  return (assets as { id: string; path: string }[]).map((asset) => ({ ...asset, root }));
+});
 // A fresh profile: never the developer's recent projects or work projects.
 const scratch = mkdtempSync(join(tmpdir(), "mmx-install-pack-"));
 const projectRoot = join(scratch, "blank");
@@ -27,18 +29,18 @@ test.afterAll(async () => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
-/** File → Install / update MMX Starter pack…; returns the dialogs it showed, all accepted. */
+/** File → Install / update MMX packs…; returns the dialogs it showed, all accepted. */
 async function install(page: Page, dialogs: string[]): Promise<string[]> {
   const before = dialogs.length;
   await page.getByRole("button", { name: "File menu" }).click();
-  await page.getByRole("menuitem", { name: /Install \/ update MMX Starter pack/ }).click();
+  await page.getByRole("menuitem", { name: /Install \/ update MMX packs/ }).click();
   await expect
     .poll(() => dialogs.slice(before).some((m) => /installed|up to date/.test(m)))
     .toBe(true);
   return dialogs.slice(before);
 }
 
-test("AC-INSTALL: a blank project gets the pack's art from File → Install; a second run adds nothing", async () => {
+test("AC-INSTALL: a blank project gets the packs' art from File → Install; a second run adds nothing", async () => {
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE;
   app = await electron.launch({
@@ -82,18 +84,21 @@ test("AC-INSTALL: a blank project gets the pack's art from File → Install; a s
   writeFileSync(join(projectRoot, levelPath), JSON.stringify(level, null, 2));
 
   const first = await install(page, dialogs);
-  expect(first[0]).toMatch(/^Install \/ update the MMX Starter pack\?/);
+  expect(first[0]).toMatch(/^Install \/ update the MMX packs \(Starter, X, Zero\)\?/);
   expect(first[0]).toContain("Undo cannot revert it");
-  expect(first.at(-1)).toMatch(/^MMX Starter pack installed\./);
-  expect(first.at(-1)).toContain("12 assets");
-  expect(first.at(-1)).toContain("6 files");
+  expect(first.at(-1)).toMatch(/^MMX packs installed\./);
+  expect(first.at(-1)).toContain("15 assets");
+  expect(first.at(-1)).toContain("8 files");
   const assets = readJson("project.json").assets.map((asset: { id: string }) => asset.id);
   expect(assets.sort()).toEqual(packAssets.map((asset) => asset.id).sort());
-  for (const { path } of packAssets) {
-    expect(readFileSync(join(projectRoot, path)).equals(readFileSync(join(packRoot, path)))).toBe(
-      true,
-    );
+  for (const { path, root } of packAssets) {
+    expect(readFileSync(join(projectRoot, path)).equals(readFileSync(join(root, path)))).toBe(true);
   }
+  expect(readJson("project.json").packs.map((pack: { id: string }) => pack.id)).toEqual([
+    "mmx-starter",
+    "mmx-player-x",
+    "mmx-player-zero",
+  ]);
 
   await page.getByRole("tab", { name: "Object Palette" }).click();
   for (const id of ["enemy.metool", "pickup.life.large"]) {

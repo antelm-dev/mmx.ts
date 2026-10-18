@@ -85,6 +85,7 @@ async function checkGenerated(t: TestContext, sources: ZeroSources) {
     { id: "mmx-player-zero", version: 1 },
   ]);
   assert.deepEqual(read("data/game.json"), withStarterPack({}, undefined).overlay);
+  assert.equal(manifest.player.loadout, "player.zero");
   return { summary, bindings, level };
 }
 

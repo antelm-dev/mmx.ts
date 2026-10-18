@@ -72,4 +72,28 @@ describe("project game data", () => {
       projectGameData(badAbility).issues.every((issue) => issue.code.startsWith("game-data.")),
     ).toBe(true);
   });
+
+  it("reports compile warnings such as player.missing, and still uses the data", () => {
+    const overlay = {
+      ...MMX_OVERLAY,
+      prefabs: {
+        ...MMX_OVERLAY.prefabs,
+        spawn: { ...GAME_DATA.prefabs.spawn!, source: { kind: "loadout", ref: "player.nobody" } },
+      },
+    } as typeof MMX_OVERLAY;
+    const result = projectGameData(overlay);
+    expect(result.issues).toEqual([]);
+    expect(result.data).not.toBe(GAME_DATA);
+    expect(result.warnings).toEqual([
+      {
+        severity: "warning",
+        code: "game-data.player.missing",
+        path: "/data/game.json",
+        message: expect.stringMatching(
+          /^data\/game\.json prefabs\.spawn\.source: .*player\.nobody/,
+        ),
+      },
+    ]);
+    expect(projectGameData(MMX_OVERLAY).warnings).toEqual([]);
+  });
 });

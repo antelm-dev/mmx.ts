@@ -3,11 +3,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const templateRoot = resolve(here, "../../templates/mmx-starter");
+// The MMX — X pack owns X's art; generate-manifest.mjs copies it into the templates.
+const packRoot = resolve(here, "../../../../packages/pack-mmx-player-x");
 // The Godot reference project: a sibling checkout of this repo, or an argument relative to the repo root.
 const godot = resolve(here, "../../../..", process.argv[2] ?? "../Mega-Man-X8-16-bit");
 const sprites = join(godot, "src/Actors/Player/x_sprites");
-const assets = join(templateRoot, "assets/sprites/player");
+const assets = join(packRoot, "assets/sprites/player");
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
@@ -42,4 +43,4 @@ writeFileSync(animsPath, JSON.stringify(anims, null, 2) + "\n");
 copyFileSync(join(sprites, "x_leftarm.png"), join(assets, "x_leftarm.png"));
 
 console.log(`x_anims.json: added armRegion to ${patched} frames`);
-console.log("x_leftarm.png: copied to templates/mmx-starter/assets/sprites/player");
+console.log("x_leftarm.png: copied to packages/pack-mmx-player-x/assets/sprites/player");
