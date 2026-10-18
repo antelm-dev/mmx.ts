@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { compileLevel } from "@mmx/engine";
 import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
+import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
 import {
   buildProjectToDisk,
   bundleContainsAbsolutePaths,
@@ -379,8 +380,12 @@ test("a data/game.json overlay with an unsupported category fails loadProject", 
 });
 
 test("project.json may pick a loadout its data/game.json overlay adds", async () => {
-  const speedy = { ...GAME_DATA.loadouts["player.x"]!, id: "player.speedy" };
-  const fixture = await createOverlayFixture({ loadouts: { "player.speedy": speedy } });
+  // X's records come with the overlay, so the test needs no built-in player.
+  const speedy = { ...xPack.loadouts["player.x"], id: "player.speedy" };
+  const fixture = await createOverlayFixture({
+    ...xPack,
+    loadouts: { ...xPack.loadouts, "player.speedy": speedy },
+  });
   try {
     const manifestPath = path.join(fixture.root, "project.json");
     const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));

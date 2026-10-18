@@ -5,7 +5,7 @@ import { Input } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { REPLAY_ACTIONS } from "../src/core/Replay.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
@@ -14,7 +14,7 @@ import type { Enemy } from "../src/game/Enemy.js";
 import { compileGameData, type GameData } from "../src/data/index.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
 import type { RollConfig } from "../src/game/enemy/Roll.js";
-import { MMX_GAME_DATA } from "./support/mmx.js";
+import { MMX_GAME_DATA, createPlayer } from "./support/mmx.js";
 
 // Headless: no clip data (see enemy.test.ts). A Spiky-like test enemy built on
 // the Metool's body, with Roll answering idle and nothing else.
@@ -61,7 +61,7 @@ function setup(opts: {
     "#".repeat(80),
   ];
   const world = World.fromRows(rows);
-  const player = new Player(world, opts.playerX, FLOOR_Y - 14, new Input());
+  const player = createPlayer(world, opts.playerX, FLOOR_Y - 14, new Input());
   const stage = new Stage(world, player);
   const data = compiled(opts.data ?? spikyData(opts.roll));
   const def = data.enemies.get("spiky")!;

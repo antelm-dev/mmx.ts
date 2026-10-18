@@ -72,7 +72,7 @@ const M = {
 const repeat = (mask: number, n: number): number[] => new Array(n).fill(mask);
 
 function digestOf(frames: number[], loadoutId?: string): string {
-  const scene = Scene.create({ level: flatLevel(), loadoutId });
+  const scene = Scene.create({ level: flatLevel(), loadoutId, gameData: MMX_COMPILED });
   for (const m of frames) scene.step(m);
   return scene.digest();
 }
@@ -111,7 +111,7 @@ const DIGEST_SEQUENCES: Record<string, { frames: number[]; digest: string }> = {
 // ---------------------------------------------------------------------------
 
 test("player ability composition and order", () => {
-  const scene = Scene.create({ level: flatLevel() });
+  const scene = Scene.create({ level: flatLevel(), gameData: MMX_COMPILED });
   assert.deepEqual(
     scene.player.moveset.map((m) => m.name),
     [
@@ -135,14 +135,14 @@ test("player ability composition and order", () => {
 });
 
 test("player starts on the buster with full health", () => {
-  const scene = Scene.create({ level: flatLevel() });
+  const scene = Scene.create({ level: flatLevel(), gameData: MMX_COMPILED });
   assert.equal(scene.player.activeWeapon, "buster");
   assert.equal(scene.player.max_health, MAX_HEALTH);
   assert.equal(scene.player.current_health, MAX_HEALTH);
 });
 
 test("weapon order is buster then dark_arrow", () => {
-  const scene = Scene.create({ level: flatLevel() });
+  const scene = Scene.create({ level: flatLevel(), gameData: MMX_COMPILED });
   assert.deepEqual(
     scene.player.weapons.map((w) => w.id),
     ["buster", "dark_arrow"],

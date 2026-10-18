@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import { Input } from "../src/core/Input.js";
 import { DT, ONE_WAY_DROP_TICKS, TILE_SIZE } from "../src/core/constants.js";
 import { Actor } from "../src/game/Actor.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
 import { LifeCapsule } from "../src/game/Pickup.js";
-import { ENEMY_STATS, MMX_COMPILED, makeMetool } from "./support/mmx.js";
+import { ENEMY_STATS, MMX_COMPILED, makeMetool, createPlayer } from "./support/mmx.js";
 
 // Solid floor on row 11 (top 176); a OneWay ledge on row 8 (top 128), columns 3..12.
 const FLOOR_Y = 11 * TILE_SIZE;
@@ -30,7 +30,7 @@ function feet(a: Actor): number {
 /** Player standing on the floor under the ledge. */
 function makePlayer(world = room()) {
   const input = new Input();
-  const player = new Player(world, 6 * TILE_SIZE, 10 * TILE_SIZE, input);
+  const player = createPlayer(world, 6 * TILE_SIZE, 10 * TILE_SIZE, input);
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { input, player };
 }
@@ -136,7 +136,7 @@ test("a Metool patrols on a OneWay floor without falling through", () => {
   rows.push("#".repeat(40));
   const world = World.fromRows(rows);
   const top = 10 * TILE_SIZE;
-  const player = new Player(world, 35 * TILE_SIZE, 14 * TILE_SIZE - 14, new Input());
+  const player = createPlayer(world, 35 * TILE_SIZE, 14 * TILE_SIZE - 14, new Input());
   const stage = new Stage(world, player);
   const metool = stage.add(
     makeMetool(world, 10 * TILE_SIZE, top - ENEMY_STATS.metool.hh, -1, 1234),

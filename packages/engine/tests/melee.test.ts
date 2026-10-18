@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 
 import { Input } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import type { Enemy } from "../src/game/Enemy.js";
 import type { MeleeSpec } from "../src/game/Character.js";
-import { ENEMY_STATS, makeBat, makeMetool } from "./support/mmx.js";
+import { ENEMY_STATS, makeBat, makeMetool, createPlayer } from "./support/mmx.js";
 
 const FLOOR_Y = 10 * 16;
 const SWING: MeleeSpec = { box: { hw: 12, hh: 12, ox: 24 }, damage: 2, activeFrames: 3 };
@@ -17,7 +17,7 @@ function makeStage(facing = 1) {
   const rows = Array.from({ length: 10 }, () => "#" + ".".repeat(78) + "#");
   rows.push("#".repeat(80));
   const world = World.fromRows(rows);
-  const player = new Player(world, 40 * 16, FLOOR_Y - 14, new Input());
+  const player = createPlayer(world, 40 * 16, FLOOR_Y - 14, new Input());
   player.set_direction(facing);
   player.update_facing_direction();
   return { world, player, stage: new Stage(world, player) };

@@ -4,11 +4,9 @@ import assert from "node:assert/strict";
 import { Input, type Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { World } from "../src/game/World.js";
-import { Player } from "../src/game/Player.js";
-import { GAME_DATA } from "../src/data/gameData.js";
 import { compileGameData } from "../src/data/compileGameData.js";
-import { COMPILED_GAME_DATA } from "../src/data/index.js";
 import { buildCompileRegistries } from "../src/behaviors/index.js";
+import { MMX_COMPILED, MMX_GAME_DATA, createPlayer } from "./support/mmx.js";
 
 // A 30x12 room: solid floor on the bottom row, walls on both sides.
 function room(): World {
@@ -18,10 +16,10 @@ function room(): World {
   return World.fromRows(rows);
 }
 
-test("the default game data, Zero included, compiles without diagnostics", () => {
-  const result = compileGameData(GAME_DATA, buildCompileRegistries());
+test("the MMX game data, Zero included, compiles without diagnostics", () => {
+  const result = compileGameData(MMX_GAME_DATA, buildCompileRegistries());
   assert.deepEqual(result.diagnostics, []);
-  const zero = COMPILED_GAME_DATA.loadouts.get("player.zero");
+  const zero = MMX_COMPILED.loadouts.get("player.zero");
   assert.ok(zero);
   assert.deepEqual(zero.weapons, []);
   assert.equal(zero.actor.maxHealth, 16);
@@ -30,14 +28,14 @@ test("the default game data, Zero included, compiles without diagnostics", () =>
 test("an armed loadout still needs an initialWeapon", () => {
   const bad = { id: "bad", actor: "player.zero", slots: [], weapons: ["buster"] };
   const result = compileGameData(
-    { ...GAME_DATA, loadouts: { ...GAME_DATA.loadouts, bad } },
+    { ...MMX_GAME_DATA, loadouts: { ...MMX_GAME_DATA.loadouts, bad } },
     buildCompileRegistries(),
   );
   assert.ok(result.diagnostics.some((d) => d.fieldPath === "loadouts.bad.initialWeapon"));
 });
 
 test("a Player composes from the Zero loadout headlessly", () => {
-  const player = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  const player = createPlayer(room(), 80, 160, new Input(), 1, "player.zero");
   assert.deepEqual(
     player.moveset.map((m) => m.name),
     [
@@ -59,7 +57,7 @@ test("a Player composes from the Zero loadout headlessly", () => {
 
 test("Zero's jump is the GBA impulse: 5 px/f up, 0.25 px/f² down -> 47.5 px apex", () => {
   const input = new Input();
-  const player = new Player(room(), 80, 160, input, 1, "player.zero");
+  const player = createPlayer(room(), 80, 160, input, 1, "player.zero");
   for (let i = 0; i < 10; i++) player.tick(DT);
   const floorY = player.pos.y;
   let apex = floorY;
@@ -74,7 +72,7 @@ test("Zero's jump is the GBA impulse: 5 px/f up, 0.25 px/f² down -> 47.5 px ape
 /** Run, jump, dash, then wall-jump off the right wall; one line per tick. */
 function replay(): { trace: string; states: Set<string> } {
   const input = new Input();
-  const player = new Player(room(), 80, 160, input, 7, "player.zero");
+  const player = createPlayer(room(), 80, 160, input, 7, "player.zero");
   const held = (f: number): Action[] => {
     const a: Action[] = [];
     if (f >= 10) a.push("move_right");
@@ -106,8 +104,8 @@ test("a scripted Zero replay (run, jump, dash, wall jump) is deterministic", () 
 });
 
 test("each loadout's actor sets the runtime body and health", () => {
-  const x = new Player(room(), 80, 160, new Input(), 1);
-  const zero = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  const x = createPlayer(room(), 80, 160, new Input(), 1);
+  const zero = createPlayer(room(), 80, 160, new Input(), 1, "player.zero");
   assert.deepEqual([x.hw, x.hh, x.body_hh, x.max_health, x.current_health], [6, 14, 14, 32, 32]);
   assert.deepEqual(
     [zero.hw, zero.hh, zero.body_hh, zero.max_health, zero.current_health],
@@ -118,7 +116,7 @@ test("each loadout's actor sets the runtime body and health", () => {
 test("only X crouches while dashing: Zero keeps its full body", () => {
   const dashHh = (loadout?: string): [number, number] => {
     const input = new Input();
-    const p = new Player(room(), 80, 176 - 15, input, 1, loadout);
+    const p = createPlayer(room(), 80, 176 - 15, input, 1, loadout);
     for (let i = 0; i < 30; i++) p.tick(DT);
     const standing = p.hh;
     input.setDown("dash", true);
@@ -140,7 +138,7 @@ test("X and Zero bodies collide differently under a low ceiling", () => {
   };
   const jumpTop = (loadout: string): number => {
     const input = new Input();
-    const p = new Player(lowRoom(), 80, 160, input, 1, loadout);
+    const p = createPlayer(lowRoom(), 80, 160, input, 1, loadout);
     for (let i = 0; i < 10; i++) p.tick(DT);
     input.setDown("jump", true);
     let top = p.pos.y;
@@ -158,7 +156,7 @@ test("X and Zero bodies collide differently under a low ceiling", () => {
 test("Zero's abilities run on Zero's configs, not X's", () => {
   // X and Zero share walk speed (90), so check values that differ.
   const knockback = (loadout: string): number => {
-    const p = new Player(room(), 80, 160, new Input(), 1, loadout);
+    const p = createPlayer(room(), 80, 160, new Input(), 1, loadout);
     for (let i = 0; i < 10; i++) p.tick(DT);
     p.damage(1);
     p.tick(DT);
@@ -167,7 +165,7 @@ test("Zero's abilities run on Zero's configs, not X's", () => {
   assert.equal(knockback("player.x"), 45);
   assert.equal(knockback("player.zero"), 60);
 
-  const zero = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  const zero = createPlayer(room(), 80, 160, new Input(), 1, "player.zero");
   const ability = (name: string) => zero.get_ability(name) as unknown as Record<string, number>;
   assert.equal(ability("DashJump").horizontal_velocity, 210);
   assert.equal(ability("DashWallJump").horizontal_velocity, 210);
@@ -178,7 +176,7 @@ test("Zero's abilities run on Zero's configs, not X's", () => {
 });
 
 test("Zero's wall and dash jumps inherit zero.jump's rise, not X's", () => {
-  const zero = new Player(room(), 80, 160, new Input(), 1, "player.zero");
+  const zero = createPlayer(room(), 80, 160, new Input(), 1, "player.zero");
   const rise = (name: string) => {
     const a = zero.get_ability(name) as unknown as Record<string, number>;
     return [a.jump_velocity, a.max_jump_time, a.leeway_time, a.fullspeed_proportion];
@@ -191,7 +189,7 @@ test("Zero's wall and dash jumps inherit zero.jump's rise, not X's", () => {
   // Jump at the right wall, then wall-kick off it; measure the kick's rise.
   const wallKickRise = (loadout: string): number => {
     const input = new Input();
-    const p = new Player(room(), 440, 160, input, 1, loadout);
+    const p = createPlayer(room(), 440, 160, input, 1, loadout);
     input.setDown("move_right", true);
     for (let i = 0; i < 10; i++) p.tick(DT);
     input.setDown("jump", true);

@@ -5,9 +5,9 @@ import { Tile, World } from "../src/game/World.js";
 import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { ToolingSession } from "../src/tooling/ToolingSession.js";
 import { VIEW_WIDTH, VIEW_HEIGHT } from "../src/core/constants.js";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { Input } from "../src/core/Input.js";
-import { MMX_COMPILED } from "./support/mmx.js";
+import { MMX_COMPILED, createPlayer } from "./support/mmx.js";
 
 const COLS = 16;
 const ROWS = 8;
@@ -145,7 +145,7 @@ test("restartLevel discards the recording and returns to frame zero", () => {
 test("projectiles get deterministic, counter-derived runtime ids", () => {
   const build = (): Player => {
     const world = new World(new Array<Tile>(COLS * ROWS).fill(Tile.Empty), COLS, ROWS);
-    return new Player(world, 48, 48, new Input());
+    return createPlayer(world, 48, 48, new Input());
   };
   const a = build();
   a.fireActiveWeapon(0);
