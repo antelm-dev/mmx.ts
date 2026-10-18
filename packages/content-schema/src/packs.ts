@@ -59,6 +59,11 @@ export type MergePackInput<M> = {
   bindingsFile?: unknown;
   /** Project paths holding a file other than the pack's: their entries are not added. */
   occupiedPaths?: ReadonlySet<string>;
+  /**
+   * Whether keys missing from a record the project has are added (default true). An explicit
+   * Install fills them; the migration on open (`withStarterPack`) adds whole records only.
+   */
+  fillKeys?: boolean;
 };
 
 export type MergePackResult<M> = {
@@ -93,11 +98,11 @@ export function mergePack<M extends { packs?: readonly PackRef[]; assets?: reado
     return { manifest, overlay, bindingsFile, added, skipped };
   }
 
-  // Records: the pack's ids first, so a new file reads like a template's; then the project's own.
+  // Records: the project's in its order, then the pack's it lacks (a new file reads like a template's).
   const nextOverlay: Json = { schemaVersion: pack.data.schemaVersion, ...own };
   for (const category of categories) {
     const existing = (own[category] ?? {}) as Json;
-    const records: Json = {};
+    const records: Json = { ...existing };
     for (const [id, record] of Object.entries((pack.data as Json)[category] as Json)) {
       const mine = existing[id];
       const name = `${category}.${id}`;
@@ -106,10 +111,9 @@ export function mergePack<M extends { packs?: readonly PackRef[]; assets?: reado
         added.push(`record ${name}`);
         continue;
       }
-      records[id] = mine;
       if (!isRecord(mine) || !isRecord(record)) continue;
       const missing = Object.keys(record).filter((key) => !(key in mine));
-      if (missing.length > 0) {
+      if (missing.length > 0 && input.fillKeys !== false) {
         records[id] = {
           ...mine,
           ...structuredClone(Object.fromEntries(missing.map((key) => [key, record[key]]))),
@@ -120,7 +124,6 @@ export function mergePack<M extends { packs?: readonly PackRef[]; assets?: reado
         skipped.push(`record ${name}: the project's values kept`);
       }
     }
-    for (const [id, record] of Object.entries(existing)) if (!(id in records)) records[id] = record;
     nextOverlay[category] = records;
   }
   const dataChanged = added.length > 0;
@@ -225,7 +228,8 @@ export type WithStarterPack<M> = {
 
 /**
  * Contract C-MIGRATE: a project whose manifest has no `packs` predates packs, so it gets the MMX
- * Starter's data ({@link mergePack}: the records and record keys its `data/game.json` lacks) and
+ * Starter's data ({@link mergePack}: the records its `data/game.json` lacks, never keys inside a
+ * record it has, so a field removed on purpose stays removed) and
  * `packs: [MMX Starter]`. Art and bindings come with the template or File → Install / update MMX
  * Starter pack…. A manifest with `packs` (even `[]`) is returned as is, and so is an overlay that
  * is not an object of records, left for the merge to report so a fixed file still migrates.
@@ -238,7 +242,7 @@ export function withStarterPack<M extends { packs?: readonly PackRef[] }>(
   if (manifest.packs !== undefined) return unchanged;
   const merged = mergePack(
     // No assets are added, so whatever the manifest's are is never read.
-    { manifest: manifest as M & { assets?: readonly PackAsset[] }, overlay },
+    { manifest: manifest as M & { assets?: readonly PackAsset[] }, overlay, fillKeys: false },
     { ...MMX_STARTER, assets: [], bindings: {} },
   );
   if (merged.added.length === 0) return unchanged;

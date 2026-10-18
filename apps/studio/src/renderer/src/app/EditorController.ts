@@ -1319,7 +1319,8 @@ function hasPageTextSelection(): boolean {
 
 /**
  * A pack install's summary for a dialog: what is added, counted by kind ("26 records, 12 assets"),
- * then what is left as the project has it, listed (the first 12).
+ * then each key added to a record the project has (rare, and it can change gameplay), then what is
+ * left as the project has it; each list shows its first 12.
  */
 export function packSummary(
   title: string,
@@ -1333,11 +1334,17 @@ export function packSummary(
   const lines = [title, ""];
   const kinds = [...counts].map(([kind, n]) => `${n} ${kind}${n > 1 ? "s" : ""}`);
   lines.push(`Added: ${kinds.join(", ") || "nothing"}.`);
-  if (skipped.length > 0) {
-    lines.push(`Not changed (${skipped.length}):`);
-    lines.push(...skipped.slice(0, 12).map((entry) => `• ${entry}`));
-    if (skipped.length > 12) lines.push(`• …and ${skipped.length - 12} more`);
-  }
+  const list = (heading: string, entries: string[]) => {
+    if (entries.length === 0) return;
+    lines.push(`${heading} (${entries.length}):`, ...entries.slice(0, 12).map((e) => `• ${e}`));
+    if (entries.length > 12) lines.push(`• …and ${entries.length - 12} more`);
+  };
+  const keys = added.filter((entry) => entry.startsWith("key "));
+  list(
+    "Keys added to the project's records",
+    keys.map((entry) => entry.slice("key ".length)),
+  );
+  list("Not changed", skipped);
   return lines.join("\n");
 }
 

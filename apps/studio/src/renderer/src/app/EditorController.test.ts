@@ -92,7 +92,7 @@ vi.stubGlobal("window", { studio: { files: { saveFile }, project }, confirm: () 
 vi.stubGlobal("document", { title: "", documentElement: { dataset: {}, style: {} } });
 beforeEach(() => storage.clear());
 
-const { EditorController } = await import("./EditorController.js");
+const { EditorController, packSummary } = await import("./EditorController.js");
 const { setRoomSettings } = await import("../core/actions.js");
 const { projectSession } = await import("../core/projectSession.js");
 const { readRecentProjects } = await import("../settings/recentProjects.js");
@@ -275,5 +275,31 @@ describe("EditorController work project (C-WORK)", () => {
     expect(editor.hasRecoveryDraft()).toBe(true);
     workProjects = [];
     await projectSession.getAssets();
+  });
+});
+
+describe("packSummary (C-INSTALL)", () => {
+  it("counts additions, names each key added to an existing record, lists what is kept", () => {
+    const summary = packSummary("Install?", {
+      added: ["record enemies.bat", "record enemies.pantheon", "key enemies.metool.shield"],
+      skipped: ["record enemies.metool: the project's values kept"],
+    });
+    expect(summary.split("\n")).toEqual([
+      "Install?",
+      "",
+      "Added: 2 records, 1 key.",
+      "Keys added to the project's records (1):",
+      "• enemies.metool.shield",
+      "Not changed (1):",
+      "• record enemies.metool: the project's values kept",
+    ]);
+  });
+
+  it("shows the first 12 keys and how many more", () => {
+    const added = Array.from({ length: 14 }, (_, i) => `key prefabs.p${i}.name`);
+    const lines = packSummary("Install?", { added, skipped: [] }).split("\n");
+    expect(lines).toContain("• prefabs.p11.name");
+    expect(lines).not.toContain("• prefabs.p12.name");
+    expect(lines.at(-1)).toBe("• …and 2 more");
   });
 });

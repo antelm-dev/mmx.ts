@@ -50,11 +50,25 @@ test("an old project keeps its records, overrides included, and gets only the mi
   assert.equal(overlay?.enemies?.metool, metool, "the project's metool is kept");
   assert.equal(overlay?.enemies?.crab, crab);
   assert.deepEqual(overlay?.enemies?.bat, pack.enemies.bat);
+  // The project's records keep their order; the pack's it lacks follow.
   assert.deepEqual(Object.keys(overlay?.prefabs ?? {}), [
-    ...Object.keys(pack.prefabs),
     "enemy.crab",
+    ...Object.keys(pack.prefabs),
   ]);
+  assert.deepEqual(Object.keys(overlay?.enemies ?? {}), ["metool", "crab", "bat", "pantheon"]);
   assert.deepEqual(overlay?.pickups, pack.pickups);
+});
+
+test("migration adds whole records only: a key removed from a record stays removed", () => {
+  // The Enemy editor's "Shield: none" deletes the key.
+  const metool = { ...pack.enemies.metool } as Record<string, unknown>;
+  delete metool.shield;
+  const own = { schemaVersion: 1, enemies: { metool } } as unknown as GameDataOverlay;
+  const { overlay, changed } = withStarterPack({}, own);
+  assert.equal(changed, true);
+  assert.equal(overlay?.enemies?.metool, metool, "the same object");
+  assert.equal("shield" in (overlay?.enemies?.metool ?? {}), false);
+  assert.deepEqual(overlay?.enemies?.bat, pack.enemies.bat, "missing records are still added");
 });
 
 test("a manifest with packs is never touched: [] stays base only, a migrated project stays as is", () => {
@@ -186,6 +200,16 @@ test("mergePack: a record the user modified is kept, its missing keys added, and
     "record enemies.metool: the project's values kept",
     "bindings: no game/data.json, Play uses the starter's",
   ]);
+});
+
+test("mergePack keeps the project's record order and appends the pack's ids it lacks", () => {
+  const own = {
+    schemaVersion: 1,
+    enemies: { pantheon: pack.enemies.pantheon, metool: pack.enemies.metool },
+  } as unknown as GameDataOverlay;
+  const result = mergePack({ manifest: { packs: STARTER }, overlay: own });
+  assert.deepEqual(Object.keys(result.overlay?.enemies ?? {}), ["pantheon", "metool", "bat"]);
+  assert.deepEqual(Object.keys(result.overlay?.prefabs ?? {}), Object.keys(pack.prefabs));
 });
 
 test("mergePack: a colliding asset id or occupied path is kept, a differing binding too", () => {
