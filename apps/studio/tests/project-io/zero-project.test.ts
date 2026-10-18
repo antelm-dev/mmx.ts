@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { test, type TestContext } from "node:test";
 
 import { GAMEPLAY_SOUND_IDS } from "@mmx/browser-audio";
-import { validateImageLayers } from "@mmx/content-schema";
+import { validateImageLayers, withStarterPack } from "@mmx/content-schema";
 
 import { loadProject } from "../../src/project-io/index.js";
 import {
@@ -78,12 +78,13 @@ async function checkGenerated(t: TestContext, sources: ZeroSources) {
     [],
   );
   assert.equal(readFileSync(join(out, ".gitignore"), "utf8").split("\n")[1], "*");
-  // The project carries the MMX Starter pack (Pantheon, pantheon_shot) and its marker.
-  assert.deepEqual(manifest.packs, [{ id: "mmx-starter", version: 1 }]);
-  assert.deepEqual(
-    read("data/game.json"),
-    JSON.parse(readFileSync(resolve("../../packages/pack-mmx-starter/data/game.json"), "utf8")),
-  );
+  // The project carries the MMX Starter (Pantheon, pantheon_shot), X and Zero, and their markers.
+  assert.deepEqual(manifest.packs, [
+    { id: "mmx-starter", version: 1 },
+    { id: "mmx-player-x", version: 1 },
+    { id: "mmx-player-zero", version: 1 },
+  ]);
+  assert.deepEqual(read("data/game.json"), withStarterPack({}, undefined).overlay);
   return { summary, bindings, level };
 }
 

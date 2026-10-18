@@ -190,7 +190,7 @@ test("player.loadout round-trips through save, and new projects omit it (default
   assert.equal(created.ok, true);
   if (!created.ok) return;
   assert.equal(created.value.manifest.player, undefined);
-  assert.ok(!(await fs.readText("project.json")).includes("player"));
+  assert.equal(JSON.parse(await fs.readText("project.json")).player, undefined);
 
   const zero = {
     ...created.value,
@@ -256,7 +256,11 @@ test("data/game.json round-trips through load and save, and export keeps its ene
   const created = await createProject(fs, { id: "crab.project", name: "Crab" });
   assert.equal(created.ok, true);
   if (!created.ok) return;
-  assert.deepEqual(created.value.manifest.packs, [{ id: "mmx-starter", version: 1 }]);
+  assert.deepEqual(created.value.manifest.packs, [
+    { id: "mmx-starter", version: 1 },
+    { id: "mmx-player-x", version: 1 },
+    { id: "mmx-player-zero", version: 1 },
+  ]);
   const sheet = {
     id: "anim.crab",
     kind: "animation" as const,

@@ -10,6 +10,11 @@ const pack = JSON.parse(
   readFileSync(resolve(appRoot, "../../packages/pack-mmx-starter/data/game.json"), "utf8"),
 );
 const STARTER = [{ id: "mmx-starter", version: 1 }];
+const PACKS = [
+  ...STARTER,
+  { id: "mmx-player-x", version: 1 },
+  { id: "mmx-player-zero", version: 1 },
+];
 // A fresh profile: never the developer's recent projects or work projects.
 const scratch = mkdtempSync(join(tmpdir(), "mmx-starter-pack-"));
 const starterRoot = join(scratch, "starter");
@@ -23,7 +28,7 @@ test.afterAll(async () => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a starter project carries the MMX Starter pack; an old project gets it on open and Save writes it", async () => {
+test("a starter project carries the MMX Starter pack; an old project gets it, X and Zero on open and Save writes them", async () => {
   // The minimal fixture predates packs: no `packs`, no data/game.json.
   cpSync(fixtureRoot, oldRoot, { recursive: true });
   expect(readJson(oldRoot, "project.json").packs).toBeUndefined();
@@ -82,7 +87,9 @@ test("a starter project carries the MMX Starter pack; an old project gets it on 
 
   await page.keyboard.press("Control+s");
   await expect(page.getByText("Project saved.").last()).toBeVisible();
-  expect(readJson(oldRoot, "project.json").packs).toEqual(STARTER);
-  expect(readJson(oldRoot, "data/game.json")).toEqual(pack);
+  expect(readJson(oldRoot, "project.json").packs).toEqual(PACKS);
+  const saved = readJson(oldRoot, "data/game.json");
+  expect(saved).toMatchObject(pack);
+  expect(Object.keys(saved.loadouts)).toEqual(["player.x", "player.zero"]);
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 });
