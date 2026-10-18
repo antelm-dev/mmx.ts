@@ -80,7 +80,10 @@ test("AC-EDITOR: a clip split into intro/loop/end is edited, undone, previewed, 
   let page = await launch();
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(page.getByTestId("fan-notice")).toBeVisible();
+  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByTestId("fan-notice")).toBeHidden();
   await openProject(page);
 
   // A sliced sheet, and a looping "walk" clip of six frames that loops from frame 1.

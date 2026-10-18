@@ -34,7 +34,10 @@ test("AC-BLANK-ENEMY: a blank enemy composed from abilities is placed, undone an
   const canvas = page.locator("#viewport-canvas");
   // A fresh profile opens on the Start page, over the level.
   await expect(canvas).toBeAttached({ timeout: 30_000 });
-  await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(page.getByTestId("fan-notice")).toBeVisible();
+  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByTestId("fan-notice")).toBeHidden();
 
   await app.evaluate(({ dialog }, root) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [root] })) as never;

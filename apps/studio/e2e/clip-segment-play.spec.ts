@@ -89,7 +89,10 @@ test("AC-USE: an enemy's weak phase plays clip#segment in Play", async () => {
   page.on("dialog", (dialog) => void dialog.accept());
   const canvas = page.locator("#viewport-canvas");
   await expect(canvas).toBeAttached({ timeout: 30_000 });
-  await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(page.getByTestId("fan-notice")).toBeVisible();
+  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByTestId("fan-notice")).toBeHidden();
 
   await app.evaluate(({ dialog }, root) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [root] })) as never;

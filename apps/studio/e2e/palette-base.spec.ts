@@ -52,7 +52,10 @@ test("AC-BASE: the palette lists the primitives under Base and the project's dat
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await expect(page.locator("#viewport-canvas")).toBeAttached({ timeout: 30_000 });
-  await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(page.getByTestId("fan-notice")).toBeVisible();
+  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByTestId("fan-notice")).toBeHidden();
 
   await app.evaluate(({ dialog }, root) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [root] })) as never;
