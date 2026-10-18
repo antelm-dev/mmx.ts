@@ -14,14 +14,22 @@ import {
   type FileSystem,
 } from "../../src/project-io/index.js";
 import { createNodeFileSystem } from "../../src/project-io/node.js";
+import { withStarterPack } from "@mmx/content-schema";
 import { createMemoryFileSystem } from "./memfs.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtureRoot = join(here, "fixtures", "minimal-project");
-const PACK = JSON.parse(
+const STARTER_DATA = JSON.parse(
   readFileSync(join(here, "../../../../packages/pack-mmx-starter/data/game.json"), "utf8"),
 );
 const STARTER = [{ id: "mmx-starter", version: 1 }];
+const PLAYERS = [
+  { id: "mmx-player-x", version: 1 },
+  { id: "mmx-player-zero", version: 1 },
+];
+/** What an old project gets: the MMX Starter, X and Zero (their records are tested in content-schema). */
+const PACKS = [...STARTER, ...PLAYERS];
+const PACK = withStarterPack({}, undefined).overlay!;
 
 /** A temp copy of the minimal fixture: a project from before packs (no `packs`, no data/game.json). */
 async function withOldProject(run: (root: string) => Promise<void>): Promise<void> {
@@ -44,7 +52,7 @@ test("an old project gets the pack on load, in memory only; Save writes data/gam
     const loaded = await loadProject(fs);
     assert.equal(loaded.ok, true, JSON.stringify(loaded.issues));
     if (!loaded.ok) return;
-    assert.deepEqual(loaded.value.manifest.packs, STARTER);
+    assert.deepEqual(loaded.value.manifest.packs, PACKS);
     assert.deepEqual(loaded.value.gameData, PACK);
     assert.deepEqual(loaded.issues, []);
     // Opening writes nothing.
@@ -53,21 +61,21 @@ test("an old project gets the pack on load, in memory only; Save writes data/gam
 
     const saved = await saveProject(fs, loaded.value);
     assert.equal(saved.ok, true, JSON.stringify(saved.issues));
-    assert.deepEqual((await readJson(root, "project.json")).packs, STARTER);
+    assert.deepEqual((await readJson(root, "project.json")).packs, PACKS);
     assert.deepEqual(await readJson(root, "data/game.json"), PACK);
 
     // Reopened, a migrated project is left as is.
     const reloaded = await loadProject(fs);
     assert.ok(reloaded.ok);
-    assert.deepEqual(reloaded.value.manifest.packs, STARTER);
+    assert.deepEqual(reloaded.value.manifest.packs, PACKS);
     assert.deepEqual(reloaded.value.gameData, PACK);
   });
 });
 
 test("an old project's own data/game.json records are kept, and only missing ids are added", async () => {
   await withOldProject(async (root) => {
-    const metool = { ...PACK.enemies.metool, touchDamage: 7 };
-    const crab = { ...PACK.enemies.metool, id: "crab" };
+    const metool = { ...STARTER_DATA.enemies.metool, touchDamage: 7 };
+    const crab = { ...STARTER_DATA.enemies.metool, id: "crab" };
     const own = { schemaVersion: 1, enemies: { metool, crab } };
     await createNodeFileSystem(root).writeText("data/game.json", JSON.stringify(own));
     const loaded = await loadProject(createNodeFileSystem(root));
@@ -75,8 +83,8 @@ test("an old project's own data/game.json records are kept, and only missing ids
     const enemies = loaded.value.gameData?.enemies ?? {};
     assert.deepEqual(enemies.metool, metool);
     assert.deepEqual(enemies.crab, crab);
-    assert.deepEqual(enemies.bat, PACK.enemies.bat);
-    assert.deepEqual(loaded.value.gameData?.pickups, PACK.pickups);
+    assert.deepEqual(enemies.bat, STARTER_DATA.enemies.bat);
+    assert.deepEqual(loaded.value.gameData?.pickups, STARTER_DATA.pickups);
   });
 });
 
@@ -108,9 +116,9 @@ test("a new project carries the pack, and an export of a migrated, unsaved proje
   const fs = createMemoryFileSystem();
   const created = await createProject(fs, { id: "new.project", name: "New" });
   assert.ok(created.ok);
-  assert.deepEqual(created.value.manifest.packs, STARTER);
+  assert.deepEqual(created.value.manifest.packs, PACKS);
   assert.deepEqual(created.value.gameData, PACK);
-  assert.deepEqual(JSON.parse(await fs.readText("project.json")).packs, STARTER);
+  assert.deepEqual(JSON.parse(await fs.readText("project.json")).packs, PACKS);
   assert.deepEqual(JSON.parse(await fs.readText("data/game.json")), PACK);
 
   await withOldProject(async (root) => {
@@ -118,9 +126,18 @@ test("a new project carries the pack, and an export of a migrated, unsaved proje
     const loaded = await loadProject(source);
     assert.ok(loaded.ok);
     const dest = createMemoryFileSystem();
-    const exported = await exportProject(source, dest, loaded.value);
+    const writes: string[] = [];
+    const recording: FileSystem = {
+      ...dest,
+      async writeText(path, content) {
+        writes.push(path);
+        return dest.writeText(path, content);
+      },
+    };
+    const exported = await exportProject(source, recording, loaded.value);
     assert.equal(exported.ok, true, JSON.stringify(exported.issues));
-    assert.deepEqual(JSON.parse(await dest.readText("project.json")).packs, STARTER);
+    assert.ok(writes.indexOf("data/game.json") < writes.indexOf("project.json"), writes.join());
+    assert.deepEqual(JSON.parse(await dest.readText("project.json")).packs, PACKS);
     assert.deepEqual(JSON.parse(await dest.readText("data/game.json")), PACK);
   });
 });
@@ -143,11 +160,48 @@ test("a save or create cut short at data/game.json leaves no packs marker, so th
     assert.equal((await readJson(root, "project.json")).packs, undefined);
     const again = await loadProject(fs);
     assert.ok(again.ok);
-    assert.deepEqual(again.value.manifest.packs, STARTER);
+    assert.deepEqual(again.value.manifest.packs, PACKS);
     assert.deepEqual(again.value.gameData, PACK);
   });
 
   const fresh = createMemoryFileSystem();
   await assert.rejects(createProject(full(fresh), { id: "x.project", name: "X" }), /ENOSPC/);
   assert.equal(await fresh.exists("project.json"), false);
+});
+
+test("a packs: [mmx-starter] project gets X and Zero on load; Save writes the records, then the markers", async () => {
+  await withOldProject(async (root) => {
+    const manifest = await readJson(root, "project.json");
+    const own = { ...manifest, packs: STARTER, player: { loadout: "player.zero" } };
+    await writeFile(join(root, "project.json"), JSON.stringify(own));
+    await createNodeFileSystem(root).writeText("data/game.json", JSON.stringify(STARTER_DATA));
+    const disk = createNodeFileSystem(root);
+    const loaded = await loadProject(disk);
+    assert.equal(loaded.ok, true, JSON.stringify(loaded.issues));
+    if (!loaded.ok) return;
+    assert.deepEqual(loaded.value.manifest.packs, PACKS);
+    assert.deepEqual(loaded.value.manifest.player, { loadout: "player.zero" });
+    assert.deepEqual(loaded.value.gameData, PACK);
+    assert.deepEqual(loaded.issues, []);
+    // Opening writes nothing.
+    assert.deepEqual((await readJson(root, "project.json")).packs, STARTER);
+    assert.deepEqual(await readJson(root, "data/game.json"), STARTER_DATA);
+
+    const writes: string[] = [];
+    const recording: FileSystem = {
+      ...disk,
+      async writeText(path, content) {
+        writes.push(path);
+        return disk.writeText(path, content);
+      },
+    };
+    assert.ok((await saveProject(recording, loaded.value)).ok);
+    assert.ok(writes.indexOf("data/game.json") < writes.indexOf("project.json"), writes.join());
+    assert.deepEqual((await readJson(root, "project.json")).packs, PACKS);
+    assert.deepEqual(await readJson(root, "data/game.json"), PACK);
+    const reloaded = await loadProject(disk);
+    assert.ok(reloaded.ok);
+    assert.deepEqual(reloaded.value.manifest.packs, PACKS);
+    assert.deepEqual(reloaded.value.gameData, PACK);
+  });
 });

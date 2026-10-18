@@ -93,8 +93,9 @@ type ProjectGameData = { gameData: GameData; compiledGameData: CompiledGameData 
 
 /**
  * `data/game.json` merged as an overlay over the engine's {@link GAME_DATA} and
- * compiled; without the file, the built-in data unchanged. A `manifest` without
- * `packs` gets the MMX Starter (`withStarterPack`, in memory: nothing is written),
+ * compiled; without the file, the built-in data unchanged. The manifest gets the
+ * packs it lacks (`withStarterPack`: the MMX Starter, X and Zero without `packs`,
+ * X and Zero without a player pack), in memory: nothing is written; it is
  * returned as `manifest`. Problems are reported to `issues` against the file and
  * yield undefined.
  */

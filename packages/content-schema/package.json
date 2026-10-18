@@ -28,6 +28,8 @@
   "dependencies": {
     "@mmx/contracts": "workspace:*",
     "@mmx/engine": "workspace:*",
+    "@mmx/pack-mmx-player-x": "workspace:*",
+    "@mmx/pack-mmx-player-zero": "workspace:*",
     "@mmx/pack-mmx-starter": "workspace:*"
   },
   "devDependencies": {

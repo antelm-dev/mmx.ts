@@ -330,6 +330,12 @@ importers:
       '@mmx/engine':
         specifier: workspace:*
         version: link:../engine
+      '@mmx/pack-mmx-player-x':
+        specifier: workspace:*
+        version: link:../pack-mmx-player-x
+      '@mmx/pack-mmx-player-zero':
+        specifier: workspace:*
+        version: link:../pack-mmx-player-zero
       '@mmx/pack-mmx-starter':
         specifier: workspace:*
         version: link:../pack-mmx-starter
