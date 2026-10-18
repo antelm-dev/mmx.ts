@@ -1,3 +1,4 @@
+import { MMX_STARTER_PACK, withStarterPack } from "@mmx/content-schema";
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
 import {
   COMPILED_GAME_DATA,
@@ -100,6 +101,14 @@ export function projectGameData(overlay: GameDataOverlay | undefined): ProjectGa
     compiledOverlays.set(overlay, result);
   }
   return result;
+}
+
+// The migration gives a manifest with packs but no player marker the X and Zero packs.
+const PLAYERS_OVERLAY = withStarterPack({ packs: [MMX_STARTER_PACK] }, undefined).overlay!;
+
+/** No project open: the core with the X and Zero packs, so Play still has its player. */
+export function noProjectGameData(): ProjectGameData {
+  return projectGameData(PLAYERS_OVERLAY);
 }
 
 export type NewEnemyInput = {
