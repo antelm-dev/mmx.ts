@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { mergeGameData, type GameDataOverlay } from "../src/data/index.js";
-import { MMX_GAME_DATA } from "./support/mmx.js";
+import { buildCompileRegistries } from "../src/behaviors/index.js";
+import { compileGameData, mergeGameData, type GameDataOverlay } from "../src/data/index.js";
+import { Scene } from "../src/game/Scene.js";
+import { stage1 } from "./fixtures/levels.js";
+import { MMX_GAME_DATA, compileStrict } from "./support/mmx.js";
 
 const crab = { ...MMX_GAME_DATA.enemies.metool!, id: "crab", sheet: "anim.enemy.crab" };
 
@@ -36,7 +39,7 @@ test("mergeGameData is deterministic", () => {
 test("mergeGameData rejects unsupported categories, schema mismatches and malformed records", () => {
   const result = mergeGameData(MMX_GAME_DATA, {
     schemaVersion: 2,
-    weapons: {},
+    physics: {},
     enemies: { crab: 1 },
   } as unknown as GameDataOverlay);
   assert.equal(result.ok, false);
@@ -45,7 +48,7 @@ test("mergeGameData rejects unsupported categories, schema mismatches and malfor
     result.diagnostics.map((d) => [d.code, d.fieldPath]),
     [
       ["overlay.schemaVersion", "schemaVersion"],
-      ["overlay.category", "weapons"],
+      ["overlay.category", "physics"],
       ["overlay.invalid", "enemies.crab"],
     ],
   );
@@ -75,14 +78,53 @@ test("mergeGameData merges pickups, environments and projectiles by id", () => {
   assert.deepEqual(result.value.projectiles.lemon, MMX_GAME_DATA.projectiles.lemon);
 });
 
-test("mergeGameData refuses to replace a projectile a weapon fires", () => {
+test("mergeGameData merges abilities, loadouts, weapons and fired projectiles by id", () => {
+  const speedy = { ...MMX_GAME_DATA.loadouts["player.x"]!, id: "player.speedy" };
   const result = mergeGameData(MMX_GAME_DATA, {
+    abilities: {
+      "player.walk": { ...MMX_GAME_DATA.abilities["player.walk"]!, priority: 3 },
+    },
+    loadouts: { "player.speedy": speedy },
+    weapons: { buster: { ...MMX_GAME_DATA.weapons.buster!, maxLiveShots: 1 } },
     projectiles: { lemon: { ...MMX_GAME_DATA.projectiles.lemon!, damage: 9 } },
   });
-  assert.equal(result.ok, false);
-  if (result.ok) return;
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.value.abilities["player.walk"]!.priority, 3);
+  assert.deepEqual(result.value.loadouts["player.speedy"], speedy);
+  assert.deepEqual(result.value.loadouts["player.x"], MMX_GAME_DATA.loadouts["player.x"]);
+  assert.equal(result.value.weapons.buster!.maxLiveShots, 1);
+  assert.equal(result.value.projectiles.lemon!.damage, 9);
+  assert.equal(compileStrict(result.value).loadouts.has("player.speedy"), true);
+});
+
+test("game data without any loadout compiles and reports that no player can spawn", () => {
+  const data = structuredClone(MMX_GAME_DATA);
+  data.loadouts = {};
+  const result = compileGameData(data, buildCompileRegistries());
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
   assert.deepEqual(
-    result.diagnostics.map((d) => [d.code, d.fieldPath]),
-    [["overlay.projectile", "projectiles.lemon"]],
+    result.diagnostics.map((d) => [d.severity, d.code, d.fieldPath]),
+    [["warning", "player.missing", "prefabs.spawn.source"]],
   );
+  assert.match(result.diagnostics[0]!.message, /player\.x/);
+  // The level that places the spawn says so when its player is built.
+  assert.throws(
+    () => Scene.create({ level: stage1, seed: 1, gameData: result.value }),
+    /unknown loadout 'player\.x'/,
+  );
+});
+
+test("a loadout that can jump without a walk or fall slot is a warning", () => {
+  const data = structuredClone(MMX_GAME_DATA);
+  const x = data.loadouts["player.x"]!;
+  x.slots = x.slots.filter((s) => s.ability !== "player.walk");
+  const result = compileGameData(data, buildCompileRegistries());
+  assert.equal(result.ok, true);
+  assert.deepEqual(
+    result.diagnostics.map((d) => [d.severity, d.code, d.definitionId]),
+    [["warning", "loadout.airControl", "player.x"]],
+  );
+  assert.match(result.diagnostics[0]!.message, /player\.walk/);
 });

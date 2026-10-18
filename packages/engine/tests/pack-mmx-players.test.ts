@@ -4,7 +4,12 @@ import assert from "node:assert/strict";
 import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
 import zeroPack from "@mmx/pack-mmx-player-zero/data/game.json" with { type: "json" };
 
-import { GAME_DATA, type GameData } from "../src/data/index.js";
+import {
+  GAME_DATA,
+  mergeGameData,
+  type GameData,
+  type GameDataOverlay,
+} from "../src/data/index.js";
 import type { LevelData } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { stage1, stage2 } from "./fixtures/levels.js";
@@ -36,20 +41,17 @@ function coreWithoutPlayers(): GameData {
   return data;
 }
 
-// shortcut: a plain per-category spread, as the overlay rejects abilities, loadouts and
-// weapons; move to mergeGameData once it accepts them (task 03).
+/** `base` with each pack merged over it in order, as a project's overlays are. */
 function withPacks(base: GameData, ...packs: Pack[]): GameData {
-  const data: Record<string, unknown> = { ...base };
-  for (const { schemaVersion, ...categories } of packs) {
-    assert.equal(schemaVersion, base.schemaVersion);
-    for (const [category, records] of Object.entries(categories)) {
-      data[category] = { ...(data[category] as object), ...records };
-    }
-  }
-  return data as GameData;
+  return packs.reduce((data, pack) => {
+    const merged = mergeGameData(data, pack as GameDataOverlay);
+    assert.ok(merged.ok, JSON.stringify(!merged.ok && merged.diagnostics));
+    return merged.value;
+  }, base);
 }
 
-const assembled = (): GameData => withPacks(coreWithoutPlayers(), STARTER as Pack, X, ZERO);
+const assembled = (x: Pack = X): GameData =>
+  withPacks(coreWithoutPlayers(), STARTER as Pack, x, ZERO);
 
 test("core without the players keeps no player record", () => {
   const core = coreWithoutPlayers();
@@ -58,6 +60,17 @@ test("core without the players keeps no player record", () => {
 
 test("core without the players + X + Zero is GAME_DATA", () => {
   assert.deepStrictEqual(withPacks(coreWithoutPlayers(), X, ZERO), GAME_DATA);
+});
+
+test("the X and Zero packs share no id", () => {
+  for (const category of PLAYER_CATEGORIES) {
+    const zero = new Set(Object.keys(ZERO[category] ?? {}));
+    assert.deepEqual(
+      Object.keys(X[category] ?? {}).filter((id) => zero.has(id)),
+      [],
+      category,
+    );
+  }
 });
 
 test("core without the players + Starter + X + Zero is core + Starter", () => {
@@ -99,3 +112,29 @@ for (const [name, level] of [
     assert.deepEqual(trace(level, assembled()), trace(level, MMX_GAME_DATA));
   });
 }
+
+/** stage1 with a bat (1 health, no shield) just ahead of the spawn, in the buster's line of fire. */
+const BAT_AHEAD: LevelData = (() => {
+  const spawn = stage1.entities.find((e) => e.id === "Spawn")!;
+  const metool = stage1.entities.find((e) => e.id === "Enemy")!;
+  const bat = { ...metool, iid: "sentinel-bat", x: spawn.x + 96, y: spawn.y - 8 };
+  return {
+    ...stage1,
+    entities: [...stage1.entities, { ...bat, fields: { ...bat.fields, Kind: "bat" } }],
+  };
+})();
+
+test("the equivalence reads the X pack's shots: a harmless lemon changes X's digests", () => {
+  const x = structuredClone(X);
+  x.projectiles!.lemon!.damage = 0;
+  assert.deepEqual(trace(BAT_AHEAD, assembled()), trace(BAT_AHEAD, MMX_GAME_DATA));
+  assert.notDeepEqual(trace(BAT_AHEAD, assembled(x)), trace(BAT_AHEAD, MMX_GAME_DATA));
+});
+
+test("a project overlay that changes a weapon changes the game", () => {
+  const merged = mergeGameData(MMX_GAME_DATA, {
+    weapons: { buster: { ...MMX_GAME_DATA.weapons.buster!, maxLiveShots: 1 } },
+  });
+  assert.ok(merged.ok);
+  assert.notDeepEqual(trace(stage1, merged.value), trace(stage1, MMX_GAME_DATA));
+});

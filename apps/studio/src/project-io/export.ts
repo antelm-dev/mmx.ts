@@ -1,7 +1,7 @@
 import { serializeProject, validateProject, type ProjectDocument } from "@mmx/project-schema";
 
 import type { FileSystem } from "./fs.js";
-import { PROJECT_VALIDATION } from "./project.js";
+import { projectValidation } from "./project.js";
 import { fail, issue, succeed, type ProjectResult, type StudioProject } from "./model.js";
 import {
   CANONICAL_GAME_DATA_FILE,
@@ -76,7 +76,7 @@ export async function exportProject(
   );
   if (!destinationGuard.ok) return fail(destinationGuard.issues);
 
-  const validation = validateProject(project.manifest, PROJECT_VALIDATION);
+  const validation = validateProject(project.manifest, projectValidation(project.gameData));
   if (!validation.ok) {
     return fail(
       validation.issues.map((entry) => ({

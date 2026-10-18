@@ -7,7 +7,7 @@ import {
   type PlaytestSnapshot,
 } from "@mmx/editor-runtime";
 import { documentToLevelData } from "@mmx/editor-runtime/adapters";
-import { BODY_HALF_H, BODY_HALF_W, DEFAULT_PLAYER_LOADOUT, World } from "@mmx/engine";
+import { DEFAULT_PLAYER_LOADOUT, World } from "@mmx/engine";
 import { instanceSize, type LevelDocument } from "@mmx/content-schema";
 import { emptySelection, type EditorSelection, type EditorStore } from "../core/EditorStore.js";
 import { type FileAccess } from "../core/persistence.js";
@@ -136,10 +136,15 @@ export class EditorPlaytestController {
       this.cb.toast("Fix the errors in data/game.json (see Problems) before playing.");
       return;
     }
+    const loadoutId = this.cb.getLoadoutId() ?? DEFAULT_PLAYER_LOADOUT;
+    const loadout = gameData.loadouts.get(loadoutId);
+    if (!loadout) {
+      this.cb.toast(`No player: the project's data has no loadout '${loadoutId}'.`);
+      return;
+    }
+    const { body } = loadout.actor;
     // The copy Play runs (restarts included); checked now so a refusal is immediate,
     // and rebuilt from the level as it is once the loads below are done.
-    const body = gameData.loadouts.get(this.cb.getLoadoutId() ?? DEFAULT_PLAYER_LOADOUT)?.actor
-      .body ?? { hw: BODY_HALF_W, hh: BODY_HALF_H };
     const moveSpawn =
       here &&
       ((doc: LevelDocument) =>
@@ -196,7 +201,6 @@ export class EditorPlaytestController {
     try {
       await audio.load();
       const files = this.cb.getFileAccess();
-      const loadoutId = this.cb.getLoadoutId();
       const session = createPlaytest(level, {
         host,
         loadoutId,
@@ -243,7 +247,7 @@ export class EditorPlaytestController {
       this.play = session;
       // Lets e2e tests tell which player sheet and loadout Play is running.
       host.dataset.playerSheet = assets.manifest.playerSheet;
-      host.dataset.playerLoadout = loadoutId ?? "player.x";
+      host.dataset.playerLoadout = loadoutId;
       host.dataset.playerMoveset = session.playerMoveset.join(" ");
       host.dataset.enemyKinds = session.enemyKinds.join(" ");
     } catch (error) {

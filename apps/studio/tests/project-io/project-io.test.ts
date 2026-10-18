@@ -210,6 +210,29 @@ test("player.loadout round-trips through save, and new projects omit it (default
   });
 });
 
+test("player.loadout may name a loadout data/game.json adds, on save, load and export", async () => {
+  const fs = createMemoryFileSystem();
+  const created = await createProject(fs, { id: "speedy.project", name: "Speedy" });
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+  const speedy = {
+    ...created.value,
+    manifest: { ...created.value.manifest, player: { loadout: "player.speedy" } },
+    gameData: {
+      ...created.value.gameData,
+      loadouts: { "player.speedy": { id: "player.speedy" } },
+    } as never,
+  };
+  const saved = await saveProject(fs, speedy);
+  assert.equal(saved.ok, true, JSON.stringify(saved.issues));
+
+  const loaded = await loadProject(fs);
+  assert.equal(loaded.ok, true, JSON.stringify(loaded.issues));
+  if (!loaded.ok) return;
+  assert.deepEqual(loaded.value.manifest.player, { loadout: "player.speedy" });
+  assert.equal((await exportProject(fs, createMemoryFileSystem(), loaded.value)).ok, true);
+});
+
 test("data/game.json round-trips through load and save, and export keeps its enemy sheets", async () => {
   const fs = createMemoryFileSystem();
   const created = await createProject(fs, { id: "crab.project", name: "Crab" });

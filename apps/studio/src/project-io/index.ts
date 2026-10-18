@@ -29,7 +29,6 @@ export {
   saveProject,
   updateManifestAssets,
   updateLevelDocument,
-  LOADOUT_IDS,
   PROJECT_VALIDATION,
   type CreateProjectInput,
 } from "./project.js";

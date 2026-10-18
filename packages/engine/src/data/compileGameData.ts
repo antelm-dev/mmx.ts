@@ -183,6 +183,18 @@ export function compileGameData(
         message: `initialWeapon '${l.initialWeapon}' is not in this loadout's weapons.`,
       });
     }
+    // Jumps take their air control from the walk slot and their dash fall from the fall slot.
+    const behaviors = new Set(l.slots.map((s) => data.abilities[s.ability]?.behavior));
+    const jumps = ["player.jump", "player.dash-jump", "player.wall-jump", "player.dash-wall-jump"];
+    const missing = ["player.walk", "player.fall"].filter((b) => !behaviors.has(b));
+    if (missing.length > 0 && jumps.some((b) => behaviors.has(b))) {
+      warn({
+        code: "loadout.airControl",
+        definitionId: l.id,
+        fieldPath: `loadouts.${l.id}.slots`,
+        message: `Loadout can jump but has no ${missing.join(" or ")} slot: no air control or dash fall in the air.`,
+      });
+    }
   }
 
   // --- projectiles -----------------------------------------------------------
@@ -426,7 +438,15 @@ export function compileGameData(
         message: `Prefab references unknown runtime '${pf.runtime}'.`,
       });
     }
-    if (!resolvePrefabSource(data, pf)) {
+    if (pf.source.kind === "loadout" && !data.loadouts[pf.source.ref]) {
+      // Not fatal: a project without a player pack still compiles; constructing Player reports it.
+      warn({
+        code: "player.missing",
+        definitionId: pf.id,
+        fieldPath: `prefabs.${pf.id}.source`,
+        message: `Prefab '${pf.id}' uses loadout '${pf.source.ref}', which is not defined: no player can spawn.`,
+      });
+    } else if (!resolvePrefabSource(data, pf)) {
       error({
         code: "reference.missing",
         definitionId: pf.id,

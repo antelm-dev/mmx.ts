@@ -51,7 +51,7 @@ describe("project game data", () => {
   });
 
   it("reports merge and compile errors at /data/game.json and falls back to the engine's data", () => {
-    const unsupported = projectGameData({ weapons: {} } as never);
+    const unsupported = projectGameData({ physics: {} } as never);
     expect(unsupported.data).toBe(GAME_DATA);
     expect(unsupported.issues).toEqual([
       expect.objectContaining({

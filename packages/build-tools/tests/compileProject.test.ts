@@ -365,7 +365,7 @@ test("an invalid data/game.json overlay fails loadProject with the compile diagn
 });
 
 test("a data/game.json overlay with an unsupported category fails loadProject", async () => {
-  const fixture = await createOverlayFixture({ weapons: {} });
+  const fixture = await createOverlayFixture({ physics: {} });
   try {
     const result = await loadProject(fixture.root);
     assert.equal(result.ok, false);
@@ -373,6 +373,34 @@ test("a data/game.json overlay with an unsupported category fails loadProject", 
       result.issues.map((entry) => [entry.code, entry.path]),
       [["overlay.category", "/data/game.json"]],
     );
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+test("project.json may pick a loadout its data/game.json overlay adds", async () => {
+  const speedy = { ...GAME_DATA.loadouts["player.x"]!, id: "player.speedy" };
+  const fixture = await createOverlayFixture({ loadouts: { "player.speedy": speedy } });
+  try {
+    const manifestPath = path.join(fixture.root, "project.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    await fs.writeFile(
+      manifestPath,
+      JSON.stringify({ ...manifest, player: { loadout: "player.speedy" } }),
+      "utf8",
+    );
+    const project = await requireProject(fixture.root);
+    assert.equal(project.manifest.player?.loadout, "player.speedy");
+    assert.ok(project.compiledGameData.loadouts.has("player.speedy"));
+
+    await fs.writeFile(
+      manifestPath,
+      JSON.stringify({ ...manifest, player: { loadout: "player.ghost" } }),
+      "utf8",
+    );
+    const result = await loadProject(fixture.root);
+    assert.equal(result.ok, false);
+    assert.ok(result.issues.some((entry) => entry.path === "/player/loadout"));
   } finally {
     await fixture.dispose();
   }

@@ -1,5 +1,4 @@
 import {
-  COMPILED_GAME_DATA,
   type CompiledGameData,
   type EnemyDefinition,
   type GameDataOverlay,
@@ -36,13 +35,13 @@ const BEHAVIOR_CLIPS: Record<string, string[]> = {
   "player.damage": ["damage"],
 };
 
-/** Clip names a player loadout of `gameData` expects in its animation asset (default loadout X). */
+/** Clip names a player loadout of a project's `gameData` expects in its animation asset (default loadout X). */
 export function requiredPlayerClips(
-  loadoutId = "player.x",
-  gameData: CompiledGameData = COMPILED_GAME_DATA,
+  loadoutId: string | undefined,
+  gameData: CompiledGameData,
 ): string[] {
   const names = new Set<string>();
-  for (const ability of gameData.loadouts.get(loadoutId)?.abilities ?? []) {
+  for (const ability of gameData.loadouts.get(loadoutId ?? "player.x")?.abilities ?? []) {
     for (const name of BEHAVIOR_CLIPS[ability.behavior] ?? []) names.add(name);
     for (const value of Object.values(ability.config)) {
       const animation = (value as { animation?: unknown } | null)?.animation;

@@ -19,8 +19,8 @@ Data only: X's sprites and sounds stay in the Studio templates for now.
 Phase 1: the built-in records still live in the engine, and the engine test
 `tests/pack-mmx-players.test.ts` fails if this pack and them diverge (core
 without the players + MMX Starter + X + Zero must equal the built-in data, hash
-`36e5bb6d8c3547a6`). The project overlay does not accept abilities, loadouts or
-weapons yet, so `mergeGameData` cannot apply this pack until it does.
+`36e5bb6d8c3547a6`); the test applies the packs with `mergeGameData`, as a
+project overlay.
 
 ## Development
 
