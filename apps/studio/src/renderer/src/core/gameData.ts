@@ -19,6 +19,8 @@ export type ProjectGameData = {
   issues: ProjectIssue[];
   /** The same errors with their `fieldPath`, for inline display. */
   diagnostics: GameDataDiagnostic[];
+  /** Compile warnings (e.g. `player.missing`): shown in Problems, they do not break the data. */
+  warnings: ProjectIssue[];
 };
 
 const GAME_DATA_PATH = "/data/game.json";
@@ -27,6 +29,7 @@ const DEFAULT_GAME_DATA: ProjectGameData = {
   compiled: COMPILED_GAME_DATA,
   issues: [],
   diagnostics: [],
+  warnings: [],
 };
 const compiledOverlays = new WeakMap<GameDataOverlay, ProjectGameData>();
 // The fallback is the engine's core: the project's objects (its pack's too) all go missing.
@@ -51,7 +54,16 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
   try {
     const compiled = compileGameData(merged.value, buildCompileRegistries());
     if (!compiled.ok) return failed(compiled.diagnostics);
-    return { data: merged.value, compiled: compiled.value, issues: [], diagnostics: [] };
+    // As build-tools loadProject reports them: warnings never block the data.
+    const warnings = compiled.diagnostics.map(
+      (d): ProjectIssue => ({
+        severity: "warning",
+        code: `game-data.${d.code}`,
+        path: GAME_DATA_PATH,
+        message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
+      }),
+    );
+    return { data: merged.value, compiled: compiled.value, issues: [], diagnostics: [], warnings };
   } catch (error) {
     // compileGameData trusts record shapes; a record missing a nested object throws.
     const message = error instanceof Error ? error.message : String(error);

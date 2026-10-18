@@ -105,6 +105,7 @@ function validateOpenProject(project: StudioProject): ProjectIssue[] {
   const validation = { ...PROJECT_VALIDATION, loadoutIds: [...gameData.compiled.loadouts.keys()] };
   return [
     ...gameData.issues,
+    ...gameData.warnings,
     // Only on data that compiles: its enemies own known abilities with full configs.
     ...(gameData.issues.length === 0
       ? enemyClipIssues(project.gameData, project.manifest.assets ?? [])
@@ -943,7 +944,7 @@ export class ProjectSession {
   }
 
   /**
-   * File → Install / update MMX Starter pack… (contract C-INSTALL) into the open project's folder;
+   * File → Install / update MMX packs… (contract C-INSTALL) into the open project's folder;
    * with `dryRun`, what it would add and keep, nothing written. The caller reopens the project.
    */
   async installPack(
