@@ -26,7 +26,7 @@ import {
   type StudioGameData,
 } from "../assets/studioAssets.js";
 import { enemyClipIssues, requiredPlayerClips } from "./clips.js";
-import { projectGameData, type ProjectGameData } from "./gameData.js";
+import { noProjectGameData, projectGameData, type ProjectGameData } from "./gameData.js";
 import type { RecoveryDraft } from "./persistence.js";
 
 /** The name a recovery draft gets when it is added as a new level. */
@@ -167,9 +167,13 @@ export class ProjectSession {
 
   getSnapshot = (): ProjectSessionState => this.state;
 
-  /** The open project's game data (the engine's when none is open or its data/game.json has errors). */
+  /**
+   * The open project's game data (the engine's core if its data/game.json has errors); with
+   * none open, the core with the X and Zero packs.
+   */
   gameData(): ProjectGameData {
-    return projectGameData(this.state.project?.gameData);
+    const { project } = this.state;
+    return project ? projectGameData(project.gameData) : noProjectGameData();
   }
 
   /** The last built sprites and animations, for previews; null while none are loaded. */

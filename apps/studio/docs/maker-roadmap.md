@@ -88,7 +88,7 @@ Un `LevelDocument` porte :
 
 ### Loadouts par saga
 
-Un loadout (`packages/engine/src/data/loadouts.ts` dans mmx-core-ts) choisit
+Un loadout (les packs `pack-mmx-player-x` et `pack-mmx-player-zero` dans mmx-core-ts) choisit
 l'acteur, la liste ordonnée d'abilities et les armes ; le projet le sélectionne
 par `player.loadout`.
 

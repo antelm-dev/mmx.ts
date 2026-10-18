@@ -17,8 +17,9 @@ export interface IntroConfig {
  *
  * Event-driven like Damage/Death rather than polled: `_StartCondition` never
  * fires true on its own; {@link Player.beginIntro} calls `ExecuteOnce` once, from
- * `Scene`'s constructor, so a bare `new Player()` (every engine test, the headless
- * sim) never sees it and behaves exactly as it did before this ability existed.
+ * `Scene`'s constructor, so a player built directly with `new Player(...)` from a
+ * pack's loadout (most engine tests, the headless sim) never sees it and behaves
+ * exactly as it did before this ability existed.
  *
  * Four phases, chained by clip name rather than by a sub-state enum, matching the
  * original:

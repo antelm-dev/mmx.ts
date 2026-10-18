@@ -18,7 +18,7 @@ import type {
  * `play_animation*("…")` literals of mmx-core-ts `packages/engine/src/game/abilities/`
  * (Idle.ts, Walk.ts, Fall.ts, WallSlide.ts, Dash.ts + AirDash.ts, Jump.ts + DashJump.ts,
  * WallJump.ts + DashWallJump.ts, Intro.ts, Damage.ts). Update it with those files;
- * saber swings name their clips in the ability config instead (data/abilities.ts).
+ * saber swings name their clips in the ability config instead (the Zero pack's `abilities`).
  */
 const BEHAVIOR_CLIPS: Record<string, string[]> = {
   "player.idle": ["recover", "idle", "weak"],

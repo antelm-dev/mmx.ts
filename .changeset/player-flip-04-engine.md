@@ -1,0 +1,5 @@
+---
+"@mmx/engine": major
+---
+
+X and Zero leave the engine. `GAME_DATA` keeps only the physics and the level primitives (`spawn`, `hazard`, `camera-zone`): the `player.x` and `player.zero` actors and loadouts, the `player.*` and `zero.*` abilities, the `buster` and `dark_arrow` weapons and the `lemon`, `medium`, `charged` and `dark_arrow` shots are gone; they live in `@mmx/pack-mmx-player-x` and `@mmx/pack-mmx-player-zero`, which projects carry. The core still compiles, with one warning (`player.missing`: `spawn` points at `player.x`, which a pack provides). `COMPILED_GAME_DATA.hash` becomes `a188bb2adc199c77`. `new Player(...)` now requires `loadoutId` and `gameData`, and `SceneOptions.gameData` is required (so `Scene.create`, `Recorder`, `ToolingSession` and the runtimes need it); a scene's `loadoutId` still defaults to `DEFAULT_PLAYER_LOADOUT` (`player.x`). A project carrying the packs (both templates, and every old project once migrated on load) still compiles to `36e5bb6d8c3547a6` and X plays as before; a `packs: []` project has no player.

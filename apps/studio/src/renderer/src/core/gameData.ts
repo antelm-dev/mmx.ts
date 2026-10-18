@@ -1,3 +1,4 @@
+import { MMX_STARTER_PACK, withStarterPack } from "@mmx/content-schema";
 import { buildCompileRegistries } from "@mmx/engine/behaviors";
 import {
   COMPILED_GAME_DATA,
@@ -32,6 +33,40 @@ const DEFAULT_GAME_DATA: ProjectGameData = {
   warnings: [],
 };
 const compiledOverlays = new WeakMap<GameDataOverlay, ProjectGameData>();
+
+// As build-tools loadProject reports them: warnings never block the data.
+function warningsOf(diagnostics: readonly GameDataDiagnostic[]): ProjectIssue[] {
+  return diagnostics.map(
+    (d): ProjectIssue => ({
+      severity: "warning",
+      code: `game-data.${d.code}`,
+      path: GAME_DATA_PATH,
+      message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
+    }),
+  );
+}
+
+/**
+ * A project without data/game.json (`packs: []`): the core, whose only warning is that no
+ * pack provides the spawn's loadout. Reported at project.json, since data/game.json is absent.
+ */
+const CORE_GAME_DATA: ProjectGameData = {
+  ...DEFAULT_GAME_DATA,
+  warnings: compileGameData(GAME_DATA, buildCompileRegistries()).diagnostics.map(
+    (d): ProjectIssue => {
+      const source = d.definitionId ? GAME_DATA.prefabs[d.definitionId]?.source : undefined;
+      return {
+        severity: "warning",
+        code: `game-data.${d.code}`,
+        path: "/project.json",
+        message:
+          d.code === "player.missing" && source?.kind === "loadout"
+            ? `no pack provides loadout '${source.ref}' (install the MMX packs or add data/game.json)`
+            : d.message,
+      };
+    },
+  ),
+};
 // The fallback is the engine's core: the project's objects (its pack's too) all go missing.
 const UNAVAILABLE = " — the objects of data/game.json are unavailable until it is fixed";
 
@@ -54,15 +89,7 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
   try {
     const compiled = compileGameData(merged.value, buildCompileRegistries());
     if (!compiled.ok) return failed(compiled.diagnostics);
-    // As build-tools loadProject reports them: warnings never block the data.
-    const warnings = compiled.diagnostics.map(
-      (d): ProjectIssue => ({
-        severity: "warning",
-        code: `game-data.${d.code}`,
-        path: GAME_DATA_PATH,
-        message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
-      }),
-    );
+    const warnings = warningsOf(compiled.diagnostics);
     return { data: merged.value, compiled: compiled.value, issues: [], diagnostics: [], warnings };
   } catch (error) {
     // compileGameData trusts record shapes; a record missing a nested object throws.
@@ -83,13 +110,21 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
 
 /** Merge and compile a project's overlay (memoized per overlay object); the engine's data without one. */
 export function projectGameData(overlay: GameDataOverlay | undefined): ProjectGameData {
-  if (!overlay) return DEFAULT_GAME_DATA;
+  if (!overlay) return CORE_GAME_DATA;
   let result = compiledOverlays.get(overlay);
   if (!result) {
     result = compile(overlay);
     compiledOverlays.set(overlay, result);
   }
   return result;
+}
+
+// The migration gives a manifest with packs but no player marker the X and Zero packs.
+const PLAYERS_OVERLAY = withStarterPack({ packs: [MMX_STARTER_PACK] }, undefined).overlay!;
+
+/** No project open: the core with the X and Zero packs, so Play still has its player. */
+export function noProjectGameData(): ProjectGameData {
+  return projectGameData(PLAYERS_OVERLAY);
 }
 
 export type NewEnemyInput = {

@@ -639,7 +639,9 @@ function validatePlayer(
     add({
       code: "reference.invalid",
       path: "/player/loadout",
-      message: `player.loadout '${value.loadout}' is not a compiled loadout; expected one of: ${known.join(", ")}.`,
+      message: `player.loadout '${value.loadout}' is not a compiled loadout; ${
+        known.length > 0 ? `expected one of: ${known.join(", ")}` : "no loadout is defined"
+      }.`,
     });
   }
 }

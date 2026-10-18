@@ -262,7 +262,11 @@ test("mergePack: a blank project gets the pack's records, asset entries and bind
   assert.ok(result.added.includes("asset anim.enemy.metool"));
   for (const key of PACK_BINDING_KEYS) assert.ok(result.added.includes(key), key);
   assert.deepEqual(manifest, blankManifest(), "the input is not mutated");
-  assert.equal(hashOf(result.overlay), "36e5bb6d8c3547a6");
+  // The Starter alone has no player: on load the migration adds X and Zero, which keeps the hash.
+  assert.equal(
+    hashOf(withStarterPack(result.manifest, result.overlay).overlay),
+    "36e5bb6d8c3547a6",
+  );
 
   // Without game/data.json Play uses the starter's bindings: none is written.
   const none = mergePack({ manifest, overlay: undefined });

@@ -575,6 +575,14 @@ test("player.loadout is optional, validated against known loadouts, and serializ
   );
   assert.match(unknown.issues[0]!.message, /'player\.vile'.*player\.x, player\.zero/);
 
+  // A project with no player pack (packs: []) has no loadout to name.
+  const none = parseProject(validProject({ player: { loadout: "player.x" } }), { loadoutIds: [] });
+  assert.equal(none.ok, false);
+  assert.match(
+    none.issues[0]!.message,
+    /'player\.x' is not a compiled loadout; no loadout is defined\.$/,
+  );
+
   // Without known ids only the shape is checked.
   assert.equal(validateProject(validProject({ player: { loadout: "player.vile" } })).ok, true);
   const malformed = validateProject({

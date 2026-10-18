@@ -59,7 +59,7 @@ export const SHOT_POSITION_ADJUST: Readonly<Record<string, { x: number; y: numbe
 
 /**
  * One projectile's flight stats, as a weapon fires it — see {@link shotStats}.
- * A weapon's shots are indexed by charge level (data/weapons.ts).
+ * A weapon's shots are indexed by charge level (a pack's `weapons`, e.g. the X pack's buster).
  */
 export interface ShotStats {
   /** Clip name in shot_anims.json. */

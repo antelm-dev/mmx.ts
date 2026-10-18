@@ -12,10 +12,10 @@ export interface CreatePlaytestOptions {
   host?: HTMLElement;
   audio?: PlaytestAudio;
   seed?: number;
-  /** Compiled player loadout id (the project's `player.loadout`); engine default when omitted. */
+  /** Compiled player loadout id (the project's `player.loadout`); `player.x` when omitted. */
   loadoutId?: string;
-  /** The project's compiled game data (its `data/game.json` merged in); engine default when omitted. */
-  gameData?: CompiledGameData;
+  /** The project's compiled game data (its packs and `data/game.json` merged in). */
+  gameData: CompiledGameData;
   onSnapshot?: (snapshot: PlaytestSnapshot) => void;
   onError?: (error: string) => void;
   onExitToObject?: (sourceEntityId: string) => void;

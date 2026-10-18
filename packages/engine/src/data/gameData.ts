@@ -1,10 +1,5 @@
 import type { GameData } from "./types.js";
 import { physics } from "./physics.js";
-import { actors } from "./actors.js";
-import { abilities } from "./abilities.js";
-import { loadouts } from "./loadouts.js";
-import { weapons } from "./weapons.js";
-import { projectiles } from "./projectiles.js";
 import { environments } from "./environments.js";
 import { prefabs } from "./prefabs.js";
 
@@ -20,21 +15,22 @@ export function defineGameData(data: GameData): GameData {
 }
 
 /**
- * The engine's core game data: the players, their weapons and shots, the behaviour
- * catalogue and the level primitives (spawn, hazard, camera zone). Enemies, pickups,
- * platforms and conveyors are project data, merged over this as an overlay; the
- * MMX Starter pack (`@mmx/pack-mmx-starter`) is the MMX set.
+ * The engine's core game data: physics and the level primitives (spawn, hazard,
+ * camera zone). Players, their abilities, weapons and shots, enemies, pickups,
+ * platforms and conveyors are project data, merged over this as an overlay: the
+ * X and Zero packs (`@mmx/pack-mmx-player-x`, `@mmx/pack-mmx-player-zero`) and the
+ * MMX Starter pack (`@mmx/pack-mmx-starter`) are the MMX set.
  */
 export const GAME_DATA: GameData = defineGameData({
   schemaVersion: GAME_SCHEMA_VERSION,
   gameVersion: "1.0.0",
   physics,
-  actors,
-  abilities,
-  loadouts,
+  actors: {},
+  abilities: {},
+  loadouts: {},
   enemies: {},
-  weapons,
-  projectiles,
+  weapons: {},
+  projectiles: {},
   pickups: {},
   environments,
   prefabs,

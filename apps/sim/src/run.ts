@@ -1,5 +1,6 @@
 import {
   Action,
+  DEFAULT_PLAYER_LOADOUT,
   DT,
   Input,
   Player,
@@ -34,7 +35,7 @@ async function main(): Promise<void> {
     level.spawn.y,
     input,
     undefined,
-    entry.loadoutId,
+    entry.loadoutId ?? DEFAULT_PLAYER_LOADOUT,
     gameData,
   );
   if (entry.clips?.player) player.loadAnimations(entry.clips.player);

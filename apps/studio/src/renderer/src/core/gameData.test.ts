@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GAME_DATA } from "@mmx/engine/data";
-import { addEnemy, projectGameData, uniqueEnemySlug } from "./gameData.js";
+import { addEnemy, noProjectGameData, projectGameData, uniqueEnemySlug } from "./gameData.js";
 import { MMX_GAME_DATA, MMX_OVERLAY } from "./mmx.test-support.js";
 
 const crab = { name: "Crab", base: "metool", sheet: "anim.crab", health: 5, touchDamage: 4 };
@@ -95,5 +95,18 @@ describe("project game data", () => {
       },
     ]);
     expect(projectGameData(MMX_OVERLAY).warnings).toEqual([]);
+    // Without data/game.json (a `packs: []` project) the core has no player: Problems says so.
+    expect(projectGameData(undefined).warnings).toEqual([
+      {
+        severity: "warning",
+        code: "game-data.player.missing",
+        path: "/project.json",
+        message:
+          "no pack provides loadout 'player.x' (install the MMX packs or add data/game.json)",
+      },
+    ]);
+    // With no project open, Play still has X and Zero: the core with their packs.
+    expect([...noProjectGameData().compiled.loadouts.keys()]).toEqual(["player.x", "player.zero"]);
+    expect(noProjectGameData().warnings).toEqual([]);
   });
 });

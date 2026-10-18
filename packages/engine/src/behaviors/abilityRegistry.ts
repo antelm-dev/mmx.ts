@@ -3,7 +3,8 @@ import { validateConfig, type Schema } from "./configValidation.js";
 
 /**
  * The player-ability registry. Each entry validates the exact config its ability
- * class consumes (the keys authored in data/abilities.ts) and — from Part 5 —
+ * class consumes (the keys the X and Zero packs author, `@mmx/pack-mmx-player-x` and
+ * `@mmx/pack-mmx-player-zero`, data/game.json `abilities`) and — from Part 5 —
  * creates the ability instance from that validated config. The `create` bodies
  * are placeholders until Part 5 wires the Player loadout.
  *
@@ -15,8 +16,8 @@ export type AbilityFactory = BehaviorFactory<unknown, AbilityConfig, unknown>;
 
 /**
  * Config contract per player ability behaviour. Kept in one table so it reads as
- * the counterpart to data/abilities.ts — every key here must appear there and
- * vice versa, or compilation fails (unknown/missing key).
+ * the counterpart to the player packs' `abilities` records — every key here must
+ * appear there and vice versa, or compilation fails (unknown/missing key).
  */
 const ABILITY_SCHEMAS: Readonly<Record<string, Schema>> = {
   "player.idle": {},

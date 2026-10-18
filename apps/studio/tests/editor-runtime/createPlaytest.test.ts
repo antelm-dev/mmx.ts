@@ -2,9 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createLevelDocument } from "@mmx/content-schema";
 import { createPlaytest, PlaytestInput, STOPPED_PLAYTEST } from "../../src/editor-runtime/index.js";
+import { projectGameData } from "../../src/renderer/src/core/gameData.js";
+import { MMX_OVERLAY } from "../../src/renderer/src/core/mmx.test-support.js";
+
+/** Core + MMX Starter, X and Zero: the game data a project made from the template plays. */
+const gameData = projectGameData(MMX_OVERLAY).compiled;
 
 test("createPlaytest advances one fixed step and exposes a public snapshot", async () => {
-  const session = createPlaytest(createLevelDocument({ cols: 20, rows: 12 }));
+  const session = createPlaytest(createLevelDocument({ cols: 20, rows: 12 }), { gameData });
   await session.start();
 
   const before = session.snapshot();
@@ -26,7 +31,7 @@ test("createPlaytest advances one fixed step and exposes a public snapshot", asy
 });
 
 test("dispose is idempotent and rejects further simulation ops", async () => {
-  const session = createPlaytest(createLevelDocument());
+  const session = createPlaytest(createLevelDocument(), { gameData });
   await session.start();
   session.dispose();
   session.dispose();
@@ -40,7 +45,7 @@ test("dispose is idempotent and rejects further simulation ops", async () => {
 });
 
 test("stop returns the stopped snapshot and start can run again", async () => {
-  const session = createPlaytest(createLevelDocument());
+  const session = createPlaytest(createLevelDocument(), { gameData });
   await session.start();
   session.step();
   assert.equal(session.snapshot().frame, 1);
@@ -55,7 +60,7 @@ test("stop returns the stopped snapshot and start can run again", async () => {
 });
 
 test("checkpoints and restarts stay behind the public façade", async () => {
-  const session = createPlaytest(createLevelDocument());
+  const session = createPlaytest(createLevelDocument(), { gameData });
   await session.start();
 
   session.step();
@@ -77,7 +82,7 @@ test("checkpoints and restarts stay behind the public façade", async () => {
 });
 
 test("debug controller fields surface through playtest snapshot", async () => {
-  const session = createPlaytest(createLevelDocument());
+  const session = createPlaytest(createLevelDocument(), { gameData });
   await session.start();
 
   session.step();
@@ -100,8 +105,8 @@ test("debug controller fields surface through playtest snapshot", async () => {
 });
 
 test("loadoutId picks the running player's loadout", async () => {
-  const x = createPlaytest(createLevelDocument());
-  const zero = createPlaytest(createLevelDocument(), { loadoutId: "player.zero" });
+  const x = createPlaytest(createLevelDocument(), { gameData });
+  const zero = createPlaytest(createLevelDocument(), { gameData, loadoutId: "player.zero" });
   await x.start();
   await zero.start();
 

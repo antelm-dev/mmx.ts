@@ -16,9 +16,10 @@ import { stage1, stage2 } from "./fixtures/levels.js";
 import { MMX_PACK as STARTER, compileStrict } from "./support/mmx.js";
 
 /**
- * The X and Zero packs are the player records still built into the engine: core
- * without them plus both packs is the built-in data, value for value. The packs
- * are the source; this test keeps the built-ins aligned until phase 2 removes them.
+ * The X and Zero packs are the player records that used to be built into the
+ * engine. The engine's core has none left: core + Starter + X + Zero is the game
+ * as it was before they left. The hash and X's digests below were taken from the
+ * built-in data before the removal, so a change to either side shows here.
  */
 
 /** COMPILED_GAME_DATA.hash of core + MMX Starter, before the players left the engine. */
@@ -30,17 +31,6 @@ type Pack = { schemaVersion?: number } & Partial<Omit<GameData, "schemaVersion" 
 const X = xPack as Pack;
 const ZERO = zeroPack as Pack;
 
-/** GAME_DATA minus every record the X and Zero packs ship. */
-function coreWithoutPlayers(): GameData {
-  const data = structuredClone(GAME_DATA);
-  for (const pack of [X, ZERO]) {
-    for (const category of PLAYER_CATEGORIES) {
-      for (const id of Object.keys(pack[category] ?? {})) delete data[category][id];
-    }
-  }
-  return data;
-}
-
 /** `base` with each pack merged over it in order, as a project's overlays are. */
 function withPacks(base: GameData, ...packs: Pack[]): GameData {
   return packs.reduce((data, pack) => {
@@ -50,19 +40,11 @@ function withPacks(base: GameData, ...packs: Pack[]): GameData {
   }, base);
 }
 
-/** Core + Starter with the players still built in: what the packs must reproduce. */
-const BUILTINS = withPacks(structuredClone(GAME_DATA), STARTER as Pack);
-
 const assembled = (x: Pack = X): GameData =>
-  withPacks(coreWithoutPlayers(), STARTER as Pack, x, ZERO);
+  withPacks(structuredClone(GAME_DATA), STARTER as Pack, x, ZERO);
 
-test("core without the players keeps no player record", () => {
-  const core = coreWithoutPlayers();
-  for (const category of PLAYER_CATEGORIES) assert.deepEqual(Object.keys(core[category]), []);
-});
-
-test("core without the players + X + Zero is GAME_DATA", () => {
-  assert.deepStrictEqual(withPacks(coreWithoutPlayers(), X, ZERO), GAME_DATA);
+test("core keeps no player record", () => {
+  for (const category of PLAYER_CATEGORIES) assert.deepEqual(Object.keys(GAME_DATA[category]), []);
 });
 
 test("the X and Zero packs share no id", () => {
@@ -76,11 +58,7 @@ test("the X and Zero packs share no id", () => {
   }
 });
 
-test("core without the players + Starter + X + Zero is core + Starter", () => {
-  assert.deepStrictEqual(assembled(), BUILTINS);
-});
-
-test("core without the players + Starter + X + Zero compiles to the built-in hash", () => {
+test("core + Starter + X + Zero compiles to the built-in hash", () => {
   assert.equal(compileStrict(assembled()).hash, BUILTIN_HASH);
 });
 
@@ -107,12 +85,20 @@ function trace(level: LevelData, gameData: GameData): string[] {
   return out;
 }
 
-for (const [name, level] of [
-  ["stage1", stage1],
-  ["stage2", stage2],
+/** X's traces on the built-in data, recorded before the players left the engine. */
+// prettier-ignore
+const BUILTIN_TRACES = {
+  stage1: ["e61aac90","79f3ea88","5ba3906d","e7859999","a5b14535","b3ae73a8","446c39d4","367cfe7a","4b885a64","27833a34","c7eb19ec","9cf6dba1","6213e104","eef7a343","b0a57442","d3f6295d","d28fdbfa","9fdbab2e","a5746e37","f052fe2a"],
+  stage2: ["f7a4e1fa","83a92838","f588c2e4","16076ea3","636847a7","9f20ef1c","1239c787","693a7b07","dbf2fefa","8f85a4a0","31afffd4","a7719e11","9717f9e6","d1d2b7c4","8c0408cd","24e0326a","a7835f1a","73e46055","d1100f5a","f71975f9"],
+  batAhead: ["05d22e24","79f3ea88","5ba3906d","e7859999","a5b14535","b3ae73a8","446c39d4","367cfe7a","4b885a64","27833a34","c7eb19ec","9cf6dba1","6213e104","eef7a343","b0a57442","d3f6295d","d28fdbfa","9fdbab2e","a5746e37","f052fe2a"],
+};
+
+for (const [name, level, expected] of [
+  ["stage1", stage1, BUILTIN_TRACES.stage1],
+  ["stage2", stage2, BUILTIN_TRACES.stage2],
 ] as const) {
   test(`X plays ${name} the same with the player packs as with the built-ins`, () => {
-    assert.deepEqual(trace(level, assembled()), trace(level, BUILTINS));
+    assert.deepEqual(trace(level, assembled()), expected);
   });
 }
 
@@ -130,8 +116,8 @@ const BAT_AHEAD: LevelData = (() => {
 test("the equivalence reads the X pack's shots: a harmless lemon changes X's digests", () => {
   const x = structuredClone(X);
   x.projectiles!.lemon!.damage = 0;
-  assert.deepEqual(trace(BAT_AHEAD, assembled()), trace(BAT_AHEAD, BUILTINS));
-  assert.notDeepEqual(trace(BAT_AHEAD, assembled(x)), trace(BAT_AHEAD, BUILTINS));
+  assert.deepEqual(trace(BAT_AHEAD, assembled()), BUILTIN_TRACES.batAhead);
+  assert.notDeepEqual(trace(BAT_AHEAD, assembled(x)), BUILTIN_TRACES.batAhead);
 });
 
 test("a project overlay that changes a weapon changes the game", () => {

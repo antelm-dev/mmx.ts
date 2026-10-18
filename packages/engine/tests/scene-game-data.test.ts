@@ -85,8 +85,11 @@ test("a scene spawns an enemy kind defined only in its game data", () => {
   assert.notEqual(crab.pos.x, x0, "the crab patrols");
 });
 
-test("a scene defaults to the built-in game data", () => {
-  assert.equal(Scene.create({ level: level([]) }).gameDataHash, COMPILED_GAME_DATA.hash);
+test("the engine's core alone has no player to build a scene with", () => {
+  assert.throws(
+    () => Scene.create({ level: level([]), gameData: COMPILED_GAME_DATA }),
+    /unknown loadout 'player\.x'/,
+  );
 });
 
 test("compileLevel resolves enemy kinds against the given game data", () => {

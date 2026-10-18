@@ -5,9 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { compileLevel } from "@mmx/engine";
-import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
+import { GAME_DATA, mergeGameData, type GameData, type GameDataOverlay } from "@mmx/engine/data";
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
 import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
+import zeroPack from "@mmx/pack-mmx-player-zero/data/game.json" with { type: "json" };
 import {
   buildProjectToDisk,
   bundleContainsAbsolutePaths,
@@ -50,10 +51,13 @@ test("compileBrowserProjectBundle injects engine data without absolute paths", a
   assert.equal(bundleContainsAbsolutePaths(source), false);
   assert.equal(bundle.meta.entryLevelId, "level.main");
   assert.equal(bundle.levels[0]?.data.identifier, "level.main");
-  // An old project (no packs): the MMX Starter is merged in memory.
-  const withPack = mergeGameData(GAME_DATA, pack as GameDataOverlay);
-  assert.ok(withPack.ok);
-  assert.deepEqual(bundle.gameData, withPack.value);
+  // An old project (no packs): the MMX Starter, X and Zero are merged in memory.
+  const withPacks = [pack, xPack, zeroPack].reduce((data: GameData, overlay) => {
+    const merged = mergeGameData(data, overlay as GameDataOverlay);
+    assert.ok(merged.ok);
+    return merged.value;
+  }, GAME_DATA);
+  assert.deepEqual(bundle.gameData, withPacks);
   assert.equal(bundle.assetUrls["sprite.bg"], emission.byId["sprite.bg"]?.publicUrl);
 });
 

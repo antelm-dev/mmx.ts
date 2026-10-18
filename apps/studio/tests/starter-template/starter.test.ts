@@ -9,6 +9,7 @@ import { ToolingSession } from "@mmx/engine/tooling";
 import { parseProject } from "@mmx/project-schema";
 import { documentToLevelData } from "../../src/editor-runtime/adapters/index.js";
 import { loadProject } from "../../src/project-io/index.js";
+import { projectGameData } from "../../src/renderer/src/core/gameData.js";
 import { createNodeFileSystem } from "../../src/project-io/node.js";
 
 import {
@@ -102,7 +103,12 @@ test("a starter project's entry level has ground under the spawn and the player 
     const col = Math.floor(spawn.x / doc.gridSize);
     assert.equal(doc.tiles[row * doc.cols + col], TerrainTile.Solid, "solid tile under the spawn");
 
-    const session = new ToolingSession({ level: documentToLevelData(doc) });
+    // The project's own packs give it its player.
+    const session = new ToolingSession({
+      level: documentToLevelData(doc),
+      gameData: projectGameData(loaded.value.gameData).compiled,
+      loadoutId: manifest.player?.loadout,
+    });
     let snap = session.step(0);
     for (let frame = 0; frame < 240; frame++) snap = session.step(0);
     const { bounds, velocity } = snap.player;
