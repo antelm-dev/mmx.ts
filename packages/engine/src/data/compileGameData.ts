@@ -11,6 +11,7 @@ import type {
   GameData,
   GameDataDiagnostic,
   Hitbox,
+  Knockback,
   LoadoutDefinition,
   PrefabDefinition,
   WeaponDefinition,
@@ -69,7 +70,12 @@ export function compileGameData(
   checkKeyId(data.prefabs, "prefabs");
 
   // --- numeric + hitbox helpers ---------------------------------------------
-  const num = (v: number, path: string, id: string, opts: { min?: number; gt?: number }): void => {
+  const num = (
+    v: number,
+    path: string,
+    id: string,
+    opts: { min?: number; gt?: number; int?: boolean },
+  ): void => {
     if (typeof v !== "number" || !Number.isFinite(v)) {
       error({
         code: "value.number",
@@ -78,6 +84,14 @@ export function compileGameData(
         message: `${path} must be a finite number.`,
       });
       return;
+    }
+    if (opts.int && !Number.isInteger(v)) {
+      error({
+        code: "value.integer",
+        definitionId: id,
+        fieldPath: path,
+        message: `${path} must be a whole number.`,
+      });
     }
     if (opts.gt !== undefined && !(v > opts.gt)) {
       error({
@@ -113,6 +127,16 @@ export function compileGameData(
     if (box.ox !== undefined) num(box.ox, `${path}.ox`, id, {});
     if (box.oy !== undefined) num(box.oy, `${path}.oy`, id, {});
   };
+  /** An optional whole number: checked only when present. */
+  const optInt = (v: number | undefined, path: string, id: string, min: number): void => {
+    if (v !== undefined) num(v, path, id, { min, int: true });
+  };
+  const knockback = (k: Knockback | undefined, path: string, id: string): void => {
+    if (k === undefined) return;
+    optInt(k.speed, `${path}.speed`, id, 0);
+    optInt(k.lift, `${path}.lift`, id, 0);
+    optInt(k.frames, `${path}.frames`, id, 1);
+  };
 
   // --- physics ---------------------------------------------------------------
   num(data.physics.gravity, "physics.gravity", "physics", { gt: 0 });
@@ -126,6 +150,8 @@ export function compileGameData(
     if (actor.body.dashCrouch !== undefined) {
       num(actor.body.dashCrouch, `actors.${actor.id}.body.dashCrouch`, actor.id, { min: 0 });
     }
+    optInt(actor.armor, `actors.${actor.id}.armor`, actor.id, 0);
+    optInt(actor.regenEveryFrames, `actors.${actor.id}.regenEveryFrames`, actor.id, 1);
   }
 
   // --- abilities -------------------------------------------------------------
@@ -227,6 +253,7 @@ export function compileGameData(
     hitbox(p.hitbox, `projectiles.${p.id}.hitbox`, p.id);
     if (p.animation.frameCount !== undefined)
       num(p.animation.frameCount, `projectiles.${p.id}.animation.frameCount`, p.id, { gt: 0 });
+    knockback(p.knockback, `projectiles.${p.id}.knockback`, p.id);
   }
 
   // --- weapons ---------------------------------------------------------------
@@ -293,6 +320,8 @@ export function compileGameData(
       });
     }
     num(e.touchDamage, `enemies.${e.id}.touchDamage`, e.id, { min: 0 });
+    knockback(e.touchKnockback, `enemies.${e.id}.touchKnockback`, e.id);
+    optInt(e.invulnerabilityFrames, `enemies.${e.id}.invulnerabilityFrames`, e.id, 0);
     hitbox(e.hurtbox, `enemies.${e.id}.hurtbox`, e.id);
     hitbox(e.perception, `enemies.${e.id}.perception`, e.id);
     // Each ability id must be a known enemy behaviour, with a full config.
@@ -577,6 +606,11 @@ function compileEnemy(e: EnemyDefinition, data: GameData): CompiledEnemy {
     perception: fillHitbox(e.perception),
     maxHealth: actor.maxHealth,
     touchDamage: e.touchDamage,
+    // Only present keys: an undefined one hashes as null and would move the hash.
+    ...(e.touchKnockback ? { touchKnockback: { ...e.touchKnockback } } : {}),
+    ...(e.invulnerabilityFrames !== undefined
+      ? { invulnerabilityFrames: e.invulnerabilityFrames }
+      : {}),
     movement: e.movement,
     shield: e.shield ? { ...e.shield } : undefined,
     abilities: [...e.abilities],

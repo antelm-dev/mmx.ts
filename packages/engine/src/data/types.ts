@@ -32,6 +32,19 @@ export interface Offset {
 }
 
 /**
+ * Knockback one attack gives the player, overriding the `player.damage` config
+ * for that hit only. An absent part keeps the config's value.
+ */
+export interface Knockback {
+  /** Horizontal speed, px/s. */
+  speed?: number;
+  /** Upward launch speed, px/s. */
+  lift?: number;
+  /** Tumble length, frames at 60 Hz. */
+  frames?: number;
+}
+
+/**
  * One saber swing in a `player.slash` config. Frames count from the swing's
  * first tick at 60 Hz; `hitbox` is measured from the feet, facing right, y down
  * (the zero_moves.json `attacks` convention).
@@ -92,6 +105,10 @@ export interface ActorDefinition {
    */
   body: Hitbox & { dashCrouch?: number };
   maxHealth: number;
+  /** Flat reduction of every hit taken (a hit still deals at least 1). Default 0. */
+  armor?: number;
+  /** +1 HP every this many frames while hurt but alive. Absent = no regeneration. */
+  regenEveryFrames?: number;
 }
 
 /**
@@ -163,6 +180,10 @@ export interface EnemyDefinition {
   hurtbox: Hitbox;
   /** Contact damage dealt to the player. */
   touchDamage: number;
+  /** Knockback contact gives the player; absent parts use its `player.damage` config. */
+  touchKnockback?: Knockback;
+  /** Frames the enemy cannot be hurt after a hit. Default 0. */
+  invulnerabilityFrames?: number;
   movement: MovementModel;
   /** AI vision box (half-extents + vertical offset from the body centre). */
   perception: Hitbox;
@@ -219,6 +240,10 @@ export interface ProjectileDefinition {
   };
   /** randf_range(-r, r) vertical spawn scatter; drives deterministic RNG. */
   verticalRange: number;
+  /** Free element tag (e.g. "ice"), recorded on the hits this shot lands. */
+  element?: string;
+  /** Knockback this shot gives the player (enemy shots). */
+  knockback?: Knockback;
 }
 
 /** A pickup: what it grants and how much. */
@@ -352,6 +377,9 @@ export interface CompiledEnemy {
   perception: Required<Hitbox>;
   maxHealth: number;
   touchDamage: number;
+  /** Copied only when the raw record has it (an absent key keeps the hash). */
+  touchKnockback?: Knockback;
+  invulnerabilityFrames?: number;
   movement: MovementModel;
   shield?: { breakable: boolean };
   abilities: string[];

@@ -66,6 +66,11 @@ export class Actor {
   max_health = MAX_HEALTH;
   current_health = MAX_HEALTH;
   invulnerability = 0;
+  /** Flat reduction of every hit through the damage chain (see computeDamage). */
+  armor = 0;
+  /** +1 HP every this many ticks while hurt but alive; 0 = no regeneration. */
+  regen_every_frames = 0;
+  private regen_ticks = 0;
 
   readonly events = new EventBus();
   /** Monotonic milliseconds clock (deterministic in sim, wall-clock in browser). */
@@ -190,6 +195,18 @@ export class Actor {
       this.current_health -= value;
       this.events.emit("damage", value);
     }
+  }
+
+  /** One tick of regeneration: +1 HP each {@link regen_every_frames} ticks while 0 < hp < max. */
+  protected tickRegen(): void {
+    if (this.regen_every_frames <= 0) return;
+    if (!this.has_health() || this.current_health >= this.max_health) {
+      this.regen_ticks = 0;
+      return;
+    }
+    if (++this.regen_ticks < this.regen_every_frames) return;
+    this.regen_ticks = 0;
+    this.heal(1);
   }
 
   /**

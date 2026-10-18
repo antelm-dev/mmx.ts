@@ -1,6 +1,12 @@
 import { Movement } from "../ability/Movement.js";
-import type { Actor } from "../Actor.js";
 import type { Character } from "../Character.js";
+import type { Knockback } from "../../data/types.js";
+import { PHYSICS_FPS } from "../../core/constants.js";
+
+/** Whatever dealt a hit: knockback pushes away from its position. */
+export interface DamageInflicter {
+  pos: { x: number; y: number };
+}
 
 /** Typed tuning for {@link Damage}, supplied by the loadout. */
 export interface DamageConfig {
@@ -29,6 +35,8 @@ export class Damage extends Movement {
 
   damage_taken = 0;
   damage_direction = -1;
+  /** The current hit's own knockback; absent parts fall back to the config above. */
+  private knockback: Knockback | undefined;
 
   constructor(character: Character, config: DamageConfig) {
     super(character);
@@ -43,10 +51,11 @@ export class Damage extends Movement {
     return false;
   }
 
-  receiveHit(value: number, inflicter?: Actor): boolean {
+  receiveHit(value: number, inflicter?: DamageInflicter, knockback?: Knockback): boolean {
     if (!this.should_be_damaged()) return false;
 
     this.damage_taken = value;
+    this.knockback = knockback;
     this.damage_direction = this.define_knockback_direction(inflicter);
 
     // Damage.gd is_high_priority() returns true, so the source interrupts every
@@ -64,7 +73,7 @@ export class Damage extends Movement {
     this.character.invulnerability = this.invulnerability_time;
     this.character.set_direction(-this.damage_direction); // face the attacker
     this.character.update_facing_direction();
-    this.character.set_vertical_speed(-this.jump_velocity);
+    this.character.set_vertical_speed(-(this.knockback?.lift ?? this.jump_velocity));
     this.zero_bonus_horizontal_speed();
     // Damage.gd lifts X one pixel before the launch so floor snap cannot pin him.
     this.character.pos.y -= 1;
@@ -73,12 +82,15 @@ export class Damage extends Movement {
 
   override _Update(dt: number): void {
     // Knockback direction is fixed by the inflicter, never by held input or facing.
-    this.character.set_horizontal_speed(this.horizontal_velocity * this.damage_direction);
+    const speed = this.knockback?.speed ?? this.horizontal_velocity;
+    this.character.set_horizontal_speed(speed * this.damage_direction);
     this.process_gravity(dt);
   }
 
   override _EndCondition(): boolean {
-    if (this.timer > this.duration_time) return true;
+    const frames = this.knockback?.frames;
+    if (this.timer > (frames !== undefined ? frames / PHYSICS_FPS : this.duration_time))
+      return true;
 
     // Damage.gd lets a fresh press into the wall cancel the tumble.
     const wall = this.character.is_colliding_with_wall();
@@ -108,7 +120,7 @@ export class Damage extends Movement {
     );
   }
 
-  private define_knockback_direction(inflicter?: Actor): number {
+  private define_knockback_direction(inflicter?: DamageInflicter): number {
     if (inflicter && this.character.pos.x - inflicter.pos.x > 0) return 1;
     return -1;
   }

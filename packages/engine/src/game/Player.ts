@@ -4,8 +4,8 @@ import { Input } from "../core/Input.js";
 
 import { Damage } from "./abilities/Damage.js";
 import { Intro } from "./abilities/Intro.js";
-import type { Actor } from "./Actor.js";
-import type { CompiledGameData } from "../data/types.js";
+import type { DamageInflicter } from "./abilities/Damage.js";
+import type { CompiledGameData, Knockback } from "../data/types.js";
 import { buildPlayerLoadout } from "./loadout/PlayerLoadout.js";
 import { DEFAULT_DASH_CROUCH } from "../core/constants.js";
 
@@ -44,19 +44,26 @@ export class Player extends Character {
     this.hh = this.body_hh = body.hh;
     this.dash_crouch = body.dashCrouch ?? DEFAULT_DASH_CROUCH;
     this.max_health = this.current_health = maxHealth;
+    this.armor = loadout.actor.armor ?? 0;
+    this.regen_every_frames = loadout.actor.regenEveryFrames ?? 0;
     buildPlayerLoadout(this, loadout, gameData);
   }
 
-  /** Actor.damage routed through Damage.gd's state instead of reducing health inline. */
-  override damage(value: number, inflicter?: Actor): void {
+  /**
+   * Actor.damage routed through Damage.gd's state instead of reducing health inline.
+   * `knockback` overrides the Damage config for this hit only. Returns whether the
+   * hit landed (Damage accepted it).
+   */
+  override damage(value: number, inflicter?: DamageInflicter, knockback?: Knockback): boolean {
     this.events.emit("damage", value, inflicter);
     const damage = this.get_ability("Damage");
-    if (damage instanceof Damage) damage.receiveHit(value, inflicter);
+    const landed = damage instanceof Damage && damage.receiveHit(value, inflicter, knockback);
     // Checked here, after Damage's own _Setup has fully run its knockback, rather
     // than inline in reduce_health(): "zero_health" starts Death synchronously,
     // and interrupting Damage from partway through its own _Setup would leave the
     // rest of that _Setup still running against an ability Death just finalized.
     if (this.current_health <= 0) this.emit_zero_health();
+    return landed;
   }
 
   /** Lethal terrain bypasses ordinary damage protection and invulnerability. */

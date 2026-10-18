@@ -9,7 +9,9 @@ import {
 import type { World } from "./World.js";
 import { HIT_FX_FPS, HIT_FX_FRAME_COUNT } from "../core/constants.js";
 import { COMPILED_GAME_DATA } from "../data/index.js";
-import type { CompiledGameData } from "../data/types.js";
+import type { CompiledGameData, Knockback } from "../data/types.js";
+import { computeDamage, type DamageEvent } from "./damage.js";
+import type { DamageInflicter } from "./abilities/Damage.js";
 import {
   FallingPlatform,
   MovingPlatform,
@@ -64,6 +66,10 @@ export class Stage {
   readonly pickups: LifeCapsule[];
   readonly weaponCapsules: WeaponCapsule[];
   readonly sparks: HitSpark[] = [];
+  /** The hits resolved on the current tick; cleared at the start of every tick. */
+  readonly damageEvents: DamageEvent[] = [];
+  /** Index of the current tick (ticks run before it), stamped on its damage events. */
+  frame = -1;
 
   constructor(
     readonly world: World,
@@ -100,6 +106,8 @@ export class Stage {
 
   /** One fixed step of the whole room. */
   tick(dt: number): void {
+    this.frame++;
+    this.damageEvents.length = 0;
     // PickUp.gd switches the collecting capsule to PAUSE_MODE_PROCESS before it
     // pauses the scene tree. While its fill ticks continue, absolutely
     // everything else in the room retains its current simulation state — a
@@ -259,7 +267,15 @@ export class Stage {
         if (!enemy.has_health()) continue;
         if (!rectsOverlap(shot.bounds, enemy.hurtbox)) continue;
         // Only the charged buster carries `break_guards` in the original.
-        if (!strike(enemy, shot.damage, shot.charge >= 2)) continue; // passes through
+        const attack = {
+          id: shot.stats.id,
+          base: shot.damage,
+          breaksGuard: shot.charge >= 2,
+          weapon: shot.weapon,
+          charge: shot.charge,
+          element: shot.stats.element,
+        };
+        if (!this.strike(enemy, attack)) continue; // passes through
 
         shot.hit(shot.x, shot.y);
         break;
@@ -280,7 +296,7 @@ export class Stage {
       if (!enemy.has_health() || swing.hit.has(enemy)) continue;
       if (!rectsOverlap(box, enemy.hurtbox)) continue;
       // ponytail: the saber never breaks guards; add a spec flag if one should.
-      if (!strike(enemy, swing.damage, false)) continue;
+      if (!this.strike(enemy, { id: "melee", base: swing.damage, breaksGuard: false })) continue;
       swing.hit.add(enemy);
       const hurt = enemy.hurtbox;
       if (swing.hitFx) {
@@ -318,7 +334,9 @@ export class Stage {
       if (!bodiesOverlap(enemy, this.player) && !hitboxesTouch(enemy, this.player)) continue;
 
       if (!this.player.is_invulnerable()) {
-        this.player.damage(enemy.stats.touch_damage, enemy);
+        const source = { kind: enemy.kind, runtimeId: enemy.runtimeId };
+        const base = enemy.stats.touch_damage;
+        this.hitPlayer("touch", base, source, enemy, enemy.def.touchKnockback);
       }
       enemy.ai.onTouchedPlayer();
     }
@@ -340,11 +358,102 @@ export class Stage {
     for (const enemy of this.enemies) {
       for (const shot of enemy.projectiles) {
         if (!shot.isLive || p.is_invulnerable() || !rectsOverlap(shot.bounds, body)) continue;
-        p.damage(shot.damage, enemy);
+        const source = { kind: enemy.kind, runtimeId: enemy.runtimeId };
+        const { id, knockback, element } = shot.stats;
+        this.hitPlayer(id, shot.damage, source, enemy, knockback, element);
         shot.hit(shot.x, shot.y);
       }
     }
   }
+
+  /**
+   * EnemyShield/EnemyDamage reaction to one player hit, through the damage
+   * chain. Returns false when the enemy is invulnerable right now, so the hit
+   * should pass through; a shield or an immunity still spends it.
+   */
+  private strike(enemy: Enemy, attack: PlayerAttack): boolean {
+    const target = { kind: enemy.kind, runtimeId: enemy.runtimeId };
+    const log = (dealt: number, result: DamageEvent["result"]): void =>
+      this.log(
+        attack.id,
+        PLAYER,
+        target,
+        attack.base,
+        { armor: enemy.armor, dealt },
+        result,
+        attack,
+      );
+    if (enemy.has_shield()) {
+      log(0, enemy.hit_shield(attack.breaksGuard) ? "guard_break" : "shielded");
+      return true;
+    }
+    if (!enemy.can_be_damaged()) return false;
+    const { dealt, result } = computeDamage({ base: attack.base, armor: enemy.armor });
+    if (result === "immune") {
+      enemy.events.emit("deflect");
+      log(0, "immune");
+      return true;
+    }
+    enemy.damage(dealt);
+    log(dealt, enemy.has_health() ? "hit" : "killed");
+    return true;
+  }
+
+  /** One hit on the player through the damage chain; logged only when it lands. */
+  private hitPlayer(
+    attack: string,
+    base: number,
+    source: DamageEvent["source"],
+    inflicter: DamageInflicter,
+    knockback?: Knockback,
+    element?: string,
+  ): void {
+    const p = this.player;
+    const { dealt } = computeDamage({ base, armor: p.armor });
+    if (!p.damage(dealt, inflicter, knockback)) return;
+    const result = p.has_health() ? "hit" : "killed";
+    this.log(attack, source, PLAYER, base, { armor: p.armor, dealt }, result, { element });
+  }
+
+  private log(
+    attack: string,
+    source: DamageEvent["source"],
+    target: DamageEvent["target"],
+    base: number,
+    { armor, dealt }: { armor: number; dealt: number },
+    result: DamageEvent["result"],
+    extra: { weapon?: string; charge?: number; element?: string } = {},
+  ): void {
+    const event: DamageEvent = {
+      frame: this.frame,
+      attack,
+      source,
+      target,
+      base,
+      multiplier: 100,
+      armor,
+      dealt,
+      result,
+    };
+    // Optional keys only when set, so events compare and serialise cleanly.
+    if (extra.weapon) event.weapon = extra.weapon;
+    if (extra.charge !== undefined) event.charge = extra.charge;
+    if (extra.element !== undefined) event.element = extra.element;
+    this.damageEvents.push(event);
+  }
+}
+
+/** The player as a damage event's source or target (its snapshot identity). */
+const PLAYER = { kind: "player", runtimeId: "player" } as const;
+
+/** One player hit on an enemy: a shot (by projectile id) or the saber ("melee"). */
+interface PlayerAttack {
+  id: string;
+  base: number;
+  breaksGuard: boolean;
+  weapon?: string;
+  charge?: number;
+  element?: string;
 }
 
 type Rect = { left: number; right: number; top: number; bottom: number };
@@ -352,17 +461,6 @@ type Rect = { left: number; right: number; top: number; bottom: number };
 /** A damage box (shot or melee) against an enemy hurtbox. */
 function rectsOverlap(a: Rect, b: Rect): boolean {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-}
-
-/**
- * EnemyShield/EnemyDamage reaction to one player hit. Returns false when the
- * enemy is invulnerable right now, so the hit should pass through.
- */
-function strike(enemy: Enemy, damage: number, breaksGuard: boolean): boolean {
-  if (enemy.has_shield()) enemy.hit_shield(breaksGuard);
-  else if (enemy.can_be_damaged()) enemy.damage(damage);
-  else return false;
-  return true;
 }
 
 /** Enemy body against the player body — both are centre + half-extents. */

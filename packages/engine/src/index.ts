@@ -12,6 +12,7 @@ export * from "./game/AbilityUser.js";
 export * from "./game/Identity.js";
 export * from "./game/Animation.js";
 export * from "./game/Camera.js";
+export * from "./game/damage.js";
 export * from "./game/Enemy.js";
 export * from "./game/Environment.js";
 export * from "./game/LevelData.js";
