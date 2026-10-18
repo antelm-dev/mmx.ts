@@ -482,6 +482,9 @@ importers:
         specifier: workspace:*
         version: link:../engine
     devDependencies:
+      '@mmx/pack-mmx-player-x':
+        specifier: workspace:*
+        version: link:../pack-mmx-player-x
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3

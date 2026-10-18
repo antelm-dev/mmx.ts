@@ -1,4 +1,22 @@
+import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
 import { Tile, type LevelData } from "@mmx/engine";
+import { buildCompileRegistries } from "@mmx/engine/behaviors";
+import {
+  GAME_DATA,
+  compileGameData,
+  mergeGameData,
+  type CompiledGameData,
+  type GameDataOverlay,
+} from "@mmx/engine/data";
+
+/** The engine's core + the X pack: the engine ships no player, so the tests bring X. */
+export const TEST_GAME_DATA: CompiledGameData = (() => {
+  const merged = mergeGameData(GAME_DATA, xPack as GameDataOverlay);
+  if (!merged.ok) throw new Error(JSON.stringify(merged.diagnostics));
+  const compiled = compileGameData(merged.value, buildCompileRegistries());
+  if (!compiled.ok) throw new Error(JSON.stringify(compiled.diagnostics));
+  return compiled.value;
+})();
 
 export function testLevel(): LevelData {
   const cols = 32;

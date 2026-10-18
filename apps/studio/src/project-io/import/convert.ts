@@ -12,7 +12,7 @@ const HOLD = 0xff;
 export const Tile = { Empty: 0, Solid: 1, SlopeUpRight: 2, SlopeUpLeft: 3, OneWay: 4 } as const;
 
 // renderer-pixi draws the sprite centre at feet - body_hh - 4 (renderer-pixi/src/render/sprite.ts,
-// SPRITE_OFFSET_Y) with body_hh = 15 for player.zero (engine/src/data/actors.ts), so the
+// SPRITE_OFFSET_Y) with body_hh = 15 for player.zero (pack-mmx-player-zero/data/game.json), so the
 // anchor (Zero's feet) sits 15 + 4 below the cell centre.
 export const FEET_BELOW_CENTRE = 19;
 

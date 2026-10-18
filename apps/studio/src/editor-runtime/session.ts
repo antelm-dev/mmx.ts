@@ -16,7 +16,7 @@ const DISPOSED_ERROR = "Playtest session has been disposed";
 
 export function createPlaytest(
   document: LevelDocument,
-  options: CreatePlaytestOptions = {},
+  options: CreatePlaytestOptions,
 ): EditorPlaytestSession {
   return new PlaytestSession(document, options);
 }

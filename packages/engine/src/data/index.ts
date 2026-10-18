@@ -3,8 +3,9 @@
  *
  * Authoring surface: {@link defineGameData} + the per-category definition tables.
  * Compilation: {@link compileGameData} → {@link CompiledGameData}. Runtime code
- * reads the compiled form; the compat constants (core/constants) and the default
- * loadout/enemy/weapon builders read {@link COMPILED_GAME_DATA}.
+ * reads the compiled form; the compat physics constants (core/constants) read
+ * {@link COMPILED_GAME_DATA}, the core alone, which has no player: a scene or a
+ * player is always given the project's compiled data.
  */
 export * from "./types.js";
 export * from "./gameData.js";

@@ -5,6 +5,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Input, Player, World, loadLevel } from "@mmx/engine";
+import type { CompiledGameData } from "@mmx/engine/data";
 import { loadEntryLevel } from "../src/project.js";
 
 const fixture = path.resolve(
@@ -26,10 +27,16 @@ async function projectWithPlayer(player: unknown): Promise<string> {
   return dir;
 }
 
-function movesetOf(loadoutId: string): string[] {
-  return new Player(World.fromRows(["#"]), 0, 0, new Input(), undefined, loadoutId).moveset.map(
-    (m) => m.name,
-  );
+function movesetOf(loadoutId: string, gameData: CompiledGameData): string[] {
+  return new Player(
+    World.fromRows(["#"]),
+    0,
+    0,
+    new Input(),
+    undefined,
+    loadoutId,
+    gameData,
+  ).moveset.map((m) => m.name);
 }
 
 test("the sim boots a project with player.loadout = player.zero as Zero", async () => {
@@ -38,18 +45,20 @@ test("the sim boots a project with player.loadout = player.zero as Zero", async 
     // Same wiring as run.ts.
     const entry = await loadEntryLevel(dir);
     assert.equal(entry.loadoutId, "player.zero");
-    const level = loadLevel(entry.level);
+    // The project's own data: X and Zero come from the packs it is migrated to.
+    const level = loadLevel(entry.level, entry.gameData);
     const player = new Player(
       level.world,
       level.spawn.x,
       level.spawn.y,
       new Input(),
       undefined,
-      entry.loadoutId,
+      entry.loadoutId!,
+      entry.gameData,
     );
     const moveset = player.moveset.map((m) => m.name);
-    assert.deepEqual(moveset, movesetOf("player.zero"));
-    assert.notDeepEqual(moveset, movesetOf("player.x"));
+    assert.deepEqual(moveset, movesetOf("player.zero", entry.gameData));
+    assert.notDeepEqual(moveset, movesetOf("player.x", entry.gameData));
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

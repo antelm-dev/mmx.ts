@@ -2,7 +2,7 @@ import { Input } from "../core/Input.js";
 import { DT } from "../core/constants.js";
 import { applyInput } from "../core/Replay.js";
 import type { AnimData } from "@mmx/contracts/animation";
-import { COMPILED_GAME_DATA, hashCanonical } from "../data/index.js";
+import { hashCanonical } from "../data/index.js";
 import type { CompiledGameData } from "../data/types.js";
 import { Camera } from "./Camera.js";
 import type { Enemy } from "./Enemy.js";
@@ -10,7 +10,7 @@ import { spawnEnemy } from "./enemies/index.js";
 import { loadLevel } from "./level.js";
 import type { LevelData } from "./LevelData.js";
 import type { LifeCapsule, WeaponCapsule } from "./Pickup.js";
-import { Player } from "./Player.js";
+import { DEFAULT_PLAYER_LOADOUT, Player } from "./Player.js";
 import { Stage } from "./Stage.js";
 import type { World } from "./World.js";
 
@@ -55,14 +55,14 @@ export interface SceneOptions {
   seed?: number;
   /** Authored level to instantiate. Core does not ship a built-in game level. */
   level: LevelData;
-  /** Compiled player loadout id (a project's `player.loadout`); the Player default when omitted. */
+  /** Compiled player loadout id (a project's `player.loadout`); {@link DEFAULT_PLAYER_LOADOUT} when omitted. */
   loadoutId?: string;
   /**
    * Compiled game data the scene is built from — enemy, pickup, environment and
-   * projectile definitions, loadouts.
-   * Defaults to the built-in {@link COMPILED_GAME_DATA}.
+   * projectile definitions, loadouts. The engine's core ships no player, so this
+   * must carry the loadout the scene plays (a project's packs and overlay).
    */
-  gameData?: CompiledGameData;
+  gameData: CompiledGameData;
   /**
    * Gameplay clip data owned by the engine (see {@link SceneClips}). Absent: actors
    * run clip-less until a renderer attaches clips, as before. Folded into
@@ -104,7 +104,7 @@ export class Scene {
 
   private constructor(seed: number, options: SceneOptions) {
     this.seed = seed;
-    const gameData = options.gameData ?? COMPILED_GAME_DATA;
+    const gameData = options.gameData;
     const clips = options.clips;
     this.gameDataHash = clips ? hashWithClips(gameData.hash, clips) : gameData.hash;
     const level = loadLevel(options.level, gameData);
@@ -117,7 +117,7 @@ export class Scene {
       level.spawn.y,
       this.input,
       seed,
-      options.loadoutId,
+      options.loadoutId ?? DEFAULT_PLAYER_LOADOUT,
       gameData,
     );
     if (clips?.player) {

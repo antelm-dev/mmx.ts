@@ -95,5 +95,9 @@ describe("project game data", () => {
       },
     ]);
     expect(projectGameData(MMX_OVERLAY).warnings).toEqual([]);
+    // Without data/game.json (a `packs: []` project) the core has no player: Problems says so.
+    expect(projectGameData(undefined).warnings).toEqual([
+      expect.objectContaining({ code: "game-data.player.missing", severity: "warning" }),
+    ]);
   });
 });

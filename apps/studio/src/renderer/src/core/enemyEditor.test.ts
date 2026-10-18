@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Scene, Tile } from "@mmx/engine";
-import { GAME_DATA, type GameDataOverlay } from "@mmx/engine/data";
+import type { GameDataOverlay } from "@mmx/engine/data";
 import { definitionsFromGameData } from "@mmx/content-schema";
 import type { AnimationAsset } from "@mmx/project-schema";
 import { enemyClipIssues } from "./clips.js";
@@ -27,7 +27,12 @@ import {
   withReaction,
   withWeakPhase,
 } from "./enemyEditor.js";
-import { MMX_GAME_DATA, MMX_OVERLAY, compileIssues } from "./mmx.test-support.js";
+import {
+  MMX_GAME_DATA,
+  MMX_OVERLAY,
+  PLAYERS_GAME_DATA,
+  compileIssues,
+} from "./mmx.test-support.js";
 
 // A project made from the template: its data carries the MMX Starter pack.
 const crab = addEnemy(MMX_OVERLAY, MMX_GAME_DATA, {
@@ -574,7 +579,7 @@ describe("enemy editor", () => {
     });
 
     it("adds Shoot with one of the project's projectiles when it lacks pantheon_shot", () => {
-      const base = GAME_DATA;
+      const base = PLAYERS_GAME_DATA;
       const projectiles = Object.keys(base.projectiles);
       expect(projectiles).not.toContain("pantheon_shot");
       const shooter = withAbilities(BLANK_ENEMY, ["Shoot", "Death"], projectiles);
@@ -591,7 +596,7 @@ describe("enemy editor", () => {
     });
 
     it("composes a blank enemy that compiles over a base with none of them", () => {
-      const base = GAME_DATA;
+      const base = PLAYERS_GAME_DATA;
       expect(Object.keys(base.enemies)).toEqual([]);
       for (const movement of MOVEMENTS) {
         const abilities = abilitiesFor(movement);

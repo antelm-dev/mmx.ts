@@ -58,8 +58,11 @@ vi.mock("@mmx/project-schema", () => ({ validateProject: () => ({ issues: [] }) 
 
 const { ProjectSession } = await import("./projectSession.js");
 const { deleteBlocker } = await import("./objectDefinitions.js");
+const { PLAYERS_OVERLAY } = await import("./mmx.test-support.js");
 
 const project = { manifest: { assets: [] }, levels: [] };
+// Opened and created projects carry the player packs (the migration adds them): the engine has none.
+const playersProject = { ...project, gameData: PLAYERS_OVERLAY };
 const bridge = {
   pickDirectory: async () => "/projects/b",
   load: async () => ({ ok: true, issues: [], value: { rootPath: "/projects/b", project } }),
@@ -101,15 +104,24 @@ describe("ProjectSession asset switch", () => {
 
 describe("ProjectSession without game/data.json", () => {
   // Main seeds game/data.json (and the starter assets it binds) on the first player binding.
-  const seededProject = { ...project, manifest: { assets: [{ id: "sprite.hud.x-bar" }] } };
+  const seededProject = { ...playersProject, manifest: { assets: [{ id: "sprite.hud.x-bar" }] } };
   let onDisk: { bindings: { playerAnimation: string } } | null = null;
   const noData = {
     ...bridge,
+    load: async () => ({
+      ok: true,
+      issues: [],
+      value: { rootPath: "/projects/b", project: playersProject },
+    }),
     readPlayAssets: async () => {
       calls.push("read");
       return { ok: true, issues: [], value: { gameData: onDisk, urls: {} } };
     },
-    save: async () => ({ ok: true, issues: [], value: { rootPath: "/projects/b", project } }),
+    save: async () => ({
+      ok: true,
+      issues: [],
+      value: { rootPath: "/projects/b", project: playersProject },
+    }),
     writePlayerAnimation: async (_root: string, id: string) => {
       onDisk = { bindings: { playerAnimation: id } };
       return { ok: true, issues: [], value: seededProject };
@@ -613,6 +625,7 @@ describe("ProjectSession work project (C-WORK)", () => {
   const workProject = {
     manifest: { id: "untitled.project", name: "Untitled Project", assets: [] },
     levels: [],
+    gameData: PLAYERS_OVERLAY,
   };
   const workBridge = (overrides: Record<string, unknown> = {}) => {
     const calls = {

@@ -5,6 +5,9 @@ import { createPlaytest, type PlaytestAudio } from "../../src/editor-runtime/ind
 import { projectGameData } from "../../src/renderer/src/core/gameData.js";
 import { MMX_OVERLAY } from "../../src/renderer/src/core/mmx.test-support.js";
 
+/** Core + MMX Starter, X and Zero: the game data a project made from the template plays. */
+const gameData = projectGameData(MMX_OVERLAY).compiled;
+
 function trackingAudio() {
   const calls = { scenes: 0, enemies: 0, stops: 0 };
   const audio: PlaytestAudio = {
@@ -23,7 +26,7 @@ function trackingAudio() {
 
 test("playtest audio attaches the scene on start and stops once on dispose", async () => {
   const { audio, calls } = trackingAudio();
-  const session = createPlaytest(createLevelDocument(), { audio });
+  const session = createPlaytest(createLevelDocument(), { audio, gameData });
   await session.start();
   assert.equal(calls.scenes, 1);
   assert.equal(calls.stops, 0);
@@ -36,7 +39,7 @@ test("playtest audio attaches the scene on start and stops once on dispose", asy
 
 test("playtest audio re-attaches the scene after restartLevel", async () => {
   const { audio, calls } = trackingAudio();
-  const session = createPlaytest(createLevelDocument(), { audio });
+  const session = createPlaytest(createLevelDocument(), { audio, gameData });
   await session.start();
   assert.equal(calls.scenes, 1);
 
@@ -63,7 +66,7 @@ test("playtest audio attaches each spawned enemy", async (t) => {
 });
 
 test("playtest sessions work without audio", async () => {
-  const session = createPlaytest(createLevelDocument());
+  const session = createPlaytest(createLevelDocument(), { gameData });
   await session.start();
   session.restartLevel();
   session.stop();

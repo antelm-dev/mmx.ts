@@ -112,7 +112,7 @@ ATTRIBUTION.md                       copied from templates/mmx-demo
 - Frames are mirrored so Zero faces right, like X's frames.
 - The engine draws a fixed region centred at `feet - body_hh - 4` (see
   `renderer-pixi/src/render/sprite.ts`), with `body_hh` = 15 for the `player.zero` actor
-  (`engine/src/data/actors.ts`), so each frame's mirrored anchor is placed at
+  (`pack-mmx-player-zero/data/game.json`), so each frame's mirrored anchor is placed at
   `(cell.w / 2, cell.h / 2 + 19)`.
 
 ### Clips

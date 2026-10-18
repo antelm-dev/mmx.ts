@@ -38,23 +38,30 @@ function compile(data: GameData): CompiledGameData {
 
 const withPack = (): GameData => withPacks(core(), PACK, X_PACK, ZERO_PACK);
 
-test("core keeps only the engine's primitives, the players and their shots", () => {
+test("core keeps only the engine's primitives", () => {
   const data = core();
   assert.deepEqual(Object.keys(data.prefabs).sort(), ["camera-zone", "hazard", "spawn"]);
-  assert.deepEqual(Object.keys(data.enemies), []);
-  assert.deepEqual(Object.keys(data.pickups), []);
   assert.deepEqual(Object.keys(data.environments).sort(), ["camera-zone", "hazard"]);
-  assert.deepEqual(Object.keys(data.actors).sort(), ["player.x", "player.zero"]);
-  assert.deepEqual(Object.keys(data.projectiles).sort(), [
-    "charged",
-    "dark_arrow",
-    "lemon",
-    "medium",
-  ]);
+  for (const category of [
+    "enemies",
+    "pickups",
+    "actors",
+    "abilities",
+    "loadouts",
+    "weapons",
+    "projectiles",
+  ] as const) {
+    assert.deepEqual(Object.keys(data[category]), [], category);
+  }
 });
 
-test("core alone compiles with no diagnostic", () => {
-  compile(core());
+test("core alone compiles, warning only that no player can spawn", () => {
+  const result = compileGameData(core(), buildCompileRegistries());
+  assert.ok(result.ok, JSON.stringify(result.diagnostics));
+  assert.deepEqual(
+    result.diagnostics.map((d) => [d.severity, d.code, d.fieldPath]),
+    [["warning", "player.missing", "prefabs.spawn.source"]],
+  );
 });
 
 test("core + MMX Starter, X and Zero packs compile to the former built-in hash", () => {

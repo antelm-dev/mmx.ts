@@ -2,12 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createLevelDocument, TerrainTile } from "@mmx/content-schema";
 import { createPlaytest, PlaytestInput, traceRun } from "../../src/editor-runtime/index.js";
+import { projectGameData } from "../../src/renderer/src/core/gameData.js";
+import { MMX_OVERLAY } from "../../src/renderer/src/core/mmx.test-support.js";
+
+/** Core + MMX Starter, X and Zero: the game data a project made from the template plays. */
+const gameData = projectGameData(MMX_OVERLAY).compiled;
 
 const right = new PlaytestInput();
 right.set("move_right", true);
 
 test("a trace re-simulates the run: it ends where Play stopped, and the same run gives the same trail", async () => {
-  const session = createPlaytest(createLevelDocument({ cols: 60, rows: 12 }));
+  const session = createPlaytest(createLevelDocument({ cols: 60, rows: 12 }), { gameData });
   await session.start();
   for (let i = 0; i < 240; i++) session.step(i < 90 ? undefined : right);
   const live = session.snapshot().runtime!.player.bounds;
@@ -28,7 +33,7 @@ test("the trail stops where the player dies", async () => {
   // Floor under the Spawn only: walking right drops the player into the pit, which kills them.
   const doc = createLevelDocument({ cols: 20, rows: 12 });
   const tiles = doc.tiles.map((tile, i) => (i % doc.cols < 6 ? tile : TerrainTile.Empty));
-  const session = createPlaytest({ ...doc, tiles });
+  const session = createPlaytest({ ...doc, tiles }, { gameData });
   await session.start();
   for (let i = 0; i < 400; i++) session.step(i < 60 ? undefined : right);
   assert.equal(session.snapshot().runtime!.player.health, 0);
@@ -44,7 +49,7 @@ test("the trail stops where the player dies", async () => {
 });
 
 test("a stale trace resolves null", async () => {
-  const session = createPlaytest(createLevelDocument());
+  const session = createPlaytest(createLevelDocument(), { gameData });
   await session.start();
   for (let i = 0; i < 200; i++) session.step();
   const run = session.recordedRun()!;

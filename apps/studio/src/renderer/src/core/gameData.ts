@@ -32,6 +32,24 @@ const DEFAULT_GAME_DATA: ProjectGameData = {
   warnings: [],
 };
 const compiledOverlays = new WeakMap<GameDataOverlay, ProjectGameData>();
+
+// As build-tools loadProject reports them: warnings never block the data.
+function warningsOf(diagnostics: readonly GameDataDiagnostic[]): ProjectIssue[] {
+  return diagnostics.map(
+    (d): ProjectIssue => ({
+      severity: "warning",
+      code: `game-data.${d.code}`,
+      path: GAME_DATA_PATH,
+      message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
+    }),
+  );
+}
+
+/** A project without data/game.json (`packs: []`): the core, whose warnings say it has no player. */
+const CORE_GAME_DATA: ProjectGameData = {
+  ...DEFAULT_GAME_DATA,
+  warnings: warningsOf(compileGameData(GAME_DATA, buildCompileRegistries()).diagnostics),
+};
 // The fallback is the engine's core: the project's objects (its pack's too) all go missing.
 const UNAVAILABLE = " — the objects of data/game.json are unavailable until it is fixed";
 
@@ -54,15 +72,7 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
   try {
     const compiled = compileGameData(merged.value, buildCompileRegistries());
     if (!compiled.ok) return failed(compiled.diagnostics);
-    // As build-tools loadProject reports them: warnings never block the data.
-    const warnings = compiled.diagnostics.map(
-      (d): ProjectIssue => ({
-        severity: "warning",
-        code: `game-data.${d.code}`,
-        path: GAME_DATA_PATH,
-        message: `data/game.json${d.fieldPath ? ` ${d.fieldPath}` : ""}: ${d.message}`,
-      }),
-    );
+    const warnings = warningsOf(compiled.diagnostics);
     return { data: merged.value, compiled: compiled.value, issues: [], diagnostics: [], warnings };
   } catch (error) {
     // compileGameData trusts record shapes; a record missing a nested object throws.
@@ -83,7 +93,7 @@ function compile(overlay: GameDataOverlay): ProjectGameData {
 
 /** Merge and compile a project's overlay (memoized per overlay object); the engine's data without one. */
 export function projectGameData(overlay: GameDataOverlay | undefined): ProjectGameData {
-  if (!overlay) return DEFAULT_GAME_DATA;
+  if (!overlay) return CORE_GAME_DATA;
   let result = compiledOverlays.get(overlay);
   if (!result) {
     result = compile(overlay);

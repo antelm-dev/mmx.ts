@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ENEMY_BEHAVIOR_SCHEMAS } from "@mmx/engine/behaviors";
-import { COMPILED_GAME_DATA, GAME_DATA } from "@mmx/engine/data";
+import { GAME_DATA } from "@mmx/engine/data";
 import type { AnimationAsset, AnimationFrame } from "@mmx/project-schema";
 import { addBlankEnemy, BLANK_ENEMY } from "./enemyEditor.js";
-import { MMX_GAME_DATA } from "./mmx.test-support.js";
+import { projectGameData } from "./gameData.js";
+import { MMX_GAME_DATA, MMX_OVERLAY } from "./mmx.test-support.js";
 import {
   boxFromPoints,
   canDeleteClip,
@@ -114,8 +115,10 @@ describe("clips helpers", () => {
     });
   });
 
+  const MMX_COMPILED = projectGameData(MMX_OVERLAY).compiled;
+
   it("lists the clips each loadout plays", () => {
-    expect(requiredPlayerClips(undefined, COMPILED_GAME_DATA).sort()).toEqual([
+    expect(requiredPlayerClips(undefined, MMX_COMPILED).sort()).toEqual([
       "beam",
       "beam_equip",
       "beam_in",
@@ -131,16 +134,16 @@ describe("clips helpers", () => {
       "walljump",
       "weak",
     ]);
-    expect(requiredPlayerClips("player.zero", COMPILED_GAME_DATA)).toEqual(
+    expect(requiredPlayerClips("player.zero", MMX_COMPILED)).toEqual(
       expect.arrayContaining(["walk", "slash_1", "wall_slash"]),
     );
-    expect(requiredPlayerClips("player.x", COMPILED_GAME_DATA)).not.toContain("slash_1");
+    expect(requiredPlayerClips("player.x", MMX_COMPILED)).not.toContain("slash_1");
   });
 
   it("reads the loadouts of the project's data, which may have none", () => {
-    const speedy = { ...COMPILED_GAME_DATA.loadouts.get("player.zero")!, id: "player.speedy" };
+    const speedy = { ...MMX_COMPILED.loadouts.get("player.zero")!, id: "player.speedy" };
     const project = {
-      ...COMPILED_GAME_DATA,
+      ...MMX_COMPILED,
       loadouts: new Map([["player.speedy", speedy]]),
     };
     expect(requiredPlayerClips("player.speedy", project)).toContain("slash_1");

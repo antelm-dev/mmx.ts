@@ -5,7 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import pack from "@mmx/pack-mmx-starter/data/game.json" with { type: "json" };
-import { GAME_DATA, mergeGameData, type GameDataOverlay } from "@mmx/engine/data";
+import xPack from "@mmx/pack-mmx-player-x/data/game.json" with { type: "json" };
+import zeroPack from "@mmx/pack-mmx-player-zero/data/game.json" with { type: "json" };
+import { GAME_DATA, mergeGameData, type GameData, type GameDataOverlay } from "@mmx/engine/data";
 import { requireProject } from "../src/loadProject.js";
 
 const syntheticProject = path.join(
@@ -13,7 +15,7 @@ const syntheticProject = path.join(
   "fixtures",
   "synthetic-project",
 );
-/** The engine's hash while the MMX objects were built in: core + pack keeps it. */
+/** The engine's hash while the MMX objects and players were built in: core + packs keeps it. */
 const BUILTIN_HASH = "36e5bb6d8c3547a6";
 const STARTER = [{ id: "mmx-starter", version: 1 }];
 const PLAYERS = [
@@ -51,9 +53,12 @@ test("an old project gets the MMX Starter, X and Zero in memory, compiles to the
     const project = await requireProject(dir);
     assert.deepEqual(project.manifest.packs, [...STARTER, ...PLAYERS]);
     assert.equal(project.compiledGameData.hash, BUILTIN_HASH);
-    const withPack = mergeGameData(GAME_DATA, pack as GameDataOverlay);
-    assert.ok(withPack.ok);
-    assert.deepEqual(project.gameData, withPack.value);
+    const withPacks = [pack, xPack, zeroPack].reduce((data: GameData, overlay) => {
+      const merged = mergeGameData(data, overlay as GameDataOverlay);
+      assert.ok(merged.ok);
+      return merged.value;
+    }, GAME_DATA);
+    assert.deepEqual(project.gameData, withPacks);
     assert.deepEqual(await snapshot(dir), before);
   } finally {
     await fs.rm(dir, { recursive: true, force: true });

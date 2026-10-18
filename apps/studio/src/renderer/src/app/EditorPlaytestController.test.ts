@@ -5,6 +5,8 @@ import { documentToLevelData } from "@mmx/editor-runtime/adapters";
 import { COMPILED_GAME_DATA } from "@mmx/engine/data";
 import { Recorder } from "@mmx/engine";
 import { EditorStore } from "../core/EditorStore.js";
+import { projectGameData } from "../core/gameData.js";
+import { MMX_OVERLAY } from "../core/mmx.test-support.js";
 import {
   EditorPlaytestController,
   playHereDocument,
@@ -54,6 +56,9 @@ function spawnOf(doc: LevelDocument) {
   return doc.objects.find((o) => o.definitionId === "spawn")!;
 }
 
+/** Core + MMX Starter, X and Zero: the game data an MMX project plays. */
+const MMX = projectGameData(MMX_OVERLAY).compiled;
+
 function controller(store: EditorStore, toast = vi.fn()) {
   const getAssets = vi.fn(async () => ({
     catalog: {},
@@ -63,7 +68,7 @@ function controller(store: EditorStore, toast = vi.fn()) {
   const ctl = new EditorPlaytestController(store, {
     getHost: () => ({ dataset: {} }) as HTMLElement,
     getFileAccess: () => ({}),
-    getGameData: () => COMPILED_GAME_DATA,
+    getGameData: () => MMX,
     getLoadoutId: () => undefined,
     getAssets,
     validate: () => ({ ok: true, errorCount: 0 }),
@@ -100,7 +105,8 @@ describe("EditorPlaytestController", () => {
     const getAssets = vi.fn(async () => null);
     const controller = new EditorPlaytestController(store, {
       getHost: () => ({}) as HTMLElement,
-      getGameData: () => ({ ...COMPILED_GAME_DATA, loadouts: new Map() }),
+      // The engine's core alone: no player since X and Zero left it for their packs.
+      getGameData: () => COMPILED_GAME_DATA,
       getLoadoutId: () => undefined,
       getAssets,
       toast,
@@ -136,7 +142,7 @@ describe("EditorPlaytestController", () => {
   /** The next Play records `frames` idle frames of the level it is given (tainted on request). */
   function recordNextPlay(frames: number, tainted = false): void {
     vi.mocked(createPlaytest).mockImplementationOnce((played) => {
-      const scene = { level: documentToLevelData(played), gameData: COMPILED_GAME_DATA };
+      const scene = { level: documentToLevelData(played), gameData: MMX };
       const recorder = new Recorder(scene);
       for (let i = 0; i < frames; i++) recorder.step(0);
       if (tainted) recorder.markTainted();
@@ -255,13 +261,15 @@ describe("playHereDocument", () => {
   it("records replays that a normal Play of the level refuses", () => {
     const doc = level();
     const here = playHereDocument(doc, 100, 100, BODY, snap16) as LevelDocument;
-    const recorder = new Recorder({ level: documentToLevelData(here) });
+    const recorder = new Recorder({ level: documentToLevelData(here), gameData: MMX });
     for (let i = 0; i < 10; i++) recorder.step(0);
     const replay = recorder.toReplay();
 
-    expect(() => new Recorder({ level: documentToLevelData(doc) }).load(replay)).toThrow(
-      /recorded on level/,
-    );
-    expect(new Recorder({ level: documentToLevelData(here) }).load(replay).frame).toBe(10);
+    expect(() =>
+      new Recorder({ level: documentToLevelData(doc), gameData: MMX }).load(replay),
+    ).toThrow(/recorded on level/);
+    expect(
+      new Recorder({ level: documentToLevelData(here), gameData: MMX }).load(replay).frame,
+    ).toBe(10);
   });
 });

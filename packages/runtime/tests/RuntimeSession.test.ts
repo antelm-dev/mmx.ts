@@ -5,14 +5,17 @@ import { createToolingRuntime } from "../src/tooling/createToolingRuntime.js";
 import { RuntimeSession } from "../src/core/RuntimeSession.js";
 import type { RuntimePresentation } from "../src/core/types.js";
 import type { Scene } from "@mmx/engine";
-import { COMPILED_GAME_DATA } from "@mmx/engine/data";
-import { testLevel } from "./testLevel.js";
+import { TEST_GAME_DATA, testLevel } from "./testLevel.js";
 
 const SEED = 42;
 
 test("player and tooling facades match for the same seed and masks", () => {
-  const player = createPlayerRuntime({ scene: { level: testLevel(), seed: SEED } });
-  const tooling = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
+  const player = createPlayerRuntime({
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
+  });
+  const tooling = createToolingRuntime({
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
+  });
   const masks = [0, 1 << 1, 1 << 4, (1 << 1) | (1 << 4), 0, 1 << 5];
 
   for (const mask of masks) {
@@ -28,7 +31,9 @@ test("player and tooling facades match for the same seed and masks", () => {
 });
 
 test("pause blocks automatic stepping while manual step remains deterministic", async () => {
-  const tooling = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
+  const tooling = createToolingRuntime({
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
+  });
   tooling.step(0);
   tooling.step(0);
   assert.equal(tooling.inspect().frame, 2);
@@ -88,7 +93,7 @@ test("scene replacement rebinds presentation and audio", () => {
     },
   };
   const session = new RuntimeSession({
-    scene: { level: testLevel(), seed: SEED },
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
     presentation,
     audio: {
       attachScene: (scene) => {
@@ -114,8 +119,12 @@ test("scene replacement rebinds presentation and audio", () => {
 });
 
 test("checkpoint restart restores deterministic state", () => {
-  const a = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
-  const b = createToolingRuntime({ scene: { level: testLevel(), seed: SEED } });
+  const a = createToolingRuntime({
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
+  });
+  const b = createToolingRuntime({
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
+  });
 
   for (let i = 0; i < 5; i++) {
     a.step(1 << 1);
@@ -140,7 +149,9 @@ test("headless createPlayerRuntime does not need DOM globals", () => {
   if (hadWindow) Reflect.deleteProperty(globalThis, "window");
   if (hadRaf) Reflect.deleteProperty(globalThis, "requestAnimationFrame");
 
-  const runtime = createPlayerRuntime({ scene: { level: testLevel(), seed: SEED } });
+  const runtime = createPlayerRuntime({
+    scene: { level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA },
+  });
   runtime.step(0);
   assert.equal(runtime.inspect().frame, 1);
   runtime.dispose();
@@ -149,7 +160,7 @@ test("headless createPlayerRuntime does not need DOM globals", () => {
 });
 
 test("the scene's game data survives level loads, restarts and replays", () => {
-  const gameData = { ...COMPILED_GAME_DATA, hash: "custom-data" };
+  const gameData = { ...TEST_GAME_DATA, hash: "custom-data" };
   const tooling = createToolingRuntime({ scene: { level: testLevel(), seed: SEED, gameData } });
   tooling.step(0);
   const replay = tooling.toReplay();
@@ -161,7 +172,7 @@ test("the scene's game data survives level loads, restarts and replays", () => {
   tooling.restartCheckpoint();
   assert.equal(tooling.session.scene.gameDataHash, "custom-data");
 
-  tooling.replaceScene({ level: testLevel(), seed: SEED });
+  tooling.replaceScene({ level: testLevel(), seed: SEED, gameData: TEST_GAME_DATA });
   assert.throws(() => tooling.loadReplay(replay), /recorded with game data/);
   tooling.dispose();
 });

@@ -5,12 +5,14 @@ import { Input } from "../core/Input.js";
 import { Damage } from "./abilities/Damage.js";
 import { Intro } from "./abilities/Intro.js";
 import type { Actor } from "./Actor.js";
-import { COMPILED_GAME_DATA } from "../data/index.js";
 import type { CompiledGameData } from "../data/types.js";
 import { buildPlayerLoadout } from "./loadout/PlayerLoadout.js";
 import { DEFAULT_DASH_CROUCH } from "../core/constants.js";
 
-/** The loadout the default player is composed from — Player.tscn's ability list, as data. */
+/**
+ * The loadout a scene plays when its project names none: X's id. The engine ships
+ * no loadout; the X pack (`@mmx/pack-mmx-player-x`) provides it.
+ */
 export const DEFAULT_PLAYER_LOADOUT = "player.x";
 
 /**
@@ -18,7 +20,7 @@ export const DEFAULT_PLAYER_LOADOUT = "player.x";
  * rather than a hand-built ability list. The loadout owns the ability set, their
  * composition order (which tie-breaks locomotion priority), each ability's
  * priority and layer (independent action vs. locomotion/reaction), and the
- * arsenal. The default `player.x` loadout reproduces Player.tscn exactly.
+ * arsenal. The X pack's `player.x` loadout reproduces Player.tscn exactly.
  *
  * Extension points not ported here (documented in README): armor sets (Hermes/Icarus),
  * boss weapons, Ride Armor, subtanks, AirJump double-jump.
@@ -29,9 +31,9 @@ export class Player extends Character {
     x: number,
     y: number,
     input: Input,
-    seed?: number,
-    loadoutId: string = DEFAULT_PLAYER_LOADOUT,
-    gameData: CompiledGameData = COMPILED_GAME_DATA,
+    seed: number | undefined,
+    loadoutId: string,
+    gameData: CompiledGameData,
   ) {
     super(world, x, y, input, seed);
 

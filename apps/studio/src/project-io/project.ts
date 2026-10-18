@@ -14,7 +14,7 @@ import {
   type ProjectDocument,
   type ProjectAsset,
 } from "@mmx/project-schema";
-import { COMPILED_GAME_DATA, type GameDataOverlay } from "@mmx/engine/data";
+import type { GameDataOverlay } from "@mmx/engine/data";
 
 import type { FileSystem } from "./fs.js";
 import { CANONICAL_GAME_DATA_FILE, levelManifestPath, PROJECT_MANIFEST } from "./paths.js";
@@ -25,12 +25,11 @@ export const PROJECT_VALIDATION = {
 };
 
 /**
- * Validation for a project with `overlay` as its data/game.json: its `player.loadout` may name
- * an engine loadout or one the overlay adds (the merge only adds and replaces ids).
+ * Validation for a project with `overlay` as its data/game.json (its packs merged in): its
+ * `player.loadout` must name a loadout the overlay adds, since the engine ships none.
  */
 export function projectValidation(overlay: GameDataOverlay | undefined) {
-  const own = Object.keys(overlay?.loadouts ?? {});
-  const loadoutIds = new Set([...COMPILED_GAME_DATA.loadouts.keys(), ...own]);
+  const loadoutIds = new Set(Object.keys(overlay?.loadouts ?? {}));
   return { ...PROJECT_VALIDATION, loadoutIds };
 }
 
