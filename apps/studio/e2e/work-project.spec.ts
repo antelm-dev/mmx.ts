@@ -27,7 +27,10 @@ async function launch(profile: string) {
 /** First launch of a profile: the fan notice, then the Start tab. */
 async function firstLaunch(profile: string) {
   const launched = await launch(profile);
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(launched.page.getByTestId("fan-notice")).toBeVisible();
   await launched.page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(launched.page.getByTestId("fan-notice")).toBeHidden();
   await expect(launched.page.getByRole("tab", { name: "Start" })).toBeVisible();
   return launched;
 }

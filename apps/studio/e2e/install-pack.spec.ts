@@ -56,7 +56,10 @@ test("AC-INSTALL: a blank project gets the pack's art from File → Install; a s
     void dialog.accept();
   });
   await expect(page.locator("#viewport-canvas")).toBeAttached({ timeout: 30_000 });
-  await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(page.getByTestId("fan-notice")).toBeVisible();
+  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByTestId("fan-notice")).toBeHidden();
 
   await app.evaluate(({ dialog }, picked) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [picked] })) as never;

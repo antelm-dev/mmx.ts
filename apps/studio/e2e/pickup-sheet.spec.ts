@@ -134,7 +134,10 @@ test("AC-SHEET: an old project's small/large pickup keys and an overlay's life.h
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("dialog", (dialog) => void dialog.accept());
   await expect(page.locator("#viewport-canvas")).toBeAttached({ timeout: 30_000 });
-  await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+  // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+  await expect(page.getByTestId("fan-notice")).toBeVisible();
+  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByTestId("fan-notice")).toBeHidden();
 
   await open(page, oldRoot);
   await expectPaletteSprites(page, capsules);

@@ -205,6 +205,41 @@ test("a missing projectile reference is an error", () => {
   assert.ok(codes(compile(data).diagnostics).includes("projectile.missing"));
 });
 
+test("a list field that is missing or not an array is a value.array error, not a throw", () => {
+  const cases: [string, (data: GameData) => void][] = [
+    [
+      "loadouts.player.x.slots",
+      (d) => delete (d.loadouts["player.x"] as Record<string, unknown>).slots,
+    ],
+    [
+      "loadouts.player.x.slots",
+      (d) => ((d.loadouts["player.x"] as Record<string, unknown>).slots = 3),
+    ],
+    [
+      "loadouts.player.x.weapons",
+      (d) => delete (d.loadouts["player.x"] as Record<string, unknown>).weapons,
+    ],
+    [
+      "weapons.buster.projectiles",
+      (d) => delete (d.weapons.buster as Record<string, unknown>).projectiles,
+    ],
+    [
+      "weapons.buster.chargeThresholds",
+      (d) => delete (d.weapons.buster as Record<string, unknown>).chargeThresholds,
+    ],
+  ];
+  for (const [fieldPath, mutate] of cases) {
+    const data = clone();
+    mutate(data);
+    const result = compile(data);
+    assert.equal(result.ok, false, fieldPath);
+    assert.ok(
+      result.diagnostics.some((d) => d.code === "value.array" && d.fieldPath === fieldPath),
+      `${fieldPath}: ${JSON.stringify(result.diagnostics)}`,
+    );
+  }
+});
+
 test("a missing prefab runtime is an error", () => {
   const data = cloneMmx();
   data.prefabs["enemy.metool"].runtime = "ghost";

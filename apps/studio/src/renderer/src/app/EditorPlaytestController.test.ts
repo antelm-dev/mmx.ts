@@ -94,6 +94,25 @@ describe("EditorPlaytestController", () => {
     expect(store.get().mode).toBe("edit");
   });
 
+  it("refuses to start Play when the project's data has no loadout for its player", async () => {
+    const store = new EditorStore(level());
+    const toast = vi.fn();
+    const getAssets = vi.fn(async () => null);
+    const controller = new EditorPlaytestController(store, {
+      getHost: () => ({}) as HTMLElement,
+      getGameData: () => ({ ...COMPILED_GAME_DATA, loadouts: new Map() }),
+      getLoadoutId: () => undefined,
+      getAssets,
+      toast,
+    } as Partial<PlaytestCallbacks> as PlaytestCallbacks);
+
+    controller.togglePlay();
+    await vi.waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(toast).toHaveBeenCalledWith(expect.stringMatching(/no loadout 'player\.x'/));
+    expect(getAssets).not.toHaveBeenCalled();
+    expect(store.get().mode).toBe("edit");
+  });
+
   it("plays a copy with the Spawn moved, and Stop leaves the level untouched", async () => {
     const store = new EditorStore(level());
     const before = structuredClone(store.get().document);

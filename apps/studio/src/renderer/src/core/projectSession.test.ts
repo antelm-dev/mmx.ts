@@ -312,7 +312,7 @@ describe("ProjectSession game data", () => {
     expect(session.gameData().compiled.enemies.has("crab")).toBe(true);
 
     // An unsupported category: reported, the crab is gone, and Play is refused (issues).
-    session.setGameData({ ...overlay, weapons: {} } as never);
+    session.setGameData({ ...overlay, physics: {} } as never);
     expect(session.getSnapshot().dirty).toBe(true);
     expect(session.getSnapshot().issues).toContainEqual(
       expect.objectContaining({

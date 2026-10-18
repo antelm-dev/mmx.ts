@@ -53,7 +53,10 @@ test.afterAll(() => rmSync(profile, { recursive: true, force: true }));
 test("first launch shows the Start tab; Blank level closes it and the canvas responds", async () => {
   const { app, page } = await launch();
   try {
-    await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+    // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+    await expect(page.getByTestId("fan-notice")).toBeVisible();
+    await page.getByRole("button", { name: "OK", exact: true }).click();
+    await expect(page.getByTestId("fan-notice")).toBeHidden();
     await expect(startTab(page)).toHaveAttribute("aria-selected", "true");
     await expect(recents(page)).toContainText("No recent projects yet.");
     await expect(page.locator("#viewport-canvas")).toBeHidden();

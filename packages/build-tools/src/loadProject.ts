@@ -147,6 +147,16 @@ async function loadGameData(
     return report("gameData.invalid", `${GAME_DATA_FILE} is malformed: ${message}`);
   }
   if (!compiled.ok) return reportDiagnostics(compiled.diagnostics);
+  // Warnings (e.g. no player loadout for the spawn) do not block the load.
+  for (const d of compiled.diagnostics) {
+    const where = d.fieldPath ? ` ${d.fieldPath}` : "";
+    issues.push({
+      severity: "warning",
+      code: d.code,
+      path: `/${GAME_DATA_FILE}`,
+      message: `${GAME_DATA_FILE}${where}: ${d.message}`,
+    });
+  }
   return {
     data: { gameData: merged.value, compiledGameData: compiled.value },
     manifest: packed.manifest,
@@ -213,7 +223,8 @@ export async function loadProject(root: string): Promise<LoadProjectResult> {
   const loaded = await loadGameData(rootResolved, gameDataIssues, raw);
   const projectGameData = loaded?.data;
   const parsed = parseProject(loaded?.manifest ?? raw, {
-    loadoutIds: (projectGameData?.compiledGameData ?? COMPILED_GAME_DATA).loadouts.keys(),
+    // The project's merged loadouts; none to check against when its game data failed (reported).
+    loadoutIds: projectGameData?.compiledGameData.loadouts.keys(),
     terrainTiles: Object.values(TerrainTile),
   });
   if (!parsed.ok || !parsed.project) {

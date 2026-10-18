@@ -79,7 +79,10 @@ test("AC-NOPROJECT: a pickup and an enemy made without a project, placed, saved 
     const { app, page } = first;
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
-    await page.getByRole("button", { name: "OK", exact: true }).click(); // first-launch notice
+    // First-launch notice: wait for it, then check it is gone, so the click never races its mount.
+    await expect(page.getByTestId("fan-notice")).toBeVisible();
+    await page.getByRole("button", { name: "OK", exact: true }).click();
+    await expect(page.getByTestId("fan-notice")).toBeHidden();
     await expect(page.getByRole("tab", { name: "Start" })).toBeVisible();
     const before = await levelObjects(page);
 

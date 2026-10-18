@@ -13,18 +13,25 @@ import {
   type ProjectDocument,
   type ProjectAsset,
 } from "@mmx/project-schema";
-import { COMPILED_GAME_DATA } from "@mmx/engine/data";
+import { COMPILED_GAME_DATA, type GameDataOverlay } from "@mmx/engine/data";
 
 import type { FileSystem } from "./fs.js";
 import { CANONICAL_GAME_DATA_FILE, levelManifestPath, PROJECT_MANIFEST } from "./paths.js";
 import { fail, issue, succeed, type ProjectResult, type StudioProject } from "./model.js";
 
-/** Compiled player loadout ids a project's `player.loadout` may reference (default `player.x`). */
-export const LOADOUT_IDS: readonly string[] = [...COMPILED_GAME_DATA.loadouts.keys()];
 export const PROJECT_VALIDATION = {
-  loadoutIds: LOADOUT_IDS,
   terrainTiles: Object.values(TerrainTile),
 };
+
+/**
+ * Validation for a project with `overlay` as its data/game.json: its `player.loadout` may name
+ * an engine loadout or one the overlay adds (the merge only adds and replaces ids).
+ */
+export function projectValidation(overlay: GameDataOverlay | undefined) {
+  const own = Object.keys(overlay?.loadouts ?? {});
+  const loadoutIds = new Set([...COMPILED_GAME_DATA.loadouts.keys(), ...own]);
+  return { ...PROJECT_VALIDATION, loadoutIds };
+}
 
 export type CreateProjectInput = {
   id: string;
@@ -111,21 +118,40 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
     ]);
   }
 
-  const parsed = parseProject(raw, PROJECT_VALIDATION);
+  const issues: ReturnType<typeof issue>[] = [];
+  // Read first: `player.loadout` may name a loadout this overlay adds.
+  let gameData: StudioProject["gameData"];
+  if (await fs.exists(CANONICAL_GAME_DATA_FILE)) {
+    try {
+      gameData = JSON.parse(await fs.readText(CANONICAL_GAME_DATA_FILE));
+    } catch (error) {
+      // Like a broken manifest: opening and re-saving must not drop the file's records.
+      issues.push(
+        issue(
+          "game-data.parse",
+          error instanceof Error ? error.message : String(error),
+          `/${CANONICAL_GAME_DATA_FILE}`,
+        ),
+      );
+    }
+  }
+
+  const parsed = parseProject(raw, projectValidation(gameData));
   if (!parsed.ok || !parsed.project) {
-    return fail(
-      parsed.issues.map((entry) => ({
+    // A broken data/game.json may be why an overlay loadout reads as unknown: report both.
+    return fail([
+      ...issues,
+      ...parsed.issues.map((entry) => ({
         severity: entry.severity,
         code: entry.code,
         message: entry.message,
         path: entry.path,
       })),
-    );
+    ]);
   }
 
   const manifest = parsed.project;
   const levels: StudioProject["levels"] = [];
-  const issues: ReturnType<typeof issue>[] = [];
 
   for (const [index, ref] of manifest.levels.entries()) {
     if (!(await fs.exists(ref.path))) {
@@ -165,22 +191,6 @@ export async function loadProject(fs: FileSystem): Promise<ProjectResult<StudioP
     }
   }
 
-  let gameData: StudioProject["gameData"];
-  if (await fs.exists(CANONICAL_GAME_DATA_FILE)) {
-    try {
-      gameData = JSON.parse(await fs.readText(CANONICAL_GAME_DATA_FILE));
-    } catch (error) {
-      // Like a broken manifest: opening and re-saving must not drop the file's records.
-      issues.push(
-        issue(
-          "game-data.parse",
-          error instanceof Error ? error.message : String(error),
-          `/${CANONICAL_GAME_DATA_FILE}`,
-        ),
-      );
-    }
-  }
-
   if (issues.some((entry) => entry.severity === "error")) {
     return fail(issues);
   }
@@ -203,7 +213,7 @@ export async function saveProject(
   fs: FileSystem,
   project: StudioProject,
 ): Promise<ProjectResult<StudioProject>> {
-  const validation = validateProject(project.manifest, PROJECT_VALIDATION);
+  const validation = validateProject(project.manifest, projectValidation(project.gameData));
   if (!validation.ok) {
     return fail(
       validation.issues.map((entry) => ({
