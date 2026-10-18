@@ -5,7 +5,6 @@ import { buildCompileRegistries } from "../src/behaviors/index.js";
 import {
   GAME_DATA,
   compileGameData,
-  mergeGameData,
   type CompiledGameData,
   type GameData,
 } from "../src/data/index.js";
@@ -13,11 +12,12 @@ import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
 import { stage1, stage2 } from "./fixtures/levels.js";
-import { MMX_PACK as PACK } from "./support/mmx.js";
+import { MMX_PACK as PACK, X_PACK, ZERO_PACK, withPacks } from "./support/mmx.js";
 
 /**
  * The MMX Starter pack is the MMX objects that used to be built into the engine:
- * the engine's core plus the pack is the game as it was before they left. The
+ * the engine's core plus the pack (and the X and Zero packs, passed explicitly)
+ * is the game as it was before they left. The
  * hash and the digests below were taken from the built-in data before the
  * removal, so a change to either side shows here.
  */
@@ -26,6 +26,8 @@ import { MMX_PACK as PACK } from "./support/mmx.js";
 const BUILTIN_HASH = "36e5bb6d8c3547a6";
 
 const core = (): GameData => structuredClone(GAME_DATA);
+/** Core + the X and Zero packs: a project without the MMX Starter pack. */
+const withPlayers = (): GameData => withPacks(core(), X_PACK, ZERO_PACK);
 
 function compile(data: GameData): CompiledGameData {
   const result = compileGameData(data, buildCompileRegistries());
@@ -34,11 +36,7 @@ function compile(data: GameData): CompiledGameData {
   return result.value;
 }
 
-function withPack(): GameData {
-  const merged = mergeGameData(core(), PACK);
-  assert.ok(merged.ok, JSON.stringify(!merged.ok && merged.diagnostics));
-  return merged.value;
-}
+const withPack = (): GameData => withPacks(core(), PACK, X_PACK, ZERO_PACK);
 
 test("core keeps only the engine's primitives, the players and their shots", () => {
   const data = core();
@@ -59,7 +57,7 @@ test("core alone compiles with no diagnostic", () => {
   compile(core());
 });
 
-test("core + MMX Starter pack compiles to the former built-in hash", () => {
+test("core + MMX Starter, X and Zero packs compile to the former built-in hash", () => {
   assert.equal(compile(withPack()).hash, BUILTIN_HASH);
 });
 
@@ -133,7 +131,10 @@ for (const [name, level, expected, missing] of [
 ] as const) {
   test(`${name} plays with core + pack as it did with the built-ins`, () => {
     assert.deepEqual(run(level, compile(withPack())).trace, expected);
-    assert.throws(() => Scene.create({ level, seed: 0x5eed, gameData: compile(core()) }), missing);
+    assert.throws(
+      () => Scene.create({ level, seed: 0x5eed, gameData: compile(withPlayers()) }),
+      missing,
+    );
   });
 }
 

@@ -8,12 +8,11 @@ import { DT } from "../src/core/constants.js";
 import { compileGameData, type CompiledGameData, type GameData } from "../src/data/index.js";
 import type { Enemy } from "../src/game/Enemy.js";
 import type { LevelData } from "../src/game/LevelData.js";
-import { Player } from "../src/game/Player.js";
 import { Recorder } from "../src/game/Recorder.js";
 import { Stage } from "../src/game/Stage.js";
 import { Tile, World } from "../src/game/World.js";
 import { spawnEnemy } from "../src/game/enemies/index.js";
-import { MMX_COMPILED, MMX_GAME_DATA } from "./support/mmx.js";
+import { MMX_COMPILED, MMX_GAME_DATA, createPlayer } from "./support/mmx.js";
 
 /**
  * Death's optional weak phase (MMX1 Spiky): below `weakHealth` the enemy stops,
@@ -58,7 +57,7 @@ function setup(death: DeathFields = WEAK, playerX = 70 * 16) {
   for (let y = 0; y < GROUND_ROW; y++) rows.push("#" + ".".repeat(78) + "#");
   rows.push("#".repeat(80));
   const world = World.fromRows(rows);
-  const player = new Player(world, playerX, FLOOR_Y - 14, new Input());
+  const player = createPlayer(world, playerX, FLOOR_Y - 14, new Input());
   const stage = new Stage(world, player);
   const gameData = compiled(death);
   const def = gameData.enemies.get("spiky")!;

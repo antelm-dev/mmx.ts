@@ -12,8 +12,9 @@ import {
 } from "./support/player.js";
 import { Actor } from "../src/game/Actor.js";
 import type { AnimData } from "@mmx/contracts/animation";
-import { Player } from "../src/game/Player.js";
+import type { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
+import { createPlayer } from "./support/mmx.js";
 
 const animData = JSON.parse(
   readFileSync(new URL("./fixtures/x_anims.json", import.meta.url), "utf8"),
@@ -28,7 +29,7 @@ function room(): World {
 function makePlayer() {
   const world = room();
   const input = new Input();
-  const player = new Player(world, 10 * 16, 10 * 16, input);
+  const player = createPlayer(world, 10 * 16, 10 * 16, input);
   player.loadAnimations(animData);
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { world, input, player };

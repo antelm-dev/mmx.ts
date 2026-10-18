@@ -16,7 +16,7 @@ function clone(): GameData {
   return structuredClone(GAME_DATA);
 }
 
-/** For the cases that edit an MMX object: core + the MMX Starter pack. */
+/** For the cases that edit an MMX object or a player: core + the MMX packs. */
 function cloneMmx(): GameData {
   return structuredClone(MMX_GAME_DATA);
 }
@@ -39,8 +39,8 @@ test("the default game data compiles with no error diagnostics", () => {
   }
 });
 
-test("COMPILED_GAME_DATA is available and reference-resolved", () => {
-  const loadout = COMPILED_GAME_DATA.loadouts.get("player.x");
+test("the compiled game data is reference-resolved", () => {
+  const loadout = MMX_COMPILED.loadouts.get("player.x");
   assert.ok(loadout);
   assert.equal(loadout.actor.id, "player.x");
   assert.deepEqual(
@@ -63,7 +63,7 @@ test("COMPILED_GAME_DATA is available and reference-resolved", () => {
       "player.charge",
     ],
   );
-  const buster = COMPILED_GAME_DATA.weapons.get("buster");
+  const buster = MMX_COMPILED.weapons.get("buster");
   assert.equal(buster?.resolvedProjectiles.length, 3);
   assert.equal(buster?.resolvedProjectiles[2].id, "charged");
 });
@@ -91,8 +91,8 @@ test("the content hash is stable and non-empty", () => {
 });
 
 test("the hash changes when a gameplay value changes", () => {
-  const before = COMPILED_GAME_DATA.hash;
-  const data = clone();
+  const before = MMX_COMPILED.hash;
+  const data = cloneMmx();
   data.projectiles.lemon.damage = 999;
   const after = compile(data);
   assert.equal(after.ok, true);
@@ -100,7 +100,7 @@ test("the hash changes when a gameplay value changes", () => {
 });
 
 test("the hash is invariant to authoring key order", () => {
-  const data = clone();
+  const data = cloneMmx();
   const reordered: typeof data.projectiles = {} as typeof data.projectiles;
   for (const key of Object.keys(data.projectiles).reverse()) {
     reordered[key] = data.projectiles[key];
@@ -108,7 +108,7 @@ test("the hash is invariant to authoring key order", () => {
   data.projectiles = reordered;
   const result = compile(data);
   assert.equal(result.ok, true);
-  if (result.ok) assert.equal(result.value.hash, COMPILED_GAME_DATA.hash);
+  if (result.ok) assert.equal(result.value.hash, MMX_COMPILED.hash);
 });
 
 test("a prefab's display name and description are presentation: they never change the hash", () => {
@@ -144,7 +144,7 @@ test("a blank prefab name or description is an error", () => {
 // --- diagnostics ------------------------------------------------------------
 
 test("no partial compiled value is produced when errors exist", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.projectiles.lemon.speed = 0;
   const result = compile(data);
   assert.equal(result.ok, false);
@@ -152,25 +152,25 @@ test("no partial compiled value is produced when errors exist", () => {
 });
 
 test("a key/id mismatch is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.projectiles.lemon.id = "not-lemon";
   assert.ok(codes(compile(data).diagnostics).includes("id.mismatch"));
 });
 
 test("a missing actor reference is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.loadouts["player.x"].actor = "ghost";
   assert.ok(codes(compile(data).diagnostics).includes("reference.missing"));
 });
 
 test("a missing ability reference in a loadout is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.loadouts["player.x"].slots[0].ability = "ghost";
   assert.ok(codes(compile(data).diagnostics).includes("reference.missing"));
 });
 
 test("an unknown behavior id is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.abilities["player.dash"].behavior = "player.teleport";
   assert.ok(codes(compile(data).diagnostics).includes("behavior.unknown"));
 });
@@ -182,25 +182,25 @@ test("a non-finite numeric value is an error", () => {
 });
 
 test("an invalid priority is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.abilities["player.dash"].priority = Number.NaN;
   assert.ok(codes(compile(data).diagnostics).includes("value.number"));
 });
 
 test("non-ascending charge thresholds are an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.weapons.buster.chargeThresholds = [2.75, 1.75];
   assert.ok(codes(compile(data).diagnostics).includes("charge.threshold"));
 });
 
 test("an invalid hitbox is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.projectiles.lemon.hitbox.hw = 0;
   assert.ok(codes(compile(data).diagnostics).includes("value.range"));
 });
 
 test("a missing projectile reference is an error", () => {
-  const data = clone();
+  const data = cloneMmx();
   data.weapons.buster.projectiles = ["ghost"];
   assert.ok(codes(compile(data).diagnostics).includes("projectile.missing"));
 });
@@ -229,7 +229,7 @@ test("a list field that is missing or not an array is a value.array error, not a
     ],
   ];
   for (const [fieldPath, mutate] of cases) {
-    const data = clone();
+    const data = cloneMmx();
     mutate(data);
     const result = compile(data);
     assert.equal(result.ok, false, fieldPath);

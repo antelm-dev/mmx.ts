@@ -5,6 +5,7 @@ import type { LevelData, LevelEntity } from "../src/game/LevelData.js";
 import { Recorder } from "../src/game/Recorder.js";
 import type { Scene } from "../src/game/Scene.js";
 import { Tile } from "../src/game/World.js";
+import { MMX_COMPILED } from "./support/mmx.js";
 
 // 60x30 tiles (960x480px), floor on row 12, open space below it down to the world edge.
 const COLS = 60;
@@ -42,7 +43,7 @@ function dropTo(scene: Scene, y: number): void {
 }
 
 test("falling 32px past the camera zone's bottom kills and restarts at the checkpoint", () => {
-  const recorder = new Recorder({ level: pitLevel(true) });
+  const recorder = new Recorder({ level: pitLevel(true), gameData: MMX_COMPILED });
   const scene = recorder.scene;
   settle(scene);
   const spawn = { x: scene.player.pos.x, y: scene.player.pos.y };
@@ -67,7 +68,7 @@ test("falling 32px past the camera zone's bottom kills and restarts at the check
 });
 
 test("without a camera zone the pit line is the world bottom plus the margin", () => {
-  const scene = new Recorder({ level: pitLevel(false) }).scene;
+  const scene = new Recorder({ level: pitLevel(false), gameData: MMX_COMPILED }).scene;
   settle(scene);
   const worldBottom = ROWS * GRID;
 

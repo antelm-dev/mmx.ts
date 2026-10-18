@@ -3,13 +3,12 @@ import assert from "node:assert/strict";
 
 import { DT } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
-import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import { MovingPlatform } from "../src/game/Environment.js";
 import { loadLevel } from "../src/game/level.js";
 import { stage2 } from "./fixtures/levels.js";
-import { MMX_COMPILED } from "./support/mmx.js";
+import { MMX_COMPILED, createPlayer } from "./support/mmx.js";
 
 test("the mechanics demo is larger than the original and authors every environment type", () => {
   const level = loadLevel(stage2, MMX_COMPILED);
@@ -23,7 +22,7 @@ test("the mechanics demo is larger than the original and authors every environme
 
 test("hazards bypass damage protection and start death immediately", () => {
   const world = World.fromRows(["....", "...."]);
-  const player = new Player(world, 16, 16, new Input());
+  const player = createPlayer(world, 16, 16, new Input());
   const stage = new Stage(world, player, {
     hazards: [{ id: "spikes", x: 8, y: 8, w: 16, h: 16 }],
   });
@@ -37,7 +36,7 @@ test("hazards bypass damage protection and start death immediately", () => {
 
 test("a grounded conveyor adds its signed speed and stops outside the strip", () => {
   const world = World.fromRows([".....", ".....", "#####"]);
-  const player = new Player(world, 24, 20, new Input());
+  const player = createPlayer(world, 24, 20, new Input());
   const stage = new Stage(world, player, {
     conveyors: [{ id: "belt", x: 0, y: 24, w: 64, h: 8, speed: 60 }],
   });
@@ -55,7 +54,7 @@ test("a grounded conveyor adds its signed speed and stops outside the strip", ()
 
 test("a horizontal platform carries its rider and reverses at its endpoint", () => {
   const world = World.fromRows(["..........", "..........", ".........."]);
-  const player = new Player(world, 16, 18, new Input());
+  const player = createPlayer(world, 16, 18, new Input());
   const stage = new Stage(world, player, {
     platforms: [{ id: "lift", x: 0, y: 32, w: 48, h: 8, travel: 16, speed: 60 }],
   });
@@ -81,7 +80,7 @@ test("a horizontal platform carries its rider and reverses at its endpoint", () 
 test("jumping deliberately releases the moving platform", () => {
   const world = World.fromRows(["..........", "..........", ".........."]);
   const input = new Input();
-  const player = new Player(world, 16, 18, input);
+  const player = createPlayer(world, 16, 18, input);
   const stage = new Stage(world, player, {
     platforms: [{ id: "lift", x: 0, y: 32, w: 48, h: 8, travel: 32, speed: 60 }],
   });
@@ -96,7 +95,7 @@ test("jumping deliberately releases the moving platform", () => {
 
 test("a falling player lands on a moving platform from above", () => {
   const world = World.fromRows(["..........", "..........", "..........", ".........."]);
-  const player = new Player(world, 24, 0, new Input());
+  const player = createPlayer(world, 24, 0, new Input());
   const stage = new Stage(world, player, {
     platforms: [{ id: "bridge", x: 0, y: 48, w: 64, h: 8, travel: 0, speed: 0 }],
   });
@@ -136,7 +135,7 @@ test("a vertical platform folds back at both ends like a horizontal one", () => 
 for (const speed of [60, 240]) {
   test(`a vertical platform carries its rider up and down at ${speed}px/s`, () => {
     const world = World.fromRows(new Array(12).fill("..........") as string[]);
-    const player = new Player(world, 24, 40, new Input());
+    const player = createPlayer(world, 24, 40, new Input());
     const stage = new Stage(world, player, {
       platforms: [{ id: "lift", x: 0, y: 64, w: 64, h: 8, travel: 80, speed, axis: "vertical" }],
     });
@@ -164,7 +163,7 @@ for (const speed of [60, 240]) {
 test("a falling platform waits Delay after it is stood on, falls with its rider, then despawns", () => {
   // 6 rows = 96px of world: the platform leaves it after a short fall.
   const world = World.fromRows(new Array(6).fill("..........") as string[]);
-  const player = new Player(world, 24, 0, new Input());
+  const player = createPlayer(world, 24, 0, new Input());
   const stage = new Stage(world, player, {
     fallingPlatforms: [{ id: "drop", x: 0, y: 32, w: 64, h: 8, delay: 0.25 }],
   });
@@ -203,7 +202,7 @@ test("a falling platform waits Delay after it is stood on, falls with its rider,
 
 test("a falling platform nobody stands on never falls", () => {
   const world = World.fromRows(new Array(6).fill("..........") as string[]);
-  const player = new Player(world, 120, 0, new Input());
+  const player = createPlayer(world, 120, 0, new Input());
   const stage = new Stage(world, player, {
     fallingPlatforms: [{ id: "drop", x: 0, y: 32, w: 64, h: 8, delay: 0 }],
   });

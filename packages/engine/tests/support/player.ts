@@ -1,13 +1,13 @@
-import { COMPILED_GAME_DATA } from "../../src/data/index.js";
 import { playerWeapon, type PlayerWeapon } from "../../src/game/Character.js";
+import { MMX_COMPILED } from "./mmx.js";
 
 /**
  * X's tables, which the engine no longer exports: the runtime reads them from
- * the player's loadout. Read here from the built-in game data, so a test pins
- * the same numbers the default player plays with.
+ * the player's loadout. Read here from the X pack in the MMX game data, so a
+ * test pins the same numbers X plays with.
  */
 
-const D = COMPILED_GAME_DATA;
+const D = MMX_COMPILED;
 
 function weapon(id: string): PlayerWeapon {
   const w = D.weapons.get(id);

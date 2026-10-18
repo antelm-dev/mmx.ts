@@ -9,11 +9,10 @@ import { Input } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { compileGameData, type GameData } from "../src/data/index.js";
 import { AnimationPlayer } from "../src/game/Animation.js";
-import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
 import { spawnEnemy } from "../src/game/enemies/index.js";
-import { MMX_GAME_DATA } from "./support/mmx.js";
+import { MMX_GAME_DATA, createPlayer } from "./support/mmx.js";
 
 /**
  * Named segments (intro once, loop, end once) let one clip hold its transition
@@ -241,7 +240,7 @@ function stunner() {
   for (let y = 0; y < GROUND_ROW; y++) rows.push("#" + ".".repeat(78) + "#");
   rows.push("#".repeat(80));
   const world = World.fromRows(rows);
-  const stage = new Stage(world, new Player(world, 70 * 16, FLOOR_Y - 14, new Input()));
+  const stage = new Stage(world, createPlayer(world, 70 * 16, FLOOR_Y - 14, new Input()));
   const def = gameData.enemies.get("stunner")!;
   const enemy = stage.add(
     spawnEnemy(def, world, 20 * 16, FLOOR_Y - def.actor.body.hh, -1, 1234, gameData),

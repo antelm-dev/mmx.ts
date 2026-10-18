@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { Input, Action } from "../src/core/Input.js";
 import { DT } from "../src/core/constants.js";
 import { WALK_SPEED, JUMP_VELOCITY } from "./support/player.js";
-import { Player } from "../src/game/Player.js";
 import { World } from "../src/game/World.js";
+import { createPlayer } from "./support/mmx.js";
 
 // A flat 30x12 room with a solid floor on the bottom row and a wall on the right.
 function flatRoom(): World {
@@ -19,7 +19,7 @@ function makePlayer() {
   const input = new Input();
   const world = flatRoom();
   // stand on the floor: floor top = 11*16 = 176, body half-h 14 -> center ~162
-  const player = new Player(world, 5 * 16, 10 * 16, input);
+  const player = createPlayer(world, 5 * 16, 10 * 16, input);
   // settle a few frames onto the floor
   for (let i = 0; i < 5; i++) player.tick(DT);
   return { input, world, player };
@@ -85,7 +85,7 @@ test("cannot jump after walking off a ledge", () => {
   const rows = Array.from({ length: 11 }, () => "#".padEnd(19, ".").concat("#"));
   rows.push("#".repeat(9).padEnd(19, ".").concat("#"));
   const input = new Input();
-  const player = new Player(World.fromRows(rows), 6 * 16, 10 * 16, input);
+  const player = createPlayer(World.fromRows(rows), 6 * 16, 10 * 16, input);
 
   for (let i = 0; i < 5; i++) player.tick(DT);
   input.setDown("move_right", true);
@@ -126,7 +126,7 @@ test("holds into a wall to wall-slide, then jumps to wall-kick", () => {
   rows.push("#".repeat(30));
   const world = World.fromRows(rows);
   const input = new Input();
-  const player = new Player(world, 28 * 16, 3 * 16, input); // airborne near right wall
+  const player = createPlayer(world, 28 * 16, 3 * 16, input); // airborne near right wall
 
   input.setDown("move_right", true); // press into the wall while falling
   let sawSlide = false;
@@ -151,7 +151,7 @@ test("holding dash while wall-kicking performs a DashWallJump (faster kick-off)"
   rows.push("#".repeat(30));
   const world = World.fromRows(rows);
   const input = new Input();
-  const player = new Player(world, 28 * 16, 3 * 16, input);
+  const player = createPlayer(world, 28 * 16, 3 * 16, input);
 
   input.setDown("move_right", true);
   input.setDown("dash", true); // hold dash the whole time

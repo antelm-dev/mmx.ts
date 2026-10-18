@@ -4,10 +4,9 @@ import assert from "node:assert/strict";
 import { DT, PICKUP_TICK_INTERVAL } from "../src/core/constants.js";
 import { Input } from "../src/core/Input.js";
 import { Actor } from "../src/game/Actor.js";
-import { Player } from "../src/game/Player.js";
 import { Stage } from "../src/game/Stage.js";
 import { World } from "../src/game/World.js";
-import { LIFE_CAPSULE_STATS, MMX_COMPILED } from "./support/mmx.js";
+import { LIFE_CAPSULE_STATS, MMX_COMPILED, createPlayer } from "./support/mmx.js";
 
 function room(): World {
   return World.fromRows(["....", "....", "...."]);
@@ -36,7 +35,7 @@ test("heal() raises current_health, clamped to the maximum, and emits the amount
 
 test("a small Life Energy capsule heals 2 HP over several ticks, then despawns", () => {
   const world = room();
-  const player = new Player(world, 16, 16, new Input());
+  const player = createPlayer(world, 16, 16, new Input());
   player.current_health = player.max_health - 10;
   const stage = new Stage(
     world,
@@ -71,7 +70,7 @@ test("a small Life Energy capsule heals 2 HP over several ticks, then despawns",
 
 test("a large capsule picked up near full health discards the unused overflow", () => {
   const world = room();
-  const player = new Player(world, 16, 16, new Input());
+  const player = createPlayer(world, 16, 16, new Input());
   player.current_health = player.max_health - 1;
   const stage = new Stage(
     world,
@@ -93,7 +92,7 @@ test("a large capsule picked up near full health discards the unused overflow", 
 test("the stage freezes while a Life Energy capsule restores health, then resumes", () => {
   const world = room();
   const input = new Input();
-  const player = new Player(world, 16, 16, input);
+  const player = createPlayer(world, 16, 16, input);
   player.current_health = player.max_health - LIFE_CAPSULE_STATS.large.heal;
   const stage = new Stage(
     world,
@@ -132,7 +131,7 @@ test("a Life Energy capsule falls under gravity and settles on the floor", () =>
     "....................",
     "####################",
   ]);
-  const player = new Player(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
+  const player = createPlayer(world, 300, 16, new Input()); // far from the capsule, on its own floor tile
   const stage = new Stage(
     world,
     player,
@@ -154,7 +153,7 @@ test("a Life Energy capsule falls under gravity and settles on the floor", () =>
 
 test("a capsule outside the player's reach is left untouched", () => {
   const world = room();
-  const player = new Player(world, 16, 16, new Input());
+  const player = createPlayer(world, 16, 16, new Input());
   const stage = new Stage(
     world,
     player,
